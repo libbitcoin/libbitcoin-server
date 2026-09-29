@@ -62,3 +62,127 @@ BOOST_AUTO_TEST_CASE(native__ws_configuration__default__json)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(native_limited_tests, native_limited_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(native__configuration__limited_blocks_unreached_milestone__pruned_zero)
+{
+    const auto response = get_json("/v1/configuration?format=json");
+    BOOST_REQUIRE(response.is_object());
+    BOOST_REQUIRE_EQUAL(response.as_object().at("pruned").as_int64(), 0);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(server_node_tests, server_node_setup_fixture)
+
+static const std::string unavailable{ "192.0.2.1:65009" };
+
+BOOST_AUTO_TEST_CASE(server_node__server_config__always__configuration)
+{
+    BOOST_REQUIRE(&server_.server_config() == &config_);
+}
+
+BOOST_AUTO_TEST_CASE(server_node__server_settings__always__server_settings)
+{
+    BOOST_REQUIRE(&server_.server_settings() == &config_.server);
+}
+
+BOOST_AUTO_TEST_CASE(server_node__run__default__success)
+{
+    BOOST_REQUIRE(!run([](server::configuration&) {}));
+}
+
+BOOST_AUTO_TEST_CASE(server_node__run__inbound_unavailable__failure)
+{
+    BOOST_REQUIRE(run([](server::configuration& config)
+    {
+        config.network.inbound.binds = { { unavailable } };
+        config.network.inbound.connections = 1;
+    }));
+}
+
+BOOST_AUTO_TEST_CASE(server_node__run__admin_unavailable__failure)
+{
+    BOOST_REQUIRE(run([](server::configuration& config)
+    {
+        config.server.admin.path = "unused";
+        config.server.admin.binds = { { unavailable } };
+        config.server.admin.connections = 1;
+    }));
+}
+
+BOOST_AUTO_TEST_CASE(server_node__run__native_unavailable__failure)
+{
+    BOOST_REQUIRE(run([](server::configuration& config)
+    {
+        config.server.native.path = "unused";
+        config.server.native.binds = { { unavailable } };
+        config.server.native.connections = 1;
+    }));
+}
+
+BOOST_AUTO_TEST_CASE(server_node__run__bitcoind_unavailable__failure)
+{
+    BOOST_REQUIRE(run([](server::configuration& config)
+    {
+        config.server.bitcoind.binds = { { unavailable } };
+        config.server.bitcoind.connections = 1;
+    }));
+}
+
+BOOST_AUTO_TEST_CASE(server_node__run__btcd_unavailable__failure)
+{
+    BOOST_REQUIRE(run([](server::configuration& config)
+    {
+        config.server.btcd.binds = { { unavailable } };
+        config.server.btcd.connections = 1;
+    }));
+}
+
+BOOST_AUTO_TEST_CASE(server_node__run__electrum_unavailable__failure)
+{
+    BOOST_REQUIRE(run([](server::configuration& config)
+    {
+        config.server.electrum.binds = { { unavailable } };
+        config.server.electrum.connections = 1;
+    }));
+}
+
+BOOST_AUTO_TEST_CASE(server_node__run__sparrow_unavailable__failure)
+{
+    BOOST_REQUIRE(run([](server::configuration& config)
+    {
+        config.server.sparrow.binds = { { unavailable } };
+        config.server.sparrow.connections = 1;
+    }));
+}
+
+BOOST_AUTO_TEST_CASE(server_node__run__esplora_unavailable__failure)
+{
+    BOOST_REQUIRE(run([](server::configuration& config)
+    {
+        config.server.esplora.binds = { { unavailable } };
+        config.server.esplora.connections = 1;
+    }));
+}
+
+BOOST_AUTO_TEST_CASE(server_node__run__stratum_v1_unavailable__failure)
+{
+    BOOST_REQUIRE(run([](server::configuration& config)
+    {
+        config.server.stratum_v1.binds = { { unavailable } };
+        config.server.stratum_v1.connections = 1;
+    }));
+}
+
+BOOST_AUTO_TEST_CASE(server_node__run__stratum_v2_unavailable__failure)
+{
+    BOOST_REQUIRE(run([](server::configuration& config)
+    {
+        config.server.stratum_v2.binds = { { unavailable } };
+        config.server.stratum_v2.connections = 1;
+    }));
+}
+
+BOOST_AUTO_TEST_SUITE_END()

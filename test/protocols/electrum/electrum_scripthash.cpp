@@ -23,6 +23,7 @@ using namespace system;
 static const code not_found{ server::error::electrum::bad_request };
 static const code wrong_version{ server::error::electrum::bad_request };
 static const code invalid_argument{ server::error::electrum::bad_request };
+static const code excessive_history{ server::error::electrum::excessive_history };
 static const std::string bogus_scripthash{ "9c2c84a6cf9809e08af19557e28d38257e6fee6981269760637a5f9dfb000b05" };
 static const std::string found_scripthash{ "bad83872c90886be19b98734fd16741611efcd9f5de699c14b712675eec682f5" };
 static const chain::script bogus{ chain::script::to_pay_key_hash_pattern({ 0x42 }) };
@@ -225,6 +226,20 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__confirmed_and_
     BOOST_REQUIRE_EQUAL(tx3.at("tx_hash").as_string(), encode_hash(hash3));
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__history_exceeds_maximum__excessive_history)
+{
+    config_.server.electrum.maximum_history = 1;
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+
+    constexpr auto request = R"({{"id":1007,"method":"blockchain.scripthash.get_history","params":["{}"]}})" "\n";
+    const auto result = get_error(std::format(request, found_scripthash));
+    BOOST_REQUIRE_EQUAL(result, excessive_history.value());
+}
+
 // blockchain.scripthash.get_mempool
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__missing_arguments__dropped)
@@ -317,6 +332,19 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__confirmed_and_
     BOOST_REQUIRE_EQUAL(tx1.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
     BOOST_REQUIRE_EQUAL(tx2.at("height").as_int64(), -1); // not rooted
     BOOST_REQUIRE_EQUAL(tx2.at("tx_hash").as_string(), encode_hash(hash2));
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__history_exceeds_maximum__excessive_history)
+{
+    config_.server.electrum.maximum_history = 1;
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+
+    constexpr auto request = R"({{"id":1007,"method":"blockchain.scripthash.get_mempool","params":["{}"]}})" "\n";
+    const auto result = get_error(std::format(request, found_scripthash));
+    BOOST_REQUIRE_EQUAL(result, excessive_history.value());
 }
 
 // blockchain.scripthash.list_unspent
@@ -429,6 +457,35 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__confirmed_and
     const auto point12_0 = chain::point{ hash12, 0 };
     BOOST_REQUIRE(point11_0 < point12_0);
     BOOST_REQUIRE(point12_0 < point11_1);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// duplicate
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(electrum_duplicate_tests, electrum_duplicate_setup_fixture)
+
+static const code daemon_error{ server::error::electrum::daemon_error };
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__duplicate__daemon_error)
+{
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    constexpr auto request = R"({{"id":1102,"method":"blockchain.scripthash.get_history","params":["{}"]}})" "\n";
+    const auto result = get_error(std::format(request, found_scripthash));
+    BOOST_REQUIRE_EQUAL(result, daemon_error.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__duplicate__daemon_error)
+{
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    constexpr auto request = R"({{"id":1103,"method":"blockchain.scripthash.listunspent","params":["{}"]}})" "\n";
+    const auto result = get_error(std::format(request, found_scripthash));
+    BOOST_REQUIRE_EQUAL(result, daemon_error.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

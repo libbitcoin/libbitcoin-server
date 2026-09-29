@@ -79,6 +79,16 @@ struct bitcoind_setup_fixture
     // Write a raw frame over the upgraded websocket without reading.
     void ws_notify(std::string_view body);
 
+    // Read the next frame over the upgraded websocket without writing.
+    boost::json::value ws_read();
+
+    // As rpc(), with an origin header, returning only the http status.
+    status rpc_origin_status(std::string_view method, std::string_view origin);
+
+    // As options_status(), with an origin header.
+    status options_origin_status(std::string_view target,
+        std::string_view origin);
+
 
     // bitcoind REST over HTTP GET (target under "/rest/...").
     status rest_status(std::string_view target);
@@ -244,6 +254,30 @@ struct bitcoind_witness_setup_fixture
     }
 };
 
+struct bitcoind_unassociated_setup_fixture
+    : bitcoind_setup_fixture
+{
+    inline bitcoind_unassociated_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_unassociated_store(query);
+        })
+    {
+    }
+};
+
+struct bitcoind_dangling_setup_fixture
+    : bitcoind_setup_fixture
+{
+    inline bitcoind_dangling_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_dangling_store(query);
+        })
+    {
+    }
+};
+
 // Configured with a populated address pool -- loaded from a hosts file.
 // The pool is loaded by the start sequence, which the base fixture bypasses.
 struct bitcoind_hosts_setup_fixture
@@ -320,6 +354,156 @@ struct bitcoind_submit_setup_fixture
         {
             config.node.currency_window_minutes = 0;
         }, true)
+    {
+    }
+};
+
+// Configured as submission, over a store with an anyone-can-spend output.
+struct bitcoind_broadcast_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_broadcast_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_broadcast_store(query);
+        }, [](configuration& config)
+        {
+            config.node.currency_window_minutes = 0;
+        }, true)
+    {
+    }
+};
+
+// Configured with no block filter tables.
+struct bitcoind_unfiltered_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_unfiltered_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.database.filter_bk.buckets = 0;
+            config.database.filter_tx.buckets = 0;
+        })
+    {
+    }
+};
+
+// The ten block store with its blocks also candidate, and mock block 10 a
+// candidate above the confirmed top (block or header only).
+bool setup_candidate_store(test::query_t& query, bool associated) NOEXCEPT;
+
+struct bitcoind_candidate_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_candidate_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return setup_candidate_store(query, true);
+        })
+    {
+    }
+};
+
+struct bitcoind_candidate_header_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_candidate_header_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return setup_candidate_store(query, false);
+        })
+    {
+    }
+};
+
+// The three block store with a confirmed block 3 header timestamped as block 2.
+bool setup_simultaneous_store(test::query_t& query) NOEXCEPT;
+bool setup_unrooted_store(test::query_t& query) NOEXCEPT;
+bool setup_dangling_candidate_store(test::query_t& query) NOEXCEPT;
+
+struct bitcoind_simultaneous_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_simultaneous_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return setup_simultaneous_store(query);
+        })
+    {
+    }
+};
+
+struct bitcoind_unrooted_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_unrooted_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return setup_unrooted_store(query);
+        })
+    {
+    }
+};
+
+struct bitcoind_dangling_candidate_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_dangling_candidate_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return setup_dangling_candidate_store(query);
+        })
+    {
+    }
+};
+
+// Configured with no address index -- for the utxo set scan path.
+struct bitcoind_dangling_no_address_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_dangling_no_address_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_dangling_store(query);
+        }, [](configuration& config)
+        {
+            config.database.outs.buckets = 0;
+        })
+    {
+    }
+};
+
+// Configured with advertised inbound addresses.
+struct bitcoind_selfs_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_selfs_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.network.inbound.selfs = { { "1.2.3.4:8333" } };
+        })
+    {
+    }
+};
+
+// Configured with a zmq binding (no connections, so not served).
+struct bitcoind_zmq_bound_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_zmq_bound_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.server.bitcoind_zmq.binds = { { "127.0.0.1:28332" } };
+        })
     {
     }
 };

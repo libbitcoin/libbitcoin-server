@@ -24,6 +24,55 @@
 
 using namespace boost::beast;
 
+bool setup_candidate_store(test::query_t& query, bool associated) NOEXCEPT
+{
+    const auto& header = test::mock_block10.header();
+    const database::context context{ 0, 10, 0 };
+    return test::setup_ten_block_store(query) &&
+        query.push_candidate(query.to_header(test::block1_hash)) &&
+        query.push_candidate(query.to_header(test::block2_hash)) &&
+        query.push_candidate(query.to_header(test::block3_hash)) &&
+        query.push_candidate(query.to_header(test::block4_hash)) &&
+        query.push_candidate(query.to_header(test::block5_hash)) &&
+        query.push_candidate(query.to_header(test::block6_hash)) &&
+        query.push_candidate(query.to_header(test::block7_hash)) &&
+        query.push_candidate(query.to_header(test::block8_hash)) &&
+        query.push_candidate(query.to_header(test::block9_hash)) &&
+        (associated ?
+            query.set(test::mock_block10, context, {}, false, false) :
+            query.set(header, context, {}, false)) &&
+        query.push_candidate(query.to_header(header.hash()));
+}
+
+bool setup_simultaneous_store(test::query_t& query) NOEXCEPT
+{
+    const auto& header = test::block3.header();
+    const auto timestamp = test::block2.header().timestamp();
+    const system::chain::header top{ header.version(), test::block2_hash, header.merkle_root(), timestamp, header.bits(), header.nonce() };
+    return test::setup_three_block_store(query) &&
+        query.set(top, database::context{ 0, 3, 0 }, {}, false) &&
+        query.push_confirmed(query.to_header(top.hash()), false);
+}
+
+// A faulted store: the confirmed top has no parent.
+bool setup_unrooted_store(test::query_t& query) NOEXCEPT
+{
+    const auto& header = test::block3.header();
+    const system::chain::header top{ header.version(), system::null_hash, header.merkle_root(), header.timestamp(), header.bits(), header.nonce() };
+    return test::setup_three_block_store(query) &&
+        query.set(top, database::context{ 0, 3, 0 }, {}, false) &&
+        query.push_confirmed(query.to_header(top.hash()), false);
+}
+
+// A faulted store: the candidate top is not a header.
+bool setup_dangling_candidate_store(test::query_t& query) NOEXCEPT
+{
+    return test::setup_three_block_store(query) &&
+        query.push_candidate(query.to_header(test::block1_hash)) &&
+        query.push_candidate(query.to_header(test::block2_hash)) &&
+        query.push_candidate(database::header_link{ 42 });
+}
+
 bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup,
     const configurator& configure, bool start)
   : rpc_setup_fixture(setup,
@@ -110,6 +159,46 @@ boost::json::value bitcoind_setup_fixture::ws_rpc_dropped(
 void bitcoind_setup_fixture::ws_notify(std::string_view body)
 {
     client_.write_frame(body);
+}
+
+boost::json::value bitcoind_setup_fixture::ws_read()
+{
+    return client_.read_frame(true);
+}
+
+static bitcoind_setup_fixture::status status_of(tcp_stream& socket,
+    const rpc_client::request& request)
+{
+    network::boost_code ec{};
+    http::write(socket, request, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    flat_buffer buffer{};
+    http::response<http::string_body> response{};
+    http::read(socket, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    return response.result();
+}
+
+bitcoind_setup_fixture::status
+bitcoind_setup_fixture::rpc_origin_status(std::string_view method,
+    std::string_view origin)
+{
+    auto request = rpc_client::create_post("/", body_of(method, "[]"));
+    request.set(http::field::origin, origin);
+    return status_of(client_.stream(), request);
+}
+
+bitcoind_setup_fixture::status
+bitcoind_setup_fixture::options_origin_status(std::string_view target,
+    std::string_view origin)
+{
+    rpc_client::request request{ http::verb::options, target,
+        network::http::version_1_1 };
+    request.set(http::field::host, "localhost");
+    request.set(http::field::origin, origin);
+    request.keep_alive(true);
+    return status_of(client_.stream(), request);
 }
 
 bitcoind_setup_fixture::status

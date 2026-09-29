@@ -281,4 +281,140 @@ BOOST_AUTO_TEST_CASE(error_t__code__server_error__true_expected_message)
     BOOST_REQUIRE_EQUAL(ec.message(), "server_error");
 }
 
+// electrum::translate
+
+BOOST_AUTO_TEST_CASE(error_t__electrum_translate__success__success)
+{
+    BOOST_REQUIRE(!error::electrum::translate(error::success, error::electrum::bad_request));
+}
+
+BOOST_AUTO_TEST_CASE(error_t__electrum_translate__electrum_code__unchanged)
+{
+    const code ec{ error::electrum::server_busy };
+    BOOST_REQUIRE(error::electrum::translate(ec, error::electrum::bad_request) == ec);
+}
+
+BOOST_AUTO_TEST_CASE(error_t__electrum_translate__depth_limited__excessive_history)
+{
+    const code ec{ database::error::depth_limited };
+    BOOST_REQUIRE(error::electrum::translate(ec, error::electrum::bad_request) == error::electrum::excessive_history);
+}
+
+BOOST_AUTO_TEST_CASE(error_t__electrum_translate__database_code__daemon_error)
+{
+    const code ec{ database::error::integrity };
+    BOOST_REQUIRE(error::electrum::translate(ec, error::electrum::bad_request) == error::electrum::daemon_error);
+}
+
+BOOST_AUTO_TEST_CASE(error_t__electrum_translate__other_code__failure)
+{
+    const code ec{ error::not_found };
+    BOOST_REQUIRE(error::electrum::translate(ec, error::electrum::bad_request) == error::electrum::bad_request);
+}
+
+// btcd::translate
+
+BOOST_AUTO_TEST_CASE(error_t__btcd_translate__success__success)
+{
+    BOOST_REQUIRE(!error::btcd::translate(error::success, error::btcd::misc_error));
+}
+
+BOOST_AUTO_TEST_CASE(error_t__btcd_translate__btcd_code__unchanged)
+{
+    const code ec{ error::btcd::invalid_parameter };
+    BOOST_REQUIRE(error::btcd::translate(ec, error::btcd::misc_error) == ec);
+}
+
+BOOST_AUTO_TEST_CASE(error_t__btcd_translate__database_code__internal_error)
+{
+    const code ec{ database::error::integrity };
+    BOOST_REQUIRE(error::btcd::translate(ec, error::btcd::misc_error) == error::btcd::internal_error);
+}
+
+BOOST_AUTO_TEST_CASE(error_t__btcd_translate__other_code__failure)
+{
+    const code ec{ error::not_found };
+    BOOST_REQUIRE(error::btcd::translate(ec, error::btcd::misc_error) == error::btcd::misc_error);
+}
+
+// bitcoind::translate
+
+BOOST_AUTO_TEST_CASE(error_t__bitcoind_translate__success__success)
+{
+    BOOST_REQUIRE(!error::bitcoind::translate(error::success, error::bitcoind::misc_error));
+}
+
+BOOST_AUTO_TEST_CASE(error_t__bitcoind_translate__bitcoind_code__unchanged)
+{
+    const code ec{ error::bitcoind::invalid_parameter };
+    BOOST_REQUIRE(error::bitcoind::translate(ec, error::bitcoind::misc_error) == ec);
+}
+
+BOOST_AUTO_TEST_CASE(error_t__bitcoind_translate__database_code__internal_error)
+{
+    const code ec{ database::error::integrity };
+    BOOST_REQUIRE(error::bitcoind::translate(ec, error::bitcoind::misc_error) == error::bitcoind::internal_error);
+}
+
+BOOST_AUTO_TEST_CASE(error_t__bitcoind_translate__other_code__failure)
+{
+    const code ec{ error::not_found };
+    BOOST_REQUIRE(error::bitcoind::translate(ec, error::bitcoind::misc_error) == error::bitcoind::misc_error);
+}
+
+// bitcoind::reject
+
+BOOST_AUTO_TEST_CASE(error_t__bitcoind_reject__node_orphan_block__prev_blk_not_found)
+{
+    BOOST_REQUIRE_EQUAL(error::bitcoind::reject(node::error::orphan_block), "prev-blk-not-found");
+}
+
+BOOST_AUTO_TEST_CASE(error_t__bitcoind_reject__node_orphan_header__prev_blk_not_found)
+{
+    BOOST_REQUIRE_EQUAL(error::bitcoind::reject(node::error::orphan_header), "prev-blk-not-found");
+}
+
+BOOST_AUTO_TEST_CASE(error_t__bitcoind_reject__node_duplicate_block__duplicate)
+{
+    BOOST_REQUIRE_EQUAL(error::bitcoind::reject(node::error::duplicate_block), "duplicate");
+}
+
+BOOST_AUTO_TEST_CASE(error_t__bitcoind_reject__node_duplicate_header__duplicate)
+{
+    BOOST_REQUIRE_EQUAL(error::bitcoind::reject(node::error::duplicate_header), "duplicate");
+}
+
+BOOST_AUTO_TEST_CASE(error_t__bitcoind_reject__empty_transaction__bad_txns_vin_empty)
+{
+    BOOST_REQUIRE_EQUAL(error::bitcoind::reject(system::error::empty_transaction), "bad-txns-vin-empty");
+}
+
+BOOST_AUTO_TEST_CASE(error_t__bitcoind_reject__unmapped_transaction_code__message)
+{
+    const code ec{ system::error::double_spend };
+    BOOST_REQUIRE_EQUAL(error::bitcoind::reject(ec), ec.message());
+}
+
+BOOST_AUTO_TEST_CASE(error_t__bitcoind_reject__invalid_proof_of_work__high_hash)
+{
+    BOOST_REQUIRE_EQUAL(error::bitcoind::reject(system::error::invalid_proof_of_work), "high-hash");
+}
+
+BOOST_AUTO_TEST_CASE(error_t__bitcoind_reject__block_weight_limit__bad_blk_weight)
+{
+    BOOST_REQUIRE_EQUAL(error::bitcoind::reject(system::error::block_weight_limit), "bad-blk-weight");
+}
+
+BOOST_AUTO_TEST_CASE(error_t__bitcoind_reject__unmapped_block_code__message)
+{
+    const code ec{ system::error::checkpoint_conflict };
+    BOOST_REQUIRE_EQUAL(error::bitcoind::reject(ec), ec.message());
+}
+
+BOOST_AUTO_TEST_CASE(error_t__bitcoind_reject__other_code__message)
+{
+    const code ec{ error::not_found };
+    BOOST_REQUIRE_EQUAL(error::bitcoind::reject(ec), "not_found");
+}
+
 BOOST_AUTO_TEST_SUITE_END()

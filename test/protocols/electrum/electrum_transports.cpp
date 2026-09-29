@@ -24,6 +24,7 @@ using namespace system;
 // differ only in framing and in the push of notifications.
 
 static const code not_implemented{ server::error::electrum::method_not_found };
+static const code bad_request{ server::error::electrum::bad_request };
 
 // http POST
 
@@ -70,6 +71,47 @@ BOOST_AUTO_TEST_CASE(electrum__post__subscribed_event__no_notification)
     const auto next = post(R"({"id":703,"method":"blockchain.relayfee","params":[]})");
     BOOST_REQUIRE_EQUAL(next.at("id").as_int64(), 703);
     REQUIRE_NO_THROW_TRUE(next.at("result").is_double());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__post__repeat_version_from_1_4__bad_request)
+{
+    BOOST_REQUIRE(post_handshake(electrum::version::v1_4));
+
+    const auto response = post(R"({"id":704,"method":"server.version","params":["foobar","1.4"]})");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), bad_request.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__post__missing_arguments__dropped)
+{
+    BOOST_REQUIRE(post_handshake(electrum::version::v1_1));
+
+    const auto response = post(R"({"id":705,"method":"blockchain.scripthash.get_balance","params":[]})");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// scoped credential
+
+BOOST_FIXTURE_TEST_SUITE(electrum_scoped_credential_tests, electrum_scoped_credential_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(electrum__post__scoped_credential_unlisted_method__forbidden)
+{
+    const auto response = post_authorized(R"({"id":900,"method":"server.version","params":["test","1.4"]})", ELECTRUM_TEST_USERNAME, ELECTRUM_TEST_PASSWORD);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    const auto status = post_status_authorized(R"({"id":901,"method":"server.banner","params":[]})", ELECTRUM_TEST_USERNAME, ELECTRUM_TEST_PASSWORD);
+    BOOST_REQUIRE_EQUAL(status, rpc_client::status::forbidden);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__ws__scoped_credential_unlisted_method__dropped)
+{
+    BOOST_REQUIRE(!ws_upgrade(ELECTRUM_TEST_USERNAME, ELECTRUM_TEST_PASSWORD));
+    BOOST_REQUIRE(ws_handshake(electrum::version::v1_4));
+
+    const auto response = ws_get(R"({"id":902,"method":"server.banner","params":[]})");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

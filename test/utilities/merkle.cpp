@@ -126,4 +126,28 @@ BOOST_AUTO_TEST_CASE(merkle__excess_hashes__false)
     BOOST_REQUIRE(!server::extract_partial_merkle(root, matched, positions, 1, { 0x00 }, { one_hash, one_hash }));
 }
 
+BOOST_AUTO_TEST_CASE(merkle__insufficient_flag_bits__false)
+{
+    hash_digest root{};
+    hashes matched{};
+    std::vector<size_t> positions{};
+    BOOST_REQUIRE(!server::extract_partial_merkle(root, matched, positions, 16, { 0xff }, { one_hash, null_hash }));
+}
+
+BOOST_AUTO_TEST_CASE(merkle__insufficient_hashes__false)
+{
+    hash_digest root{};
+    hashes matched{};
+    std::vector<size_t> positions{};
+    BOOST_REQUIRE(!server::extract_partial_merkle(root, matched, positions, 1, { 0x00 }, {}));
+}
+
+BOOST_AUTO_TEST_CASE(merkle__duplicate_siblings__false)
+{
+    hash_digest root{};
+    hashes matched{};
+    std::vector<size_t> positions{};
+    BOOST_REQUIRE(!server::extract_partial_merkle(root, matched, positions, 2, { 0x07 }, { one_hash, one_hash }));
+}
+
 BOOST_AUTO_TEST_SUITE_END()

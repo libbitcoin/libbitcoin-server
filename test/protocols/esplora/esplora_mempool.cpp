@@ -91,4 +91,47 @@ BOOST_AUTO_TEST_CASE(esplora__invalid_target__not_found)
     BOOST_REQUIRE_EQUAL(status, http::status::not_found);
 }
 
+// request validation
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(esplora__get__non_origin_form__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(get_status("blocks/tip/height"), http::status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__get__opaque_origin__forbidden)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/blocks/tip/height", http::field::origin, "null"), http::status::forbidden);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__get__empty_host__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/blocks/tip/height", http::field::host, ""), http::status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__post__non_origin_form__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(post_status("tx", "00"), http::status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__post__opaque_origin__forbidden)
+{
+    BOOST_REQUIRE_EQUAL(post_status("/tx", "00", http::field::origin, "null"), http::status::forbidden);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__post__empty_host__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(post_status("/tx", "00", http::field::host, ""), http::status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__post__invalid_target__not_found)
+{
+    BOOST_REQUIRE_EQUAL(post_status("/bogus", "00"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__post__bodyless_method__method_not_allowed)
+{
+    BOOST_REQUIRE_EQUAL(post_status("/blocks/tip/height", "00"), http::status::method_not_allowed);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

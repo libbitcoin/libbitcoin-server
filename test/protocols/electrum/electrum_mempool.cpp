@@ -59,6 +59,16 @@ BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__extra_param__dropped)
 ////    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
 ////}
 
+BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__empty_params__empty)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    const auto response = get(R"({"id":603,"method":"mempool.get_fee_histogram","params":[]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+    BOOST_REQUIRE(response.at("result").as_array().empty());
+}
+
 // mempool.get_info
 
 BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__insufficient_version__wrong_version)

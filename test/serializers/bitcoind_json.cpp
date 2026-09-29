@@ -193,4 +193,79 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_tx_context__unknown__zero_confirmatio
     BOOST_REQUIRE(!out.contains("in_active_chain"));
 }
 
+// inject_block_context (unknown)
+
+BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__unknown__unchanged)
+{
+    const system::settings settings{ chain::selection::mainnet };
+    boost::json::object out{};
+    inject_block_context(out, query_, settings, database::header_link{}, test::block1.header());
+    BOOST_REQUIRE(out.empty());
+}
+
+// chain_states_entry
+
+BOOST_AUTO_TEST_CASE(bitcoind_json__chain_states_entry__top__expected)
+{
+    const auto link = query_.to_header(test::block9_hash);
+    const auto out = chain_states_entry(query_, link, 1.0, true);
+    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(out.at("blocks").value()), 9u);
+    BOOST_REQUIRE_EQUAL(std::get<network::rpc::string_t>(out.at("bestblockhash").value()), encode_hash(test::block9_hash));
+    BOOST_REQUIRE_EQUAL(std::get<network::rpc::string_t>(out.at("bits").value()), "1d00ffff");
+    BOOST_REQUIRE(std::get<bool>(out.at("validated").value()));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_json__chain_states_entry__unknown__empty)
+{
+    BOOST_REQUIRE(chain_states_entry(query_, database::header_link{}, 1.0, true).empty());
+}
+
+// inject_activity
+
+BOOST_AUTO_TEST_CASE(bitcoind_json__inject_activity__watched_output__receive_and_spend)
+{
+    using namespace network::rpc;
+    BOOST_REQUIRE(query_.set(test::mock_block13, database::context{ 0, 10, 0 }, {}, false, false));
+    const auto block = query_.get_block(query_.to_header(test::mock_block13.hash()), false);
+    BOOST_REQUIRE(block);
+    BOOST_REQUIRE(query_.populate_without_metadata(*block));
+
+    const auto& txs = *test::mock_block13.transactions_ptr();
+    const auto blockhash = encode_hash(test::mock_block13.hash());
+    const auto script = test::mock_tx13.outputs_ptr()->front()->script().to_data(false);
+    const std::unordered_set<std::string> watch{ encode_base16(script) };
+
+    array_t out{};
+    inject_activity(out, *block, 10, blockhash, watch, 0x00, 0x05, "bc", 0);
+    BOOST_REQUIRE_EQUAL(out.size(), 2u);
+
+    const auto& receive = std::get<object_t>(out.at(0).value());
+    BOOST_REQUIRE_EQUAL(std::get<string_t>(receive.at("type").value()), "receive");
+    BOOST_REQUIRE_EQUAL(std::get<number_t>(receive.at("amount").value()), 9 / 100'000'000.0);
+    BOOST_REQUIRE_EQUAL(std::get<string_t>(receive.at("blockhash").value()), blockhash);
+    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(receive.at("height").value()), 10u);
+    BOOST_REQUIRE_EQUAL(std::get<string_t>(receive.at("txid").value()), encode_hash(test::mock_tx13.hash(false)));
+    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(receive.at("vout").value()), 0u);
+
+    const auto& spend = std::get<object_t>(out.at(1).value());
+    BOOST_REQUIRE_EQUAL(std::get<string_t>(spend.at("type").value()), "spend");
+    BOOST_REQUIRE_EQUAL(std::get<number_t>(spend.at("amount").value()), 9 / 100'000'000.0);
+    BOOST_REQUIRE_EQUAL(std::get<string_t>(spend.at("blockhash").value()), blockhash);
+    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(spend.at("height").value()), 10u);
+    BOOST_REQUIRE_EQUAL(std::get<string_t>(spend.at("spend_txid").value()), encode_hash(txs.back()->hash(false)));
+    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(spend.at("spend_vin").value()), 0u);
+    BOOST_REQUIRE_EQUAL(std::get<string_t>(spend.at("prevout_txid").value()), encode_hash(test::mock_tx13.hash(false)));
+    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(spend.at("prevout_vout").value()), 0u);
+
+    const auto& prevout_spk = std::get<json_t>(spend.at("prevout_spk").value());
+    BOOST_REQUIRE_EQUAL(as_text(prevout_spk.at("address")), "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_json__inject_activity__unwatched__empty)
+{
+    network::rpc::array_t out{};
+    inject_activity(out, test::block1, 1, encode_hash(test::block1_hash), {}, 0x00, 0x05, "bc", 0);
+    BOOST_REQUIRE(out.empty());
+}
+
 BOOST_AUTO_TEST_SUITE_END()

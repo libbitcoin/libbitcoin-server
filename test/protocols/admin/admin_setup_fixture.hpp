@@ -43,6 +43,7 @@ struct admin_setup_fixture
     boost::json::value get_json(std::string_view target);
 
     network::boost_code ws_upgrade();
+    void ws_send(std::string_view message);
     system::data_chunk ws_receive();
     std::string ws_receive_text();
     boost::json::value ws_receive_json();

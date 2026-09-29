@@ -196,6 +196,14 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_testmempoolaccept__not_arr
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_testmempoolaccept__not_string__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto result = get_error(R"({"id":91,"method":"blockchain.transaction.testmempoolaccept","params":[[true]]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+}
+
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_testmempoolaccept__empty_array__invalid_argument)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_7));
@@ -564,6 +572,24 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_id_from_pos__missing_posit
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_found.value());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_id_from_pos__negative_height__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto response = get(R"({"id":95,"method":"blockchain.transaction.id_from_pos","params":[-1,0]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_id_from_pos__fractional_position__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto response = get(R"({"id":96,"method":"blockchain.transaction.id_from_pos","params":[0,1.5]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // Broadcast tx retention.
@@ -807,6 +833,26 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_testmempoolaccept__closed_
     BOOST_REQUIRE_EQUAL(results.size(), 1u);
     BOOST_REQUIRE(!results.at(0).as_object().at("allowed").as_bool());
     BOOST_REQUIRE_EQUAL(results.at(0).as_object().at("reason").as_string(), pooling_disabled.message());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// unassociated
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(electrum_unassociated_tests, electrum_unassociated_setup_fixture)
+
+using namespace system;
+static const code daemon_error{ server::error::electrum::daemon_error };
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__unassociated__daemon_error)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto hash = encode_hash(test::block3.transactions_ptr()->front()->hash(false));
+    constexpr auto request = R"({{"id":4000,"method":"blockchain.transaction.get_merkle","params":["{}",3]}})" "\n";
+    const auto result = get_error(std::format(request, hash));
+    BOOST_REQUIRE_EQUAL(result, daemon_error.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

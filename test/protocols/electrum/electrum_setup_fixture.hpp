@@ -26,6 +26,9 @@
 
 #define ELECTRUM_ENDPOINT "127.0.0.1:65002"
 #define SPARROW_ENDPOINT "127.0.0.1:65003"
+#define ELECTRUM_TEST_USERNAME "user"
+#define ELECTRUM_TEST_PASSWORD "pass"
+#define ELECTRUM_TEST_SCOPED_METHOD "server.version"
 
 struct electrum_setup_fixture
   : rpc_setup_fixture
@@ -54,8 +57,20 @@ struct electrum_setup_fixture
     bool post_handshake(electrum::version version,
         const std::string& name="test", network::rpc::code_t id={});
 
+    // As post(), with basic authorization.
+    boost::json::value post_authorized(const std::string& request,
+        const std::string& username, const std::string& password);
+
+    // As post_authorized(), returning only the http status.
+    rpc_client::status post_status_authorized(const std::string& request,
+        const std::string& username, const std::string& password);
+
     // Upgrade the connection to websocket (no further http requests).
     network::boost_code ws_upgrade();
+
+    // As ws_upgrade(), with basic authorization on the upgrade request.
+    network::boost_code ws_upgrade(const std::string& username,
+        const std::string& password);
 
     // json-rpc over the upgraded websocket connection.
     boost::json::value ws_get(const std::string& request);
@@ -173,6 +188,21 @@ struct electrum_restricted_version_setup_fixture
     }
 };
 
+struct electrum_legacy_version_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_legacy_version_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, true, [](configuration& config)
+        {
+            config.server.electrum.protocol_minimum = { 0, 6 };
+        })
+    {
+    }
+};
+
 // Configured with a server ping interval (v1.7 websocket and downgraded tcp).
 struct electrum_ping_setup_fixture
   : electrum_setup_fixture
@@ -185,6 +215,65 @@ struct electrum_ping_setup_fixture
         {
             config.server.electrum.ping_interval_seconds = 1;
             config.server.electrum.ping_size = 4;
+        })
+    {
+    }
+};
+
+struct electrum_scoped_credential_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_scoped_credential_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, true, [](configuration& config)
+        {
+            config.server.electrum.credentials =
+            {
+                { ELECTRUM_TEST_USERNAME ":" ELECTRUM_TEST_PASSWORD ":"
+                    ELECTRUM_TEST_SCOPED_METHOD }
+            };
+        })
+    {
+    }
+};
+
+struct electrum_unassociated_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_unassociated_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_unassociated_store(query);
+        })
+    {
+    }
+};
+
+struct electrum_dangling_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_dangling_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_dangling_store(query);
+        })
+    {
+    }
+};
+
+// A faulted store (once block 10 is confirmed): a block 10 tx is archived
+// again, outside of the block.
+struct electrum_duplicate_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_duplicate_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query) &&
+                query.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false) &&
+                query.set(*test::mock_block10.transactions_ptr()->at(1));
         })
     {
     }

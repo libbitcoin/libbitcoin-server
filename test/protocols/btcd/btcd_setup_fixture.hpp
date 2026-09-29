@@ -64,11 +64,16 @@ struct btcd_setup_fixture
         std::string_view params="[]");
 
     boost::json::value http_rpc(std::string_view method,
-        std::string_view params = "[]");
+        std::string_view params = "[]", bool checked=true);
+
+    // As http_rpc(), with basic authorization.
+    boost::json::value http_rpc(std::string_view method,
+        std::string_view params, const std::string& username,
+        const std::string& password);
 
     // Read one further (unprompted) server push, e.g. a blockconnected
     // notification. Returns the parsed json-rpc notification object.
-    boost::json::value receive_notification();
+    boost::json::value receive_notification(bool checked=true);
 
 private:
     // The ws connection, plus the plain one used by http_rpc or tcp_rpc.
@@ -174,6 +179,18 @@ struct btcd_taproot_active_setup_fixture
             return test::setup_ten_block_store(query,
                 system::chain::flags::bip341_rule |
                 system::chain::flags::bip342_rule);
+        })
+    {
+    }
+};
+
+struct btcd_dangling_setup_fixture
+  : btcd_setup_fixture
+{
+    inline btcd_dangling_setup_fixture()
+      : btcd_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_dangling_store(query);
         })
     {
     }
