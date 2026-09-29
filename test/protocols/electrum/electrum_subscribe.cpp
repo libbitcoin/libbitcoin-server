@@ -23,6 +23,7 @@ using namespace system;
 static const code not_found{ server::error::electrum::bad_request };
 static const code wrong_version{ server::error::electrum::bad_request };
 static const code invalid_argument{ server::error::electrum::bad_request };
+static const code excessive_history{ server::error::electrum::excessive_history };
 static const std::string bogus_address{ "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn" };
 static const std::string found_address{ "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM" };
 static const std::string bogus_scripthash{ "9c2c84a6cf9809e08af19557e28d38257e6fee6981269760637a5f9dfb000b05" };
@@ -509,6 +510,57 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_noti
     BOOST_REQUIRE(params2.at(1).is_string());
     BOOST_REQUIRE_EQUAL(params2.at(0).as_string(), found_scripthash);
     BOOST_REQUIRE_EQUAL(params2.at(1).as_string(), expected_confirm12);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__transaction_notify__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
+    const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
+    const auto expected_initial = encode_base16(sha256_hash(encode_hash(hash10) + ":10:"));
+
+    constexpr auto request = R"({{"id":1101,"method":"blockchain.scripthash.subscribe","params":["{}"]}})" "\n";
+    const auto response = get(std::format(request, found_scripthash));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), expected_initial);
+
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    const auto expected_rooted11 = encode_base16(sha256_hash
+    (
+        encode_hash(hash10) + ":10:" +
+        encode_hash(hash11) + ":0:"
+    ));
+
+    notify(node::chases::transaction{ query_.to_tx(hash11).value });
+
+    const auto notification = receive();
+    REQUIRE_NO_THROW_TRUE(notification.at("method").is_string());
+    REQUIRE_NO_THROW_TRUE(notification.at("params").is_array());
+    BOOST_REQUIRE_EQUAL(notification.at("method").as_string(), "blockchain.scripthash.subscribe");
+
+    const auto& params = notification.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params.size(), 2u);
+    BOOST_REQUIRE(params.at(0).is_string());
+    BOOST_REQUIRE(params.at(1).is_string());
+    BOOST_REQUIRE_EQUAL(params.at(0).as_string(), found_scripthash);
+    BOOST_REQUIRE_EQUAL(params.at(1).as_string(), expected_rooted11);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__history_exceeds_maximum__excessive_history)
+{
+    config_.server.electrum.maximum_history = 1;
+    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+
+    constexpr auto request = R"({{"id":1101,"method":"blockchain.scripthash.subscribe","params":["{}"]}})" "\n";
+    const auto result = get_error(std::format(request, found_scripthash));
+    BOOST_REQUIRE_EQUAL(result, excessive_history.value());
 }
 
 // blockchain.scripthash.unsubscribe

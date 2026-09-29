@@ -173,6 +173,21 @@ struct electrum_restricted_version_setup_fixture
     }
 };
 
+struct electrum_legacy_version_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_legacy_version_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, true, [](configuration& config)
+        {
+            config.server.electrum.protocol_minimum = { 0, 6 };
+        })
+    {
+    }
+};
+
 // Configured with a server ping interval (v1.7 websocket and downgraded tcp).
 struct electrum_ping_setup_fixture
   : electrum_setup_fixture

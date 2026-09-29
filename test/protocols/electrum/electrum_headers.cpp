@@ -231,6 +231,33 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__proof_self_block1__expec
     BOOST_REQUIRE_EQUAL(branch.at(0).as_string(), encode_hash(test::block0_hash));
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__proof_self_block1_v1_4__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    const auto expected_header = encode_base16(test::header1_data);
+    const auto expected_root = encode_hash(merkle_root(
+    {
+        test::block0_hash,
+        test::block1_hash
+    }));
+
+    const auto response = get(R"({"id":47,"method":"blockchain.block.header","params":[1,1]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& result = response.at("result").as_object();
+    REQUIRE_NO_THROW_TRUE(result.at("header").is_string());
+    REQUIRE_NO_THROW_TRUE(result.at("root").is_string());
+    REQUIRE_NO_THROW_TRUE(result.at("branch").is_array());
+    BOOST_REQUIRE_EQUAL(result.at("header").as_string(), expected_header);
+    BOOST_REQUIRE_EQUAL(result.at("root").as_string(), expected_root);
+
+    const auto& branch = result.at("branch").as_array();
+    BOOST_REQUIRE(branch.at(0).is_string());
+    BOOST_REQUIRE_EQUAL(branch.size(), 1u);
+    BOOST_REQUIRE_EQUAL(branch.at(0).as_string(), encode_hash(test::block0_hash));
+}
+
 BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__proof_example__expected)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
@@ -814,6 +841,15 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__start_plus_count_huge__
     REQUIRE_NO_THROW_TRUE(response.at("error").is_object());
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), not_found.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__start_plus_count_overflow__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":71,"method":"blockchain.block.headers","params":[1e19,1e19]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
 // TODO: add optional bool parameter "raw".
