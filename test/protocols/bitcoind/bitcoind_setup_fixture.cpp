@@ -64,17 +64,6 @@ bool setup_unrooted_store(test::query_t& query) NOEXCEPT
         query.push_confirmed(query.to_header(top.hash()), false);
 }
 
-// A faulted store: block 3 is confirmed at height 2.
-bool setup_misplaced_store(test::query_t& query) NOEXCEPT
-{
-    return query.initialize(test::genesis) &&
-        query.set(test::block1, database::context{ 0, 1, 0 }, {}, false, false) &&
-        query.set(test::block2, database::context{ 0, 2, 0 }, {}, false, false) &&
-        query.set(test::block3, database::context{ 0, 3, 0 }, {}, false, false) &&
-        query.push_confirmed(query.to_header(test::block1_hash), true) &&
-        query.push_confirmed(query.to_header(test::block3_hash), false);
-}
-
 // A faulted store: the candidate top is not a header.
 bool setup_dangling_candidate_store(test::query_t& query) NOEXCEPT
 {

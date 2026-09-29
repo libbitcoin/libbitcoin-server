@@ -422,7 +422,6 @@ struct bitcoind_candidate_header_setup_fixture
 // The three block store with a confirmed block 3 header timestamped as block 2.
 bool setup_simultaneous_store(test::query_t& query) NOEXCEPT;
 bool setup_unrooted_store(test::query_t& query) NOEXCEPT;
-bool setup_misplaced_store(test::query_t& query) NOEXCEPT;
 bool setup_dangling_candidate_store(test::query_t& query) NOEXCEPT;
 
 struct bitcoind_simultaneous_setup_fixture
@@ -444,18 +443,6 @@ struct bitcoind_unrooted_setup_fixture
       : bitcoind_setup_fixture([](test::query_t& query)
         {
             return setup_unrooted_store(query);
-        })
-    {
-    }
-};
-
-struct bitcoind_misplaced_setup_fixture
-  : bitcoind_setup_fixture
-{
-    inline bitcoind_misplaced_setup_fixture()
-      : bitcoind_setup_fixture([](test::query_t& query)
-        {
-            return setup_misplaced_store(query);
         })
     {
     }

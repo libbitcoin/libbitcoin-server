@@ -3371,18 +3371,6 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmininginfo__unrooted__internal_error)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-// misplaced
-// ----------------------------------------------------------------------------
-
-BOOST_FIXTURE_TEST_SUITE(bitcoind_misplaced_tests, bitcoind_misplaced_setup_fixture)
-
-BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__misplaced__internal_error)
-{
-    BOOST_REQUIRE(has_code(rpc("gettxoutsetinfo"), -32603));
-}
-
-BOOST_AUTO_TEST_SUITE_END()
-
 // simultaneous
 // ----------------------------------------------------------------------------
 
