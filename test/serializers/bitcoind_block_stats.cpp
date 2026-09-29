@@ -101,4 +101,19 @@ BOOST_AUTO_TEST_CASE(bitcoind_block_stats__unspendable_output__excluded_from_act
     BOOST_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase_actual").value()), 0);
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_block_stats__segregated_paying__witness_statistics)
+{
+    transaction segregated{ 1, inputs{ { point{ one_hash, 0 }, script{}, witness{ "[242424]" }, 0 } }, outputs{ { 90'000, script{} } }, 0 };
+    segregated.inputs_ptr()->front()->prevout = to_shared<output>(100'000, script{});
+    const auto block = make_block({ make_coinbase(), make_paying(50'000, 48'000), std::move(segregated) });
+    const auto stats = server::block_stats(block, 2, 40, test_subsidy);
+
+    const auto& tx = *block.transactions_ptr()->back();
+    BOOST_REQUIRE(tx.is_segregated());
+    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("swtxs").value()), 1u);
+    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("swtotal_size").value()), tx.serialized_size(true));
+    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("swtotal_weight").value()), tx.weight());
+    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("totalfee").value()), 12'000u);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

@@ -320,4 +320,84 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockpart__block_part)
     BOOST_REQUIRE_EQUAL(media_of(object), to_value(media_type::application_octet_stream));
 }
 
+// error paths
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__tx_no_hash__missing_hash)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/tx"), server::error::missing_hash);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__tx_no_extension__invalid_target)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/tx/" + test_hash), server::error::invalid_target);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__tx_not_hex__invalid_hash)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/tx/nothex.json"), server::error::invalid_hash);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockhashbyheight_no_extension__invalid_target)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/blockhashbyheight/5"), server::error::invalid_target);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilter_no_extension__invalid_target)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/blockfilter/basic/" + test_hash), server::error::invalid_target);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilter_not_hex__invalid_hash)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/blockfilter/basic/nothex.json"), server::error::invalid_hash);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilterheaders_no_type__missing_target)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/blockfilterheaders"), server::error::missing_target);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilterheaders_extended__invalid_target)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/blockfilterheaders/extended/" + test_hash + ".json"), server::error::invalid_target);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilterheaders_invalid_count__invalid_number)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/blockfilterheaders/basic/abc/" + test_hash + ".json"), server::error::invalid_number);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilterheaders_no_extension__invalid_target)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/blockfilterheaders/basic/" + test_hash), server::error::invalid_target);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__blockfilterheaders_not_hex__invalid_hash)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/blockfilterheaders/basic/nothex.json"), server::error::invalid_hash);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__getutxos_no_extension__invalid_target)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/getutxos/" + test_hash + "-0"), server::error::invalid_target);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__spenttxouts_no_extension__invalid_target)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/spenttxouts/" + test_hash), server::error::invalid_target);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

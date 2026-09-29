@@ -61,4 +61,35 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__malformed_count__false)
     BOOST_REQUIRE(!bitcoind_query(out, target));
 }
 
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__empty_count__false)
+{
+    request_t out{};
+    const auto target = "/rest/headers/" + test_hash + ".json?count=";
+    BOOST_REQUIRE(!bitcoind_target(out, target));
+    BOOST_REQUIRE(!bitcoind_query(out, target));
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__empty_target__false)
+{
+    request_t out{};
+    BOOST_REQUIRE(!bitcoind_target(out, "/rest/chaininfo.json"));
+    BOOST_REQUIRE(!bitcoind_query(out, ""));
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__no_params__false)
+{
+    request_t out{};
+    BOOST_REQUIRE(!bitcoind_query(out, "/rest/headers/" + test_hash + ".json?count=7"));
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__offset_and_size__overlaid)
+{
+    request_t out{};
+    const auto target = "/rest/blockpart/" + test_hash + ".bin?offset=80&size=1";
+    BOOST_REQUIRE(!bitcoind_target(out, target));
+    BOOST_REQUIRE(bitcoind_query(out, target));
+    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("offset").value()), 80u);
+    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("size").value()), 1u);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
