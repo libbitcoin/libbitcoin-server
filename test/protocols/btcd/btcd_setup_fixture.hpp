@@ -64,7 +64,12 @@ struct btcd_setup_fixture
         std::string_view params="[]");
 
     boost::json::value http_rpc(std::string_view method,
-        std::string_view params = "[]");
+        std::string_view params = "[]", bool checked=true);
+
+    // As http_rpc(), with basic authorization.
+    boost::json::value http_rpc(std::string_view method,
+        std::string_view params, const std::string& username,
+        const std::string& password);
 
     // Read one further (unprompted) server push, e.g. a blockconnected
     // notification. Returns the parsed json-rpc notification object.

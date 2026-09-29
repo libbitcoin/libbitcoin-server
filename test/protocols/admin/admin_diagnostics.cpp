@@ -271,4 +271,19 @@ BOOST_AUTO_TEST_CASE(admin__ws_event_subscribe__unfiltered_event__not_notified)
     BOOST_REQUIRE_EQUAL(frame.at("value").as_int64(), 2);
 }
 
+BOOST_AUTO_TEST_CASE(admin__ws_event_subscribe__unsubscribed__not_notified)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    BOOST_REQUIRE_EQUAL(ws_get_json("/v1/event/subscribe?filter=8").at("previous").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(ws_get_json("/v1/event/subscribe?filter=0").at("previous").as_int64(), 8);
+    BOOST_REQUIRE_EQUAL(ws_get_json("/v1/log/subscribe?filter=1024").at("previous").as_int64(), 0);
+
+    fire(node::events::block_archived, 1);
+    write(10, "marker");
+
+    const auto frame = ws_receive_json();
+    REQUIRE_NO_THROW_TRUE(frame.at("message").is_string());
+    BOOST_REQUIRE_EQUAL(frame.at("message").as_string(), "marker");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
