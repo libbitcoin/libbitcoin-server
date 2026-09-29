@@ -152,12 +152,32 @@ bool electrum_setup_fixture::post_handshake(electrum::version version,
     return verify(post(version_request(version, name, id)), version, id);
 }
 
+boost::json::value electrum_setup_fixture::post_authorized(
+    const std::string& request, const std::string& username,
+    const std::string& password)
+{
+    return client_.post_authorized(request, username, password);
+}
+
+rpc_client::status electrum_setup_fixture::post_status_authorized(
+    const std::string& request, const std::string& username,
+    const std::string& password)
+{
+    return client_.post_status_authorized(request, username, password);
+}
+
 // websocket.
 // ----------------------------------------------------------------------------
 
 network::boost_code electrum_setup_fixture::ws_upgrade()
 {
     return client_.upgrade();
+}
+
+network::boost_code electrum_setup_fixture::ws_upgrade(
+    const std::string& username, const std::string& password)
+{
+    return client_.upgrade(username, password);
 }
 
 boost::json::value electrum_setup_fixture::ws_receive()

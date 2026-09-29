@@ -1003,4 +1003,114 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__checkpoint_v1_2__wrong_
     BOOST_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_number_of_blocks_subscribe__not_header_notification__skipped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto response = get(R"({"id":95,"method":"blockchain.numblocks.subscribe","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    notify(node::chases::organized{ 42 });
+    notify(node::chases::organized{ 10 });
+
+    const auto notification = receive();
+    REQUIRE_NO_THROW_TRUE(notification.at("params").is_int64());
+    BOOST_REQUIRE_EQUAL(notification.at("method").as_string(), "blockchain.numblocks.subscribe");
+    BOOST_REQUIRE_EQUAL(notification.at("params").as_int64(), 10);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__not_header_notification__skipped)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto response = get(R"({"id":96,"method":"blockchain.headers.subscribe","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("result").at("height").as_int64(), 9);
+
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    notify(node::chases::organized{ 42 });
+    notify(node::chases::organized{ 10 });
+
+    const auto notification = receive();
+    REQUIRE_NO_THROW_TRUE(notification.at("params").is_array());
+    BOOST_REQUIRE_EQUAL(notification.at("method").as_string(), "blockchain.headers.subscribe");
+    BOOST_REQUIRE_EQUAL(notification.at("params").at(0).at("height").as_int64(), 10);
+    BOOST_REQUIRE_EQUAL(notification.at("params").at(0).at("hex").as_string(), encode_base16(test::mock_block10.header().to_data()));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// dangling
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(electrum_dangling_tests, electrum_dangling_setup_fixture)
+
+static const code daemon_error{ server::error::electrum::daemon_error };
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_chunk__dangling__daemon_error)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto result = get_error(R"({"id":1,"method":"blockchain.block.get_chunk","params":[0]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, daemon_error.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_get_header__dangling__daemon_error)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto result = get_error(R"({"id":2,"method":"blockchain.block.get_header","params":[3]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, daemon_error.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__dangling__daemon_error)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto result = get_error(R"({"id":3,"method":"blockchain.block.header","params":[3]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, daemon_error.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_header__dangling_checkpoint__daemon_error)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto result = get_error(R"({"id":4,"method":"blockchain.block.header","params":[0,3]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, daemon_error.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__dangling_v1_4__daemon_error)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto result = get_error(R"({"id":5,"method":"blockchain.block.headers","params":[0,4]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, daemon_error.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_block_headers__dangling_v1_6__daemon_error)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto result = get_error(R"({"id":6,"method":"blockchain.block.headers","params":[0,4]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, daemon_error.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__dangling_v1_0__daemon_error)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto result = get_error(R"({"id":7,"method":"blockchain.headers.subscribe","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, daemon_error.value());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_headers_subscribe__dangling_v1_4__daemon_error)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto result = get_error(R"({"id":8,"method":"blockchain.headers.subscribe","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, daemon_error.value());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
