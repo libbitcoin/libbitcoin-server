@@ -2849,6 +2849,55 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__witness_tx__wtxid_differs)
     BOOST_REQUIRE_EQUAL(result.at("vsize").as_int64(), (weight + 3) / 4);
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__missing_prevouts__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockstats", "[2]"), -32603));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// unassociated
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_unassociated_tests, bitcoind_unassociated_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__unassociated__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockstats", "[3]"), -32603));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// dangling
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_dangling_tests, bitcoind_dangling_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__dangling__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxoutsetinfo"), -32603));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdifficulty__dangling__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getdifficulty"), -32603));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__dangling__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockchaininfo"), -32603));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchainstates__dangling__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getchainstates"), -32603));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__dangling__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("scantxoutset", "[\"start\", [\"addr(1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa)\"]]"), -32603));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // submission

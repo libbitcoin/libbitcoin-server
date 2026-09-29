@@ -244,6 +244,30 @@ struct bitcoind_witness_setup_fixture
     }
 };
 
+struct bitcoind_unassociated_setup_fixture
+    : bitcoind_setup_fixture
+{
+    inline bitcoind_unassociated_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_unassociated_store(query);
+        })
+    {
+    }
+};
+
+struct bitcoind_dangling_setup_fixture
+    : bitcoind_setup_fixture
+{
+    inline bitcoind_dangling_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_dangling_store(query);
+        })
+    {
+    }
+};
+
 // Configured with a populated address pool -- loaded from a hosts file.
 // The pool is loaded by the start sequence, which the base fixture bypasses.
 struct bitcoind_hosts_setup_fixture
