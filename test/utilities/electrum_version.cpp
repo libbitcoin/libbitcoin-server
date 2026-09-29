@@ -131,3 +131,24 @@ BOOST_AUTO_TEST_CASE(electrum_version__version_floor__undefined__next_lower)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(electrum_request_tests)
+
+using namespace network::rpc;
+
+BOOST_AUTO_TEST_CASE(electrum_request__server_version__single_value__minimum_appended)
+{
+    request_t message{ .method = "server.version", .params = params_t{ value_t{ string_t{ "foobar" } } } };
+    electrum_request(message, electrum::version::v0_0, { 1, 0 }, { 1, 7 });
+    BOOST_REQUIRE(message.params.has_value());
+    BOOST_REQUIRE(std::holds_alternative<array_t>(message.params.value()));
+
+    const auto& params = std::get<array_t>(message.params.value());
+    BOOST_REQUIRE_EQUAL(params.size(), 2u);
+    BOOST_REQUIRE(std::holds_alternative<string_t>(params.at(0).value()));
+    BOOST_REQUIRE(std::holds_alternative<string_t>(params.at(1).value()));
+    BOOST_REQUIRE_EQUAL(std::get<string_t>(params.at(0).value()), "foobar");
+    BOOST_REQUIRE_EQUAL(std::get<string_t>(params.at(1).value()), "1.0");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
