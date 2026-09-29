@@ -160,6 +160,21 @@ bool setup_broadcast_store(query_t& query) NOEXCEPT
         query.push_confirmed(query.to_header(block1c.hash()), true);
 }
 
+// A faulted store: block 3 is confirmed without its transactions.
+bool setup_unassociated_store(query_t& query) NOEXCEPT
+{
+    return setup_three_block_store(query) &&
+        query.set(block3.header(), database::context{ 0, 3, 0 }, {}, false) &&
+        query.push_confirmed(query.to_header(block3_hash), false);
+}
+
+// A faulted store: the confirmed top is not a header.
+bool setup_dangling_store(query_t& query) NOEXCEPT
+{
+    return setup_three_block_store(query) &&
+        query.push_confirmed(database::header_link{ 42 }, false);
+}
+
 bool setup_three_block_unconfirmed_address_store(query_t& query) NOEXCEPT
 {
     return query.initialize(genesis) &&

@@ -109,6 +109,8 @@ bool setup_three_block_witness_store(query_t& query) NOEXCEPT;
 bool setup_three_block_confirmed_address_store(query_t& query) NOEXCEPT;
 bool setup_three_block_unconfirmed_address_store(query_t& query) NOEXCEPT;
 bool setup_broadcast_store(query_t& query) NOEXCEPT;
+bool setup_unassociated_store(query_t& query) NOEXCEPT;
+bool setup_dangling_store(query_t& query) NOEXCEPT;
 
 // TODO: move.
 boost::json::value parse_json(std::string_view value) NOEXCEPT;
