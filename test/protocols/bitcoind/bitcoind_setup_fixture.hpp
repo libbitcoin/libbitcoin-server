@@ -358,6 +358,22 @@ struct bitcoind_submit_setup_fixture
     }
 };
 
+// Configured as submission, over a store with an anyone-can-spend output.
+struct bitcoind_broadcast_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_broadcast_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_broadcast_store(query);
+        }, [](configuration& config)
+        {
+            config.node.currency_window_minutes = 0;
+        }, true)
+    {
+    }
+};
+
 // Configured with no block filter tables.
 struct bitcoind_unfiltered_setup_fixture
   : bitcoind_setup_fixture
