@@ -60,6 +60,14 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__nvalid_mode__invalid_arg
     BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__invalid_mode_v1_6__invalid_argument)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto result = get_error(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"bogus"]})" "\n");
+    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+}
+
 BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__uninitialized__negative_one)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_6));
