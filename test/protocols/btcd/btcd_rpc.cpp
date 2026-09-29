@@ -36,6 +36,7 @@ static const code unimplemented{ server::error::btcd::unimplemented };
 static const code misc_error{ server::error::btcd::misc_error };
 static const code invalid_parameter{ server::error::btcd::invalid_parameter };
 static const code invalid_params{ server::error::btcd::invalid_params };
+static const code internal{ server::error::btcd::internal_error };
 static const code block_not_found{ server::error::btcd::invalid_address_or_key };
 static const code node_not_added{ server::error::btcd::client_node_not_added };
 static const code node_not_connected{ server::error::btcd::client_node_not_connected };
@@ -1071,6 +1072,28 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__blockdisconnected__not_subscribed__not_delivered)
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 }
 
+BOOST_AUTO_TEST_CASE(btcd_rpc__blockconnected__dangling_link__not_delivered)
+{
+    rpc("notifyblocks");
+    notify(node::chases::organized{ 42 });
+    notify(node::chases::reorganized{ 9 });
+
+    const auto disconnected = receive_notification();
+    BOOST_REQUIRE_EQUAL(as_text(disconnected.at("method")), "blockdisconnected");
+    BOOST_REQUIRE_EQUAL(as_text(disconnected.at("params").as_array()[0]), block9);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__blockdisconnected__dangling_link__not_delivered)
+{
+    rpc("notifyblocks");
+    notify(node::chases::reorganized{ 42 });
+    notify(node::chases::reorganized{ 9 });
+
+    const auto disconnected = receive_notification();
+    BOOST_REQUIRE_EQUAL(as_text(disconnected.at("method")), "blockdisconnected");
+    BOOST_REQUIRE_EQUAL(as_text(disconnected.at("params").as_array()[0]), block9);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // Filter limit (btcd.maximum_filters): loadtxfilter watches are bounded per
@@ -1256,6 +1279,33 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getblockchaininfo__bip9_softforks_taproot__active
     BOOST_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
     BOOST_REQUIRE_EQUAL(as_text(result.at("bip9_softforks").at("taproot").at("status")), "active");
     BOOST_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 709632);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// dangling
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(btcd_dangling_tests, btcd_dangling_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getblockchaininfo__dangling__internal_error)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("getblockchaininfo"), internal.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getdifficulty__dangling__internal_error)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("getdifficulty"), internal.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getinfo__dangling__internal_error)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("getinfo"), internal.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__dangling__internal_error)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("rescan", std::format(R"(["{}",[],[],""])", encode_hash(test::block1_hash))), internal.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

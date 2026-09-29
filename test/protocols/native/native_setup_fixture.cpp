@@ -115,7 +115,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
     ec = config_.initialize();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
 
-    setup(query_);
+    BOOST_REQUIRE(setup(query_));
 
     // Run the server.
     std::promise<code> running{};

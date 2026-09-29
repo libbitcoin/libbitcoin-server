@@ -179,4 +179,16 @@ struct btcd_taproot_active_setup_fixture
     }
 };
 
+struct btcd_dangling_setup_fixture
+  : btcd_setup_fixture
+{
+    inline btcd_dangling_setup_fixture()
+      : btcd_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_dangling_store(query);
+        })
+    {
+    }
+};
+
 #endif
