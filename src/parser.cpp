@@ -2133,6 +2133,11 @@ options_metadata parser::load_settings() THROWS
         "Sampling period for drop of stalled channels, defaults to '10' (0 disables)."
     )
     (
+        "node.compact_timeout_seconds",
+        setting<uint16_t>(&configured.node.compact_timeout_seconds),
+        "Time to await a compact block fill before downloading the block, defaults to '10' (0 disables)."
+    )
+    (
         "node.currency_window_minutes",
         setting<uint32_t>(&configured.node.currency_window_minutes),
         "Time from present that blocks are considered current, defaults to '1440' (0 disables)."
