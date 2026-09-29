@@ -722,6 +722,11 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__unknown_beginblock__not_found)
     BOOST_REQUIRE_EQUAL(result, block_not_found.value());
 }
 
+BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__invalid_beginblock__not_found)
+{
+    BOOST_REQUIRE_EQUAL(rpc_error("rescan", R"(["not-a-hash",[],[],""])"), block_not_found.value());
+}
+
 BOOST_AUTO_TEST_CASE(btcd_rpc__rescan__no_addresses_or_outpoints__rescan_finished)
 {
     const auto response = rpc("rescan", std::format(R"(["{}",[],[],""])", block9));
@@ -770,6 +775,16 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getblockcount__downgraded_second__nine)
 
     // The downgrade is latched, so the connection remains tcp.
     BOOST_REQUIRE_EQUAL(tcp_rpc("getblockcount").at("result").as_int64(), 9);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getcfilter__downgraded_numeric_hash__dropped)
+{
+    REQUIRE_NO_THROW_TRUE(tcp_rpc("getcfilter", "[42,0]").at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__getcfilter__http_post_numeric_hash__dropped)
+{
+    REQUIRE_NO_THROW_TRUE(http_rpc("getcfilter", "[42,0]", false).at("dropped").as_bool());
 }
 
 // service settings
@@ -1211,6 +1226,13 @@ BOOST_AUTO_TEST_CASE(btcd_scoped_credential__notifyblocks__unlisted_method__inva
 
     // notifyblocks is implemented, so rejection is permitted()'s doing.
     BOOST_REQUIRE_EQUAL(rpc_error("notifyblocks"), invalid_params.value());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_scoped_credential__notifyblocks__http_post_unlisted_method__invalid_params)
+{
+    const auto response = http_rpc("notifyblocks", "[]", BTCD_TEST_USERNAME, BTCD_TEST_PASSWORD);
+    REQUIRE_NO_THROW_TRUE(response.at("error").is_object());
+    BOOST_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), invalid_params.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

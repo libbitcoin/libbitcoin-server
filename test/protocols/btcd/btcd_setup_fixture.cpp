@@ -126,8 +126,17 @@ boost::json::value btcd_setup_fixture::tcp_rpc(std::string_view method,
 }
 
 boost::json::value btcd_setup_fixture::http_rpc(std::string_view method,
-    std::string_view params)
+    std::string_view params, bool checked)
 {
-    return other_.post(body_of(http_request_id_++, method, params), "/", true);
+    return other_.post(body_of(http_request_id_++, method, params), "/",
+        checked);
+}
+
+boost::json::value btcd_setup_fixture::http_rpc(std::string_view method,
+    std::string_view params, const std::string& username,
+    const std::string& password)
+{
+    return other_.post_authorized(body_of(http_request_id_++, method, params),
+        username, password);
 }
 
