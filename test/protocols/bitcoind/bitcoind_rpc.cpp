@@ -2751,6 +2751,197 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__utxoupdatepsbt__matching_output_descriptor__w
     BOOST_REQUIRE(out.derivations.front().point == to_chunk(point));
 }
 
+// scanblocks (the store holds only the genesis filter)
+
+static const std::string genesis_pk{ "pk(04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f)" };
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__genesis_key__genesis_block)
+{
+    const auto response = rpc("scanblocks", "[\"start\", [\"" + genesis_pk + "\"], 0, 0]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("from_height").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("to_height").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("relevant_blocks").as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("relevant_blocks").at(0)), block0);
+    BOOST_REQUIRE(result.at("completed").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__unmatched_script__no_blocks)
+{
+    const auto response = rpc("scanblocks", "[\"start\", [\"raw(51)\"], 0, 0]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.at("relevant_blocks").as_array().empty());
+    BOOST_REQUIRE(result.at("completed").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__unknown_filtertype__invalid_address)
+{
+    BOOST_REQUIRE(has_code(rpc("scanblocks", "[\"start\", [\"" + genesis_pk + "\"], 0, 0, \"extended\"]"), -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__no_scanobjects__misc_error)
+{
+    BOOST_REQUIRE(has_code(rpc("scanblocks", "[\"start\"]"), -1));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__negative_start__misc_error)
+{
+    BOOST_REQUIRE(has_code(rpc("scanblocks", "[\"start\", [\"" + genesis_pk + "\"], -1]"), -1));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__stop_below_start__misc_error)
+{
+    BOOST_REQUIRE(has_code(rpc("scanblocks", "[\"start\", [\"" + genesis_pk + "\"], 5, 2]"), -1));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__invalid_descriptor__invalid_address)
+{
+    BOOST_REQUIRE(has_code(rpc("scanblocks", "[\"start\", [\"bogus\"], 0, 0]"), -5));
+}
+
+// scantxoutset
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__repeated_script__one_unspent)
+{
+    const auto& coinbase = *test::block1.transactions_ptr()->front();
+    const auto raw = "\"raw(" + encode_base16(coinbase.outputs_ptr()->front()->script().to_data(false)) + ")\"";
+    const auto response = rpc("scantxoutset", "[\"start\", [" + raw + ", " + raw + "]]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE(result.at("success").as_bool());
+    BOOST_REQUIRE_EQUAL(result.at("unspents").as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("unspents").at(0).at("txid")), encode_hash(coinbase.hash(false)));
+    BOOST_REQUIRE_EQUAL(result.at("total_amount").as_double(), 50.0);
+}
+
+// verifytxoutproof
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifytxoutproof__unknown_block__invalid_address)
+{
+    const auto& header = test::mock_block10.header();
+    const auto proof = encode_base16(header.to_data()) + "01000000" + "01" + encode_base16(header.merkle_root()) + "01" + "01";
+    BOOST_REQUIRE(has_code(rpc("verifytxoutproof", "[\"" + proof + "\"]"), -5));
+}
+
+// getdeploymentinfo
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getdeploymentinfo", "[\"nothex\"]"), -8));
+}
+
+// getdescriptoractivity
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdescriptoractivity__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("getdescriptoractivity", "[[\"nothex\"], []]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdescriptoractivity__invalid_descriptor__invalid_address)
+{
+    BOOST_REQUIRE(has_code(rpc("getdescriptoractivity", "[[\"" + block1 + "\"], [\"bogus\"]]"), -5));
+}
+
+// waitfor
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__waitforblock__not_hash__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("waitforblock", "[\"nothex\"]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__waitforblockheight__negative_timeout__misc_error)
+{
+    BOOST_REQUIRE(has_code(rpc("waitforblockheight", "[100, -1]"), -1));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__waitfornewblock__stale_tip__immediate_top)
+{
+    const auto response = rpc("waitfornewblock", "[60000, \"" + block5 + "\"]");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), block9);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__waitforblockheight__organized__new_top)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    ws_notify(R"({"jsonrpc":"2.0","id":0,"method":"waitforblockheight","params":[10, 60000]})");
+
+    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    notify(node::chases::organized{ 10 });
+
+    const auto response = ws_read();
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("height").as_int64(), 10);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("hash")), encode_hash(test::mock_block10.hash()));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// block filters disabled
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_unfiltered_tests, bitcoind_unfiltered_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__unfiltered__misc_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getblockfilter", hash_param(test::block0_hash)), -1));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__unfiltered__misc_error)
+{
+    BOOST_REQUIRE(has_code(rpc("scanblocks", "[\"start\", [\"raw(51)\"]]"), -1));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// candidate above confirmed
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_candidate_tests, bitcoind_candidate_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintips__candidate_block__valid_headers)
+{
+    const auto response = rpc("getchaintips");
+    const auto& tips = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(tips.size(), 2u);
+    BOOST_REQUIRE_EQUAL(tips.at(0).at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(as_text(tips.at(0).at("status")), "active");
+    BOOST_REQUIRE_EQUAL(tips.at(1).at("height").as_int64(), 10);
+    BOOST_REQUIRE_EQUAL(as_text(tips.at(1).at("hash")), encode_hash(test::mock_block10.hash()));
+    BOOST_REQUIRE_EQUAL(tips.at(1).at("branchlen").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(as_text(tips.at(1).at("status")), "valid-headers");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchainstates__candidate_block__unvalidated_second_state)
+{
+    const auto response = rpc("getchainstates");
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("headers").as_int64(), 10);
+
+    const auto& states = result.at("chainstates").as_array();
+    BOOST_REQUIRE_EQUAL(states.size(), 2u);
+    BOOST_REQUIRE_EQUAL(states.at(0).at("blocks").as_int64(), 9);
+    BOOST_REQUIRE(states.at(0).at("validated").as_bool());
+    BOOST_REQUIRE_EQUAL(states.at(1).at("blocks").as_int64(), 10);
+    BOOST_REQUIRE_EQUAL(as_text(states.at(1).at("bestblockhash")), encode_hash(test::mock_block10.hash()));
+    BOOST_REQUIRE(!states.at(1).at("validated").as_bool());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_candidate_header_tests, bitcoind_candidate_header_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchaintips__candidate_header__headers_only)
+{
+    const auto response = rpc("getchaintips");
+    const auto& tips = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(tips.size(), 2u);
+    BOOST_REQUIRE_EQUAL(tips.at(1).at("height").as_int64(), 10);
+    BOOST_REQUIRE_EQUAL(tips.at(1).at("branchlen").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(as_text(tips.at(1).at("status")), "headers-only");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // websocket authorization

@@ -79,6 +79,16 @@ struct bitcoind_setup_fixture
     // Write a raw frame over the upgraded websocket without reading.
     void ws_notify(std::string_view body);
 
+    // Read the next frame over the upgraded websocket without writing.
+    boost::json::value ws_read();
+
+    // As rpc(), with an origin header, returning only the http status.
+    status rpc_origin_status(std::string_view method, std::string_view origin);
+
+    // As options_status(), with an origin header.
+    status options_origin_status(std::string_view target,
+        std::string_view origin);
+
 
     // bitcoind REST over HTTP GET (target under "/rest/...").
     status rest_status(std::string_view target);
@@ -344,6 +354,83 @@ struct bitcoind_submit_setup_fixture
         {
             config.node.currency_window_minutes = 0;
         }, true)
+    {
+    }
+};
+
+// Configured with no block filter tables.
+struct bitcoind_unfiltered_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_unfiltered_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.database.filter_bk.buckets = 0;
+            config.database.filter_tx.buckets = 0;
+        })
+    {
+    }
+};
+
+// The ten block store with its blocks also candidate, and mock block 10 a
+// candidate above the confirmed top (block or header only).
+bool setup_candidate_store(test::query_t& query, bool associated) NOEXCEPT;
+
+struct bitcoind_candidate_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_candidate_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return setup_candidate_store(query, true);
+        })
+    {
+    }
+};
+
+struct bitcoind_candidate_header_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_candidate_header_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return setup_candidate_store(query, false);
+        })
+    {
+    }
+};
+
+// Configured with advertised inbound addresses.
+struct bitcoind_selfs_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_selfs_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.network.inbound.selfs = { { "1.2.3.4:8333" } };
+        })
+    {
+    }
+};
+
+// Configured with a zmq binding (no connections, so not served).
+struct bitcoind_zmq_bound_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_zmq_bound_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.server.bitcoind_zmq.binds = { { "127.0.0.1:28332" } };
+        })
     {
     }
 };
