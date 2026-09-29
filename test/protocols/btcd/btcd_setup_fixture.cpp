@@ -111,9 +111,9 @@ bool btcd_setup_fixture::authenticate(const std::string& username,
     }
 }
 
-boost::json::value btcd_setup_fixture::receive_notification()
+boost::json::value btcd_setup_fixture::receive_notification(bool checked)
 {
-    return client_.read_frame(true);
+    return client_.read_frame(checked);
 }
 
 // Raw json on the plain socket, which the server detects and downgrades to a
