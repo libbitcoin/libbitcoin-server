@@ -171,4 +171,45 @@ struct esplora_no_address_setup_fixture
     }
 };
 
+struct esplora_unassociated_setup_fixture
+  : esplora_setup_fixture
+{
+    inline esplora_unassociated_setup_fixture()
+      : esplora_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_unassociated_store(query);
+        })
+    {
+    }
+};
+
+// A faulted store: block 1 is reassociated with the coinbase of block 2.
+struct esplora_misassociated_setup_fixture
+  : esplora_setup_fixture
+{
+    inline esplora_misassociated_setup_fixture()
+      : esplora_setup_fixture([](test::query_t& query)
+        {
+            const auto coinbase = test::block2.transactions_ptr()->front()->hash(false);
+            return test::setup_ten_block_store(query) &&
+                !query.set_code(query.to_header(test::block1_hash), database::tx_links{ query.to_tx(coinbase) }, false);
+        })
+    {
+    }
+};
+
+// A faulted store: block 3 is archived at height 9 above its height 2 parent.
+struct esplora_misheighted_setup_fixture
+  : esplora_setup_fixture
+{
+    inline esplora_misheighted_setup_fixture()
+      : esplora_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_three_block_store(query) &&
+                query.set(test::block3, database::context{ 0, 9, 0 }, {}, false, false);
+        })
+    {
+    }
+};
+
 #endif

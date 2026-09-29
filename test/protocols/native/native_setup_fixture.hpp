@@ -114,6 +114,33 @@ struct native_address_setup_fixture
     }
 };
 
+struct native_unassociated_setup_fixture
+  : native_setup_fixture
+{
+    inline native_unassociated_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_unassociated_store(query);
+        })
+    {
+    }
+};
+
+// A faulted store: block 1 is reassociated with the coinbase of block 2.
+struct native_misassociated_setup_fixture
+  : native_setup_fixture
+{
+    inline native_misassociated_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            const auto coinbase = test::block2.transactions_ptr()->front()->hash(false);
+            return test::setup_ten_block_store(query) &&
+                !query.set_code(query.to_header(test::block1_hash), database::tx_links{ query.to_tx(coinbase) }, false);
+        })
+    {
+    }
+};
+
 struct native_no_address_setup_fixture
   : native_setup_fixture
 {

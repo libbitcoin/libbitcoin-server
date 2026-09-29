@@ -69,7 +69,7 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup,
     ec = config_.initialize();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
 
-    setup(query_);
+    BOOST_REQUIRE(setup(query_));
 
     // The node (chasers and address pool), bypassed by default.
     if (start)

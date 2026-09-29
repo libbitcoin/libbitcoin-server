@@ -239,3 +239,29 @@ BOOST_AUTO_TEST_CASE(esplora__block_status__unconfirmed__not_in_best_chain)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+// faulted stores
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(esplora_unassociated_tests, esplora_unassociated_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(esplora__blocks__unassociated__empty)
+{
+    const auto response = get_json("/blocks");
+    BOOST_REQUIRE(response.is_array());
+    BOOST_REQUIRE(response.as_array().empty());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(esplora_misheighted_tests, esplora_misheighted_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(esplora__block__misheighted__zero_mediantime)
+{
+    const auto response = get_json("/block/" + encode_hash(test::block3_hash));
+    BOOST_REQUIRE(response.is_object());
+    BOOST_REQUIRE_EQUAL(response.as_object().at("height").as_int64(), 9);
+    BOOST_REQUIRE_EQUAL(response.as_object().at("mediantime").as_int64(), 0);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

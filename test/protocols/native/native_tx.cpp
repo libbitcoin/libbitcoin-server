@@ -220,3 +220,12 @@ BOOST_AUTO_TEST_CASE(native__tx_details__spend_exceeds_value__internal_server_er
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(native_misassociated_tests, native_misassociated_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(native__tx_details__misassociated__internal_server_error)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/v1/tx/" + coinbase1_hash + "/details?format=json"), http::status::internal_server_error);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

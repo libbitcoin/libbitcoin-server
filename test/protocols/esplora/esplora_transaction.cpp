@@ -348,3 +348,22 @@ BOOST_AUTO_TEST_CASE(esplora__broadcast__genesis_coinbase__coinbase_transaction)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+// misassociated block
+// ----------------------------------------------------------------------------
+
+static const std::string coinbase1 = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+
+BOOST_FIXTURE_TEST_SUITE(esplora_misassociated_tests, esplora_misassociated_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(esplora__tx_merkleblock_proof__misassociated__not_found)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/tx/" + coinbase1 + "/merkleblock-proof"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__tx_merkle_proof__misassociated__not_found)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/tx/" + coinbase1 + "/merkle-proof"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
