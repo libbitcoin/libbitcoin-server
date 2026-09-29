@@ -493,6 +493,12 @@ BOOST_AUTO_TEST_CASE(parsers__esplora_target__block_txid_missing_index__missing_
     BOOST_REQUIRE_EQUAL(esplora_target(out, "/block/0000000000000000000000000000000000000000000000000000000000000042/txid"), server::error::missing_position);
 }
 
+BOOST_AUTO_TEST_CASE(parsers__esplora_target__block_txid_invalid_index__invalid_number)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(esplora_target(out, "/block/0000000000000000000000000000000000000000000000000000000000000042/txid/x"), server::error::invalid_number);
+}
+
 BOOST_AUTO_TEST_CASE(parsers__esplora_target__block_missing_hash__missing_hash)
 {
     request_t out{};

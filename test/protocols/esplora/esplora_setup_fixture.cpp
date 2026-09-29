@@ -148,6 +148,22 @@ http::status esplora_setup_fixture::get_status(std::string_view target)
     return response.result();
 }
 
+http::status esplora_setup_fixture::get_status(std::string_view target,
+    http::field name, std::string_view value)
+{
+    auto request = create_request(target);
+    request.set(name, value);
+    http::write(socket_, request);
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    return response.result();
+}
+
 std::string esplora_setup_fixture::get_text(std::string_view target)
 {
     http::write(socket_, create_request(target));
@@ -211,6 +227,22 @@ http::status esplora_setup_fixture::post_status(std::string_view target,
     std::string_view body)
 {
     http::write(socket_, create_post(target, body));
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    return response.result();
+}
+
+http::status esplora_setup_fixture::post_status(std::string_view target,
+    std::string_view body, http::field name, std::string_view value)
+{
+    auto request = create_post(target, body);
+    request.set(name, value);
+    http::write(socket_, request);
 
     flat_buffer buffer{};
     network::boost_code ec{};

@@ -36,10 +36,14 @@ struct esplora_setup_fixture
     ~esplora_setup_fixture();
 
     status get_status(std::string_view target);
+    status get_status(std::string_view target,
+        boost::beast::http::field name, std::string_view value);
     std::string get_text(std::string_view target);
     system::data_chunk get_data(std::string_view target);
     boost::json::value get_json(std::string_view target);
     status post_status(std::string_view target, std::string_view body);
+    status post_status(std::string_view target, std::string_view body,
+        boost::beast::http::field name, std::string_view value);
     std::string post_text(std::string_view target, std::string_view body);
 
     network::boost_code ws_upgrade();
@@ -87,6 +91,35 @@ struct esplora_submit_setup_fixture
     }
 };
 
+struct esplora_broadcast_setup_fixture
+  : esplora_setup_fixture
+{
+    inline esplora_broadcast_setup_fixture()
+      : esplora_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_broadcast_store(query);
+        }, [](server::configuration& config)
+        {
+            config.node.currency_window_minutes = 0;
+        }, true)
+    {
+    }
+};
+
+struct esplora_header_setup_fixture
+  : esplora_setup_fixture
+{
+    inline esplora_header_setup_fixture()
+      : esplora_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query) &&
+                query.set(test::mock_block10.header(),
+                    database::context{ 0, 10, 0 }, {}, false);
+        })
+    {
+    }
+};
+
 struct esplora_ten_block_setup_fixture
   : esplora_setup_fixture
 {
@@ -106,6 +139,18 @@ struct esplora_witness_setup_fixture
       : esplora_setup_fixture([](test::query_t& query)
         {
             return test::setup_three_block_witness_store(query);
+        })
+    {
+    }
+};
+
+struct esplora_unconfirmed_setup_fixture
+  : esplora_setup_fixture
+{
+    inline esplora_unconfirmed_setup_fixture()
+      : esplora_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_three_block_unconfirmed_address_store(query);
         })
     {
     }
