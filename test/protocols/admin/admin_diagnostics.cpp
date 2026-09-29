@@ -109,6 +109,19 @@ BOOST_AUTO_TEST_CASE(admin__event_subscribe__json__previous_zero)
     BOOST_REQUIRE_EQUAL(response.at("previous").as_int64(), 0);
 }
 
+// dispatch (http)
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(admin__dispatch__invalid_target__bad_request)
+{
+    BOOST_REQUIRE(get_status("/v1/bogus") == status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(admin__dispatch__html__bad_request)
+{
+    BOOST_REQUIRE(get_status("/v1/log/subscribe?filter=1&format=html") == status::bad_request);
+}
+
 // subscribe (websockets)
 // ----------------------------------------------------------------------------
 
@@ -153,6 +166,16 @@ BOOST_AUTO_TEST_CASE(admin__ws_log_subscribe__html__error_eof)
 {
     BOOST_REQUIRE(!ws_upgrade());
     BOOST_REQUIRE(ws_dropped("/v1/log/subscribe?filter=1&format=html"));
+}
+
+BOOST_AUTO_TEST_CASE(admin__ws_dispatch__invalid_target__ignored)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    ws_send("/v1/bogus");
+
+    const auto ack = ws_get_json("/v1/log/subscribe?filter=1024");
+    REQUIRE_NO_THROW_TRUE(ack.at("previous").is_int64());
+    BOOST_REQUIRE_EQUAL(ack.at("previous").as_int64(), 0);
 }
 
 // streams (websockets)

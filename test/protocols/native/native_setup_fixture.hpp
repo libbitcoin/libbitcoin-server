@@ -40,12 +40,15 @@ struct native_setup_fixture
 
     bool expect_dropped(std::string_view target);
     status get_status(std::string_view target);
+    status get_status(std::string_view target, boost::beast::http::field name,
+        std::string_view value);
 
     std::string get_text(std::string_view target);
     system::data_chunk get_data(std::string_view target);
     boost::json::value get_json(std::string_view target);
 
     network::boost_code ws_upgrade();
+    void ws_send(std::string_view message);
     system::data_chunk ws_receive();
     bool ws_dropped(std::string_view message);
     std::string ws_get_text(std::string_view message);
@@ -169,6 +172,72 @@ struct native_file_setup_fixture
         })
     {
     }
+};
+
+struct native_no_default_setup_fixture
+  : native_setup_fixture
+{
+    inline native_no_default_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            const auto path = std::filesystem::absolute(TEST_DIRECTORY);
+            config.server.native.path = path;
+            config.server.native.default_ = {};
+        })
+    {
+    }
+};
+
+struct native_hosts_setup_fixture
+  : native_setup_fixture
+{
+    inline native_hosts_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.server.native.hosts = { { "example.com" } };
+        })
+    {
+    }
+};
+
+struct native_limited_setup_fixture
+  : native_setup_fixture
+{
+    inline native_limited_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.node.limited_blocks = true;
+        })
+    {
+    }
+};
+
+// Runs a server node on demand, for start sequence outcomes.
+struct server_node_setup_fixture
+{
+    using configurator = std::function<void(server::configuration&)>;
+
+    DELETE_COPY_MOVE(server_node_setup_fixture);
+    server_node_setup_fixture();
+    ~server_node_setup_fixture();
+
+    code run(const configurator& configure);
+
+protected:
+    server::configuration config_;
+    test::store_t store_;
+    test::query_t query_;
+    network::logger log_;
+    server::server_node server_;
 };
 
 #endif

@@ -195,6 +195,22 @@ http::status native_setup_fixture::get_status(std::string_view target)
     return response.result();
 }
 
+http::status native_setup_fixture::get_status(std::string_view target,
+    http::field name, std::string_view value)
+{
+    auto request = create_request(target);
+    request.set(name, value);
+    http::write(socket_, request);
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    return response.result();
+}
+
 std::string native_setup_fixture::get_text(std::string_view target)
 {
     http::write(socket_, create_request(target));
@@ -249,6 +265,15 @@ network::boost_code native_setup_fixture::ws_upgrade()
     websocket_.value().text(true);
     websocket_.value().handshake("localhost", "/", ec);
     return ec;
+}
+
+void native_setup_fixture::ws_send(std::string_view message)
+{
+    network::boost_code ec{};
+    BOOST_CHECK(websocket_.has_value());
+
+    websocket_.value().write(net::buffer(message), ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
 }
 
 data_chunk native_setup_fixture::ws_receive()
@@ -309,3 +334,60 @@ void native_setup_fixture::notify(node::event_value value)
 {
     server_.notify(node::error::success, value);
 }
+
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+
+server_node_setup_fixture::server_node_setup_fixture()
+  : config_
+    {
+        system::chain::selection::mainnet,
+        test::web_pages,
+        test::web_pages
+    },
+    store_
+    {
+        [&]() NOEXCEPT -> const database::settings&
+        {
+            config_.database.path = TEST_DIRECTORY;
+            return config_.database;
+        }()
+    },
+    query_{ store_ }, log_{},
+    server_{ query_, config_, log_ }
+{
+    test::clear(test::directory);
+    config_.database.interval_depth = 2;
+    config_.node.minimum_fee_rate = 99.0;
+    config_.network.inbound.connections = 0;
+    config_.network.outbound.connections = 0;
+
+    const auto ec = store_.create([](auto, auto) {});
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+}
+
+server_node_setup_fixture::~server_node_setup_fixture()
+{
+    server_.close();
+    const auto ec = store_.close([](auto, auto){});
+    BOOST_WARN_MESSAGE(!ec, ec.message());
+    test::clear(test::directory);
+}
+
+code server_node_setup_fixture::run(const configurator& configure)
+{
+    configure(config_);
+
+    const auto ec = config_.initialize();
+    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BOOST_REQUIRE(test::setup_ten_block_store(query_));
+
+    std::promise<code> running{};
+    server_.run([&](const code& ec) NOEXCEPT
+    {
+        running.set_value(ec);
+    });
+
+    return running.get_future().get();
+}
+
+BC_POP_WARNING()

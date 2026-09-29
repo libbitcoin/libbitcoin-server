@@ -63,6 +63,25 @@ BOOST_AUTO_TEST_CASE(parsers__native_target__invalid_target__invalid_target)
     BOOST_REQUIRE_EQUAL(native_target(out, "/v3/invalid"), server::error::invalid_target);
 }
 
+BOOST_AUTO_TEST_CASE(parsers__native_target__top_invalid_subcomponent__invalid_subcomponent)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, "/v3/top/invalid"), server::error::invalid_subcomponent);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__input_invalid_subcomponent__invalid_subcomponent)
+{
+    const std::string path = "/v3/input/0000000000000000000000000000000000000000000000000000000000000000/3/invalid";
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::invalid_subcomponent);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__block_missing_id_type__missing_id_type)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, "/v3/block"), server::error::missing_id_type);
+}
+
 // configuration
 
 BOOST_AUTO_TEST_CASE(parsers__native_target__configuration_valid__expected)
