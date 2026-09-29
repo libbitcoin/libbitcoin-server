@@ -489,6 +489,53 @@ BOOST_AUTO_TEST_CASE(zmq__maximum_subscriptions__cancelled__subscription_release
     BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("hashblock"));
 }
 
+BOOST_AUTO_TEST_CASE(zmq__hashtx__transaction__reversed_hash_and_sequence)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "hashtx");
+    peer_ping_pong(socket_);
+
+    const auto hash = test::block1.transactions_ptr()->front()->hash(false);
+    notify(node::chases::transaction{ query_.to_tx(hash).value });
+    const auto message = peer_read_message(socket_);
+    BOOST_REQUIRE_EQUAL(message.size(), 3u);
+    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("hashtx"));
+    BOOST_REQUIRE_EQUAL(message.at(1), to_chunk(reverse_copy(hash)));
+    BOOST_REQUIRE_EQUAL(message.at(2), base16_chunk("00000000"));
+}
+
+BOOST_AUTO_TEST_CASE(zmq__rawtx__transaction__wire_transaction)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "rawtx");
+    peer_ping_pong(socket_);
+
+    const auto& tx = *test::block1.transactions_ptr()->front();
+    notify(node::chases::transaction{ query_.to_tx(tx.hash(false)).value });
+    const auto message = peer_read_message(socket_);
+    BOOST_REQUIRE_EQUAL(message.size(), 3u);
+    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("rawtx"));
+    BOOST_REQUIRE_EQUAL(message.at(1), tx.to_data(true));
+}
+
+BOOST_AUTO_TEST_CASE(zmq__sequence__transaction__reversed_hash_and_accepted_label)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "sequence");
+    peer_ping_pong(socket_);
+
+    const auto hash = test::block1.transactions_ptr()->front()->hash(false);
+    auto expected = to_chunk(reverse_copy(hash));
+    expected.push_back('A');
+
+    notify(node::chases::transaction{ query_.to_tx(hash).value });
+    const auto message = peer_read_message(socket_);
+    BOOST_REQUIRE_EQUAL(message.size(), 3u);
+    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("sequence"));
+    BOOST_REQUIRE_EQUAL(message.at(1).size(), 41u);
+    BOOST_REQUIRE_EQUAL(data_chunk(message.at(1).begin(), std::next(message.at(1).begin(), 33)), expected);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // CURVE mechanism.
