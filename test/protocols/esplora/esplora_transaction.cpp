@@ -258,6 +258,80 @@ BOOST_AUTO_TEST_CASE(esplora__tx_outspends__spent__expected)
     BOOST_REQUIRE_EQUAL(spend0.at("vin").as_int64(), 0);
 }
 
+BOOST_AUTO_TEST_CASE(esplora__tx__witness_spend__witness_and_prevout)
+{
+    const auto& prevouts = *test::block1a.transactions_ptr()->front()->outputs_ptr();
+    const auto response = get_json("/tx/" + tx2);
+    BOOST_REQUIRE(response.is_object());
+
+    const auto& inputs = response.as_object().at("vin").as_array();
+    BOOST_REQUIRE_EQUAL(inputs.size(), 2u);
+
+    const auto& input0 = inputs.at(0).as_object();
+    BOOST_REQUIRE(!input0.at("is_coinbase").as_bool());
+    BOOST_REQUIRE_EQUAL(input0.at("txid").as_string(), tx1);
+    BOOST_REQUIRE_EQUAL(input0.at("vout").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(input0.at("witness").as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(input0.at("witness").as_array().front().as_string(), "242424");
+    BOOST_REQUIRE_EQUAL(input0.at("prevout").as_object().at("value").as_int64(), to_signed(prevouts.at(0)->value()));
+    BOOST_REQUIRE_EQUAL(input0.at("prevout").as_object().at("scriptpubkey").as_string(), encode_base16(prevouts.at(0)->script().to_data(false)));
+
+    const auto& input1 = inputs.at(1).as_object();
+    BOOST_REQUIRE_EQUAL(input1.at("vout").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(input1.at("witness").as_array().front().as_string(), "313131");
+    BOOST_REQUIRE_EQUAL(input1.at("prevout").as_object().at("value").as_int64(), to_signed(prevouts.at(1)->value()));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// unconfirmed tx
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(esplora_unconfirmed_tests, esplora_unconfirmed_setup_fixture)
+
+static const std::string tx4 = encode_hash(test::tx4.hash(false));
+
+BOOST_AUTO_TEST_CASE(esplora__tx_status__unconfirmed__not_confirmed)
+{
+    const auto response = get_json("/tx/" + tx4 + "/status");
+    BOOST_REQUIRE(response.is_object());
+    BOOST_REQUIRE_EQUAL(response.as_object().size(), 1u);
+    BOOST_REQUIRE(!response.as_object().at("confirmed").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(esplora__tx__unconfirmed__status_not_confirmed)
+{
+    const auto response = get_json("/tx/" + tx4);
+    BOOST_REQUIRE(response.is_object());
+    BOOST_REQUIRE_EQUAL(response.as_object().at("txid").as_string(), tx4);
+    BOOST_REQUIRE(!response.as_object().at("status").as_object().at("confirmed").as_bool());
+}
+
+BOOST_AUTO_TEST_CASE(esplora__tx_merkle_proof__unconfirmed__not_found)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/tx/" + tx4 + "/merkle-proof"), http::status::not_found);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// broadcast
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(esplora_broadcast_tests, esplora_broadcast_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(esplora__broadcast__valid__txid)
+{
+    const auto tx1c = encode_base16(test::tx1c.to_data(true));
+    BOOST_REQUIRE_EQUAL(post_text("/tx", tx1c), encode_hash(test::tx1c.hash(false)));
+}
+
+BOOST_AUTO_TEST_CASE(esplora__broadcast__duplicate__txid)
+{
+    const auto tx1c = encode_base16(test::tx1c.to_data(true));
+    BOOST_REQUIRE_EQUAL(post_text("/tx", tx1c), encode_hash(test::tx1c.hash(false)));
+    BOOST_REQUIRE_EQUAL(post_text("/tx", tx1c), encode_hash(test::tx1c.hash(false)));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // open tx pool
