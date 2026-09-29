@@ -25,6 +25,7 @@ using namespace system;
 static const code not_found{ server::error::electrum::bad_request };
 static const code wrong_version{ server::error::electrum::bad_request };
 static const code invalid_argument{ server::error::electrum::bad_request };
+static const code excessive_resource_usage{ server::error::electrum::excessive_resource_usage };
 static const std::string found_address{ "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM" };
 static const std::string bogus_hash{ "4242424242424242424242424242424242424242424242424242424242424242" };
 
@@ -332,6 +333,25 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__confirmed_unspent_
     BOOST_REQUIRE(!history.contains("spender_txhash"));
     BOOST_REQUIRE(!history.contains("spender_height"));
     BOOST_REQUIRE_EQUAL(history.at("funder_height").as_int64(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__exceeds_maximum_subscriptions__excessive_resource_usage)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BOOST_REQUIRE_EQUAL(config_.server.electrum.maximum_subscriptions, 2u);
+
+    const auto hash1 = encode_hash(test::block1.transactions_ptr()->at(0)->hash(false));
+    const auto hash2 = encode_hash(test::block2.transactions_ptr()->at(0)->hash(false));
+    const auto hash3 = encode_hash(test::block3.transactions_ptr()->at(0)->hash(false));
+    constexpr auto request = R"({{"id":1110,"method":"blockchain.outpoint.subscribe","params":["{}",0]}})" "\n";
+    const auto response1 = get(std::format(request, hash1));
+    BOOST_REQUIRE_MESSAGE(response1.is_object() && response1.as_object().contains("result"), serialize(response1));
+
+    const auto response2 = get(std::format(request, hash2));
+    BOOST_REQUIRE_MESSAGE(response2.is_object() && response2.as_object().contains("result"), serialize(response2));
+
+    const auto result = get_error(std::format(request, hash3));
+    BOOST_REQUIRE_EQUAL(result, excessive_resource_usage.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__one_spender__expected)
