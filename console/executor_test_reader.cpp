@@ -24,7 +24,6 @@ namespace server {
 
 using namespace network;
 using namespace system;
-using format = boost_format;
 
 // address index conflict walk (const).
 
@@ -49,16 +48,16 @@ void executor::read_test(const hash_digest& key) const
     database::output_links out{};
     if (const auto ec = query_.to_address_outputs(out, key))
     {
-        logger(format("Address (%1%) failed with (%2%).") %
-            encode_hash(key) % ec.message());
+        logger(std::format("Address ({}) failed with ({}).",
+            encode_hash(key), ec.message()));
         return;
     }
 
     const auto span = duration_cast<milliseconds>(fine_clock::now() - start);
-    logger(format("Address (%1%) candidates (%2%) matches (%3%) conflicts "
-        "(%4%) walk (%5%) ms total (%6%) ms.") % encode_hash(key) %
-        candidates % out.size() % (candidates - out.size()) %
-        walk.count() % span.count());
+    logger(std::format("Address ({}) candidates ({}) matches ({}) conflicts "
+        "({}) walk ({}) ms total ({}) ms.", encode_hash(key),
+        candidates, out.size(), (candidates - out.size()),
+        walk.count(), span.count()));
 }
 
 #if defined(UNDEFINED)
@@ -78,14 +77,14 @@ void executor::read_test(const hash_digest&) const
         const auto link = query_.to_candidate(height);
         if (link.is_terminal())
         {
-            logger(format("Max candidate height is (%1%).") % sub1(height));
+            logger(std::format("Max candidate height is ({}).", sub1(height)));
             return;
         }
 
         size_t bytes{};
         if (!query_.get_block_size(bytes, link, true))
         {
-            logger(format("Block (%1%) is not associated.") % height);
+            logger(std::format("Block ({}) is not associated.", height));
             return;
         }
 
@@ -93,21 +92,21 @@ void executor::read_test(const hash_digest&) const
         if (is_zero(height % concurrency))
         {
             const auto span = duration_cast<milliseconds>(fine_clock::now() - start);
-            logger(format("Wire size (%1%) at (%2%) in (%3%) ms.") %
-                size % height % span.count());
+            logger(std::format("Wire size ({}) at ({}) in ({}) ms.",
+                size, height, span.count()));
         }
     }
 
     const auto span = duration_cast<milliseconds>(fine_clock::now() - start);
-    logger(format("Wire size (%1%) at (%2%) in (%3%) ms.") %
-        size % top % span.count());
+    logger(std::format("Wire size ({}) at ({}) in ({}) ms.",
+        size, top, span.count()));
 }
 
 void executor::read_test(const hash_digest&) const
 {
-    logger(format("Ins table body searches: %1% / (%2% + %1%)") %
-        store_.ins.positive_search_count() %
-        store_.ins.negative_search_count());
+    logger(std::format("Ins table body searches: {} / ({} + {})",
+        store_.ins.positive_search_count(),
+        store_.ins.negative_search_count()));
 }
 
 void executor::read_test(const hash_digest&) const
@@ -121,7 +120,7 @@ void executor::read_test(const hash_digest&) const
     std::set<hash_digest> keys{};
     auto tx = start_tx;
 
-    logger(format("Getting first [%1%] output address hashes.") % target_count);
+    logger(std::format("Getting first [{}] output address hashes.", target_count));
 
     auto start = fine_clock::now();
     while (!canceled() && keys.size() < target_count)
@@ -142,8 +141,8 @@ void executor::read_test(const hash_digest&) const
     }
 
     auto span = duration_cast<milliseconds>(fine_clock::now() - start);
-    logger(format("Got first [%1%] unique addresses above tx [%2%] in [%3%] ms.") %
-        keys.size() % start_tx % span.count());
+    logger(std::format("Got first [{}] unique addresses above tx [{}] in [{}] ms.",
+        keys.size(), start_tx, span.count()));
 
     struct out
     {
@@ -293,8 +292,8 @@ void executor::read_test(const hash_digest&) const
     }
 
     span = duration_cast<milliseconds>(fine_clock::now() - start);
-    logger(format("Got all [%1%] payments to [%2%] addresses in [%3%] ms.") %
-        outs.size() % keys.size() % span.count());
+    logger(std::format("Got all [{}] payments to [{}] addresses in [{}] ms.",
+        outs.size(), keys.size(), span.count()));
 
     if (!dump)
         return;
@@ -332,25 +331,25 @@ void executor::read_test(const hash_digest&) const
         const auto input = !row.input ? "{unspent}" :
             row.input->script().to_string(chain::flags::all_rules);
     
-        logger(format("%1%, %2%, %3%, %4%, %5%, %6%, %7%, %8%, %9%, %10%, %11%, %12%, %13%") %
-            encode_hash(row.address) %
+        logger(std::format("{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}",
+            encode_hash(row.address),
 
-            row.bk_fk %
-            row.bk_height %
-            encode_hash(row.bk_hash) %
+            row.bk_fk,
+            row.bk_height,
+            encode_hash(row.bk_hash),
 
-            row.tx_fk %
-            row.tx_position %
-            encode_hash(row.tx_hash) %
+            row.tx_fk,
+            row.tx_position,
+            encode_hash(row.tx_hash),
 
-            row.pt_tx_fk %
-            encode_hash(row.pt_tx_hash) %
+            row.pt_tx_fk,
+            encode_hash(row.pt_tx_hash),
 
-            row.output_fk %
-            output %
+            row.output_fk,
+            output,
 
-            row.input_fk %
-            input);
+            row.input_fk,
+            input));
     }
 }
 
@@ -358,8 +357,8 @@ void executor::read_test(const hash_digest&) const
 {
     database::header_link link{ 350'017_u32 };
     const auto ec = query_.block_confirmable(link);
-    logger(format("block_confirmable [%1%] at height [%2%].") % ec.message() %
-        query_.get_height(link));
+    logger(std::format("block_confirmable [{}] at height [{}].", ec.message(),
+        query_.get_height(link)));
 }
 
 void executor::read_test(const hash_digest&) const
@@ -375,7 +374,7 @@ void executor::read_test(const hash_digest&) const
     }
 
     auto span = duration_cast<milliseconds>(fine_clock::now() - start);
-    logger(format("Top strong block is [%1%] in [%2%] ms.") % sub1(block) % span.count());
+    logger(std::format("Top strong block is [{}] in [{}] ms.", sub1(block), span.count()));
     start = fine_clock::now();
     count = query_.header_records();
     uint32_t milestone{ 295'001 };
@@ -387,7 +386,7 @@ void executor::read_test(const hash_digest&) const
     }
 
     span = duration_cast<milliseconds>(fine_clock::now() - start);
-    logger(format("Top milestone block is [%1%] in [%2%] ms.") % sub1(milestone) % span.count());
+    logger(std::format("Top milestone block is [{}] in [{}] ms.", sub1(milestone), span.count()));
     start = fine_clock::now();
     uint32_t tx{ one };
 
@@ -399,7 +398,7 @@ void executor::read_test(const hash_digest&) const
     }
 
     span = duration_cast<milliseconds>(fine_clock::now() - start);
-    logger(format("Top strong tx is [%1%] in [%2%] ms.") % sub1(tx) % span.count());
+    logger(std::format("Top strong tx is [{}] in [{}] ms.", sub1(tx), span.count()));
 }
 
 void executor::read_test(const hash_digest&) const
@@ -424,8 +423,8 @@ void executor::read_test(const hash_digest&) const
 
     const auto average = total / (top - from);
     const auto span = duration_cast<milliseconds>(fine_clock::now() - start);
-    logger(format("Total block depths [%1%] to [%2%] avg [%3%] in [%4%] ms.")
-        % total % top % average % span.count());
+    logger(std::format("Total block depths [{}] to [{}] avg [{}] in [{}] ms.",
+        total, top, average, span.count()));
 }
 
 void executor::read_test(const hash_digest&) const
@@ -435,7 +434,7 @@ void executor::read_test(const hash_digest&) const
     const auto data = base16_array("0014dc6bf86354105de2fcd9868a2b0376d6731cb92f");
     const chain::script output_script{ data, false };
     const auto mnemonic = output_script.to_string(chain::flags::all_rules);
-    logger(format("Getting payments to {%1%}.") % mnemonic);
+    logger(std::format("Getting payments to {{}}.", mnemonic));
 
     const auto start = fine_clock::now();
     database::output_links outputs{};
@@ -443,8 +442,8 @@ void executor::read_test(const hash_digest&) const
         return;
 
     const auto span = duration_cast<milliseconds>(fine_clock::now() - start);
-    logger(format("Found [%1%] outputs of {%2%} in [%3%] ms.") %
-        outputs.size() % mnemonic % span.count());
+    logger(std::format("Found [{}] outputs of {{}} in [{}] ms.",
+        outputs.size(), mnemonic, span.count()));
 }
 
 // This was caused by concurrent redundant downloads at tail following restart.
@@ -619,7 +618,7 @@ void executor::read_test(const hash_digest&) const
     }
 
     const auto ec = query_.block_confirmable(query_.to_confirmed(height));
-    logger(format("Confirm [%1%] test (%2%).") % height % ec.message());
+    logger(std::format("Confirm [{}] test ({}).", height, ec.message()));
 }
 
 void executor::read_test(const hash_digest&) const
@@ -676,7 +675,7 @@ void executor::read_test(const hash_digest&) const
     ////logger("Confirm test 1 complete.");
 
     const auto ec = query_.block_confirmable(bk_link);
-    logger(format("Confirm test 2 complete (%1%).") % ec.message());
+    logger(std::format("Confirm test 2 complete ({}).", ec.message()));
 }
 
 void executor::read_test(const hash_digest&) const
@@ -724,15 +723,15 @@ void executor::read_test(const hash_digest&) const
         }
 
         if (is_zero(tx % frequency))
-            logger(format("get_transaction" BS_READ_ROW) % tx %
-                duration_cast<seconds>(fine_clock::now() - start).count());
+            logger(std::format("get_transaction" BS_READ_ROW, tx,
+                duration_cast<seconds>(fine_clock::now() - start).count()));
     }
 
     if (canceled())
         logger(BS_OPERATION_CANCELED);
 
     const auto span = duration_cast<seconds>(fine_clock::now() - start);
-    logger(format("get_transaction" BS_READ_ROW) % tx % span.count());
+    logger(std::format("get_transaction" BS_READ_ROW, tx, span.count()));
 }
 
 void executor::read_test(const hash_digest&) const
@@ -774,7 +773,7 @@ void executor::read_test(const hash_digest&) const
         code ec{};
         if ((ec = block->check()))
         {
-            logger(format("Block [%1%] check1: %2%") % height % ec.message());
+            logger(std::format("Block [{}] check1: {}", height, ec.message()));
             return;
         }
 
@@ -782,7 +781,7 @@ void executor::read_test(const hash_digest&) const
         if (chain::checkpoint::is_conflict(
             metadata_.configured.bitcoin.checkpoints, block->hash(), height))
         {
-            logger(format("Block [%1%] checkpoint conflict") % height);
+            logger(std::format("Block [{}] checkpoint conflict", height));
             return;
         }
 
@@ -815,7 +814,7 @@ void executor::read_test(const hash_digest&) const
         // split from accept.
         if ((ec = block->check(state)))
         {
-            logger(format("Block [%1%] check2: %2%") % height % ec.message());
+            logger(std::format("Block [{}] check2: {}", height, ec.message()));
             return;
         }
 
@@ -824,14 +823,14 @@ void executor::read_test(const hash_digest&) const
         if ((ec = block->accept(state, coin.subsidy_interval_blocks,
             coin.initial_subsidy())))
         {
-            logger(format("Block [%1%] accept: %2%") % height % ec.message());
+            logger(std::format("Block [{}] accept: {}", height, ec.message()));
             return;
         }
 
         // 1410s
         if ((ec = block->connect(state)))
         {
-            logger(format("Block [%1%] connect: %2%") % height % ec.message());
+            logger(std::format("Block [{}] connect: {}", height, ec.message()));
             return;
         }
 
@@ -848,13 +847,13 @@ void executor::read_test(const hash_digest&) const
         ////}
 
         // +10s for all.
-        logger(format("block:%1%") % height);
+        logger(std::format("block:{}", height));
         ////logger(format("block:%1% flags:%2% mtp:%3%") %
         ////    ctx.height % ctx.flags % ctx.mtp);
     }
 
     const auto span = duration_cast<seconds>(fine_clock::now() - start);
-    logger(format("STOP (%1% secs)") % span.count());
+    logger(std::format("STOP ({} secs)", span.count()));
 }
 
 // TODO: create a block/tx dumper.
@@ -879,7 +878,7 @@ void executor::read_test(const hash_digest&) const
     code ec{};
     if ((ec = query_.block_confirmable(link)))
     {
-        logger(format("query_.block_confirmable: %1%") % ec.message());
+        logger(std::format("query_.block_confirmable: {}", ec.message()));
         return;
     }
 
@@ -903,8 +902,8 @@ void executor::read_test(const hash_digest&) const
         return;
     }
 
-    logger(format("flags:%1% height:%2% mtp:%3%") %
-        ctx.flags % ctx.height % ctx.mtp);
+    logger(std::format("flags:{} height:{} mtp:{}",
+        ctx.flags, ctx.height, ctx.mtp));
 
     // minimum_block_version and work_required are only for header validate.
     chain::context state{};
@@ -925,13 +924,13 @@ void executor::read_test(const hash_digest&) const
 
     if ((ec = block->check()))
     {
-        logger(format("Block check(): %1%") % ec.message());
+        logger(std::format("Block check(): {}", ec.message()));
         return;
     }
 
     if ((ec = block->check(state)))
     {
-        logger(format("Block check(state): %1%") % ec.message());
+        logger(std::format("Block check(state): {}", ec.message()));
         return;
     }
 
@@ -939,21 +938,21 @@ void executor::read_test(const hash_digest&) const
         metadata_.configured.bitcoin.subsidy_interval_blocks,
         metadata_.configured.bitcoin.initial_subsidy())))
     {
-        logger(format("Block accept(state): %1%") % ec.message());
+        logger(std::format("Block accept(state): {}", ec.message()));
         return;
     }
 
     if ((ec = block->connect(state)))
     {
-        logger(format("Block connect: %1%") % ec.message());
+        logger(std::format("Block connect: {}", ec.message()));
         return;
     }
 
-    logger(format("segregated [%1%]") % to_int(block->is_segregated()));
-    logger(format("segregated count [%1%]") % block->segregated());
+    logger(std::format("segregated [{}]", to_int(block->is_segregated())));
+    logger(std::format("segregated count [{}]", block->segregated()));
 
     const auto span = duration_cast<milliseconds>(logger::now() - start);
-    logger(format("Validated block [%1%] in %2% msec.") % link % span.count());
+    logger(std::format("Validated block [{}] in {} msec.", link, span.count()));
 
     ////constexpr auto tx_hash = base16_hash(
     ////    "eb2179db6c40bceb02cebcc5c99cf783ed6385b00767c7a5419fe530eaba8bff");

@@ -23,7 +23,6 @@ namespace libbitcoin {
 namespace server {
 
 using namespace network;
-using format = boost_format;
 
 // Store functions.
 // ----------------------------------------------------------------------------
@@ -37,16 +36,17 @@ bool executor::check_store_path(bool create) const
     }
     else
     {
-        logger(format(BS_USING_CONFIG_FILE) % configuration);
+        logger(std::format(BS_USING_CONFIG_FILE, system::from_path(configuration)));
     }
 
     const auto& store = metadata_.configured.database.path;
     if (create)
     {
-        logger(format(BS_INITIALIZING_CHAIN) % store);
+        logger(std::format(BS_INITIALIZING_CHAIN, system::from_path(store)));
         if (const auto ec = database::file::create_directory_ex(store))
         {
-            logger(format(BS_INITCHAIN_DIRECTORY_ERROR) % store % ec.message());
+            logger(std::format(BS_INITCHAIN_DIRECTORY_ERROR, system::from_path(store),
+                ec.message()));
             return false;
         }
     }
@@ -54,7 +54,7 @@ bool executor::check_store_path(bool create) const
     {
         if (!database::file::is_directory(store))
         {
-            logger(format(BS_UNINITIALIZED_DATABASE) % store);
+            logger(std::format(BS_UNINITIALIZED_DATABASE, system::from_path(store)));
             return false;
         }
     }
@@ -69,12 +69,12 @@ bool executor::create_store(bool details)
     if (const auto ec = store_.create([&](auto event_, auto table)
     {
         if (details)
-            logger(format(BS_CREATE) %
-                server_node::store::events.at(event_) %
-                server_node::store::tables.at(table));
+            logger(std::format(BS_CREATE,
+                server_node::store::events.at(event_),
+                server_node::store::tables.at(table)));
     }))
     {
-        logger(format(BS_INITCHAIN_DATABASE_CREATE_FAILURE) % ec.message());
+        logger(std::format(BS_INITCHAIN_DATABASE_CREATE_FAILURE, ec.message()));
         return false;
     }
 
@@ -82,7 +82,7 @@ bool executor::create_store(bool details)
         return false;
 
     const auto span = duration_cast<seconds>(logger::now() - start);
-    logger(format(BS_INITCHAIN_CREATED) % span.count());
+    logger(std::format(BS_INITCHAIN_CREATED, span.count()));
     return true;
 }
 
@@ -112,12 +112,12 @@ code executor::open_store_coded(bool details)
     if (const auto ec = store_.open([&](auto event_, auto table)
     {
         if (details)
-            logger(format(BS_OPEN) %
-                server_node::store::events.at(event_) %
-                server_node::store::tables.at(table));
+            logger(std::format(BS_OPEN,
+                server_node::store::events.at(event_),
+                server_node::store::tables.at(table)));
     }))
     {
-        logger(format(BS_DATABASE_START_FAIL) % ec.message());
+        logger(std::format(BS_DATABASE_START_FAIL, ec.message()));
         return ec;
     }
 
@@ -140,17 +140,17 @@ bool executor::close_store(bool details)
     if (const auto ec = store_.close([&](auto event_, auto table)
     {
         if (details)
-            logger(format(BS_CLOSE) %
-                server_node::store::events.at(event_) %
-                server_node::store::tables.at(table));
+            logger(std::format(BS_CLOSE,
+                server_node::store::events.at(event_),
+                server_node::store::tables.at(table)));
     }))
     {
-        logger(format(BS_DATABASE_STOP_FAIL) % ec.message());
+        logger(std::format(BS_DATABASE_STOP_FAIL, ec.message()));
         return false;
     }
 
     const auto span = duration_cast<seconds>(logger::now() - start);
-    logger(format(BS_DATABASE_TIMED_STOP) % span.count());
+    logger(std::format(BS_DATABASE_TIMED_STOP, span.count()));
     return true;
 }
 
@@ -164,7 +164,7 @@ bool executor::reload_store(bool details)
 
     if (const auto ec = store_.get_fault())
     {
-        logger(format(BS_RELOAD_INVALID) % ec.message());
+        logger(std::format(BS_RELOAD_INVALID, ec.message()));
         return false;
     }
 
@@ -173,18 +173,18 @@ bool executor::reload_store(bool details)
     if (const auto ec = node_->reload([&](auto event_, auto table)
     {
         if (details)
-            logger(format(BS_RELOAD) %
-                server_node::store::events.at(event_) %
-                server_node::store::tables.at(table));
+            logger(std::format(BS_RELOAD,
+                server_node::store::events.at(event_),
+                server_node::store::tables.at(table)));
     }))
     {
-        logger(format(BS_NODE_RELOAD_FAIL) % ec.message());
+        logger(std::format(BS_NODE_RELOAD_FAIL, ec.message()));
         return false;
     };
 
     node_->resume();
     const auto span = duration_cast<seconds>(logger::now() - start);
-    logger(format(BS_NODE_RELOAD_COMPLETE) % span.count());
+    logger(std::format(BS_NODE_RELOAD_COMPLETE, span.count()));
     return true;
 }
 
@@ -195,15 +195,15 @@ bool executor::restore_store(bool details)
     if (const auto ec = store_.restore([&](auto event_, auto table)
     {
         if (details)
-            logger(format(BS_RESTORE) %
-                server_node::store::events.at(event_) %
-                server_node::store::tables.at(table));
+            logger(std::format(BS_RESTORE,
+                server_node::store::events.at(event_),
+                server_node::store::tables.at(table)));
     }))
     {
         if (ec == database::error::flush_lock)
             logger(BS_RESTORE_MISSING_FLUSH_LOCK);
         else
-            logger(format(BS_RESTORE_FAILURE) % ec.message());
+            logger(std::format(BS_RESTORE_FAILURE, ec.message()));
 
         return false;
     }
@@ -213,7 +213,7 @@ bool executor::restore_store(bool details)
         return false;
 
     const auto span = duration_cast<seconds>(logger::now() - start);
-    logger(format(BS_RESTORE_COMPLETE) % span.count());
+    logger(std::format(BS_RESTORE_COMPLETE, span.count()));
     return true;
 }
 
@@ -227,7 +227,7 @@ bool executor::hot_backup_store(bool details)
 
     if (const auto ec = store_.get_fault())
     {
-        logger(format(BS_SNAPSHOT_INVALID) % ec.message());
+        logger(std::format(BS_SNAPSHOT_INVALID, ec.message()));
         return false;
     }
 
@@ -236,19 +236,19 @@ bool executor::hot_backup_store(bool details)
     if (const auto ec = node_->snapshot([&](auto event_, auto table)
     {
         if (details)
-            logger(format(BS_BACKUP) %
-                server_node::store::events.at(event_) %
-                server_node::store::tables.at(table));
+            logger(std::format(BS_BACKUP,
+                server_node::store::events.at(event_),
+                server_node::store::tables.at(table)));
     }))
     {
         // system::error::not_a_stream when disk is full.
-        logger(format(BS_NODE_BACKUP_FAIL) % ec.message());
+        logger(std::format(BS_NODE_BACKUP_FAIL, ec.message()));
         return false;
     }
 
     node_->resume();
     const auto span = duration_cast<seconds>(logger::now() - start);
-    logger(format(BS_NODE_BACKUP_COMPLETE) % span.count());
+    logger(std::format(BS_NODE_BACKUP_COMPLETE, span.count()));
     return true;
 }
 
@@ -259,18 +259,18 @@ bool executor::cold_backup_store(bool details)
     if (const auto ec = store_.snapshot([&](auto event_, auto table)
     {
         if (details)
-            logger(format(BS_BACKUP) %
-                server_node::store::events.at(event_) %
-                server_node::store::tables.at(table));
+            logger(std::format(BS_BACKUP,
+                server_node::store::events.at(event_),
+                server_node::store::tables.at(table)));
     }))
     {
         // system::error::not_a_stream when disk is full.
-        logger(format(BS_NODE_BACKUP_FAIL) % ec.message());
+        logger(std::format(BS_NODE_BACKUP_FAIL, ec.message()));
         return false;
     }
 
     const auto span = duration_cast<seconds>(logger::now() - start);
-    logger(format(BS_NODE_BACKUP_COMPLETE) % span.count());
+    logger(std::format(BS_NODE_BACKUP_COMPLETE, span.count()));
     return true;
 }
 
@@ -280,7 +280,7 @@ bool executor::prompt_milestone_store() const
     if (metadata_.is_configured(settings::milestone) ||
         metadata_.configured.accept)
     {
-        logger(format(BS_BITCOIN_MILESTONE) % milestone);
+        logger(std::format(BS_BITCOIN_MILESTONE, milestone.to_string()));
         return true;
     }
 
@@ -289,10 +289,10 @@ bool executor::prompt_milestone_store() const
         return true;
 
     logger(BS_PROMPT_SETOFF);
-    logger(format(BS_MILESTONE_PROMPT1));
-    logger(format(BS_MILESTONE_PROMPT2));
-    logger(format(BS_MILESTONE_PROMPT3));
-    logger(format(BS_BITCOIN_MILESTONE) % milestone);
+    logger(std::format(BS_MILESTONE_PROMPT1));
+    logger(std::format(BS_MILESTONE_PROMPT2));
+    logger(std::format(BS_MILESTONE_PROMPT3));
+    logger(std::format(BS_BITCOIN_MILESTONE, milestone.to_string()));
     logger(BS_MILESTONE_CHOICE1);
     logger(BS_MILESTONE_CHOICE2);
     logger(BS_PROMPT_SETOFF);

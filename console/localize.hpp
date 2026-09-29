@@ -47,7 +47,7 @@
 #define BS_MILESTONE_PROMPT3 \
     "The default milestone in this build is the following block hash:height"
 #define BS_BITCOIN_MILESTONE \
-    "bitcoin.milestone = %1%"
+    "bitcoin.milestone = {}"
 #define BS_MILESTONE_CHOICE1 \
     "Press <enter> to continue with this default as a block you have validated."
 #define BS_MILESTONE_CHOICE2 \
@@ -73,17 +73,17 @@
 
 // --initchain
 #define BS_INITIALIZING_CHAIN \
-    "Initializing %1% directory..."
+    "Initializing {} directory..."
 #define BS_INITCHAIN_DIRECTORY_ERROR \
-    "Failed creating directory %1% with error '%2%'."
+    "Failed creating directory {} with error '{}'."
 #define BS_INITCHAIN_CREATING \
     "Please wait while creating the database..."
 #define BS_INITCHAIN_CREATED \
-    "Created the database in %1% secs."
+    "Created the database in {} secs."
 #define BS_INITCHAIN_COMPLETE \
     "Created and initialized the database."
 #define BS_INITCHAIN_DATABASE_CREATE_FAILURE \
-    "Database creation failed with error '%1%'."
+    "Database creation failed with error '{}'."
 #define BS_INITCHAIN_DATABASE_INITIALIZE \
     "Storing genesis block."
 #define BS_INITCHAIN_DATABASE_INITIALIZE_FAILURE \
@@ -91,17 +91,17 @@
 
 // --restore
 #define BS_SNAPSHOT_INVALID \
-    "Database snapshot disallowed due to corruption '%1%'."
+    "Database snapshot disallowed due to corruption '{}'."
 #define BS_RESTORING_CHAIN \
     "Please wait while restoring from most recent snapshot..."
 #define BS_RESTORE_MISSING_FLUSH_LOCK \
     "Database is not corrupted, flush lock file is absent."
 #define BS_RESTORE_INVALID \
-    "Database restore disallowed when corrupt '%1%'."
+    "Database restore disallowed when corrupt '{}'."
 #define BS_RESTORE_FAILURE \
-    "Database restore failed with error '%1%'."
+    "Database restore failed with error '{}'."
 #define BS_RESTORE_COMPLETE \
-    "Restored the database in %1% secs."
+    "Restored the database in {} secs."
 
 // --daemon
 #define BS_DAEMON_UNSUPPORTED \
@@ -121,121 +121,121 @@
 #define BS_DAEMON_ABSENT \
     "The service is not installed."
 #define BS_DAEMON_INSTALL_FAILURE \
-    "Service installation failed with error %1%."
+    "Service installation failed with error {}."
 #define BS_DAEMON_UNINSTALL_FAILURE \
-    "Service removal failed with error %1%."
+    "Service removal failed with error {}."
 
 // --information
 #define BS_INFORMATION_START \
     "Configuration...\n" \
-    "   dirty     :%1%\n" \
-    "   interval  :%2%"
+    "   dirty     :{:d}\n" \
+    "   interval  :{}"
 #define BS_INFORMATION_SIZES \
     "Body sizes...\n" \
-    "   header    :%1%\n" \
-    "   txs       :%2%\n" \
-    "   tx        :%3%\n" \
-    "   input     :%4%\n" \
-    "   output    :%5%\n" \
-    "   ins       :%6%\n" \
-    "   outs      :%7%\n" \
-    "   candidate :%8%\n" \
-    "   confirmed :%9%\n" \
-    "   ecdsa     :%10%\n" \
-    "   schnorr   :%11%\n" \
-    "   silent    :%12%\n" \
-    "   prevalid  :%13%\n" \
-    "   prevout   :%14%\n" \
-    "   duplicate :%15%\n" \
-    "   strong_tx :%16%\n" \
-    "   state     :%17%\n" \
-    "   pool      :%18%\n" \
-    "   spends    :%19%\n" \
-    "   filter_bk :%20%\n" \
-    "   filter_tx :%21%"
+    "   header    :{}\n" \
+    "   txs       :{}\n" \
+    "   tx        :{}\n" \
+    "   input     :{}\n" \
+    "   output    :{}\n" \
+    "   ins       :{}\n" \
+    "   outs      :{}\n" \
+    "   candidate :{}\n" \
+    "   confirmed :{}\n" \
+    "   ecdsa     :{}\n" \
+    "   schnorr   :{}\n" \
+    "   silent    :{}\n" \
+    "   prevalid  :{}\n" \
+    "   prevout   :{}\n" \
+    "   duplicate :{}\n" \
+    "   strong_tx :{}\n" \
+    "   state     :{}\n" \
+    "   pool      :{}\n" \
+    "   spends    :{}\n" \
+    "   filter_bk :{}\n" \
+    "   filter_tx :{}"
 #define BS_INFORMATION_RECORDS \
     "Table records...\n" \
-    "   header    :%1%\n" \
-    "   tx        :%2%\n" \
-    "   ins       :%3%\n" \
-    "   outs      :%4%\n" \
-    "   candidate :%5%\n" \
-    "   confirmed :%6%\n" \
-    "   ecdsa     :%7%\n" \
-    "   schnorr   :%8%\n" \
-    "   silent    :%9%\n" \
-    "   prevalid  :%10%\n" \
-    "   duplicate :%11%\n" \
-    "   strong_tx :%12%\n" \
-    "   state     :%13%\n" \
-    "   pool      :%14%\n" \
-    "   spends    :%15%\n" \
-    "   filter_bk :%16%"
+    "   header    :{}\n" \
+    "   tx        :{}\n" \
+    "   ins       :{}\n" \
+    "   outs      :{}\n" \
+    "   candidate :{}\n" \
+    "   confirmed :{}\n" \
+    "   ecdsa     :{}\n" \
+    "   schnorr   :{}\n" \
+    "   silent    :{}\n" \
+    "   prevalid  :{}\n" \
+    "   duplicate :{}\n" \
+    "   strong_tx :{}\n" \
+    "   state     :{}\n" \
+    "   pool      :{}\n" \
+    "   spends    :{}\n" \
+    "   filter_bk :{}"
 #define BS_INFORMATION_BUCKETS \
     "Head buckets...\n" \
-    "   header    :%1%\n" \
-    "   txs       :%2%\n" \
-    "   tx        :%3%\n" \
-    "   ins       :%4%\n" \
-    "   outs      :%5%\n" \
-    "   prevout   :%6%\n" \
-    "   duplicate :%7%\n" \
-    "   strong_tx :%8%\n" \
-    "   state     :%9%\n" \
-    "   pool      :%10%\n" \
-    "   filter_bk :%11%\n" \
-    "   filter_tx :%12%"
+    "   header    :{}\n" \
+    "   txs       :{}\n" \
+    "   tx        :{}\n" \
+    "   ins       :{}\n" \
+    "   outs      :{}\n" \
+    "   prevout   :{}\n" \
+    "   duplicate :{}\n" \
+    "   strong_tx :{}\n" \
+    "   state     :{}\n" \
+    "   pool      :{}\n" \
+    "   filter_bk :{}\n" \
+    "   filter_tx :{}"
 #define BS_INFORMATION_COLLISION_RATES \
     "Collision rates...\n" \
-    "   header    :%1%\n" \
-    "   tx        :%2%\n" \
-    "   ins       :%3%\n" \
-    "   strong_tx :%4%\n" \
-    "   pool      :%5%"
+    "   header    :{}\n" \
+    "   tx        :{}\n" \
+    "   ins       :{}\n" \
+    "   strong_tx :{}\n" \
+    "   pool      :{}"
 #define BS_INFORMATION_COLLISION_RATES_ADDRESS \
     "Collision rates...\n" \
-    "   header    :%1%\n" \
-    "   tx        :%2%\n" \
-    "   ins       :%3%\n" \
-    "   outs      :%4%\n" \
-    "   strong_tx :%5%\n" \
-    "   pool      :%6%"
+    "   header    :{}\n" \
+    "   tx        :{}\n" \
+    "   ins       :{}\n" \
+    "   outs      :{}\n" \
+    "   strong_tx :{}\n" \
+    "   pool      :{}"
 #define BS_INFORMATION_PROGRESS_START \
     "Thinking..."
 #define BS_INFORMATION_PROGRESS \
     "Chain progress...\n" \
-    "   fork pt   :%1%\n" \
-    "   top conf  :%2%:%3%\n" \
-    "   top cand  :%4%:%5%\n" \
-    "   top assoc :%6%\n" \
-    "   associated:%7%\n" \
-    "   wire conf :%8%\n" \
-    "   wire cand :%9%"
+    "   fork pt   :{}\n" \
+    "   top conf  :{}:{}\n" \
+    "   top cand  :{}:{}\n" \
+    "   top assoc :{}\n" \
+    "   associated:{}\n" \
+    "   wire conf :{}\n" \
+    "   wire cand :{}"
 
 // --read
 #define BS_READ_ROW \
-    ": %1% in %2% secs."
+    ": {} in {} secs."
 
 // --write
 #define BS_WRITE_ROW \
-    ": %1% in %2% span."
+    ": {} in {} span."
 
 // run/general
 
 #define BS_CREATE \
-    "create::%1%(%2%)"
+    "create::{}({})"
 #define BS_OPEN \
-    "open::%1%(%2%)"
+    "open::{}({})"
 #define BS_CLOSE \
-    "close::%1%(%2%)"
+    "close::{}({})"
 #define BS_BACKUP \
-    "snapshot::%1%(%2%)"
+    "snapshot::{}({})"
 #define BS_RESTORE \
-    "restore::%1%(%2%)"
+    "restore::{}({})"
 #define BS_RELOAD \
-    "reload::%1%(%2%)"
+    "reload::{}({})"
 #define BS_CONDITION \
-    "condition::%1%(%2%)"
+    "condition::{}({})"
 
 #define BS_NODE_INTERRUPT \
     "Press CTRL-C to stop the node."
@@ -244,29 +244,29 @@
 #define BS_NETWORK_STARTING \
     "Please wait while network is starting..."
 #define BS_NODE_START_FAIL \
-    "Node failed to start with error '%1%'."
+    "Node failed to start with error '{}'."
 #define BS_NODE_UNAVAILABLE \
     "Command not available until node started."
 #define BS_NODE_INTERRUPTED \
-    "Node was interrupted by signal (%1%)."
+    "Node was interrupted by signal ({})."
 
 #define BS_NODE_BACKUP_STARTED \
     "Snapshot is started."
 #define BS_NODE_BACKUP_FAIL \
-    "Snapshot failed with error '%1%'."
+    "Snapshot failed with error '{}'."
 #define BS_NODE_BACKUP_COMPLETE \
-    "Snapshot complete in %1% secs."
+    "Snapshot complete in {} secs."
 
 #define BS_RELOAD_SPACE \
-    "Free [%1%] bytes of disk space to restart."
+    "Free [{}] bytes of disk space to restart."
 #define BS_RELOAD_INVALID \
-    "Reload disallowed due to database corruption '%1%'."
+    "Reload disallowed due to database corruption '{}'."
 #define BS_NODE_RELOAD_STARTED \
     "Reload from disk full is started."
 #define BS_NODE_RELOAD_COMPLETE \
-    "Reload from disk full in %1% secs."
+    "Reload from disk full in {} secs."
 #define BS_NODE_RELOAD_FAIL \
-    "Reload failed with error '%1%'."
+    "Reload failed with error '{}'."
 
 #define BS_NODE_UNRECOVERABLE \
     "Node is not in recoverable condition."
@@ -276,7 +276,7 @@
     "Node is ok."
 
 #define BS_NODE_REPORT_WORK \
-    "Requested channel work report [%1%]."
+    "Requested channel work report [{}]."
 
 #define BS_NODE_STARTED \
     "Node is started."
@@ -284,28 +284,28 @@
     "Node is running."
 
 #define BS_UNINITIALIZED_DATABASE \
-    "The %1% database directory does not exist."
+    "The {} database directory does not exist."
 #define BS_UNINITIALIZED_CHAIN \
-    "The %1% database is not initialized, delete and retry."
+    "The {} database is not initialized, delete and retry."
 #define BS_DATABASE_START_FAIL \
-    "Database failed to start with error '%1%'."
+    "Database failed to start with error '{}'."
 #define BS_DATABASE_STOPPING \
     "Please wait while database is stopping..."
 #define BS_DATABASE_STOP_FAIL \
-    "Database failed to stop with error '%1%'."
+    "Database failed to stop with error '{}'."
 #define BS_DATABASE_TIMED_STOP \
-    "Database stopped successfully in %1% secs."
+    "Database stopped successfully in {} secs."
 
 #define BS_NETWORK_STOPPING \
     "Please wait while network is stopping..."
 #define BS_NODE_STOP_CODE \
-    "Node stopped with code %1%."
+    "Node stopped with code {}."
 #define BS_NODE_STOPPED \
     "Node stopped successfully."
 #define BS_CHANNEL_LOG_PERIOD \
-    "Log period: %1%"
+    "Log period: {}"
 #define BS_CHANNEL_STOP_TARGET \
-    "Stop target: %1%"
+    "Stop target: {}"
 
 #define BS_VERSION_HEADER \
     "Version Information..."
@@ -315,11 +315,11 @@
 #define BS_HARDWARE_HEADER_X64 \
     "Hardware configuration (x64)..."
 #define BS_HARDWARE_PLATFORM \
-    "platform:%1%."
+    "platform:{:d}."
 #define BS_HARDWARE_COMPILED \
-    "platform:%1% compiled:%2%."
+    "platform:{:d} compiled:{:d}."
 #define BS_HARDWARE_INCOMPATIBLE \
-    "platform:%1% compiled:%2% (unsupported)."
+    "platform:{:d} compiled:{:d} (unsupported)."
 
 // warnings
 #define BS_HARDWARE_SUBOPTIMAL \
@@ -335,23 +335,23 @@
 #define BS_MEMORY_BELOW_RECOMMENDED \
     "Memory is below the amount recommended for initial block download."
 #define BS_MEMORY_PHYSICAL \
-    "Physical memory: %1% GiB."
+    "Physical memory: {} GiB."
 #define BS_SPACE_BELOW_REQUIRED \
     "Free disk space is below that required to complete initial block download."
 #define BS_SPACE_AVAILABLE \
-    "Free disk space: %1% GiB."
+    "Free disk space: {} GiB."
 #define BS_STORAGE_NOT_INTERNAL \
     "The database is not on an internal solid state drive."
 
 #define BS_LOG_TABLE_HEADER \
     "Log system configuration..."
 #define BS_LOG_TABLE \
-    "compiled:%1% enabled:%2%."
+    "compiled:{:d} enabled:{:d}."
 
 #define BS_LOG_INITIALIZE_FAILURE \
     "Failed to initialize logging, check configured path."
 #define BS_USING_CONFIG_FILE \
-    "Using config file: %1%"
+    "Using config file: {}"
 #define BS_USING_DEFAULT_CONFIG \
     "Using default configuration settings."
 #define BS_LOG_HEADER \

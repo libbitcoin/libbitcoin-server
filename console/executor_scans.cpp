@@ -27,7 +27,6 @@ namespace server {
 
 using namespace network;
 using namespace system;
-using format = boost_format;
 
 constexpr double to_double(auto integer)
 {
@@ -51,7 +50,7 @@ void executor::scan_flags() const
         const auto link = query_.to_candidate(height);
         if (!query_.get_context(ctx, link) || (ctx.height != height))
         {
-            logger(format("Error: %1%") % error);
+            logger(std::format("Error: {}", error));
             return;
         }
 
@@ -59,8 +58,9 @@ void executor::scan_flags() const
         {
             const binary prev{ flag_bits, to_big_endian(flags) };
             const binary next{ flag_bits, to_big_endian(ctx.flags) };
-            logger(format("Forked from [%1%] to [%2%] at [%3%:%4%]") % prev %
-                next % encode_hash(query_.get_header_key(link)) % height);
+            logger(std::format("Forked from [{}] to [{}] at [{}:{}]",
+                prev.encoded(), next.encoded(),
+                encode_hash(query_.get_header_key(link)), height));
             flags = ctx.flags;
         }
     }
@@ -69,8 +69,8 @@ void executor::scan_flags() const
         logger(BS_OPERATION_CANCELED);
 
     const auto span = duration_cast<milliseconds>(logger::now() - start);
-    logger(format("Scanned %1% headers for rule forks in %2% ms.") % top %
-        span.count());
+    logger(std::format("Scanned {} headers for rule forks in {} ms.", top,
+        span.count()));
 }
 
 // hashmap bucket fill rates.
@@ -92,16 +92,16 @@ void executor::scan_buckets() const
             ++filled;
 
         if (is_zero(bucket % block_frequency))
-            logger(format("header" BS_READ_ROW) % bucket %
-                duration_cast<seconds>(logger::now() - start).count());
+            logger(std::format("header" BS_READ_ROW, bucket,
+                duration_cast<seconds>(logger::now() - start).count()));
     }
 
     if (canceled())
         logger(BS_OPERATION_CANCELED);
 
     auto span = duration_cast<seconds>(logger::now() - start);
-    logger(format("header" BS_READ_ROW) % (to_double(filled) / bucket) %
-        span.count());
+    logger(std::format("header" BS_READ_ROW, (to_double(filled) / bucket),
+        span.count()));
 
     // ------------------------------------------------------------------------
 
@@ -115,16 +115,16 @@ void executor::scan_buckets() const
             ++filled;
 
         if (is_zero(bucket % tx_frequency))
-            logger(format("tx" BS_READ_ROW) % bucket %
-                duration_cast<seconds>(logger::now() - start).count());
+            logger(std::format("tx" BS_READ_ROW, bucket,
+                duration_cast<seconds>(logger::now() - start).count()));
     }
 
     if (canceled())
         logger(BS_OPERATION_CANCELED);
 
     span = duration_cast<seconds>(logger::now() - start);
-    logger(format("tx" BS_READ_ROW) % (to_double(filled) / bucket) %
-        span.count());
+    logger(std::format("tx" BS_READ_ROW, (to_double(filled) / bucket),
+        span.count()));
 
     // ------------------------------------------------------------------------
 
@@ -138,16 +138,16 @@ void executor::scan_buckets() const
             ++filled;
 
         if (is_zero(bucket % put_frequency))
-            logger(format("point" BS_READ_ROW) % bucket %
-                duration_cast<seconds>(logger::now() - start).count());
+            logger(std::format("point" BS_READ_ROW, bucket,
+                duration_cast<seconds>(logger::now() - start).count()));
     }
 
     if (canceled())
         logger(BS_OPERATION_CANCELED);
 
     span = duration_cast<seconds>(logger::now() - start);
-    logger(format("point" BS_READ_ROW) % (to_double(filled) / bucket) %
-        span.count());
+    logger(std::format("point" BS_READ_ROW, (to_double(filled) / bucket),
+        span.count()));
 }
 
 // hashmap collision distributions.
@@ -200,8 +200,8 @@ void executor::scan_collisions() const
             header_buckets);
 
         if (is_zero(index % block_frequency))
-            logger(format("header/txs" BS_READ_ROW) % index %
-                duration_cast<seconds>(logger::now() - start).count());
+            logger(std::format("header/txs" BS_READ_ROW, index,
+                duration_cast<seconds>(logger::now() - start).count()));
     }
 
     if (canceled())
@@ -211,13 +211,13 @@ void executor::scan_collisions() const
     
     const auto header_count = count(header);
     auto span = duration_cast<seconds>(logger::now() - start);
-    logger(format("header: %1% in %2%s buckets %3% filled %4% rate %5% ") %
-        index % span.count() % header_buckets % header_count %
-        (to_double(header_count) / header_buckets));
+    logger(std::format("header: {} in {}s buckets {} filled {} rate {} ",
+        index, span.count(), header_buckets, header_count,
+        (to_double(header_count) / header_buckets)));
 
     for (const auto& entry: dump(header))
-        logger(format("header: %1% frequency: %2%") %
-            entry.first % entry.second);
+        logger(std::format("header: {} frequency: {}",
+            entry.first, entry.second));
 
     header.clear();
     header.shrink_to_fit();
@@ -226,13 +226,13 @@ void executor::scan_collisions() const
 
     const auto txs_count = count(txs);
     span = duration_cast<seconds>(logger::now() - start);
-    logger(format("txs: %1% in %2%s buckets %3% filled %4% rate %5%") %
-        index % span.count() % header_buckets % txs_count %
-        (to_double(txs_count) / header_buckets));
+    logger(std::format("txs: {} in {}s buckets {} filled {} rate {}",
+        index, span.count(), header_buckets, txs_count,
+        (to_double(txs_count) / header_buckets)));
 
     for (const auto& entry: dump(txs))
-        logger(format("txs: %1% frequency: %2%") %
-            entry.first % entry.second);
+        logger(std::format("txs: {} frequency: {}",
+            entry.first, entry.second));
  
     txs.clear();
     txs.shrink_to_fit();
@@ -255,8 +255,8 @@ void executor::scan_collisions() const
             link.operator data_array<tx_link::size>()) % tx_buckets);
     
         if (is_zero(index % tx_frequency))
-            logger(format("tx & strong_tx" BS_READ_ROW) % index %
-                duration_cast<seconds>(logger::now() - start).count());
+            logger(std::format("tx & strong_tx" BS_READ_ROW, index,
+                duration_cast<seconds>(logger::now() - start).count()));
     }
     
     if (canceled())
@@ -266,13 +266,13 @@ void executor::scan_collisions() const
     
     const auto tx_count = count(tx);
     span = duration_cast<seconds>(logger::now() - start);
-    logger(format("tx: %1% in %2%s buckets %3% filled %4% rate %5%") %
-        index % span.count() % tx_buckets % tx_count %
-        (to_double(tx_count) / tx_buckets));
+    logger(std::format("tx: {} in {}s buckets {} filled {} rate {}",
+        index, span.count(), tx_buckets, tx_count,
+        (to_double(tx_count) / tx_buckets)));
     
     for (const auto& entry: dump(tx))
-        logger(format("tx: %1% frequency: %2%") %
-            entry.first % entry.second);
+        logger(std::format("tx: {} frequency: {}",
+            entry.first, entry.second));
     
     tx.clear();
     tx.shrink_to_fit();
@@ -281,13 +281,13 @@ void executor::scan_collisions() const
     
     const auto strong_tx_count = count(strong_tx);
     span = duration_cast<seconds>(logger::now() - start);
-    logger(format("strong_tx: %1% in %2%s buckets %3% filled %4% rate %5%") %
-        index % span.count() % tx_buckets % strong_tx_count %
-        (to_double(strong_tx_count) / tx_buckets));
+    logger(std::format("strong_tx: {} in {}s buckets {} filled {} rate {}",
+        index, span.count(), tx_buckets, strong_tx_count,
+        (to_double(strong_tx_count) / tx_buckets)));
     
     for (const auto& entry: dump(strong_tx))
-        logger(format("strong_tx: %1% frequency: %2%") %
-            entry.first % entry.second);
+        logger(std::format("strong_tx: {} frequency: {}",
+            entry.first, entry.second));
     
     strong_tx.clear();
     strong_tx.shrink_to_fit();
@@ -358,10 +358,10 @@ void executor::scan_collisions() const
 
                 if (is_zero(inserts % put_frequency))
                 {
-                    logger(format("point: %1% bloom fps %2% rate %3$.7f in %4% secs.") %
-                        inserts % bloom_collisions %
-                        (to_double(bloom_subtotal) / window) %
-                        duration_cast<seconds>(logger::now() - start).count());
+                    logger(std::format("point: {} bloom fps {} rate %3$.7f in {} secs.",
+                        inserts, bloom_collisions,
+                        (to_double(bloom_subtotal) / window),
+                        duration_cast<seconds>(logger::now() - start).count()));
 
                     ////logger(format("point: %1% sieve fps %2% rate %3$.7f in %4% secs.") %
                     ////    inserts % sieve_collisions % 
@@ -383,15 +383,15 @@ void executor::scan_collisions() const
 
     const auto point_count = count(spend);
     span = duration_cast<seconds>(logger::now() - start);
-    logger(format("point: %1% in %2%s buckets %3% filled %4% rate %5%") %
-        inserts % span.count() % point_buckets % point_count %
-        (to_double(point_count) / point_buckets));
+    logger(std::format("point: {} in {}s buckets {} filled {} rate {}",
+        inserts, span.count(), point_buckets, point_count,
+        (to_double(point_count) / point_buckets)));
 
     const auto spends = inserts - coinbases;
     const auto bloom_spend_collisions = bloom_collisions - coinbases;
-    logger(format("bloom k %1%: %2% fps of %3% spends (ex %4% cbs) rate %5%") %
-        k % bloom_spend_collisions % spends % coinbases %
-        (to_double(bloom_spend_collisions) / spends));
+    logger(std::format("bloom k {}: {} fps of {} spends (ex {} cbs) rate {}",
+        k, bloom_spend_collisions, spends, coinbases,
+        (to_double(bloom_spend_collisions) / spends)));
 
     ////const auto sieve_spend_collisions = sieve_collisions - coinbases;
     ////logger(format("sieve: %1% fps of %2% spends (ex %3% cbs) rate %4%") %
@@ -399,8 +399,8 @@ void executor::scan_collisions() const
     ////    (to_double(sieve_spend_collisions) / spends));
 
     for (const auto& entry: dump(spend))
-        logger(format("point: %1% frequency: %2%") %
-            entry.first % entry.second);
+        logger(std::format("point: {} frequency: {}",
+            entry.first, entry.second));
 
 
     ////spend.clear();

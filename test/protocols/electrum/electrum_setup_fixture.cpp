@@ -127,10 +127,9 @@ bool electrum_setup_fixture::verify(const boost::json::value& response,
 static std::string version_request(electrum::version version,
     const std::string& name, network::rpc::code_t id)
 {
-    return (boost_format
-    (
-        R"({"id":%1%,"method":"server.version","params":["%2%","%3%"]})"
-    ) % id % name % electrum::version_to_string(version)).str();
+    return std::format(
+        R"({{"id":{},"method":"server.version","params":["{}","{}"]}})",
+        id, name, electrum::version_to_string(version));
 }
 
 bool electrum_setup_fixture::handshake(electrum::version version,

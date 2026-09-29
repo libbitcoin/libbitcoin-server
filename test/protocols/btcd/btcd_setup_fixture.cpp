@@ -97,9 +97,9 @@ int64_t btcd_setup_fixture::rpc_error(std::string_view method,
 bool btcd_setup_fixture::authenticate(const std::string& username,
     const std::string& password)
 {
-    const auto request = R"(["%1%","%2%"])";
+    constexpr auto request = R"(["{}","{}"])";
     const auto response = rpc("authenticate",
-        (boost_format(request) % username % password).str());
+        std::format(request, username, password));
 
     try
     {

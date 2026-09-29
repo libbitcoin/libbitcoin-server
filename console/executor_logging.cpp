@@ -124,19 +124,11 @@ void executor::log_stopping()
     toggle_.at(network::levels::verbose) = false;
     toggle_.at(network::levels::proxy) = false;
 
-    logger(boost_format(BS_NODE_INTERRUPTED) % signal);
+    logger(std::format(BS_NODE_INTERRUPTED, signal));
     logger(BS_NETWORK_STOPPING);
 }
 
 void executor::logger(const std::string& message) const
-{
-    if (log_.stopped())
-        output_ << message << std::endl;
-    else
-        log_.write(network::levels::application) << message << std::endl;
-}
-
-void executor::logger(const boost_format& message) const
 {
     if (log_.stopped())
         output_ << message << std::endl;

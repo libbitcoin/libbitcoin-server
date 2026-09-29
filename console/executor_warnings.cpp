@@ -22,7 +22,6 @@
 namespace libbitcoin {
 namespace server {
 
-using format = boost_format;
 
 constexpr auto giga = system::power2<uint64_t>(30u);
 
@@ -94,7 +93,7 @@ void executor::warn_memory(system::string_list& out) const
     else
         return;
 
-    out.emplace_back((format(BS_MEMORY_PHYSICAL) % (memory / giga)).str());
+    out.emplace_back(std::format(BS_MEMORY_PHYSICAL, (memory / giga)));
 }
 
 void executor::warn_space(system::string_list& out) const
@@ -114,7 +113,7 @@ void executor::warn_space(system::string_list& out) const
         return;
 
     out.emplace_back(BS_SPACE_BELOW_REQUIRED);
-    out.emplace_back((format(BS_SPACE_AVAILABLE) % (available / giga)).str());
+    out.emplace_back(std::format(BS_SPACE_AVAILABLE, (available / giga)));
 }
 
 void executor::warn_storage(system::string_list& out) const

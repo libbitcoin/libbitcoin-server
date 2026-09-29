@@ -1811,11 +1811,11 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__batch__single_element__array_of_one)
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__batch__error_element__delivered_in_order)
 {
     const auto unknown = hash_param(null_hash, "1");
-    const auto response = rpc_body((boost_format(
-        R"([{"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]},)"
-        R"({"jsonrpc":"2.0","id":2,"method":"getrawtransaction","params":%1%},)"
-        R"({"jsonrpc":"2.0","id":3,"method":"getblockcount","params":[]}])") %
-            unknown).str());
+    const auto response = rpc_body(std::format(
+        R"([{{"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]}},)"
+        R"({{"jsonrpc":"2.0","id":2,"method":"getrawtransaction","params":{}}},)"
+        R"({{"jsonrpc":"2.0","id":3,"method":"getblockcount","params":[]}}])",
+            unknown));
 
     BOOST_REQUIRE(response.is_array());
     const auto& batch = response.as_array();

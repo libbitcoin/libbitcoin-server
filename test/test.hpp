@@ -22,6 +22,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <filesystem>
+#include <format>
 #include <bitcoin/server.hpp>
 
 #define REQUIRE_NO_THROW_TRUE(expression) \
