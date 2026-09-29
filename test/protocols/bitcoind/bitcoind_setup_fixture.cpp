@@ -44,6 +44,46 @@ bool setup_candidate_store(test::query_t& query, bool associated) NOEXCEPT
         query.push_candidate(query.to_header(header.hash()));
 }
 
+bool setup_simultaneous_store(test::query_t& query) NOEXCEPT
+{
+    const auto& header = test::block3.header();
+    const auto timestamp = test::block2.header().timestamp();
+    const system::chain::header top{ header.version(), test::block2_hash, header.merkle_root(), timestamp, header.bits(), header.nonce() };
+    return test::setup_three_block_store(query) &&
+        query.set(top, database::context{ 0, 3, 0 }, {}, false) &&
+        query.push_confirmed(query.to_header(top.hash()), false);
+}
+
+// A faulted store: the confirmed top has no parent.
+bool setup_unrooted_store(test::query_t& query) NOEXCEPT
+{
+    const auto& header = test::block3.header();
+    const system::chain::header top{ header.version(), system::null_hash, header.merkle_root(), header.timestamp(), header.bits(), header.nonce() };
+    return test::setup_three_block_store(query) &&
+        query.set(top, database::context{ 0, 3, 0 }, {}, false) &&
+        query.push_confirmed(query.to_header(top.hash()), false);
+}
+
+// A faulted store: block 3 is confirmed at height 2.
+bool setup_misplaced_store(test::query_t& query) NOEXCEPT
+{
+    return query.initialize(test::genesis) &&
+        query.set(test::block1, database::context{ 0, 1, 0 }, {}, false, false) &&
+        query.set(test::block2, database::context{ 0, 2, 0 }, {}, false, false) &&
+        query.set(test::block3, database::context{ 0, 3, 0 }, {}, false, false) &&
+        query.push_confirmed(query.to_header(test::block1_hash), true) &&
+        query.push_confirmed(query.to_header(test::block3_hash), false);
+}
+
+// A faulted store: the candidate top is not a header.
+bool setup_dangling_candidate_store(test::query_t& query) NOEXCEPT
+{
+    return test::setup_three_block_store(query) &&
+        query.push_candidate(query.to_header(test::block1_hash)) &&
+        query.push_candidate(query.to_header(test::block2_hash)) &&
+        query.push_candidate(database::header_link{ 42 });
+}
+
 bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup,
     const configurator& configure, bool start)
   : rpc_setup_fixture(setup,

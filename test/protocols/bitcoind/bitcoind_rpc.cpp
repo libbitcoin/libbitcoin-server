@@ -3211,6 +3211,16 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__missing_prevouts__internal_err
     BOOST_REQUIRE(has_code(rpc("getblockstats", "[2]"), -32603));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdescriptoractivity__missing_prevouts__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getdescriptoractivity", "[[\"" + encode_hash(test::block2a.hash()) + "\"], []]"), -32603));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__missing_prevouts__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxoutsetinfo"), -32603));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // unassociated
@@ -3253,6 +3263,90 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchainstates__dangling__internal_error)
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__dangling__internal_error)
 {
     BOOST_REQUIRE(has_code(rpc("scantxoutset", "[\"start\", [\"addr(1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa)\"]]"), -32603));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__dangling__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getdeploymentinfo"), -32603));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__dangling__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("scanblocks", "[\"start\", [\"raw(51)\"]]"), -32603));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__dangling__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getnetworkhashps"), -32603));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmininginfo__dangling__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getmininginfo"), -32603));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_dangling_no_address_tests, bitcoind_dangling_no_address_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__dangling_no_address__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("scantxoutset", "[\"start\", [\"addr(1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa)\"]]"), -32603));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// dangling candidate
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_dangling_candidate_tests, bitcoind_dangling_candidate_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getchainstates__dangling_candidate__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getchainstates"), -32603));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// unrooted
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_unrooted_tests, bitcoind_unrooted_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__unrooted__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getnetworkhashps"), -32603));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmininginfo__unrooted__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("getmininginfo"), -32603));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// misplaced
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_misplaced_tests, bitcoind_misplaced_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__misplaced__internal_error)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxoutsetinfo"), -32603));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// simultaneous
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_simultaneous_tests, bitcoind_simultaneous_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getnetworkhashps__equal_timestamps__zero)
+{
+    const auto response = rpc("getnetworkhashps", "[1]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BOOST_REQUIRE_EQUAL(response.at("result").to_number<double>(), 0.0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
