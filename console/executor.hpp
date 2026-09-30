@@ -64,7 +64,7 @@ private:
     bool handle_stopped(const system::code& ec);
 
     // Store dumps.
-    void dump_version() const;
+    void dump_version(bool stored) const;
     void dump_hardware() const;
     void dump_options() const;
     void dump_configuration() const;
