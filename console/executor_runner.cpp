@@ -150,7 +150,7 @@ bool executor::do_run()
     ////logger(BS_INFORMATION_PROGRESS_START);
     ////dump_progress();
 
-    dump_version();
+    dump_version(true);
     dump_options();
     dump_hardware();
 

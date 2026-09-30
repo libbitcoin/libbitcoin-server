@@ -244,6 +244,9 @@ public:
     /// Initialize the service contexts (const thereafter).
     virtual code initialize() NOEXCEPT;
 
+    /// The name of the service that failed to initialize, if any.
+    std::string failure{};
+
     /// address encoding (coin/network identity)
     wallet_settings wallet;
 

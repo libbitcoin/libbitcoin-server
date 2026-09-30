@@ -121,7 +121,12 @@ int bc::system::main(int argc, char* argv[])
     // Settings files are read and derived values packed, once, here.
     if (const auto ec = metadata.configured.initialize())
     {
-        cerr << ec.message() << std::endl;
+        const auto& failure = metadata.configured.server.failure;
+        cerr << ec.message();
+        if (!failure.empty())
+            cerr << " [" << failure << "]";
+
+        cerr << std::endl;
         return EXIT_FAILURE;
     }
 

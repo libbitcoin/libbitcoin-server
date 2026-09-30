@@ -68,8 +68,10 @@ bool executor::do_settings()
 bool executor::do_version()
 {
     log_.stop();
-    dump_version();
-    return true;
+    const auto& store = metadata_.configured.database.path;
+    const auto opened = database::file::is_directory(store) && open_store();
+    dump_version(opened);
+    return !opened || close_store();
 }
 
 // --[n]ewstore
