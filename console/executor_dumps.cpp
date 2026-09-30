@@ -32,7 +32,7 @@ constexpr double to_double(auto integer)
 // ----------------------------------------------------------------------------
 
 // version information for libbitcoin libraries
-void executor::dump_version() const
+void executor::dump_version(bool stored) const
 {
     const auto thumb = [](std::string_view hash, bool dirty)
     {
@@ -49,7 +49,9 @@ void executor::dump_version() const
     logger(std::format("libbitcoin-node...... {} {}", LIBBITCOIN_NODE_VERSION, thumb(LIBBITCOIN_NODE_COMMIT_HASH, LIBBITCOIN_NODE_IS_DIRTY)));
     logger(std::format("libbitcoin-server.... {} {}", LIBBITCOIN_SERVER_VERSION, thumb(LIBBITCOIN_SERVER_COMMIT_HASH, LIBBITCOIN_SERVER_IS_DIRTY)));
     logger(std::format("compiled schema...... {}", database::envelope::compiled.to_string()));
-    logger(std::format("database schema...... {}", query_.envelope().schema.to_string()));
+
+    if (stored)
+        logger(std::format("database schema...... {}", query_.envelope().schema.to_string()));
 }
 
 // The "try" functions are safe for instructions not compiled in.
