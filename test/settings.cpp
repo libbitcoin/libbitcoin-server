@@ -388,4 +388,21 @@ BOOST_AUTO_TEST_CASE(wallet__copy_construct__testnet__expected)
     BOOST_REQUIRE_EQUAL(instance.hd_public_prefix, prefix::hd::test::btc.pub);
 }
 
+BOOST_AUTO_TEST_CASE(server__settings__initialize__native_safes_without_certificate__native_failure)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    instance.native.safes.emplace_back("127.0.0.1:443");
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::tls_use_certificate);
+    BOOST_REQUIRE_EQUAL(instance.failure, "native");
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__default__no_failure)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.failure.empty());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
