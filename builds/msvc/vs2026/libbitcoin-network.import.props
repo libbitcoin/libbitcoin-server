@@ -34,7 +34,7 @@
       <AdditionalIncludeDirectories Condition="'$(Option-ssl)' == 'true'">$(ProjectDir)..\..\..\..\..\libbitcoin-network\include\bitcoin\network\ssl\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions Condition="'$(Linkage-libbitcoin-network)' == 'static' Or '$(Linkage-libbitcoin-network)' == 'ltcg'">BCT_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Option-ssl)' == 'true'">WITH_SSL;WOLFSSL_USER_SETTINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Option-ssl)' == 'true'">WITH_SSL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies Condition="'$(Linkage-libbitcoin-network)' != ''">libbitcoin-network.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -51,13 +51,5 @@
     </Link>
   </ItemDefinitionGroup>
 
-  <Target Name="WolfSSLSuppressions" BeforeTargets="ClCompile">
-    <ItemGroup>
-      <ClCompile Update="@(ClCompile)">
-        <!-- Exclude wolfssl test sources when ssl is deselected (requires external linkage). -->
-        <ExcludedFromBuild Condition="$([System.String]::new('%(RelativeDir)').StartsWith('..\..\..\..\test\ssl\')) And '$(Option-ssl)' == 'false'">true</ExcludedFromBuild>
-      </ClCompile>
-    </ItemGroup>
-  </Target>
   
 </Project>
