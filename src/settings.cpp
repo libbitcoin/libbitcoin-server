@@ -94,16 +94,25 @@ settings::settings(system::chain::selection context,
 // The service contexts are read from configured files, once, at startup.
 code settings::initialize() NOEXCEPT
 {
-    if (const auto ec = admin.initialize_context()) return ec;
-    if (const auto ec = native.initialize_context()) return ec;
-    if (const auto ec = bitcoind.initialize_context()) return ec;
-    if (const auto ec = btcd.initialize_context()) return ec;
-    if (const auto ec = electrum.initialize_context()) return ec;
-    if (const auto ec = sparrow.initialize_context()) return ec;
-    if (const auto ec = esplora.initialize_context()) return ec;
-    if (const auto ec = stratum_v1.initialize_context()) return ec;
-    if (const auto ec = stratum_v2.initialize_context()) return ec;
-    return bitcoind_zmq.initialize_context();
+    const auto initialize = [this](auto& service) NOEXCEPT
+    {
+        const auto ec = service.initialize_context();
+        if (ec)
+            failure = service.name;
+
+        return ec;
+    };
+
+    if (const auto ec = initialize(admin)) return ec;
+    if (const auto ec = initialize(native)) return ec;
+    if (const auto ec = initialize(bitcoind)) return ec;
+    if (const auto ec = initialize(btcd)) return ec;
+    if (const auto ec = initialize(electrum)) return ec;
+    if (const auto ec = initialize(sparrow)) return ec;
+    if (const auto ec = initialize(esplora)) return ec;
+    if (const auto ec = initialize(stratum_v1)) return ec;
+    if (const auto ec = initialize(stratum_v2)) return ec;
+    return initialize(bitcoind_zmq);
 }
 
 // settings::wallet_settings
