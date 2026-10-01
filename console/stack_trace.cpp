@@ -154,6 +154,8 @@ DWORD dump_stack_trace(unsigned code, EXCEPTION_POINTERS* exception) NOEXCEPT
 
 #if defined(HAVE_X64)
     constexpr DWORD machine{ IMAGE_FILE_MACHINE_AMD64 };
+#elif defined(HAVE_ARM64)
+    constexpr DWORD machine{ IMAGE_FILE_MACHINE_ARM64 };
 #else
     constexpr DWORD machine{ IMAGE_FILE_MACHINE_I386 };
 #endif
