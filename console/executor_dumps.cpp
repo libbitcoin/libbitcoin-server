@@ -184,23 +184,21 @@ void executor::dump_collisions() const
     };
 
     const auto header = rate(query_.header_records(), query_.header_buckets());
-    const auto tx = rate(query_.tx_records(), query_.tx_buckets());
-    const auto ins = rate(query_.ins_records(), query_.ins_buckets());
-    const auto strong_tx = rate(query_.strong_tx_records(),
-        query_.strong_tx_buckets());
-    const auto pool = rate(query_.pool_records(),
-        query_.pool_buckets());
+    const auto tx     = rate(query_.tx_records(), query_.tx_buckets());
+    const auto ins    = rate(query_.ins_records(), query_.ins_buckets());
+    const auto strong = rate(query_.strong_tx_records(), query_.strong_tx_buckets());
+    const auto pool   = rate(query_.pool_records(), query_.pool_buckets());
 
     if (query_.address_enabled())
     {
         const auto outs = rate(query_.outs_records(), query_.outs_buckets());
         logger(std::format(BS_INFORMATION_COLLISION_RATES_ADDRESS,
-            header, tx, ins, outs, strong_tx, pool));
+            header, tx, ins, outs, strong, pool));
         return;
     }
 
     logger(std::format(BS_INFORMATION_COLLISION_RATES,
-        header, tx, ins, strong_tx, pool));
+        header, tx, ins, strong, pool));
 }
 
 void executor::dump_progress() const
