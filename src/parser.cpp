@@ -2631,9 +2631,8 @@ BC_POP_WARNING()
         load_command_variables(argc, argv);
         load_environment_variables(environment_prefix);
 
-        // Don't load config file if any of these options are specified.
-        if (!get_option(version_variable) &&
-            !get_option(help_variable))
+        // Don't load config file if help is specified.
+        if (!get_option(help_variable))
         {
             // Returns true if the settings were loaded from a file.
             file = load_configuration_variables(config_variable);
