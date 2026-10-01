@@ -79,6 +79,13 @@ inline STACKFRAME64 get_stack_frame(const CONTEXT& context) NOEXCEPT
     frame.AddrStack.Mode = AddrModeFlat;
     frame.AddrFrame.Offset = context.Rbp;
     frame.AddrFrame.Mode = AddrModeFlat;
+#elif defined(HAVE_ARM64)
+    frame.AddrPC.Offset = context.Pc;
+    frame.AddrPC.Mode = AddrModeFlat;
+    frame.AddrStack.Offset = context.Sp;
+    frame.AddrStack.Mode = AddrModeFlat;
+    frame.AddrFrame.Offset = context.Fp;
+    frame.AddrFrame.Mode = AddrModeFlat;
 #else
     frame.AddrPC.Offset = context.Eip;
     frame.AddrPC.Mode = AddrModeFlat;
