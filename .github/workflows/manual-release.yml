@@ -380,6 +380,23 @@ jobs:
               echo "LDFLAGS=-Wl,-rpath,${{ github.workspace }}/prefix/lib" >> $GITHUB_ENV
           fi
 
+      - name: Display Relevant State
+        if: ${{ matrix.toolchain == 'cmake' || matrix.toolchain == 'gnu' || matrix.toolchain == 'presets' }}
+        shell: bash
+        run: |
+          which clang
+          clang --version
+          which clang++
+          clang++ --version
+          which gcc
+          gcc --version
+          which g++
+          g++ --version
+          which ${CC}
+          ${CC} --version
+          which ${CXX}
+          ${CXX} --version
+
       - name: Build [cmake]
         if: ${{ matrix.toolchain == 'cmake' }}
         shell: bash
