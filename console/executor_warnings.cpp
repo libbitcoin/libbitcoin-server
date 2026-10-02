@@ -45,26 +45,20 @@ void executor::warn_hardware(system::string_list& out) const
 {
     using namespace system;
 
-    const auto device = database::gpu_device();
-
 #if defined(HAVE_ARM)
-    const auto suboptimal =
-        (try_neon() && !have_neon) ||
-        (try_crypto() && !have_crypto);
+    if (try_crypto() && !have_crypto)
+        out.emplace_back(BS_HARDWARE_SHA_UNCOMPILED);
 #else
-    const auto suboptimal =
-        (try_avx512() && !have_avx512) ||
-        (try_avx2() && !have_avx2) ||
-        (try_sse41() && !have_sse41) ||
-        (try_shani() && !have_shani) ||
-        (try_avx512ifma() && !have_avx512ifma) ||
-        (try_avxifma() && !have_avxifma && !have_avx512ifma) ||
-        (try_aesni() && !have_aesni) ||
-        (try_vaes() && !have_vaes);
+    if (try_shani() && !have_shani)
+        out.emplace_back(BS_HARDWARE_SHA_UNCOMPILED);
+
+    if (try_avx2() && !have_avx2)
+        out.emplace_back(BS_HARDWARE_AVX2_UNCOMPILED);
 #endif
 
-    if (suboptimal || (device && !batched::compiled()))
-        out.emplace_back(BS_HARDWARE_SUBOPTIMAL);
+    const auto device = database::gpu_device();
+    if (device && !batched::compiled())
+        out.emplace_back(BS_HARDWARE_GPU_UNCOMPILED);
 
     if (device && batched::compiled() && !batched::accelerated())
         out.emplace_back(BS_HARDWARE_UNSUPPORTED);

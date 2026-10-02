@@ -322,8 +322,12 @@
     "platform:{:d} compiled:{:d} (unsupported)."
 
 // warnings
-#define BS_HARDWARE_SUBOPTIMAL \
-    "Available hardware acceleration is not compiled into this build."
+#define BS_HARDWARE_SHA_UNCOMPILED \
+    "Available SHA hardware acceleration is not compiled into this build."
+#define BS_HARDWARE_AVX2_UNCOMPILED \
+    "Available AVX2 hardware acceleration is not compiled into this build."
+#define BS_HARDWARE_GPU_UNCOMPILED \
+    "Available gpu hardware acceleration is not compiled into this build."
 #define BS_HARDWARE_UNSUPPORTED \
     "A gpu device is present but unsupported by the compiled acceleration."
 #define BS_HARDWARE_UNCONFIGURED \
