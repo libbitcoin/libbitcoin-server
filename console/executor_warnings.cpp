@@ -46,7 +46,7 @@ void executor::warn_hardware(system::string_list& out) const
     using namespace system;
 
 #if defined(HAVE_ARM)
-    if (try_crypto() && !have_crypto)
+    if (try_neon_sha() && !have_neon_sha)
         out.emplace_back(BS_HARDWARE_SHA_UNCOMPILED);
 #else
     if (try_shani() && !have_shani)

@@ -62,8 +62,9 @@ void executor::dump_hardware() const
 
 #if defined(HAVE_ARM)
     logger(BS_HARDWARE_HEADER_ARM64);
-    logger(std::format("crypto...... " BS_HARDWARE_COMPILED, try_crypto(), have_crypto));
-    logger(std::format("sha3........ " BS_HARDWARE_COMPILED, try_sha3(), have_sha3));
+    logger(std::format("aes......... " BS_HARDWARE_COMPILED, try_neon_aes(), have_neon_aes));
+    logger(std::format("sha......... " BS_HARDWARE_COMPILED, try_neon_sha(), have_neon_sha));
+    logger(std::format("sha3........ " BS_HARDWARE_COMPILED, try_neon_sha3(), have_neon_sha3));
     logger(std::format("neon........ " BS_HARDWARE_COMPILED, try_neon(), have_neon));
 #else
     logger(BS_HARDWARE_HEADER_X64);
