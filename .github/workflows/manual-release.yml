@@ -226,16 +226,16 @@ jobs:
 
           - image: ubuntu-26.04-arm
             toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
+            cc: "gcc"
+            cxx: "g++"
             configuration: release
             link: static
             basename: "bs-nix-arm64"
 
           - image: ubuntu-26.04-arm
             toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
+            cc: "gcc"
+            cxx: "g++"
             configuration: release
             link: static
             options: "-Denable-crypto=ON"
@@ -243,8 +243,8 @@ jobs:
 
           - image: ubuntu-26.04-arm
             toolchain: cmake
-            cc: "gcc-21"
-            cxx: "g++-21"
+            cc: "gcc"
+            cxx: "g++"
             configuration: release
             link: static
             options: "-Denable-sha3=ON"
