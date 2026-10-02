@@ -375,149 +375,149 @@ options_metadata parser::load_settings() THROWS
     (
         "forks.difficult",
         setting<bool>(&configured.bitcoin.forks.difficult),
-        "Require difficult blocks, defaults to 'true' (use false for testnet)."
+        "Require difficult blocks, defaults to {} (use false for testnet)."
     )
     (
         "forks.retarget",
         setting<bool>(&configured.bitcoin.forks.retarget),
-        "Retarget difficulty, defaults to 'true' (use false for regtest)."
+        "Retarget difficulty, defaults to {} (use false for regtest)."
     )
     (
         "forks.bip16",
         setting<bool>(&configured.bitcoin.forks.bip16),
-        "Add pay-to-script-hash processing, defaults to 'true' (soft fork)."
+        "Add pay-to-script-hash processing, defaults to {} (soft fork)."
     )
     (
         "forks.bip30",
         setting<bool>(&configured.bitcoin.forks.bip30),
-        "Disallow collision of unspent transaction hashes, defaults to 'true' (soft fork)."
+        "Disallow collision of unspent transaction hashes, defaults to {} (soft fork)."
     )
     (
         "forks.bip34",
         setting<bool>(&configured.bitcoin.forks.bip34),
-        "Require coinbase input includes block height, defaults to 'true' (soft fork)."
+        "Require coinbase input includes block height, defaults to {} (soft fork)."
     )
     (
         "forks.bip42",
         setting<bool>(&configured.bitcoin.forks.bip42),
-        "Finite monetary supply, defaults to 'true' (soft fork)."
+        "Finite monetary supply, defaults to {} (soft fork)."
     )
     (
         "forks.bip66",
         setting<bool>(&configured.bitcoin.forks.bip66),
-        "Require strict signature encoding, defaults to 'true' (soft fork)."
+        "Require strict signature encoding, defaults to {} (soft fork)."
     )
     (
         "forks.bip65",
         setting<bool>(&configured.bitcoin.forks.bip65),
-        "Add check-locktime-verify op code, defaults to 'true' (soft fork)."
+        "Add check-locktime-verify op code, defaults to {} (soft fork)."
     )
     (
         "forks.bip90",
         setting<bool>(&configured.bitcoin.forks.bip90),
-        "Assume bip34, bip65, and bip66 activation if enabled, defaults to 'true' (hard fork)."
+        "Assume bip34, bip65, and bip66 activation if enabled, defaults to {} (hard fork)."
     )
     (
         "forks.bip68",
         setting<bool>(&configured.bitcoin.forks.bip68),
-        "Add relative locktime enforcement, defaults to 'true' (soft fork)."
+        "Add relative locktime enforcement, defaults to {} (soft fork)."
     )
     (
         "forks.bip112",
         setting<bool>(&configured.bitcoin.forks.bip112),
-        "Add check-sequence-verify op code, defaults to 'true' (soft fork)."
+        "Add check-sequence-verify op code, defaults to {} (soft fork)."
     )
     (
         "forks.bip113",
         setting<bool>(&configured.bitcoin.forks.bip113),
-        "Use median time past for locktime, defaults to 'true' (soft fork)."
+        "Use median time past for locktime, defaults to {} (soft fork)."
     )
     (
         "forks.bip141",
         setting<bool>(&configured.bitcoin.forks.bip141),
-        "Segregated witness consensus layer, defaults to 'true' (soft fork)."
+        "Segregated witness consensus layer, defaults to {} (soft fork)."
     )
     (
         "forks.bip143",
         setting<bool>(&configured.bitcoin.forks.bip143),
-        "Witness version 0 (segwit), defaults to 'true' (soft fork)."
+        "Witness version 0 (segwit), defaults to {} (soft fork)."
     )
     (
         "forks.bip147",
         setting<bool>(&configured.bitcoin.forks.bip147),
-        "Prevent dummy value malleability, defaults to 'true' (soft fork)."
+        "Prevent dummy value malleability, defaults to {} (soft fork)."
     )
     (
         "forks.bip341",
         setting<bool>(&configured.bitcoin.forks.bip341),
-        "Witness version 1 (taproot), defaults to 'true' (soft fork)."
+        "Witness version 1 (taproot), defaults to {} (soft fork)."
     )
     (
         "forks.bip342",
         setting<bool>(&configured.bitcoin.forks.bip342),
-        "Validation of taproot script, defaults to 'true' (soft fork)."
+        "Validation of taproot script, defaults to {} (soft fork)."
     )
     (
         "forks.time_warp_patch",
         setting<bool>(&configured.bitcoin.forks.time_warp_patch),
-        "Assume time_warp_patch activation if enabled, defaults to 'false' (testnet4)."
+        "Assume time_warp_patch activation if enabled, defaults to {} (testnet4)."
     )
     (
         "forks.block_storm_patch",
         setting<bool>(&configured.bitcoin.forks.block_storm_patch),
-        "Assume block_storm_patch activation if enabled, defaults to 'false' (testnet4)."
+        "Assume block_storm_patch activation if enabled, defaults to {} (testnet4)."
     )
     (
         "forks.ltc_time_warp_patch",
         setting<bool>(&configured.bitcoin.forks.ltc_time_warp_patch),
-        "Fix time warp bug, defaults to 'false' (litecoin)."
+        "Fix time warp bug, defaults to {} (litecoin)."
     )
     (
         "forks.ltc_retarget_overflow_patch",
         setting<bool>(&configured.bitcoin.forks.ltc_retarget_overflow_patch),
-        "Fix target overflow for very low difficulty, defaults to 'false' (litecoin)."
+        "Fix target overflow for very low difficulty, defaults to {} (litecoin)."
     )
     (
         "forks.ltc_scrypt_proof_of_work",
         setting<bool>(&configured.bitcoin.forks.ltc_scrypt_proof_of_work),
-        "Use scrypt hashing for proof of work, defaults to 'false' (litecoin)."
+        "Use scrypt hashing for proof of work, defaults to {} (litecoin)."
     )
 
     /* [bitcoin] */
     (
         "bitcoin.initial_block_subsidy_bitcoin",
         setting<uint64_t>(&configured.bitcoin.initial_subsidy_bitcoin),
-        "The initial block subsidy, defaults to '50'."
+        "The initial block subsidy, defaults to {}."
     )
     (
         "bitcoin.subsidy_interval",
         setting<uint32_t>(&configured.bitcoin.subsidy_interval_blocks),
-        "The subsidy halving period, defaults to '210000'."
+        "The subsidy halving period, defaults to {}."
     )
     (
         "bitcoin.timestamp_limit_seconds",
         setting<uint32_t>(&configured.bitcoin.timestamp_limit_seconds),
-        "The future timestamp allowance, defaults to '7200'."
+        "The future timestamp allowance, defaults to {}."
     )
     (
         "bitcoin.retargeting_factor",
         setting<uint32_t>(&configured.bitcoin.retargeting_factor),
-        "The difficulty retargeting factor, defaults to '4'."
+        "The difficulty retargeting factor, defaults to {}."
     )
     (
         "bitcoin.retargeting_interval_seconds",
         setting<uint32_t>(&configured.bitcoin.retargeting_interval_seconds),
-        "The difficulty retargeting period, defaults to '1209600'."
+        "The difficulty retargeting period, defaults to {}."
     )
     (
         "bitcoin.block_spacing_seconds",
         setting<uint32_t>(&configured.bitcoin.block_spacing_seconds),
-        "The target block period, defaults to '600'."
+        "The target block period, defaults to {}."
     )
     (
         "bitcoin.proof_of_work_limit",
         setting<uint32_t>(&configured.bitcoin.proof_of_work_limit),
-        "The proof of work limit, defaults to '486604799'."
+        "The proof of work limit, defaults to {}."
     )
     (
         "bitcoin.genesis_block",
@@ -533,94 +533,94 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoin.bip16_activation_time",
         setting<uint32_t>(&configured.bitcoin.bip16_activation_time),
-        "The activation time for bip16 in unix time, defaults to '1333238400'."
+        "The activation time for bip16 in unix time, defaults to {}."
     )
     (
         "bitcoin.bip34_activation_threshold",
         setting<size_t>(&configured.bitcoin.bip34_activation_threshold),
-        "The number of new version blocks required for bip34 style soft fork activation, defaults to '750'."
+        "The number of new version blocks required for bip34 style soft fork activation, defaults to {}."
     )
     (
         "bitcoin.bip34_enforcement_threshold",
         setting<size_t>(&configured.bitcoin.bip34_enforcement_threshold),
-        "The number of new version blocks required for bip34 style soft fork enforcement, defaults to '950'."
+        "The number of new version blocks required for bip34 style soft fork enforcement, defaults to {}."
     )
     (
         "bitcoin.bip34_activation_sample",
         setting<size_t>(&configured.bitcoin.bip34_activation_sample),
-        "The number of blocks considered for bip34 style soft fork activation, defaults to '1000'."
+        "The number of blocks considered for bip34 style soft fork activation, defaults to {}."
     )
     (
         "bitcoin.bip34_freeze",
         setting<size_t>(&configured.bitcoin.bip90_bip34_height),
-        "The block height to freeze the bip34 softfork for bip90, defaults to '227931'."
+        "The block height to freeze the bip34 softfork for bip90, defaults to {}."
     )
     (
         "bitcoin.bip65_freeze",
         setting<size_t>(&configured.bitcoin.bip90_bip65_height),
-        "The block height to freeze the bip65 softfork for bip90, defaults to '388381'."
+        "The block height to freeze the bip65 softfork for bip90, defaults to {}."
     )
     (
         "bitcoin.bip66_freeze",
         setting<size_t>(&configured.bitcoin.bip90_bip66_height),
-        "The block height to freeze the bip66 softfork for bip90, defaults to '363725'."
+        "The block height to freeze the bip66 softfork for bip90, defaults to {}."
     )
     (
         "bitcoin.bip30_reactivate_height",
         setting<size_t>(&configured.bitcoin.bip30_reactivate_height),
-        "The height for bip30 reactivation, defaults to '1983702'."
+        "The height for bip30 reactivation, defaults to {}."
     )
     (
         "bitcoin.bip30_deactivate_checkpoint",
         setting<chain::checkpoint>(&configured.bitcoin.bip30_deactivate_checkpoint),
-        "The hash:height checkpoint for bip30 deactivation, defaults to '000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8:227931'."
+        "The hash:height checkpoint for bip30 deactivation, defaults to {}."
     )
     (
         "bitcoin.bip9_bit0_active_checkpoint",
         setting<chain::checkpoint>(&configured.bitcoin.bip9_bit0_active_checkpoint),
-        "The hash:height checkpoint for bip9 bit0 activation, defaults to '000000000000000004a1b34462cb8aeebd5799177f7a29cf28f2d1961716b5b5:419328'."
+        "The hash:height checkpoint for bip9 bit0 activation, defaults to {}."
     )
     (
         "bitcoin.bip9_bit1_active_checkpoint",
         setting<chain::checkpoint>(&configured.bitcoin.bip9_bit1_active_checkpoint),
-        "The hash:height checkpoint for bip9 bit1 activation, defaults to '0000000000000000001c8018d9cb3b742ef25114f27563e3fc4a1902167f9893:481824'."
+        "The hash:height checkpoint for bip9 bit1 activation, defaults to {}."
     )
     (
         "bitcoin.bip9_bit2_active_checkpoint",
         setting<chain::checkpoint>(&configured.bitcoin.bip9_bit2_active_checkpoint),
-        "The hash:height checkpoint for bip9 bit2 activation, defaults to '0000000000000000000687bca986194dc2c1f949318629b44bb54ec0a94d8244:709632'."
+        "The hash:height checkpoint for bip9 bit2 activation, defaults to {}."
     )
     (
         settings::milestone,
         setting<chain::checkpoint>(&configured.bitcoin.milestone),
-        "A block presumed to be valid but not required to be present, defaults to '000000000000000000010b93c9ea1c29fea277383f0f7d1f26de8b5802e885ff:950000'."
+        "A block presumed to be valid but not required to be present, defaults to {}."
     )
     (
         "bitcoin.minimum_work",
         setting<config::hash256>(&configured.bitcoin.minimum_work),
-        "The minimum work for any branch to be considered valid, defaults to '000000000000000000000000000000000000000052b2559353df4117b7348b64'."
+        "The minimum work for any branch to be considered valid, defaults to {}."
     )
 
     /* [network] */
     (
         "network.threads",
         setting<uint32_t>(&configured.network.threads),
-        "The minimum number of threads in the network threadpool, defaults to '0' (hardware threads, at most 32)."
+        "The minimum number of threads in the network threadpool, defaults to {} (hardware threads, at most 32)."
     )
     (
         "network.retry_timeout_seconds",
         setting<uint32_t>(&configured.network.retry_timeout_seconds),
-        "The time delay for failed connection retry, defaults to '1'."
+        "The time delay for failed connection retry, defaults to {}."
     )
     (
         "network.connect_timeout_seconds",
         setting<uint32_t>(&configured.network.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to '5'."
+        "The time limit for connection establishment, defaults to {}."
     )
     (
         "network.rate_limit",
         setting<uint32_t>(&configured.network.rate_limit),
-        "The per channel send rate limit in bytes per second, defaults to '0' (unlimited)."
+        "The per channel send rate limit in bytes per second, defaults to {} (unlimited)."
     )
     (
         "network.blacklist",
@@ -637,174 +637,174 @@ options_metadata parser::load_settings() THROWS
     (
         "peer.address_upper",
         setting<uint16_t>(&configured.network.address_upper),
-        "The upper bound for address selection divisor, defaults to '10'."
+        "The upper bound for address selection divisor, defaults to {}."
     )
     (
         "peer.address_lower",
         setting<uint16_t>(&configured.network.address_lower),
-        "The lower bound for address selection divisor, defaults to '5'."
+        "The lower bound for address selection divisor, defaults to {}."
     )
     (
         "peer.protocol_maximum",
         setting<uint32_t>(&configured.network.protocol_maximum),
-        "The maximum network protocol version, defaults to '70016'."
+        "The maximum network protocol version, defaults to {}."
     )
     (
         "peer.protocol_minimum",
         setting<uint32_t>(&configured.network.protocol_minimum),
-        "The minimum network protocol version, defaults to '31800'."
+        "The minimum network protocol version, defaults to {}."
     )
     (
         "peer.invalid_services",
         setting<uint64_t>(&configured.network.invalid_services),
-        "The advertised services that cause a peer to be dropped, defaults to '268435632'."
+        "The advertised services that cause a peer to be dropped, defaults to {}."
     )
     (
         "peer.enable_address",
         setting<bool>(&configured.network.enable_address),
-        "Enable address gossip, defaults to 'true'."
+        "Enable address gossip, defaults to {}."
     )
     (
         "peer.enable_address_v2",
         setting<bool>(&configured.network.enable_address_v2),
-        "Enable privacy network (Tor and I2P) address gossip, defaults to 'true'."
+        "Enable privacy network (Tor and I2P) address gossip, defaults to {}."
     )
     (
         "peer.enable_witness_tx",
         setting<bool>(&configured.network.enable_witness_tx),
-        "Enable witness transaction identifier relay, defaults to 'false'."
+        "Enable witness transaction identifier relay, defaults to {}."
     )
     (
         "peer.enable_compact",
         setting<bool>(&configured.network.enable_compact),
-        "Enable compact block messages, defaults to 'false'."
+        "Enable compact block messages, defaults to {}."
     )
     (
         "peer.enable_alert",
         setting<bool>(&configured.network.enable_alert),
-        "Enable alert messages, defaults to 'false'."
+        "Enable alert messages, defaults to {}."
     )
     (
         "peer.enable_reject",
         setting<bool>(&configured.network.enable_reject),
-        "Enable reject messages, defaults to 'false'."
+        "Enable reject messages, defaults to {}."
     )
     (
         "peer.enable_not_found",
         setting<bool>(&configured.network.enable_not_found),
-        "Enable not found messages, defaults to 'true'."
+        "Enable not found messages, defaults to {}."
     )
     (
         "peer.enable_relay",
         setting<bool>(&configured.network.enable_relay),
-        "Enable transaction relay, defaults to 'true'."
+        "Enable transaction relay, defaults to {}."
     )
     (
         "peer.validate_checksum",
         setting<bool>(&configured.network.validate_checksum),
-        "Validate the checksum of network messages, defaults to 'false'."
+        "Validate the checksum of network messages, defaults to {}."
     )
     (
         "peer.gossip_ipv4",
         setting<bool>(&configured.network.gossip_ipv4),
-        "Gossip internet protocol version 4 (IPv4) addresses, defaults to 'true'."
+        "Gossip internet protocol version 4 (IPv4) addresses, defaults to {}."
     )
     (
         "peer.gossip_ipv6",
         setting<bool>(&configured.network.gossip_ipv6),
-        "Gossip internet protocol version 6 (IPv6) addresses, defaults to 'false'."
+        "Gossip internet protocol version 6 (IPv6) addresses, defaults to {}."
     )
     (
         "peer.gossip_tor",
         setting<bool>(&configured.network.gossip_tor),
-        "Gossip tor (onion) addresses, defaults to 'false'."
+        "Gossip tor (onion) addresses, defaults to {}."
     )
     (
         "peer.gossip_i2p",
         setting<bool>(&configured.network.gossip_i2p),
-        "Gossip i2p addresses, defaults to 'false'."
+        "Gossip i2p addresses, defaults to {}."
     )
     (
         "peer.identifier",
         setting<uint32_t>(&configured.network.identifier),
-        "The magic number for message headers, defaults to '3652501241'."
+        "The magic number for message headers, defaults to {}."
     )
     (
         "peer.handshake_timeout_seconds",
         setting<uint32_t>(&configured.network.handshake_timeout_seconds),
-        "The time limit to complete the connection handshake, defaults to '15'."
+        "The time limit to complete the connection handshake, defaults to {}."
     )
     (
         "peer.channel_heartbeat_minutes",
         setting<uint32_t>(&configured.network.channel_heartbeat_minutes),
-        "The time between ping messages, defaults to '5'."
+        "The time between ping messages, defaults to {}."
     )
     (
         "peer.maximum_skew_minutes",
         setting<uint32_t>(&configured.network.maximum_skew_minutes),
-        "The maximum allowable channel clock skew, defaults to '120'."
+        "The maximum allowable channel clock skew, defaults to {}."
     )
     (
         "peer.user_agent",
         setting<std::string>(&configured.network.user_agent),
-        "The node user agent string, defaults to '" BC_USER_AGENT "'."
+        "The node user agent string, defaults to {}."
     )
     (
         "peer.path",
         setting<config::path>(&configured.network.path),
-        "The peer address cache file directory, defaults to empty."
+        "The peer address cache file directory, defaults to {}."
     )
 
     /* [outbound] */
     (
         "outbound.bind",
         setting<network::config::authorities>(&configured.network.outbound.binds),
-        "IP address to bind outbound connections, multiple allowed, defaults to none."
+        "IP address to bind outbound connections, multiple allowed, defaults to {}."
     )
     (
         "outbound.connections",
         setting<uint16_t>(&configured.network.outbound.connections),
-        "The target number of outgoing network connections, defaults to '100'."
+        "The target number of outgoing network connections, defaults to {}."
     )
     (
         "outbound.current_connections",
         setting<uint16_t>(&configured.node.current_connections),
-        "The target number of outgoing connections when current, defaults to '10' (0 disables)."
+        "The target number of outgoing connections when current, defaults to {} (0 disables)."
     )
     (
         "outbound.rate_limit",
         setting<uint32_t>(&configured.network.outbound.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+        "The send rate limit in bytes per second, defaults to {} (network controls)."
     )
     (
         "outbound.connect_timeout_seconds",
         setting<uint32_t>(&configured.network.outbound.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to '0' (network controls)."
+        "The time limit for connection establishment, defaults to {} (network controls)."
     )
     (
         "outbound.inactivity_minutes",
         setting<uint32_t>(&configured.network.outbound.inactivity_minutes),
-        "The inactivity time limit for any connection, defaults to '10'."
+        "The inactivity time limit for any connection, defaults to {}."
     )
     (
         "outbound.expiration_minutes",
         setting<uint32_t>(&configured.network.outbound.expiration_minutes),
-        "The age limit for any connection, defaults to '60'."
+        "The age limit for any connection, defaults to {}."
     )
     (
         "outbound.minimum_buffer",
         setting<uint32_t>(&configured.network.outbound.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4096'."
+        "The minimum retained read buffer size, defaults to {}."
     )
     (
         "outbound.maximum_backlog",
         setting<uint32_t>(&configured.network.outbound.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '1048576'."
+        "The maximum write backlog of a channel, defaults to {}."
     )
     (
         "outbound.maximum_request",
         setting<uint32_t>(&configured.network.outbound.maximum_request),
-        "The maximum allowed request size, defaults to '4000000'."
+        "The maximum allowed request size, defaults to {}."
     )
     (
         "outbound.seed",
@@ -814,17 +814,17 @@ options_metadata parser::load_settings() THROWS
     (
         "outbound.connect_batch_size",
         setting<uint16_t>(&configured.network.outbound.connect_batch_size),
-        "The number of concurrent attempts to establish one connection, defaults to '5'."
+        "The number of concurrent attempts to establish one connection, defaults to {}."
     )
     (
         "outbound.host_pool_capacity",
         setting<uint32_t>(&configured.network.outbound.host_pool_capacity),
-        "The maximum number of peer hosts in the pool, defaults to '10000000'."
+        "The maximum number of peer hosts in the pool, defaults to {}."
     )
     (
         "outbound.seeding_timeout_seconds",
         setting<uint32_t>(&configured.network.outbound.seeding_timeout_seconds),
-        "The time limit for obtaining seed connections and addresses, defaults to '30'."
+        "The time limit for obtaining seed connections and addresses, defaults to {}."
     )
     (
         "outbound.username",
@@ -846,57 +846,57 @@ options_metadata parser::load_settings() THROWS
     ////(
     ////    "inbound.secure",
     ////    setting<bool>(&configured.network.inbound.secure),
-    ////    "Require transport layer security, defaults to 'false' (not implemented)."
+    ////    "Require transport layer security, defaults to {} (not implemented)."
     ////)
     (
         "inbound.bind",
         setting<network::config::authorities>(&configured.network.inbound.binds),
-        "IP address to bind for listening, multiple allowed, defaults to '0.0.0.0:8333' (all IPv4)."
+        "IP address to bind for listening, multiple allowed, defaults to {} (all IPv4)."
     )
     (
         "inbound.connections",
         setting<uint16_t>(&configured.network.inbound.connections),
-        "The target number of incoming network connections, defaults to '100'."
+        "The target number of incoming network connections, defaults to {}."
     )
     (
         "inbound.rate_limit",
         setting<uint32_t>(&configured.network.inbound.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+        "The send rate limit in bytes per second, defaults to {} (network controls)."
     )
     (
         "inbound.connect_timeout_seconds",
         setting<uint32_t>(&configured.network.inbound.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to '0' (network controls)."
+        "The time limit for connection establishment, defaults to {} (network controls)."
     )
     (
         "inbound.inactivity_minutes",
         setting<uint32_t>(&configured.network.inbound.inactivity_minutes),
-        "The inactivity time limit for any connection, defaults to '10'."
+        "The inactivity time limit for any connection, defaults to {}."
     )
     (
         "inbound.expiration_minutes",
         setting<uint32_t>(&configured.network.inbound.expiration_minutes),
-        "The age limit for any connection, defaults to '60'."
+        "The age limit for any connection, defaults to {}."
     )
     (
         "inbound.minimum_buffer",
         setting<uint32_t>(&configured.network.inbound.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4096'."
+        "The minimum retained read buffer size, defaults to {}."
     )
     (
         "inbound.maximum_backlog",
         setting<uint32_t>(&configured.network.inbound.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '1048576'."
+        "The maximum write backlog of a channel, defaults to {}."
     )
     (
         "inbound.maximum_request",
         setting<uint32_t>(&configured.network.inbound.maximum_request),
-        "The maximum allowed request size, defaults to '4000000'."
+        "The maximum allowed request size, defaults to {}."
     )
     (
         "inbound.enable_loopback",
         setting<bool>(&configured.network.inbound.enable_loopback),
-        "Allow connections from the node to itself, defaults to 'false'."
+        "Allow connections from the node to itself, defaults to {}."
     )
     (
         "inbound.self",
@@ -928,12 +928,12 @@ options_metadata parser::load_settings() THROWS
     ////(
     ////    "manual.secure",
     ////    setting<bool>(&configured.network.manual.secure),
-    ////    "Require transport layer security, defaults to 'false' (not implemented)."
+    ////    "Require transport layer security, defaults to {} (not implemented)."
     ////)
     (
         "manual.bind",
         setting<network::config::authorities>(&configured.network.manual.binds),
-        "IP address to bind manual connections, multiple allowed, defaults to none."
+        "IP address to bind manual connections, multiple allowed, defaults to {}."
     )
     ////(
     ////    "manual.connections",
@@ -943,37 +943,37 @@ options_metadata parser::load_settings() THROWS
     (
         "manual.rate_limit",
         setting<uint32_t>(&configured.network.manual.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+        "The send rate limit in bytes per second, defaults to {} (network controls)."
     )
     (
         "manual.connect_timeout_seconds",
         setting<uint32_t>(&configured.network.manual.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to '0' (network controls)."
+        "The time limit for connection establishment, defaults to {} (network controls)."
     )
     (
         "manual.inactivity_minutes",
         setting<uint32_t>(&configured.network.manual.inactivity_minutes),
-        "The inactivity time limit for any connection, defaults to '10' (will attempt reconnect)."
+        "The inactivity time limit for any connection, defaults to {} (will attempt reconnect)."
     )
     (
         "manual.expiration_minutes",
         setting<uint32_t>(&configured.network.manual.expiration_minutes),
-        "The age limit for any connection, defaults to '60' (will attempt reconnect)."
+        "The age limit for any connection, defaults to {} (will attempt reconnect)."
     )
     (
         "manual.minimum_buffer",
         setting<uint32_t>(&configured.network.manual.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4096'."
+        "The minimum retained read buffer size, defaults to {}."
     )
     (
         "manual.maximum_backlog",
         setting<uint32_t>(&configured.network.manual.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '1048576'."
+        "The maximum write backlog of a channel, defaults to {}."
     )
     (
         "manual.maximum_request",
         setting<uint32_t>(&configured.network.manual.maximum_request),
-        "The maximum allowed request size, defaults to '4000000'."
+        "The maximum allowed request size, defaults to {}."
     )
     (
         "manual.peer",
@@ -1000,44 +1000,44 @@ options_metadata parser::load_settings() THROWS
     (
         "wallet.p2kh_prefix",
         setting<config::byte>(&configured.server.wallet.p2kh_prefix),
-        "The pay-to-public-key-hash address prefix, defaults to '0' (use '111' for testnet)."
+        "The pay-to-public-key-hash address prefix, defaults to {} (use '111' for testnet)."
     )
     (
         "wallet.p2sh_prefix",
         setting<config::byte>(&configured.server.wallet.p2sh_prefix),
-        "The pay-to-script-hash address prefix, defaults to '5' (use '196' for testnet)."
+        "The pay-to-script-hash address prefix, defaults to {} (use '196' for testnet)."
     )
     (
         "wallet.wif_prefix",
         setting<config::byte>(&configured.server.wallet.wif_prefix),
-        "The wallet import format prefix, defaults to '128' (use '239' for testnet)."
+        "The wallet import format prefix, defaults to {} (use '239' for testnet)."
     )
     (
         "wallet.witness_prefix",
         setting<std::string>(&configured.server.wallet.witness_prefix),
-        "The witness address prefix, defaults to 'bc' (use 'tb' for testnet)."
+        "The witness address prefix, defaults to {} (use 'tb' for testnet)."
     )
     (
         "wallet.hd_private_prefix",
         setting<uint32_t>(&configured.server.wallet.hd_private_prefix),
-        "The extended private key prefix, defaults to '76066276' (use '70615956' for testnet)."
+        "The extended private key prefix, defaults to {} (use '70615956' for testnet)."
     )
     (
         "wallet.hd_public_prefix",
         setting<uint32_t>(&configured.server.wallet.hd_public_prefix),
-        "The extended public key prefix, defaults to '76067358' (use '71979618' for testnet)."
+        "The extended public key prefix, defaults to {} (use '71979618' for testnet)."
     )
 
     /* [admin] */
     (
         "admin.bind",
         setting<network::config::authorities>(&configured.server.admin.binds),
-        "IP address to bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "admin.safe",
         setting<network::config::authorities>(&configured.server.admin.safes),
-        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to secure bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "admin.cert_auth",
@@ -1047,12 +1047,12 @@ options_metadata parser::load_settings() THROWS
     (
         "admin.cert_path",
         setting<config::path>(&configured.server.admin.cert_path),
-        "The path to the server certificate file (.PEM), defaults to unused."
+        "The path to the server certificate file (.PEM), defaults to {}."
     )
     (
         "admin.key_path",
         setting<config::path>(&configured.server.admin.key_path),
-        "The path to the server private key file (.PEM), defaults to unused."
+        "The path to the server private key file (.PEM), defaults to {}."
     )
     (
         "admin.key_pass",
@@ -1062,89 +1062,89 @@ options_metadata parser::load_settings() THROWS
     (
         "admin.connections",
         setting<uint16_t>(&configured.server.admin.connections),
-        "The required maximum number of connections, defaults to '0'."
+        "The required maximum number of connections, defaults to {}."
     )
     (
         "admin.rate_limit",
         setting<uint32_t>(&configured.server.admin.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+        "The send rate limit in bytes per second, defaults to {} (network controls)."
     )
     (
         "admin.connect_timeout_seconds",
         setting<uint32_t>(&configured.server.admin.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to '0' (network controls)."
+        "The time limit for connection establishment, defaults to {} (network controls)."
     )
     (
         "admin.inactivity_minutes",
         setting<uint32_t>(&configured.server.admin.inactivity_minutes),
-        "The idle timeout (http keep-alive), defaults to '10'."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "admin.expiration_minutes",
         setting<uint32_t>(&configured.server.admin.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to '60'."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "admin.minimum_buffer",
         setting<uint32_t>(&configured.server.admin.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4096'."
+        "The minimum retained read buffer size, defaults to {}."
     )
     (
         "admin.maximum_backlog",
         setting<uint32_t>(&configured.server.admin.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '10485760'."
+        "The maximum write backlog of a channel, defaults to {}."
     )
     (
         "admin.maximum_buffer",
         setting<uint32_t>(&configured.server.admin.maximum_buffer),
-        "The maximum json response buffer size, defaults to '65536'."
+        "The maximum json response buffer size, defaults to {}."
     )
     (
         "admin.maximum_request",
         setting<uint32_t>(&configured.server.admin.maximum_request),
-        "The maximum allowed request size, defaults to '4000000'."
+        "The maximum allowed request size, defaults to {}."
     )
     (
         "admin.server",
         setting<std::string>(&configured.server.admin.server),
-        "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
+        "The server name (http header), defaults to {}."
     )
     (
         "admin.host",
         setting<network::config::endpoints>(&configured.server.admin.hosts),
-        "The host name (http verification), multiple allowed, defaults to empty (disabled)."
+        "The host name (http verification), multiple allowed, defaults to {} (disabled)."
     )
     (
         "admin.origin",
         setting<network::config::endpoints>(&configured.server.admin.origins),
-        "The allowed origin (see CORS), multiple allowed, defaults to empty (disabled)."
+        "The allowed origin (see CORS), multiple allowed, defaults to {} (disabled)."
     )
     (
         "admin.allow_opaque_origin",
         setting<bool>(&configured.server.admin.allow_opaque_origin),
-        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to false."
+        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to {}."
     )
     (
         "admin.path",
         setting<config::path>(&configured.server.admin.path),
-        "The required root path of source files to be served, defaults to empty."
+        "The required root path of source files to be served, defaults to {}."
     )
     (
         "admin.default",
         setting<std::string>(&configured.server.admin.default_),
-        "The path of the default source page, defaults to 'index.html'."
+        "The path of the default source page, defaults to {}."
     )
 
     /* [native] */
     (
         "native.bind",
         setting<network::config::authorities>(&configured.server.native.binds),
-        "IP address to bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "native.safe",
         setting<network::config::authorities>(&configured.server.native.safes),
-        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to secure bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "native.cert_auth",
@@ -1154,12 +1154,12 @@ options_metadata parser::load_settings() THROWS
     (
         "native.cert_path",
         setting<config::path>(&configured.server.native.cert_path),
-        "The path to the server certificate file (.PEM), defaults to unused."
+        "The path to the server certificate file (.PEM), defaults to {}."
     )
     (
         "native.key_path",
         setting<config::path>(&configured.server.native.key_path),
-        "The path to the server private key file (.PEM), defaults to unused."
+        "The path to the server private key file (.PEM), defaults to {}."
     )
     (
         "native.key_pass",
@@ -1169,94 +1169,94 @@ options_metadata parser::load_settings() THROWS
     (
         "native.connections",
         setting<uint16_t>(&configured.server.native.connections),
-        "The required maximum number of connections, defaults to '0'."
+        "The required maximum number of connections, defaults to {}."
     )
     (
         "native.rate_limit",
         setting<uint32_t>(&configured.server.native.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+        "The send rate limit in bytes per second, defaults to {} (network controls)."
     )
     (
         "native.connect_timeout_seconds",
         setting<uint32_t>(&configured.server.native.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to '0' (network controls)."
+        "The time limit for connection establishment, defaults to {} (network controls)."
     )
     (
         "native.inactivity_minutes",
         setting<uint32_t>(&configured.server.native.inactivity_minutes),
-        "The idle timeout (http keep-server), defaults to '60'."
+        "The idle timeout (http keep-server), defaults to {}."
     )
     (
         "native.expiration_minutes",
         setting<uint32_t>(&configured.server.native.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to '60'."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "native.minimum_buffer",
         setting<uint32_t>(&configured.server.native.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4096'."
+        "The minimum retained read buffer size, defaults to {}."
     )
     (
         "native.maximum_backlog",
         setting<uint32_t>(&configured.server.native.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '1048576'."
+        "The maximum write backlog of a channel, defaults to {}."
     )
     (
         "native.maximum_buffer",
         setting<uint32_t>(&configured.server.native.maximum_buffer),
-        "The maximum json response buffer size, defaults to '65536'."
+        "The maximum json response buffer size, defaults to {}."
     )
     (
         "native.maximum_request",
         setting<uint32_t>(&configured.server.native.maximum_request),
-        "The maximum allowed request size, defaults to '4000000'."
+        "The maximum allowed request size, defaults to {}."
     )
     (
         "native.server",
         setting<std::string>(&configured.server.native.server),
-        "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
+        "The server name (http header), defaults to {}."
     )
     (
         "native.host",
         setting<network::config::endpoints>(&configured.server.native.hosts),
-        "The host name (http verification), multiple allowed, defaults to empty (disabled)."
+        "The host name (http verification), multiple allowed, defaults to {} (disabled)."
     )
     (
         "native.origin",
         setting<network::config::endpoints>(&configured.server.native.origins),
-        "The allowed origin (see CORS), multiple allowed, defaults to empty (disabled)."
+        "The allowed origin (see CORS), multiple allowed, defaults to {} (disabled)."
     )
     (
         "native.allow_opaque_origin",
         setting<bool>(&configured.server.native.allow_opaque_origin),
-        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to false."
+        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to {}."
     )
     (
         "native.path",
         setting<config::path>(&configured.server.native.path),
-        "The required root path of source files to be served, defaults to empty."
+        "The required root path of source files to be served, defaults to {}."
     )
     (
         "native.default",
         setting<std::string>(&configured.server.native.default_),
-        "The path of the default source page, defaults to 'index.html'."
+        "The path of the default source page, defaults to {}."
     )
     (
         "native.websocket",
         setting<bool>(&configured.server.native.websocket),
-        "Enable websocket interface, defaults to true."
+        "Enable websocket interface, defaults to {}."
     )
 
     /* [bitcoind] */
     (
         "bitcoind.bind",
         setting<network::config::authorities>(&configured.server.bitcoind.binds),
-        "IP address to bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "bitcoind.safe",
         setting<network::config::authorities>(&configured.server.bitcoind.safes),
-        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to secure bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "bitcoind.cert_auth",
@@ -1266,12 +1266,12 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoind.cert_path",
         setting<config::path>(&configured.server.bitcoind.cert_path),
-        "The path to the server certificate file (.PEM), defaults to unused."
+        "The path to the server certificate file (.PEM), defaults to {}."
     )
     (
         "bitcoind.key_path",
         setting<config::path>(&configured.server.bitcoind.key_path),
-        "The path to the server private key file (.PEM), defaults to unused."
+        "The path to the server private key file (.PEM), defaults to {}."
     )
     (
         "bitcoind.key_pass",
@@ -1286,89 +1286,89 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoind.connections",
         setting<uint16_t>(&configured.server.bitcoind.connections),
-        "The required maximum number of connections, defaults to '0'."
+        "The required maximum number of connections, defaults to {}."
     )
     (
         "bitcoind.rate_limit",
         setting<uint32_t>(&configured.server.bitcoind.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+        "The send rate limit in bytes per second, defaults to {} (network controls)."
     )
     (
         "bitcoind.connect_timeout_seconds",
         setting<uint32_t>(&configured.server.bitcoind.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to '0' (network controls)."
+        "The time limit for connection establishment, defaults to {} (network controls)."
     )
     (
         "bitcoind.inactivity_minutes",
         setting<uint32_t>(&configured.server.bitcoind.inactivity_minutes),
-        "The idle timeout (http keep-alive), defaults to '10'."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "bitcoind.expiration_minutes",
         setting<uint32_t>(&configured.server.bitcoind.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to '60'."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "bitcoind.minimum_buffer",
         setting<uint32_t>(&configured.server.bitcoind.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4096'."
+        "The minimum retained read buffer size, defaults to {}."
     )
     (
         "bitcoind.maximum_backlog",
         setting<uint32_t>(&configured.server.bitcoind.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '1048576'."
+        "The maximum write backlog of a channel, defaults to {}."
     )
     (
         "bitcoind.maximum_buffer",
         setting<uint32_t>(&configured.server.bitcoind.maximum_buffer),
-        "The maximum json response buffer size, defaults to '65536'."
+        "The maximum json response buffer size, defaults to {}."
     )
     (
         "bitcoind.maximum_request",
         setting<uint32_t>(&configured.server.bitcoind.maximum_request),
-        "The maximum allowed request size, defaults to '8004096'."
+        "The maximum allowed request size, defaults to {}."
     )
     (
         "bitcoind.server",
         setting<std::string>(&configured.server.bitcoind.server),
-        "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
+        "The server name (http header), defaults to {}."
     )
     (
         "bitcoind.version",
         setting<version>(&configured.server.bitcoind.version),
-        "The version identity (getnetworkinfo), defaults to '0.0'."
+        "The version identity (getnetworkinfo), defaults to {}."
     )
     (
         "bitcoind.subversion",
         setting<std::string>(&configured.server.bitcoind.subversion),
-        "The subversion identity (getnetworkinfo), defaults to '/libbitcoin:server/'."
+        "The subversion identity (getnetworkinfo), defaults to {}."
     )
     (
         "bitcoind.host",
         setting<network::config::endpoints>(&configured.server.bitcoind.hosts),
-        "The host name (http verification), multiple allowed, defaults to empty (disabled)."
+        "The host name (http verification), multiple allowed, defaults to {} (disabled)."
     )
     (
         "bitcoind.origin",
         setting<network::config::endpoints>(&configured.server.bitcoind.origins),
-        "The allowed origin (see CORS), multiple allowed, defaults to empty (disabled)."
+        "The allowed origin (see CORS), multiple allowed, defaults to {} (disabled)."
     )
     (
         "bitcoind.allow_opaque_origin",
         setting<bool>(&configured.server.bitcoind.allow_opaque_origin),
-        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to false."
+        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to {}."
     )
 
     /* [btcd] */
     (
         "btcd.bind",
         setting<network::config::authorities>(&configured.server.btcd.binds),
-        "IP address to bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "btcd.safe",
         setting<network::config::authorities>(&configured.server.btcd.safes),
-        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to secure bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "btcd.cert_auth",
@@ -1378,12 +1378,12 @@ options_metadata parser::load_settings() THROWS
     (
         "btcd.cert_path",
         setting<config::path>(&configured.server.btcd.cert_path),
-        "The path to the server certificate file (.PEM), defaults to unused."
+        "The path to the server certificate file (.PEM), defaults to {}."
     )
     (
         "btcd.key_path",
         setting<config::path>(&configured.server.btcd.key_path),
-        "The path to the server private key file (.PEM), defaults to unused."
+        "The path to the server private key file (.PEM), defaults to {}."
     )
     (
         "btcd.key_pass",
@@ -1398,362 +1398,362 @@ options_metadata parser::load_settings() THROWS
     (
         "btcd.connections",
         setting<uint16_t>(&configured.server.btcd.connections),
-        "The required maximum number of connections, defaults to '0'."
+        "The required maximum number of connections, defaults to {}."
     )
     (
         "btcd.rate_limit",
         setting<uint32_t>(&configured.server.btcd.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+        "The send rate limit in bytes per second, defaults to {} (network controls)."
     )
     (
         "btcd.connect_timeout_seconds",
         setting<uint32_t>(&configured.server.btcd.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to '0' (network controls)."
+        "The time limit for connection establishment, defaults to {} (network controls)."
     )
     (
         "btcd.inactivity_minutes",
         setting<uint32_t>(&configured.server.btcd.inactivity_minutes),
-        "The idle timeout (http/ws keep-alive), defaults to '10'."
+        "The idle timeout (http/ws keep-alive), defaults to {}."
     )
     (
         "btcd.expiration_minutes",
         setting<uint32_t>(&configured.server.btcd.expiration_minutes),
-        "The idle timeout (http/ws keep-alive), defaults to '60'."
+        "The idle timeout (http/ws keep-alive), defaults to {}."
     )
     (
         "btcd.minimum_buffer",
         setting<uint32_t>(&configured.server.btcd.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4096'."
+        "The minimum retained read buffer size, defaults to {}."
     )
     (
         "btcd.maximum_backlog",
         setting<uint32_t>(&configured.server.btcd.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '20971520'."
+        "The maximum write backlog of a channel, defaults to {}."
     )
     (
         "btcd.maximum_buffer",
         setting<uint32_t>(&configured.server.btcd.maximum_buffer),
-        "The maximum json response buffer size, defaults to '65536'."
+        "The maximum json response buffer size, defaults to {}."
     )
     (
         "btcd.maximum_request",
         setting<uint32_t>(&configured.server.btcd.maximum_request),
-        "The maximum allowed request size, defaults to '8004096'."
+        "The maximum allowed request size, defaults to {}."
     )
     (
         "btcd.server",
         setting<std::string>(&configured.server.btcd.server),
-        "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
+        "The server name (http header), defaults to {}."
     )
     (
         "btcd.maximum_filters",
         setting<uint32_t>(&configured.server.btcd.maximum_filters),
-        "The maximum number of loadtxfilter watches, defaults to '1000000'."
+        "The maximum number of loadtxfilter watches, defaults to {}."
     )
     (
         "btcd.maximum_history",
         setting<uint32_t>(&configured.server.btcd.maximum_history),
-        "The maximum number of address history entries, defaults to '1000000'."
+        "The maximum number of address history entries, defaults to {}."
     )
     (
         "btcd.host",
         setting<network::config::endpoints>(&configured.server.btcd.hosts),
-        "The host name (http verification), multiple allowed, defaults to empty (disabled)."
+        "The host name (http verification), multiple allowed, defaults to {} (disabled)."
     )
     (
         "btcd.origin",
         setting<network::config::endpoints>(&configured.server.btcd.origins),
-        "The allowed origin (see CORS), multiple allowed, defaults to empty (disabled)."
+        "The allowed origin (see CORS), multiple allowed, defaults to {} (disabled)."
     )
     (
         "btcd.allow_opaque_origin",
         setting<bool>(&configured.server.btcd.allow_opaque_origin),
-        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to false."
+        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to {}."
     )
 
     /* [electrum] */
     (
         "electrum.bind",
         setting<network::config::authorities>(&configured.server.electrum.binds),
-        "IP address to bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "electrum.safe",
         setting<network::config::authorities>(&configured.server.electrum.safes),
-        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to secure bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "electrum.cert_path",
         setting<config::path>(&configured.server.electrum.cert_path),
-        "The path to the server certificate file (.PEM), defaults to unused."
+        "The path to the server certificate file (.PEM), defaults to {}."
     )
     (
         "electrum.key_path",
         setting<config::path>(&configured.server.electrum.key_path),
-        "The path to the server private key file (.PEM), defaults to unused."
+        "The path to the server private key file (.PEM), defaults to {}."
     )
     (
         "electrum.connections",
         setting<uint16_t>(&configured.server.electrum.connections),
-        "The required maximum number of connections, defaults to '0'."
+        "The required maximum number of connections, defaults to {}."
     )
     (
         "electrum.rate_limit",
         setting<uint32_t>(&configured.server.electrum.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+        "The send rate limit in bytes per second, defaults to {} (network controls)."
     )
     (
         "electrum.connect_timeout_seconds",
         setting<uint32_t>(&configured.server.electrum.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to '0' (network controls)."
+        "The time limit for connection establishment, defaults to {} (network controls)."
     )
     (
         "electrum.inactivity_minutes",
         setting<uint32_t>(&configured.server.electrum.inactivity_minutes),
-        "The idle timeout (http keep-alive), defaults to '10'."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "electrum.expiration_minutes",
         setting<uint32_t>(&configured.server.electrum.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to '60'."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "electrum.minimum_buffer",
         setting<uint32_t>(&configured.server.electrum.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4096'."
+        "The minimum retained read buffer size, defaults to {}."
     )
     (
         "electrum.maximum_backlog",
         setting<uint32_t>(&configured.server.electrum.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '1048576'."
+        "The maximum write backlog of a channel, defaults to {}."
     )
     (
         "electrum.maximum_buffer",
         setting<uint32_t>(&configured.server.electrum.maximum_buffer),
-        "The maximum json response buffer size, defaults to '65536'."
+        "The maximum json response buffer size, defaults to {}."
     )
     (
         "electrum.maximum_request",
         setting<uint32_t>(&configured.server.electrum.maximum_request),
-        "The maximum allowed request size, defaults to '8004096'."
+        "The maximum allowed request size, defaults to {}."
     )
     (
         "electrum.maximum_headers",
         setting<uint32_t>(&configured.server.electrum.maximum_headers),
-        "The maximum allowed headers returned per request, defaults to '20160'."
+        "The maximum allowed headers returned per request, defaults to {}."
     )
     (
         "electrum.maximum_history",
         setting<uint32_t>(&configured.server.electrum.maximum_history),
-        "The maximum number of address history entries upon one subscription, defaults to '1000000'."
+        "The maximum number of address history entries upon one subscription, defaults to {}."
     )
     (
         "electrum.maximum_subscriptions",
         setting<uint32_t>(&configured.server.electrum.maximum_subscriptions),
-        "The maximum allowed address subscriptions per channel, defaults to '1000000'."
+        "The maximum allowed address subscriptions per channel, defaults to {}."
     )
     (
         "electrum.ping_interval_seconds",
         setting<uint32_t>(&configured.server.electrum.ping_interval_seconds),
-        "The seconds between unrequested pings, defaults to '0' (disabled)."
+        "The seconds between unrequested pings, defaults to {} (disabled)."
     )
     (
         "electrum.ping_size",
         setting<uint32_t>(&configured.server.electrum.ping_size),
-        "The hex characters of unrequested ping data, defaults to '0'."
+        "The hex characters of unrequested ping data, defaults to {}."
     )
     (
         "electrum.protocol_minimum",
         setting<version>(&configured.server.electrum.protocol_minimum),
-        "Minimum protocol version, defaults to '1.0'."
+        "Minimum protocol version, defaults to {}."
     )
     (
         "electrum.protocol_maximum",
         setting<version>(&configured.server.electrum.protocol_maximum),
-        "Maximum protocol version, defaults to '1.7'."
+        "Maximum protocol version, defaults to {}."
     )
     (
         "electrum.server_name",
         setting<std::string>(&configured.server.electrum.server_name),
-        "String returned by server.version, defaults to '" BC_USER_AGENT "'."
+        "String returned by server.version, defaults to {}."
     )
     (
         "electrum.donation_address",
         setting<std::string>(&configured.server.electrum.donation_address),
-        "String returned by server.donation_address, defaults to empty."
+        "String returned by server.donation_address, defaults to {}."
     )
     (
         "electrum.banner_message",
         setting<std::string>(&configured.server.electrum.banner_message),
-        "String returned by server.banner, defaults to empty."
+        "String returned by server.banner, defaults to {}."
     )
     (
         "electrum.self_bind",
         setting<network::config::endpoints>(&configured.server.electrum.self_binds),
-        "Advertised host:port at which this server can be reached (defaults to empty)."
+        "Advertised host:port at which this server can be reached (defaults to {})."
     )
     (
         "electrum.self_safe",
         setting<network::config::endpoints>(&configured.server.electrum.self_safes),
-        "Advertised secure host:port at which this server can be reached (defaults to empty)."
+        "Advertised secure host:port at which this server can be reached (defaults to {})."
     )
     (
         "electrum.more_bind",
         setting<network::config::endpoints>(&configured.server.electrum.more_binds),
-        "Advertised host:port at which another server can be reached (defaults to empty)."
+        "Advertised host:port at which another server can be reached (defaults to {})."
     )
     (
         "electrum.more_safe",
         setting<network::config::endpoints>(&configured.server.electrum.more_safes),
-        "Advertised secure host:port at which another server can be reached (defaults to empty)."
+        "Advertised secure host:port at which another server can be reached (defaults to {})."
     )
 
     /* [sparrow] */
     (
         "sparrow.bind",
         setting<network::config::authorities>(&configured.server.sparrow.binds),
-        "IP address to bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "sparrow.safe",
         setting<network::config::authorities>(&configured.server.sparrow.safes),
-        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to secure bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "sparrow.cert_path",
         setting<config::path>(&configured.server.sparrow.cert_path),
-        "The path to the server certificate file (.PEM), defaults to unused."
+        "The path to the server certificate file (.PEM), defaults to {}."
     )
     (
         "sparrow.key_path",
         setting<config::path>(&configured.server.sparrow.key_path),
-        "The path to the server private key file (.PEM), defaults to unused."
+        "The path to the server private key file (.PEM), defaults to {}."
     )
     (
         "sparrow.connections",
         setting<uint16_t>(&configured.server.sparrow.connections),
-        "The required maximum number of connections, defaults to '0'."
+        "The required maximum number of connections, defaults to {}."
     )
     (
         "sparrow.rate_limit",
         setting<uint32_t>(&configured.server.sparrow.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+        "The send rate limit in bytes per second, defaults to {} (network controls)."
     )
     (
         "sparrow.connect_timeout_seconds",
         setting<uint32_t>(&configured.server.sparrow.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to '0' (network controls)."
+        "The time limit for connection establishment, defaults to {} (network controls)."
     )
     (
         "sparrow.inactivity_minutes",
         setting<uint32_t>(&configured.server.sparrow.inactivity_minutes),
-        "The idle timeout (http keep-alive), defaults to '10'."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "sparrow.expiration_minutes",
         setting<uint32_t>(&configured.server.sparrow.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to '60'."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "sparrow.minimum_buffer",
         setting<uint32_t>(&configured.server.sparrow.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4096'."
+        "The minimum retained read buffer size, defaults to {}."
     )
     (
         "sparrow.maximum_backlog",
         setting<uint32_t>(&configured.server.sparrow.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '1048576'."
+        "The maximum write backlog of a channel, defaults to {}."
     )
     (
         "sparrow.maximum_buffer",
         setting<uint32_t>(&configured.server.sparrow.maximum_buffer),
-        "The maximum json response buffer size, defaults to '65536'."
+        "The maximum json response buffer size, defaults to {}."
     )
     (
         "sparrow.maximum_request",
         setting<uint32_t>(&configured.server.sparrow.maximum_request),
-        "The maximum allowed request size, defaults to '8004096'."
+        "The maximum allowed request size, defaults to {}."
     )
     (
         "sparrow.maximum_headers",
         setting<uint32_t>(&configured.server.sparrow.maximum_headers),
-        "The maximum allowed headers returned per request, defaults to '20160'."
+        "The maximum allowed headers returned per request, defaults to {}."
     )
     (
         "sparrow.maximum_history",
         setting<uint32_t>(&configured.server.sparrow.maximum_history),
-        "The maximum number of address history entries upon one subscription, defaults to '1000000'."
+        "The maximum number of address history entries upon one subscription, defaults to {}."
     )
     (
         "sparrow.maximum_subscriptions",
         setting<uint32_t>(&configured.server.sparrow.maximum_subscriptions),
-        "The maximum allowed address subscriptions per channel, defaults to '1000000'."
+        "The maximum allowed address subscriptions per channel, defaults to {}."
     )
     (
         "sparrow.ping_interval_seconds",
         setting<uint32_t>(&configured.server.sparrow.ping_interval_seconds),
-        "The seconds between unrequested pings, defaults to '0' (disabled)."
+        "The seconds between unrequested pings, defaults to {} (disabled)."
     )
     (
         "sparrow.ping_size",
         setting<uint32_t>(&configured.server.sparrow.ping_size),
-        "The hex characters of unrequested ping data, defaults to '0'."
+        "The hex characters of unrequested ping data, defaults to {}."
     )
     (
         "sparrow.protocol_minimum",
         setting<version>(&configured.server.sparrow.protocol_minimum),
-        "Minimum protocol version, defaults to '1.0'."
+        "Minimum protocol version, defaults to {}."
     )
     (
         "sparrow.protocol_maximum",
         setting<version>(&configured.server.sparrow.protocol_maximum),
-        "Maximum protocol version, defaults to '1.7'."
+        "Maximum protocol version, defaults to {}."
     )
     (
         "sparrow.server_name",
         setting<std::string>(&configured.server.sparrow.server_name),
-        "String returned by server.version, defaults to '" BC_USER_AGENT "'."
+        "String returned by server.version, defaults to {}."
     )
     (
         "sparrow.donation_address",
         setting<std::string>(&configured.server.sparrow.donation_address),
-        "String returned by server.donation_address, defaults to empty."
+        "String returned by server.donation_address, defaults to {}."
     )
     (
         "sparrow.banner_message",
         setting<std::string>(&configured.server.sparrow.banner_message),
-        "String returned by server.banner, defaults to empty."
+        "String returned by server.banner, defaults to {}."
     )
     (
         "sparrow.self_bind",
         setting<network::config::endpoints>(&configured.server.sparrow.self_binds),
-        "Advertised host:port at which this server can be reached (defaults to empty)."
+        "Advertised host:port at which this server can be reached (defaults to {})."
     )
     (
         "sparrow.self_safe",
         setting<network::config::endpoints>(&configured.server.sparrow.self_safes),
-        "Advertised secure host:port at which this server can be reached (defaults to empty)."
+        "Advertised secure host:port at which this server can be reached (defaults to {})."
     )
     (
         "sparrow.more_bind",
         setting<network::config::endpoints>(&configured.server.sparrow.more_binds),
-        "Advertised host:port at which another server can be reached (defaults to empty)."
+        "Advertised host:port at which another server can be reached (defaults to {})."
     )
     (
         "sparrow.more_safe",
         setting<network::config::endpoints>(&configured.server.sparrow.more_safes),
-        "Advertised secure host:port at which another server can be reached (defaults to empty)."
+        "Advertised secure host:port at which another server can be reached (defaults to {})."
     )
     /* [esplora] */
     (
         "esplora.bind",
         setting<network::config::authorities>(&configured.server.esplora.binds),
-        "IP address to bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "esplora.safe",
         setting<network::config::authorities>(&configured.server.esplora.safes),
-        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to secure bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "esplora.cert_auth",
@@ -1763,12 +1763,12 @@ options_metadata parser::load_settings() THROWS
     (
         "esplora.cert_path",
         setting<config::path>(&configured.server.esplora.cert_path),
-        "The path to the server certificate file (.PEM), defaults to unused."
+        "The path to the server certificate file (.PEM), defaults to {}."
     )
     (
         "esplora.key_path",
         setting<config::path>(&configured.server.esplora.key_path),
-        "The path to the server private key file (.PEM), defaults to unused."
+        "The path to the server private key file (.PEM), defaults to {}."
     )
     (
         "esplora.key_pass",
@@ -1778,247 +1778,247 @@ options_metadata parser::load_settings() THROWS
     (
         "esplora.connections",
         setting<uint16_t>(&configured.server.esplora.connections),
-        "The required maximum number of connections, defaults to '0'."
+        "The required maximum number of connections, defaults to {}."
     )
     (
         "esplora.rate_limit",
         setting<uint32_t>(&configured.server.esplora.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+        "The send rate limit in bytes per second, defaults to {} (network controls)."
     )
     (
         "esplora.connect_timeout_seconds",
         setting<uint32_t>(&configured.server.esplora.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to '0' (network controls)."
+        "The time limit for connection establishment, defaults to {} (network controls)."
     )
     (
         "esplora.inactivity_minutes",
         setting<uint32_t>(&configured.server.esplora.inactivity_minutes),
-        "The idle timeout (http keep-server), defaults to '60'."
+        "The idle timeout (http keep-server), defaults to {}."
     )
     (
         "esplora.expiration_minutes",
         setting<uint32_t>(&configured.server.esplora.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to '60'."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "esplora.minimum_buffer",
         setting<uint32_t>(&configured.server.esplora.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4096'."
+        "The minimum retained read buffer size, defaults to {}."
     )
     (
         "esplora.maximum_backlog",
         setting<uint32_t>(&configured.server.esplora.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '1048576'."
+        "The maximum write backlog of a channel, defaults to {}."
     )
     (
         "esplora.maximum_buffer",
         setting<uint32_t>(&configured.server.esplora.maximum_buffer),
-        "The maximum json response buffer size, defaults to '65536'."
+        "The maximum json response buffer size, defaults to {}."
     )
     (
         "esplora.maximum_request",
         setting<uint32_t>(&configured.server.esplora.maximum_request),
-        "The maximum allowed request size, defaults to '8004096'."
+        "The maximum allowed request size, defaults to {}."
     )
     (
         "esplora.server",
         setting<std::string>(&configured.server.esplora.server),
-        "The server name (http header), defaults to '" BC_HTTP_SERVER_NAME "'."
+        "The server name (http header), defaults to {}."
     )
     (
         "esplora.maximum_history",
         setting<uint32_t>(&configured.server.esplora.maximum_history),
-        "The maximum number of address history entries, defaults to '1000000'."
+        "The maximum number of address history entries, defaults to {}."
     )
     (
         "esplora.host",
         setting<network::config::endpoints>(&configured.server.esplora.hosts),
-        "The host name (http verification), multiple allowed, defaults to empty (disabled)."
+        "The host name (http verification), multiple allowed, defaults to {} (disabled)."
     )
     (
         "esplora.origin",
         setting<network::config::endpoints>(&configured.server.esplora.origins),
-        "The allowed origin (see CORS), multiple allowed, defaults to empty (disabled)."
+        "The allowed origin (see CORS), multiple allowed, defaults to {} (disabled)."
     )
     (
         "esplora.allow_opaque_origin",
         setting<bool>(&configured.server.esplora.allow_opaque_origin),
-        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to false."
+        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to {}."
     )
     /* [stratum_v1] */
     (
         "stratum_v1.bind",
         setting<network::config::authorities>(&configured.server.stratum_v1.binds),
-        "IP address to bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "stratum_v1.safe",
         setting<network::config::authorities>(&configured.server.stratum_v1.safes),
-        "IP address to secure bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to secure bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "stratum_v1.cert_path",
         setting<config::path>(&configured.server.stratum_v1.cert_path),
-        "The path to the server certificate file (.PEM), defaults to unused."
+        "The path to the server certificate file (.PEM), defaults to {}."
     )
     (
         "stratum_v1.key_path",
         setting<config::path>(&configured.server.stratum_v1.key_path),
-        "The path to the server private key file (.PEM), defaults to unused."
+        "The path to the server private key file (.PEM), defaults to {}."
     )
     (
         "stratum_v1.connections",
         setting<uint16_t>(&configured.server.stratum_v1.connections),
-        "The required maximum number of connections, defaults to '0'."
+        "The required maximum number of connections, defaults to {}."
     )
     (
         "stratum_v1.rate_limit",
         setting<uint32_t>(&configured.server.stratum_v1.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+        "The send rate limit in bytes per second, defaults to {} (network controls)."
     )
     (
         "stratum_v1.connect_timeout_seconds",
         setting<uint32_t>(&configured.server.stratum_v1.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to '0' (network controls)."
+        "The time limit for connection establishment, defaults to {} (network controls)."
     )
     (
         "stratum_v1.inactivity_minutes",
         setting<uint32_t>(&configured.server.stratum_v1.inactivity_minutes),
-        "The idle timeout (http keep-alive), defaults to '10'."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "stratum_v1.expiration_minutes",
         setting<uint32_t>(&configured.server.stratum_v1.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to '60'."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "stratum_v1.minimum_buffer",
         setting<uint32_t>(&configured.server.stratum_v1.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4096'."
+        "The minimum retained read buffer size, defaults to {}."
     )
     (
         "stratum_v1.maximum_backlog",
         setting<uint32_t>(&configured.server.stratum_v1.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '1048576'."
+        "The maximum write backlog of a channel, defaults to {}."
     )
     (
         "stratum_v1.maximum_buffer",
         setting<uint32_t>(&configured.server.stratum_v1.maximum_buffer),
-        "The maximum json response buffer size, defaults to '65536'."
+        "The maximum json response buffer size, defaults to {}."
     )
     (
         "stratum_v1.maximum_request",
         setting<uint32_t>(&configured.server.stratum_v1.maximum_request),
-        "The maximum allowed request size, defaults to '4000000'."
+        "The maximum allowed request size, defaults to {}."
     )
 
     /* [stratum_v2] */
     (
         "stratum_v2.bind",
         setting<network::config::authorities>(&configured.server.stratum_v2.binds),
-        "IP address to bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "stratum_v2.connections",
         setting<uint16_t>(&configured.server.stratum_v2.connections),
-        "The required maximum number of connections, defaults to '0'."
+        "The required maximum number of connections, defaults to {}."
     )
     (
         "stratum_v2.rate_limit",
         setting<uint32_t>(&configured.server.stratum_v2.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+        "The send rate limit in bytes per second, defaults to {} (network controls)."
     )
     (
         "stratum_v2.connect_timeout_seconds",
         setting<uint32_t>(&configured.server.stratum_v2.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to '0' (network controls)."
+        "The time limit for connection establishment, defaults to {} (network controls)."
     )
     (
         "stratum_v2.inactivity_minutes",
         setting<uint32_t>(&configured.server.stratum_v2.inactivity_minutes),
-        "The idle timeout (http keep-alive), defaults to '10'."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "stratum_v2.expiration_minutes",
         setting<uint32_t>(&configured.server.stratum_v2.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to '60'."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "stratum_v2.minimum_buffer",
         setting<uint32_t>(&configured.server.stratum_v2.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4096'."
+        "The minimum retained read buffer size, defaults to {}."
     )
     (
         "stratum_v2.maximum_backlog",
         setting<uint32_t>(&configured.server.stratum_v2.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '1048576'."
+        "The maximum write backlog of a channel, defaults to {}."
     )
     (
         "stratum_v2.maximum_request",
         setting<uint32_t>(&configured.server.stratum_v2.maximum_request),
-        "The maximum allowed request size, defaults to '4000000'."
+        "The maximum allowed request size, defaults to {}."
     )
 
     /* [bitcoind_zmq] */
     (
         "bitcoind_zmq.bind",
         setting<network::config::authorities>(&configured.server.bitcoind_zmq.binds),
-        "IP address to bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "bitcoind_zmq.safe",
         setting<network::config::authorities>(&configured.server.bitcoind_zmq.safes),
-        "IP address to secure (CurveZMQ) bind, multiple allowed, defaults to empty (disabled)."
+        "IP address to secure (CurveZMQ) bind, multiple allowed, defaults to {} (disabled)."
     )
     (
         "bitcoind_zmq.cert",
         setting<std::vector<config::base85>>(&configured.server.bitcoind_zmq.certs),
-        "The Z85 encoded public key of an authorized client, multiple allowed, defaults to empty (all)."
+        "The Z85 encoded public key of an authorized client, multiple allowed, defaults to {} (all)."
     )
     (
         "bitcoind_zmq.connections",
         setting<uint16_t>(&configured.server.bitcoind_zmq.connections),
-        "The required maximum number of connections, defaults to '0'."
+        "The required maximum number of connections, defaults to {}."
     )
     (
         "bitcoind_zmq.rate_limit",
         setting<uint32_t>(&configured.server.bitcoind_zmq.rate_limit),
-        "The send rate limit in bytes per second, defaults to '0' (network controls)."
+        "The send rate limit in bytes per second, defaults to {} (network controls)."
     )
     (
         "bitcoind_zmq.connect_timeout_seconds",
         setting<uint32_t>(&configured.server.bitcoind_zmq.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to '0' (network controls)."
+        "The time limit for connection establishment, defaults to {} (network controls)."
     )
     (
         "bitcoind_zmq.inactivity_minutes",
         setting<uint32_t>(&configured.server.bitcoind_zmq.inactivity_minutes),
-        "The idle timeout, defaults to '10'."
+        "The idle timeout, defaults to {}."
     )
     (
         "bitcoind_zmq.expiration_minutes",
         setting<uint32_t>(&configured.server.bitcoind_zmq.expiration_minutes),
-        "The maximum connection duration, defaults to '60'."
+        "The maximum connection duration, defaults to {}."
     )
     (
         "bitcoind_zmq.minimum_buffer",
         setting<uint32_t>(&configured.server.bitcoind_zmq.minimum_buffer),
-        "The minimum retained read buffer size, defaults to '4096'."
+        "The minimum retained read buffer size, defaults to {}."
     )
     (
         "bitcoind_zmq.maximum_backlog",
         setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to '33554432'."
+        "The maximum write backlog of a channel, defaults to {}."
     )
     (
         "bitcoind_zmq.maximum_request",
         setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_request),
-        "The maximum allowed request size, defaults to '4000000'."
+        "The maximum allowed request size, defaults to {}."
     )
     (
         "bitcoind_zmq.maximum_subscriptions",
         setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_subscriptions),
-        "The maximum topic subscriptions per connection, defaults to '100'."
+        "The maximum topic subscriptions per connection, defaults to {}."
     )
     (
         "bitcoind_zmq.key",
@@ -2030,154 +2030,154 @@ options_metadata parser::load_settings() THROWS
     (
         "node.threads",
         setting<uint32_t>(&configured.node.threads),
-        "The number of threads in the validation threadpool, defaults to '0' (hardware threads)."
+        "The number of threads in the validation threadpool, defaults to {} (hardware threads)."
     )
     (
         "node.thread_priority",
         setting<bool>(&configured.node.thread_priority),
-        "Set validation threads to high processing priority, defaults to 'true'."
+        "Set validation threads to high processing priority, defaults to {}."
     )
     (
         "node.memory_priority",
         setting<bool>(&configured.node.memory_priority),
-        "Set the process to high memory priority, defaults to 'true'."
+        "Set the process to high memory priority, defaults to {}."
     )
     (
         "node.delay_inbound",
         setting<bool>(&configured.node.delay_inbound),
-        "Block inbound peer/client (excluding admin/native) until current, defaults to 'true'."
+        "Block inbound peer/client (excluding admin/native) until current, defaults to {}."
     )
     (
         "node.provide_blocks",
         setting<bool>(&configured.node.provide_blocks),
-        "Serve blocks to network connections, defaults to 'true'."
+        "Serve blocks to network connections, defaults to {}."
     )
     (
         "node.limited_blocks",
         setting<bool>(&configured.node.limited_blocks),
-        "Limit block service to recent blocks, defaults to 'false'."
+        "Limit block service to recent blocks, defaults to {}."
     )
     (
         "node.require_blocks",
         setting<bool>(&configured.node.require_blocks),
-        "Require block service of outbound connections, defaults to 'true'."
+        "Require block service of outbound connections, defaults to {}."
     )
     (
         "node.provide_witness",
         setting<bool>(&configured.node.provide_witness),
-        "Serve witness data to network connections, defaults to 'true'."
+        "Serve witness data to network connections, defaults to {}."
     )
     (
         "node.require_witness",
         setting<bool>(&configured.node.require_witness),
-        "Require witness service of outbound connections, defaults to 'true'."
+        "Require witness service of outbound connections, defaults to {}."
     )
     (
         "node.provide_filters",
         setting<bool>(&configured.node.provide_filters),
-        "Serve client filters to network connections, defaults to 'false'."
+        "Serve client filters to network connections, defaults to {}."
     )
     (
         "node.provide_privacy",
         setting<bool>(&configured.node.provide_privacy),
-        "Provide opportunistic connection encryption, defaults to 'false'."
+        "Provide opportunistic connection encryption, defaults to {}."
     )
     (
         "node.batch_signatures",
         setting<uint64_t>(&configured.node.batch_signatures),
-        "Count of signatures to verify in each GPU batch (as available), defaults to '1000000' (0 disables)."
+        "Count of signatures to verify in each GPU batch (as available), defaults to {} (0 disables)."
     )
     (
         "node.fee_estimate_horizon",
         setting<uint16_t>(&configured.node.fee_estimate_horizon),
-        "Fee estimation horizon, limited to 1008, defaults to '0' (0 disables)."
+        "Fee estimation horizon, limited to 1008, defaults to {} (0 disables)."
     )
     (
         "node.minimum_fee_rate",
         setting<double>(&configured.node.minimum_fee_rate),
-        "Minimum fee rate for non-conflicting tx acceptance, defaults to '0.000001'."
+        "Minimum fee rate for non-conflicting tx acceptance, defaults to {}."
     )
     (
         "node.minimum_bump_rate",
         setting<double>(&configured.node.minimum_bump_rate),
-        "Minimum fee rate increment for conflicting tx acceptance, defaults to '0.0'."
+        "Minimum fee rate increment for conflicting tx acceptance, defaults to {}."
     )
     (
         "node.allowed_deviation",
         setting<float>(&configured.node.allowed_deviation),
-        "Allowable underperformance standard deviation, defaults to '1.5' (0 disables)."
+        "Allowable underperformance standard deviation, defaults to {} (0 disables)."
     )
     (
         "node.announcement_cache",
         setting<uint16_t>(&configured.node.announcement_cache),
-        "Limit of per channel cached peer block and tx announcements, to avoid replay, defaults to '42'."
+        "Limit of per channel cached peer block and tx announcements, to avoid replay, defaults to {}."
     )
     (
         "node.maximum_height",
         setting<uint32_t>(&configured.node.maximum_height),
-        "Maximum block height to populate, defaults to 0 (unlimited)."
+        "Maximum block height to populate, defaults to {} (unlimited)."
     )
     (
         "node.silent_start_height",
         setting<uint32_t>(&configured.node.silent_start_height),
-        "Minimum height of silent payment indexation, defaults to '4294967295'."
+        "Minimum height of silent payment indexation, defaults to {}."
     )
     (
         "node.maximum_concurrency",
         setting<uint32_t>(&configured.node.maximum_concurrency),
-        "Maximum number of blocks to download concurrently, defaults to '50000' (0 disables)."
+        "Maximum number of blocks to download concurrently, defaults to {} (0 disables)."
     )
     (
         "node.sample_period_seconds",
         setting<uint16_t>(&configured.node.sample_period_seconds),
-        "Sampling period for drop of stalled channels, defaults to '10' (0 disables)."
+        "Sampling period for drop of stalled channels, defaults to {} (0 disables)."
     )
     (
         "node.compact_timeout_seconds",
         setting<uint16_t>(&configured.node.compact_timeout_seconds),
-        "Time to await a compact block fill before downloading the block, defaults to '10' (0 disables)."
+        "Time to await a compact block fill before downloading the block, defaults to {} (0 disables)."
     )
     (
         "node.currency_window_minutes",
         setting<uint32_t>(&configured.node.currency_window_minutes),
-        "Time from present that blocks are considered current, defaults to '1440' (0 disables)."
+        "Time from present that blocks are considered current, defaults to {} (0 disables)."
     )
     ////(
     ////    "node.snapshot_bytes",
     ////    setting<uint64_t>(&configured.node.snapshot_bytes),
-    ////    "Downloaded bytes that triggers snapshot, defaults to '0' (0 disables)."
+    ////    "Downloaded bytes that triggers snapshot, defaults to {} (0 disables)."
     ////)
     ////(
     ////    "node.snapshot_valid",
     ////    setting<uint32_t>(&configured.node.snapshot_valid),
-    ////    "Completed validations that trigger snapshot, defaults to '0' (0 disables)."
+    ////    "Completed validations that trigger snapshot, defaults to {} (0 disables)."
     ////)
     ////(
     ////    "node.snapshot_confirm",
     ////    setting<uint32_t>(&configured.node.snapshot_confirm),
-    ////    "Completed confirmations that trigger snapshot, defaults to '0' (0 disables)."
+    ////    "Completed confirmations that trigger snapshot, defaults to {} (0 disables)."
     ////)
 
     /* [database] */
     (
         "database.path",
         setting<config::path>(&configured.database.path),
-        "The blockchain database directory, defaults to 'bitcoin'."
+        "The blockchain database directory, defaults to {}."
     )
     (
         "database.turbo",
         setting<bool>(&configured.database.turbo),
-        "Allow individual non-validation queries to use all CPUs, defaults to true."
+        "Allow individual non-validation queries to use all CPUs, defaults to {}."
     )
     (
         "database.mark_unconfirmable",
         setting<bool>(&configured.database.mark_unconfirmable),
-        "Save unconfirmable block state (prevents revalidation), defaults to 'true'."
+        "Save unconfirmable block state (prevents revalidation), defaults to {}."
     )
     (
         "database.interval_depth",
         setting<uint16_t>(&configured.database.interval_depth),
-        "The interval depth for merkle proof optimization, defaults to '11'."
+        "The interval depth for merkle proof optimization, defaults to {}."
     )
 
     /* [table.*] */
@@ -2191,41 +2191,41 @@ options_metadata parser::load_settings() THROWS
     (
         "table.header.expected",
         setting<uint64_t>(&configured.database.header.expected),
-        "The expected element count of the archive_header table, defaults to '962953'."
+        "The expected element count of the archive_header table, defaults to {}."
     )
     (
         "table.header.size",
         setting<uint64_t>(&configured.database.header.size),
-        "The minimum allocation of the archive_header table body, defaults to '124220679'."
+        "The minimum allocation of the archive_header table body, defaults to {}."
     )
     (
         "table.header.rate",
         setting<uint16_t>(&configured.database.header.rate),
-        "The percentage expansion of the archive_header table body, defaults to '1'."
+        "The percentage expansion of the archive_header table body, defaults to {}."
     )
 
     /* table.input */
     (
         "table.input.size",
         setting<uint64_t>(&configured.database.input.size),
-        "The minimum allocation of the archive_input table body, defaults to '67269346'."
+        "The minimum allocation of the archive_input table body, defaults to {}."
     )
     (
         "table.input.rate",
         setting<uint16_t>(&configured.database.input.rate),
-        "The percentage expansion of the archive_input table body, defaults to '1'."
+        "The percentage expansion of the archive_input table body, defaults to {}."
     )
 
     /* table.output */
     (
         "table.output.size",
         setting<uint64_t>(&configured.database.output.size),
-        "The minimum allocation of the archive_output table body, defaults to '1278023220'."
+        "The minimum allocation of the archive_output table body, defaults to {}."
     )
     (
         "table.output.rate",
         setting<uint16_t>(&configured.database.output.rate),
-        "The percentage expansion of the archive_output table body, defaults to '1'."
+        "The percentage expansion of the archive_output table body, defaults to {}."
     )
 
     /* table.ins */
@@ -2237,17 +2237,17 @@ options_metadata parser::load_settings() THROWS
     (
         "table.ins.expected",
         setting<uint64_t>(&configured.database.ins.expected),
-        "The expected element count of the archive_ins table, defaults to '3363467251'."
+        "The expected element count of the archive_ins table, defaults to {}."
     )
     (
         "table.ins.size",
         setting<uint64_t>(&configured.database.ins.size),
-        "The minimum allocation of the archive_ins table body, defaults to '1749002971'."
+        "The minimum allocation of the archive_ins table body, defaults to {}."
     )
     (
         "table.ins.rate",
         setting<uint16_t>(&configured.database.ins.rate),
-        "The percentage expansion of the archive_ins table body, defaults to '1'."
+        "The percentage expansion of the archive_ins table body, defaults to {}."
     )
 
     /* table.outs */
@@ -2259,17 +2259,17 @@ options_metadata parser::load_settings() THROWS
     (
         "table.outs.expected",
         setting<uint64_t>(&configured.database.outs.expected),
-        "The expected element count of the archive_outs table, defaults to '3741929086'."
+        "The expected element count of the archive_outs table, defaults to {}."
     )
     (
         "table.outs.size",
         setting<uint64_t>(&configured.database.outs.size),
-        "The minimum allocation of the archive_outs table body, defaults to '336773618'."
+        "The minimum allocation of the archive_outs table body, defaults to {}."
     )
     (
         "table.outs.rate",
         setting<uint16_t>(&configured.database.outs.rate),
-        "The percentage expansion of the archive_outs table body, defaults to '1'."
+        "The percentage expansion of the archive_outs table body, defaults to {}."
     )
 
     /* table.tx */
@@ -2281,184 +2281,184 @@ options_metadata parser::load_settings() THROWS
     (
         "table.tx.expected",
         setting<uint64_t>(&configured.database.tx.expected),
-        "The expected element count of the archive_tx table, defaults to '1359871695'."
+        "The expected element count of the archive_tx table, defaults to {}."
     )
     (
         "table.tx.size",
         setting<uint64_t>(&configured.database.tx.size),
-        "The minimum allocation of the archive_tx table body, defaults to '870317885'."
+        "The minimum allocation of the archive_tx table body, defaults to {}."
     )
     (
         "table.tx.rate",
         setting<uint16_t>(&configured.database.tx.rate),
-        "The percentage expansion of the archive_tx table body, defaults to '1'."
+        "The percentage expansion of the archive_tx table body, defaults to {}."
     )
 
     /* table.txs */
     (
         "table.txs.buckets",
         setting<uint32_t>(&configured.database.txs.buckets),
-        "The number of buckets in the archive_txs table head, defaults to '950001'."
+        "The number of buckets in the archive_txs table head, defaults to {}."
     )
     (
         "table.txs.size",
         setting<uint64_t>(&configured.database.txs.size),
-        "The minimum allocation of the archive_txs table body, defaults to '54471017'."
+        "The minimum allocation of the archive_txs table body, defaults to {}."
     )
     (
         "table.txs.rate",
         setting<uint16_t>(&configured.database.txs.rate),
-        "The percentage expansion of the archive_txs table body, defaults to '1'."
+        "The percentage expansion of the archive_txs table body, defaults to {}."
     )
 
     /* table.candidate */
     (
         "table.candidate.buckets",
         setting<uint32_t>(&configured.database.candidate.buckets),
-        "The number of buckets provisioned in the index_candidate table head, defaults to '950001'."
+        "The number of buckets provisioned in the index_candidate table head, defaults to {}."
     )
     (
         "table.candidate.rate",
         setting<uint16_t>(&configured.database.candidate.rate),
-        "The percentage expansion of the index_candidate table head, defaults to '1'."
+        "The percentage expansion of the index_candidate table head, defaults to {}."
     )
 
     /* table.confirmed */
     (
         "table.confirmed.buckets",
         setting<uint32_t>(&configured.database.confirmed.buckets),
-        "The number of buckets provisioned in the index_confirmed table head, defaults to '950001'."
+        "The number of buckets provisioned in the index_confirmed table head, defaults to {}."
     )
     (
         "table.confirmed.rate",
         setting<uint16_t>(&configured.database.confirmed.rate),
-        "The percentage expansion of the index_confirmed table head, defaults to '1'."
+        "The percentage expansion of the index_confirmed table head, defaults to {}."
     )
 
     /* table.strong */
     (
         "table.strong.buckets",
         setting<uint32_t>(&configured.database.strong_tx.buckets),
-        "The number of buckets in the index_strong table head, defaults to '543948678'."
+        "The number of buckets in the index_strong table head, dynamic default."
     )
     (
         "table.strong.expected",
         setting<uint64_t>(&configured.database.strong_tx.expected),
-        "The expected element count of the index_strong table, defaults to '1359871695'."
+        "The expected element count of the index_strong table, defaults to {}."
     )
     (
         "table.strong.size",
         setting<uint64_t>(&configured.database.strong_tx.size),
-        "The minimum allocation of the index_strong table body, defaults to '149585887'."
+        "The minimum allocation of the index_strong table body, defaults to {}."
     )
     (
         "table.strong.rate",
         setting<uint16_t>(&configured.database.strong_tx.rate),
-        "The percentage expansion of the index_strong table body, defaults to '1'."
+        "The percentage expansion of the index_strong table body, defaults to {}."
     )
 
     /* table.ecdsa */
     (
         "table.ecdsa.size",
         setting<uint64_t>(&configured.database.ecdsa.size),
-        "The minimum allocation of the batch_ecdsa table body, defaults to '0'."
+        "The minimum allocation of the batch_ecdsa table body, defaults to {}."
     )
     (
         "table.ecdsa.rate",
         setting<uint16_t>(&configured.database.ecdsa.rate),
-        "The percentage expansion of the batch_ecdsa table body, defaults to '1'."
+        "The percentage expansion of the batch_ecdsa table body, defaults to {}."
     )
 
     /* table.schnorr */
     (
         "table.schnorr.size",
         setting<uint64_t>(&configured.database.schnorr.size),
-        "The minimum allocation of the batch_schnorr table body, defaults to '0'."
+        "The minimum allocation of the batch_schnorr table body, defaults to {}."
     )
     (
         "table.schnorr.rate",
         setting<uint16_t>(&configured.database.schnorr.rate),
-        "The percentage expansion of the batch_schnorr table body, defaults to '1'."
+        "The percentage expansion of the batch_schnorr table body, defaults to {}."
     )
 
     /* table.silent */
     (
         "table.silent.size",
         setting<uint64_t>(&configured.database.silent.size),
-        "The minimum allocation of the batch_silent table body, defaults to '0'."
+        "The minimum allocation of the batch_silent table body, defaults to {}."
     )
     (
         "table.silent.rate",
         setting<uint16_t>(&configured.database.silent.rate),
-        "The percentage expansion of the batch_silent table body, defaults to '1'."
+        "The percentage expansion of the batch_silent table body, defaults to {}."
     )
 
     /* table.prevalid */
     (
         "table.prevalid.size",
         setting<uint64_t>(&configured.database.prevalid.size),
-        "The minimum allocation of the batch_prevalid table body, defaults to '0'."
+        "The minimum allocation of the batch_prevalid table body, defaults to {}."
     )
     (
         "table.prevalid.rate",
         setting<uint16_t>(&configured.database.prevalid.rate),
-        "The percentage expansion of the batch_prevalid table, defaults to '1'."
+        "The percentage expansion of the batch_prevalid table, defaults to {}."
     )
 
     /* table.prevout */
     (
         "table.prevout.buckets",
         setting<uint32_t>(&configured.database.prevout.buckets),
-        "The minimum number of buckets in the cache_prevout table head, defaults to '0'."
+        "The minimum number of buckets in the cache_prevout table head, defaults to {}."
     )
     (
         "table.prevout.size",
         setting<uint64_t>(&configured.database.prevout.size),
-        "The minimum allocation of the cache_prevout table body, defaults to '0'."
+        "The minimum allocation of the cache_prevout table body, defaults to {}."
     )
     (
         "table.prevout.rate",
         setting<uint16_t>(&configured.database.prevout.rate),
-        "The percentage expansion of the cache_prevout table, defaults to '1'."
+        "The percentage expansion of the cache_prevout table, defaults to {}."
     )
 
     /* table.duplicate */
     (
         "table.duplicate.buckets",
         setting<uint32_t>(&configured.database.duplicate.buckets),
-        "The minimum number of buckets in the cache_duplicate table head, defaults to '1024'."
+        "The minimum number of buckets in the cache_duplicate table head, defaults to {}."
     )
     (
         "table.duplicate.expected",
         setting<uint64_t>(&configured.database.duplicate.expected),
-        "The expected element count of the cache_duplicate table, defaults to '0'."
+        "The expected element count of the cache_duplicate table, defaults to {}."
     )
     (
         "table.duplicate.size",
         setting<uint64_t>(&configured.database.duplicate.size),
-        "The minimum allocation of the cache_duplicate table body, defaults to '0'."
+        "The minimum allocation of the cache_duplicate table body, defaults to {}."
     )
     (
         "table.duplicate.rate",
         setting<uint16_t>(&configured.database.duplicate.rate),
-        "The percentage expansion of the cache_duplicate table, defaults to '1'."
+        "The percentage expansion of the cache_duplicate table, defaults to {}."
     )
 
     /* table.state */
     (
         "table.state.buckets",
         setting<uint32_t>(&configured.database.state.buckets),
-        "The number of buckets in the state table head, defaults to '950001'."
+        "The number of buckets in the state table head, defaults to {}."
     )
     (
         "table.state.size",
         setting<uint64_t>(&configured.database.state.size),
-        "The minimum allocation of the state table body, defaults to '0'."
+        "The minimum allocation of the state table body, defaults to {}."
     )
     (
         "table.state.rate",
         setting<uint16_t>(&configured.database.state.rate),
-        "The percentage expansion of the state table body, defaults to '1'."
+        "The percentage expansion of the state table body, defaults to {}."
     )
 
     /* table.pool */
@@ -2470,63 +2470,63 @@ options_metadata parser::load_settings() THROWS
     (
         "table.pool.expected",
         setting<uint64_t>(&configured.database.pool.expected),
-        "The expected element count of the pool table, defaults to '10000000'."
+        "The expected element count of the pool table, defaults to {}."
     )
     (
         "table.pool.size",
         setting<uint64_t>(&configured.database.pool.size),
-        "The minimum allocation of the pool table body, defaults to '0'."
+        "The minimum allocation of the pool table body, defaults to {}."
     )
     (
         "table.pool.rate",
         setting<uint16_t>(&configured.database.pool.rate),
-        "The percentage expansion of the pool table body, defaults to '1'."
+        "The percentage expansion of the pool table body, defaults to {}."
     )
 
     /* table.spends */
     (
         "table.spends.size",
         setting<uint64_t>(&configured.database.spends.size),
-        "The minimum allocation of the spends table body, defaults to '0'."
+        "The minimum allocation of the spends table body, defaults to {}."
     )
     (
         "table.spends.rate",
         setting<uint16_t>(&configured.database.spends.rate),
-        "The percentage expansion of the spends table body, defaults to '1'."
+        "The percentage expansion of the spends table body, defaults to {}."
     )
 
     /* table.filter_bk */
     (
         "table.filter_bk.buckets",
         setting<uint32_t>(&configured.database.filter_bk.buckets),
-        "The number of buckets in the option_filter_bk table head, defaults to '0' (0 disables)."
+        "The number of buckets in the option_filter_bk table head, defaults to {} (0 disables)."
     )
     (
         "table.filter_bk.size",
         setting<uint64_t>(&configured.database.filter_bk.size),
-        "The minimum allocation of the option_filter_bk table body, defaults to '0'."
+        "The minimum allocation of the option_filter_bk table body, defaults to {}."
     )
     (
         "table.filter_bk.rate",
         setting<uint16_t>(&configured.database.filter_bk.rate),
-        "The percentage expansion of the option_filter_bk table body, defaults to '1'."
+        "The percentage expansion of the option_filter_bk table body, defaults to {}."
     )
 
     /* table.filter_tx */
     (
         "table.filter_tx.buckets",
         setting<uint32_t>(&configured.database.filter_tx.buckets),
-        "The number of buckets in the option_filter_tx table head, defaults to '0' (0 disables)."
+        "The number of buckets in the option_filter_tx table head, defaults to {} (0 disables)."
     )
     (
         "table.filter_tx.size",
         setting<uint64_t>(&configured.database.filter_tx.size),
-        "The minimum allocation of the option_filter_tx table body, defaults to '0'."
+        "The minimum allocation of the option_filter_tx table body, defaults to {}."
     )
     (
         "table.filter_tx.rate",
         setting<uint16_t>(&configured.database.filter_tx.rate),
-        "The percentage expansion of the option_filter_tx table body, defaults to '1'."
+        "The percentage expansion of the option_filter_tx table body, defaults to {}."
     )
 
     /* [log] */
@@ -2534,88 +2534,88 @@ options_metadata parser::load_settings() THROWS
     (
         "log.application",
         setting<bool>(&configured.log.application),
-        "Enable application logging, defaults to 'true'."
+        "Enable application logging, defaults to {}."
     )
 #endif
 #if defined(HAVE_LOGN)
     (
         "log.news",
         setting<bool>(&configured.log.news),
-        "Enable news logging, defaults to 'true'."
+        "Enable news logging, defaults to {}."
     )
 #endif
 #if defined(HAVE_LOGS)
     (
         "log.session",
         setting<bool>(&configured.log.session),
-        "Enable session logging, defaults to 'true'."
+        "Enable session logging, defaults to {}."
     )
 #endif
 #if defined(HAVE_LOGP)
     (
         "log.protocol",
         setting<bool>(&configured.log.protocol),
-        "Enable protocol logging, defaults to 'false'."
+        "Enable protocol logging, defaults to {}."
     )
 #endif
 #if defined(HAVE_LOGX)
     (
         "log.proxy",
         setting<bool>(&configured.log.proxy),
-        "Enable proxy logging, defaults to 'false'."
+        "Enable proxy logging, defaults to {}."
     )
 #endif
 #if defined(HAVE_LOGR)
     (
         "log.remote",
         setting<bool>(&configured.log.remote),
-        "Enable remote fault logging, defaults to 'true'."
+        "Enable remote fault logging, defaults to {}."
     )
 #endif
 #if defined(HAVE_LOGF)
     (
         "log.fault",
         setting<bool>(&configured.log.fault),
-        "Enable local fault logging, defaults to 'true'."
+        "Enable local fault logging, defaults to {}."
     )
 #endif
 #if defined(HAVE_LOGQ)
     (
         "log.quitting",
         setting<bool>(&configured.log.quitting),
-        "Enable quitting logging, defaults to 'false'."
+        "Enable quitting logging, defaults to {}."
     )
 #endif
 #if defined(HAVE_LOGO)
     (
         "log.objects",
         setting<bool>(&configured.log.objects),
-        "Enable objects logging, defaults to 'false'."
+        "Enable objects logging, defaults to {}."
     )
 #endif
 #if defined(HAVE_LOGV)
     (
         "log.verbose",
         setting<bool>(&configured.log.verbose),
-        "Enable verbose logging, defaults to 'false'."
+        "Enable verbose logging, defaults to {}."
     )
 #endif
     (
         "log.maximum_size",
         setting<uint32_t>(&configured.log.maximum_size),
-        "The maximum byte size of each pair of rotated log files, defaults to 1000000."
+        "The maximum byte size of each pair of rotated log files, defaults to {}."
     )
 #if defined (HAVE_MSC)
     (
         "log.symbols",
         setting<config::path>(&configured.log.symbols),
-        "Path to a directory containing windows symbols (.pdb) files, defaults to empty."
+        "Path to a directory containing windows symbols (.pdb) files, defaults to {}."
     )
 #endif
     (
         "log.path",
         setting<config::path>(&configured.log.path),
-        "The log files directory, defaults to empty."
+        "The log files directory, defaults to {}."
     );
 
     return description;
