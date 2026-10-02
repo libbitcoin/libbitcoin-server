@@ -190,7 +190,7 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
         { "height", add1(height) },
         { "bits", encode_base16(to_big_endian(header.bits())) },
         { "difficulty", header.difficulty() },
-        { "target", encode_hash(from_uintx(compact::expand(header.bits()))) }
+        { "target", encode_hash(from_uintx(chain::compact::expand(header.bits()))) }
     };
 
     // TODO: change to min inclusion fee when mining enabled.
@@ -204,7 +204,7 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
         { "blocks", height },
         { "bits", encode_base16(to_big_endian(top->bits())) },
         { "difficulty", top->difficulty() },
-        { "target", encode_hash(from_uintx(compact::expand(top->bits()))) },
+        { "target", encode_hash(from_uintx(chain::compact::expand(top->bits()))) },
         { "networkhashps", top->difficulty() * span / period },
         { "pooledtx", zero },
         { "blockmintxfee", max_money / satoshi_per_bitcoin },

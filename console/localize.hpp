@@ -318,6 +318,8 @@
     "platform:{:d}."
 #define BS_HARDWARE_COMPILED \
     "platform:{:d} compiled:{:d}."
+#define BS_HARDWARE_ENABLED \
+    "platform:{:d} enabled:{:d}."
 #define BS_HARDWARE_INCOMPATIBLE \
     "platform:{:d} compiled:{:d} (unsupported)."
 
@@ -327,9 +329,9 @@
 #define BS_HARDWARE_AVX2_UNCOMPILED \
     "Available AVX2 hardware acceleration is not compiled into this build."
 #define BS_HARDWARE_GPU_UNCOMPILED \
-    "Available gpu hardware acceleration is not compiled into this build."
+    "Available cuda hardware acceleration is not compiled into this build."
 #define BS_HARDWARE_UNSUPPORTED \
-    "A gpu device is present but unsupported by the compiled acceleration."
+    "A cuda device is present but unsupported by the compiled acceleration."
 #define BS_HARDWARE_UNCONFIGURED \
     "A signature batching device is present but batching is not configured."
 #define BS_MEMORY_BELOW_MINIMUM \
