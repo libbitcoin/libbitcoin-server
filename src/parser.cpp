@@ -522,7 +522,7 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoin.genesis_block",
         setting<config::block>(&configured.bitcoin.genesis_block),
-        "The hexideciaml encoding of the genesis block, defaults to mainnet."
+        "The hexadecimal encoding of the genesis block, defaults to mainnet."
     )
     (
         "bitcoin.checkpoint",
@@ -1082,7 +1082,7 @@ options_metadata parser::load_settings() THROWS
     (
         "admin.expiration_minutes",
         setting<uint32_t>(&configured.server.admin.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to {}."
+        "The maximum connection duration, defaults to {}."
     )
     (
         "admin.minimum_buffer",
@@ -1122,7 +1122,7 @@ options_metadata parser::load_settings() THROWS
     (
         "admin.allow_opaque_origin",
         setting<bool>(&configured.server.admin.allow_opaque_origin),
-        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to {}."
+        "Allow requests from opaque origin (see CORS), defaults to {}."
     )
     (
         "admin.path",
@@ -1184,12 +1184,12 @@ options_metadata parser::load_settings() THROWS
     (
         "native.inactivity_minutes",
         setting<uint32_t>(&configured.server.native.inactivity_minutes),
-        "The idle timeout (http keep-server), defaults to {}."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "native.expiration_minutes",
         setting<uint32_t>(&configured.server.native.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to {}."
+        "The maximum connection duration, defaults to {}."
     )
     (
         "native.minimum_buffer",
@@ -1229,7 +1229,7 @@ options_metadata parser::load_settings() THROWS
     (
         "native.allow_opaque_origin",
         setting<bool>(&configured.server.native.allow_opaque_origin),
-        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to {}."
+        "Allow requests from opaque origin (see CORS), defaults to {}."
     )
     (
         "native.path",
@@ -1306,7 +1306,7 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoind.expiration_minutes",
         setting<uint32_t>(&configured.server.bitcoind.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to {}."
+        "The maximum connection duration, defaults to {}."
     )
     (
         "bitcoind.minimum_buffer",
@@ -1356,7 +1356,7 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoind.allow_opaque_origin",
         setting<bool>(&configured.server.bitcoind.allow_opaque_origin),
-        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to {}."
+        "Allow requests from opaque origin (see CORS), defaults to {}."
     )
 
     /* [btcd] */
@@ -1418,7 +1418,7 @@ options_metadata parser::load_settings() THROWS
     (
         "btcd.expiration_minutes",
         setting<uint32_t>(&configured.server.btcd.expiration_minutes),
-        "The idle timeout (http/ws keep-alive), defaults to {}."
+        "The maximum connection duration, defaults to {}."
     )
     (
         "btcd.minimum_buffer",
@@ -1468,7 +1468,7 @@ options_metadata parser::load_settings() THROWS
     (
         "btcd.allow_opaque_origin",
         setting<bool>(&configured.server.btcd.allow_opaque_origin),
-        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to {}."
+        "Allow requests from opaque origin (see CORS), defaults to {}."
     )
 
     /* [electrum] */
@@ -1515,7 +1515,7 @@ options_metadata parser::load_settings() THROWS
     (
         "electrum.expiration_minutes",
         setting<uint32_t>(&configured.server.electrum.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to {}."
+        "The maximum connection duration, defaults to {}."
     )
     (
         "electrum.minimum_buffer",
@@ -1652,7 +1652,7 @@ options_metadata parser::load_settings() THROWS
     (
         "sparrow.expiration_minutes",
         setting<uint32_t>(&configured.server.sparrow.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to {}."
+        "The maximum connection duration, defaults to {}."
     )
     (
         "sparrow.minimum_buffer",
@@ -1793,12 +1793,12 @@ options_metadata parser::load_settings() THROWS
     (
         "esplora.inactivity_minutes",
         setting<uint32_t>(&configured.server.esplora.inactivity_minutes),
-        "The idle timeout (http keep-server), defaults to {}."
+        "The idle timeout (http keep-alive), defaults to {}."
     )
     (
         "esplora.expiration_minutes",
         setting<uint32_t>(&configured.server.esplora.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to {}."
+        "The maximum connection duration, defaults to {}."
     )
     (
         "esplora.minimum_buffer",
@@ -1843,7 +1843,7 @@ options_metadata parser::load_settings() THROWS
     (
         "esplora.allow_opaque_origin",
         setting<bool>(&configured.server.esplora.allow_opaque_origin),
-        "Allow requests from opaque origin (see CORS), multiple allowed, defaults to {}."
+        "Allow requests from opaque origin (see CORS), defaults to {}."
     )
     /* [stratum_v1] */
     (
@@ -1889,7 +1889,7 @@ options_metadata parser::load_settings() THROWS
     (
         "stratum_v1.expiration_minutes",
         setting<uint32_t>(&configured.server.stratum_v1.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to {}."
+        "The maximum connection duration, defaults to {}."
     )
     (
         "stratum_v1.minimum_buffer",
@@ -1941,7 +1941,7 @@ options_metadata parser::load_settings() THROWS
     (
         "stratum_v2.expiration_minutes",
         setting<uint32_t>(&configured.server.stratum_v2.expiration_minutes),
-        "The idle timeout (http keep-alive), defaults to {}."
+        "The maximum connection duration, defaults to {}."
     )
     (
         "stratum_v2.minimum_buffer",
