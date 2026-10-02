@@ -146,16 +146,16 @@ jobs:
         include:
           - image: macos-latest
             toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
+            cc: "clang"
+            cxx: "clang++"
             configuration: release
             link: static
             basename: "bs-macos-arm64"
 
           - image: macos-latest
             toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
+            cc: "clang"
+            cxx: "clang++"
             configuration: release
             link: static
             options: "-Denable-crypto=ON"
@@ -163,17 +163,17 @@ jobs:
 
           - image: macos-latest
             toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
+            cc: "clang"
+            cxx: "clang++"
             configuration: release
             link: static
-            options: "--enable-sha3"
+            options: "-Denable-sha3=ON"
             basename: "bs-macos-arm64-sha3"
 
           - image: macos-26-intel
             toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
+            cc: "clang"
+            cxx: "clang++"
             configuration: release
             link: static
             options: "-Denable-avx2=ON"
@@ -181,17 +181,17 @@ jobs:
 
           - image: macos-26-intel
             toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
+            cc: "clang"
+            cxx: "clang++"
             configuration: release
             link: static
-            options: "--enable-shani"
+            options: "-Denable-shani=ON"
             basename: "bs-macos-shani"
 
           - image: macos-26-intel
             toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
+            cc: "clang"
+            cxx: "clang++"
             configuration: release
             link: static
             options: "-Denable-avx512=ON"
@@ -212,7 +212,7 @@ jobs:
             cxx: "clang++-21"
             configuration: release
             link: static
-            options: "--enable-shani"
+            options: "-Denable-shani=ON"
             basename: "bs-nix-shani"
 
           - image: ubuntu-26.04
@@ -226,16 +226,16 @@ jobs:
 
           - image: ubuntu-26.04-arm
             toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
+            cc: "gcc"
+            cxx: "g++"
             configuration: release
             link: static
             basename: "bs-nix-arm64"
 
           - image: ubuntu-26.04-arm
             toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
+            cc: "gcc"
+            cxx: "g++"
             configuration: release
             link: static
             options: "-Denable-crypto=ON"
@@ -243,11 +243,11 @@ jobs:
 
           - image: ubuntu-26.04-arm
             toolchain: cmake
-            cc: "gcc-21"
-            cxx: "g++-21"
+            cc: "gcc"
+            cxx: "g++"
             configuration: release
             link: static
-            options: "--enable-sha3"
+            options: "-Denable-sha3=ON"
             basename: "bs-nix-arm64-sha3"
 
           - image: windows-latest
@@ -379,6 +379,15 @@ jobs:
           if [[ "${{ matrix.link }}" == "dynamic" ]]; then
               echo "LDFLAGS=-Wl,-rpath,${{ github.workspace }}/prefix/lib" >> $GITHUB_ENV
           fi
+
+      - name: Display Compiler
+        if: ${{ matrix.toolchain == 'cmake' || matrix.toolchain == 'gnu' || matrix.toolchain == 'presets' }}
+        shell: bash
+        run: |
+          which ${CC}
+          ${CC} --version
+          which ${CXX}
+          ${CXX} --version
 
       - name: Build [cmake]
         if: ${{ matrix.toolchain == 'cmake' }}
