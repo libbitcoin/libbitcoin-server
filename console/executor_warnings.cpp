@@ -56,7 +56,7 @@ void executor::warn_hardware(system::string_list& out) const
         out.emplace_back(BS_HARDWARE_AVX2_UNCOMPILED);
 #endif
 
-    const auto device = database::gpu_device();
+    const auto device = database::cuda_device();
     if (device && !batched::compiled())
         out.emplace_back(BS_HARDWARE_GPU_UNCOMPILED);
 
