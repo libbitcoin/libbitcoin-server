@@ -158,7 +158,7 @@ jobs:
             cxx: "clang++"
             configuration: release
             link: static
-            options: "-Denable-crypto=ON"
+            options: "-Denable-sha=ON -Denable-aes=ON"
             basename: "bs-macos-arm64-crypto"
 
           - image: macos-latest
@@ -238,7 +238,7 @@ jobs:
             cxx: "g++"
             configuration: release
             link: static
-            options: "-Denable-crypto=ON"
+            options: "-Denable-sha=ON -Denable-aes=ON"
             basename: "bs-nix-arm64-crypto"
 
           - image: ubuntu-26.04-arm
@@ -291,7 +291,7 @@ jobs:
 #            platform: "ARM64"
 #            toolset: "v145"
 #            version: "vs2026"
-#            options: "--enable-crypto"
+#            options: "--enable-sha --enable-aes"
 #            basename: "bs-win-arm64-crypto"
 #
 #          - image: windows-11-vs2026-arm
