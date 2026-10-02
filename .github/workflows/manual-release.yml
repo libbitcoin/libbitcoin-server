@@ -167,7 +167,7 @@ jobs:
             cxx: "clang++"
             configuration: release
             link: static
-            options: "--enable-sha3"
+            options: "-Denable-sha3=ON"
             basename: "bs-macos-arm64-sha3"
 
           - image: macos-26-intel
@@ -185,7 +185,7 @@ jobs:
             cxx: "clang++"
             configuration: release
             link: static
-            options: "--enable-shani"
+            options: "-Denable-shani=ON"
             basename: "bs-macos-shani"
 
           - image: macos-26-intel
