@@ -56,7 +56,7 @@ network::rpc::object_t chain_states_entry(
         { "blocks", height },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },
         { "bits", encode_base16(to_big_endian(bits)) },
-        { "target", encode_hash(from_uintx(compact::expand(bits))) },
+        { "target", encode_hash(from_uintx(chain::compact::expand(bits))) },
         { "difficulty", header->difficulty() },
         { "verificationprogress", progress },
         { "coins_db_cache_bytes", zero },
