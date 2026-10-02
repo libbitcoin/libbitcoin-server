@@ -150,24 +150,7 @@ jobs:
             cxx: "clang++"
             configuration: release
             link: static
-            basename: "bs-macos-arm64"
-
-          - image: macos-latest
-            toolchain: cmake
-            cc: "clang"
-            cxx: "clang++"
-            configuration: release
-            link: static
-            options: "-Denable-sha=ON -Denable-aes=ON"
-            basename: "bs-macos-arm64-crypto"
-
-          - image: macos-latest
-            toolchain: cmake
-            cc: "clang"
-            cxx: "clang++"
-            configuration: release
-            link: static
-            options: "-Denable-sha3=ON"
+            options: "-Denable-sha=ON -Denable-aes=ON -Denable-sha3=ON"
             basename: "bs-macos-arm64-sha3"
 
           - image: macos-26-intel
@@ -176,26 +159,8 @@ jobs:
             cxx: "clang++"
             configuration: release
             link: static
-            options: "-Denable-avx2=ON"
+            options: "-Denable-aesni=ON -Denable-avx2=ON -Denable-sse41=ON"
             basename: "bs-macos"
-
-          - image: macos-26-intel
-            toolchain: cmake
-            cc: "clang"
-            cxx: "clang++"
-            configuration: release
-            link: static
-            options: "-Denable-shani=ON"
-            basename: "bs-macos-shani"
-
-          - image: macos-26-intel
-            toolchain: cmake
-            cc: "clang"
-            cxx: "clang++"
-            configuration: release
-            link: static
-            options: "-Denable-avx512=ON"
-            basename: "bs-macos-avx512"
 
           - image: ubuntu-26.04
             toolchain: cmake
@@ -212,6 +177,15 @@ jobs:
             cxx: "clang++-21"
             configuration: release
             link: static
+            options: "-Denable-avx2=ON -Denable-cuda=ON"
+            basename: "bs-nix-cuda"
+
+          - image: ubuntu-26.04
+            toolchain: cmake
+            cc: "clang-21"
+            cxx: "clang++-21"
+            configuration: release
+            link: static
             options: "-Denable-shani=ON"
             basename: "bs-nix-shani"
 
@@ -221,8 +195,26 @@ jobs:
             cxx: "clang++-21"
             configuration: release
             link: static
+            options: "-Denable-shani=ON -Denable-cuda=ON"
+            basename: "bs-nix-shani-cuda"
+
+          - image: ubuntu-26.04
+            toolchain: cmake
+            cc: "clang-21"
+            cxx: "clang++-21"
+            configuration: release
+            link: static
             options: "-Denable-avx512=ON"
             basename: "bs-nix-avx512"
+
+          - image: ubuntu-26.04
+            toolchain: cmake
+            cc: "clang-21"
+            cxx: "clang++-21"
+            configuration: release
+            link: static
+            options: "-Denable-avx512=ON -Denable-cuda=ON"
+            basename: "bs-nix-avx512-cuda"
 
           - image: ubuntu-26.04-arm
             toolchain: cmake
@@ -265,6 +257,15 @@ jobs:
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
+            options: "--enable-avx2 --enable-cuda"
+            basename: "bs-win64-cuda"
+
+          - image: windows-latest
+            toolchain: msbuild
+            configuration: StaticRelease
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
             options: "--enable-shani"
             basename: "bs-win64-shani"
 
@@ -274,8 +275,26 @@ jobs:
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
+            options: "--enable-shani --enable-cuda"
+            basename: "bs-win64-shani-cuda"
+
+          - image: windows-latest
+            toolchain: msbuild
+            configuration: StaticRelease
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
             options: "--enable-avx512"
             basename: "bs-win64-avx512"
+
+          - image: windows-latest
+            toolchain: msbuild
+            configuration: StaticRelease
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            options: "--enable-avx512 --enable-cuda"
+            basename: "bs-win64-avx512-cuda"
 
 #          - image: windows-11-vs2026-arm
 #            toolchain: msbuild
