@@ -150,33 +150,7 @@ jobs:
             cxx: "clang++"
             configuration: release
             link: static
-            options: "--enable-cuda"
-            basename: "bs-macos-arm64-cuda"
-
-          - image: macos-latest
-            toolchain: cmake
-            cc: "clang"
-            cxx: "clang++"
-            configuration: release
-            link: static
-            basename: "bs-macos-arm64"
-
-          - image: macos-latest
-            toolchain: cmake
-            cc: "clang"
-            cxx: "clang++"
-            configuration: release
-            link: static
-            options: "-Denable-sha=ON -Denable-aes=ON"
-            basename: "bs-macos-arm64-crypto"
-
-          - image: macos-latest
-            toolchain: cmake
-            cc: "clang"
-            cxx: "clang++"
-            configuration: release
-            link: static
-            options: "-Denable-sha3=ON"
+            options: "-Denable-sha=ON -Denable-aes=ON -Denable-sha3=ON"
             basename: "bs-macos-arm64-sha3"
 
           - image: macos-26-intel
@@ -185,44 +159,8 @@ jobs:
             cxx: "clang++"
             configuration: release
             link: static
-            options: "-Denable-avx2=ON -Denable-cuda=ON"
-            basename: "bs-macos-cuda"
-
-          - image: macos-26-intel
-            toolchain: cmake
-            cc: "clang"
-            cxx: "clang++"
-            configuration: release
-            link: static
-            options: "-Denable-avx2=ON"
+            options: "-Denable-aesni=ON -Denable-avx2=ON -Denable-sse41=ON"
             basename: "bs-macos"
-
-          - image: macos-26-intel
-            toolchain: cmake
-            cc: "clang"
-            cxx: "clang++"
-            configuration: release
-            link: static
-            options: "-Denable-shani=ON"
-            basename: "bs-macos-shani"
-
-          - image: macos-26-intel
-            toolchain: cmake
-            cc: "clang"
-            cxx: "clang++"
-            configuration: release
-            link: static
-            options: "-Denable-avx512=ON"
-            basename: "bs-macos-avx512"
-
-          - image: ubuntu-26.04
-            toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
-            configuration: release
-            link: static
-            options: "-Denable-avx2=ON -Denable-cuda=ON"
-            basename: "bs-nix-cuda"
 
           - image: ubuntu-26.04
             toolchain: cmake
@@ -239,8 +177,26 @@ jobs:
             cxx: "clang++-21"
             configuration: release
             link: static
+            options: "-Denable-avx2=ON -Denable-cuda=ON"
+            basename: "bs-nix-cuda"
+
+          - image: ubuntu-26.04
+            toolchain: cmake
+            cc: "clang-21"
+            cxx: "clang++-21"
+            configuration: release
+            link: static
             options: "-Denable-shani=ON"
             basename: "bs-nix-shani"
+
+          - image: ubuntu-26.04
+            toolchain: cmake
+            cc: "clang-21"
+            cxx: "clang++-21"
+            configuration: release
+            link: static
+            options: "-Denable-shani=ON -Denable-cuda=ON"
+            basename: "bs-nix-shani-cuda"
 
           - image: ubuntu-26.04
             toolchain: cmake
@@ -251,14 +207,14 @@ jobs:
             options: "-Denable-avx512=ON"
             basename: "bs-nix-avx512"
 
-          - image: ubuntu-26.04-arm
+          - image: ubuntu-26.04
             toolchain: cmake
-            cc: "gcc"
-            cxx: "g++"
+            cc: "clang-21"
+            cxx: "clang++-21"
             configuration: release
             link: static
-            options: "-Denable-cuda=ON"
-            basename: "bs-nix-arm64-cuda"
+            options: "-Denable-avx512=ON -Denable-cuda=ON"
+            basename: "bs-nix-avx512-cuda"
 
           - image: ubuntu-26.04-arm
             toolchain: cmake
