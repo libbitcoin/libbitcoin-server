@@ -223,6 +223,11 @@ BOOST_AUTO_TEST_CASE(native__dispatch__invalid_stop__bad_request)
     BOOST_REQUIRE_EQUAL(get_status("/v1/block/subscribe?format=data&stop=maybe"), http::status::bad_request);
 }
 
+BOOST_AUTO_TEST_CASE(native__dispatch__unsupported_witness__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/v1/top?format=json&witness=false"), http::status::bad_request);
+}
+
 BOOST_AUTO_TEST_CASE(native__dispatch__invalid_target__bad_request)
 {
     BOOST_REQUIRE_EQUAL(get_status("/v1/bogus"), http::status::bad_request);
@@ -239,11 +244,10 @@ BOOST_AUTO_TEST_CASE(native__ws_dispatch__html__error_eof)
     BOOST_REQUIRE(ws_dropped("/v1/top?format=html"));
 }
 
-BOOST_AUTO_TEST_CASE(native__ws_dispatch__invalid_target__ignored)
+BOOST_AUTO_TEST_CASE(native__ws_dispatch__invalid_target__error_eof)
 {
     BOOST_REQUIRE(!ws_upgrade());
-    ws_send("/v1/bogus");
-    BOOST_REQUIRE_EQUAL(ws_get_text("/v1/top?format=text"), "09");
+    BOOST_REQUIRE(ws_dropped("/v1/bogus"));
 }
 
 BOOST_AUTO_TEST_CASE(native__ws_dispatch__unsupported_parameter__error_eof)

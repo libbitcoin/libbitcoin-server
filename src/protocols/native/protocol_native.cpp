@@ -141,8 +141,8 @@ bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
     if (media == media_type::text_html)
         return false;
 
-    if (const auto ec = dispatcher_.notify(model))
-        send_internal_server_error(ec, request);
+    if (dispatcher_.notify(model))
+        send_bad_request(request);
 
     return true;
 }
@@ -171,7 +171,10 @@ void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
 
     rpc::request_t model{};
     if (const auto ec = native_target(model, target))
+    {
+        stop(network::error::bad_request);
         return;
+    }
 
     // Default to json by simulating a json accept header (format overrides).
     if (!native_query(model, target, { media_type::application_json }))
@@ -186,11 +189,8 @@ void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
         return;
     }
 
-    if (const auto ec = dispatcher_.notify(model))
-    {
-        stop(network::error::internal_server_error);
-        return;
-    }
+    if (dispatcher_.notify(model))
+        stop(network::error::bad_request);
 }
 
 // Event handlers.
