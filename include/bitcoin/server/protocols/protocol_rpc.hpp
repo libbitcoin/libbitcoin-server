@@ -88,11 +88,29 @@ protected:
         if (claimed())
             return;
 
-        // Silently defer invalidated requests (to the protocol attached last).
-        if (!is_allowed_host(*post, post->version()) ||
-            !is_allowed_origin(*post, post->version()) ||
-            !post->body().template contains<network::rpc::request>())
+        // Enforce http host header (if any hosts are configured).
+        if (!is_allowed_host(*post, post->version()))
+        {
+            set_claimed();
+            send_bad_host(*post);
             return;
+        }
+
+        // Enforce http origin policy (if any origins are configured).
+        if (!is_allowed_origin(*post, post->version()))
+        {
+            set_claimed();
+            send_forbidden(*post);
+            return;
+        }
+
+        // Endpoint accepts only json-rpc posts.
+        if (!post->body().template contains<network::rpc::request>())
+        {
+            set_claimed();
+            send_bad_request(*post);
+            return;
+        }
 
         const auto& message =
             post->body().template get<network::rpc::request>().message;
@@ -129,9 +147,18 @@ protected:
             return;
 
         // ws frames carry no headers, so ws authorization is enforced here.
-        if (!authorized() ||
-            !request.body().template contains<network::rpc::request>())
+        if (!authorized())
+        {
+            stop(network::error::unauthorized);
             return;
+        }
+
+        // Websocket frames are parsed as json-rpc requests (channel body type).
+        if (!request.body().template contains<network::rpc::request>())
+        {
+            stop(error::invalid_argument);
+            return;
+        }
 
         const auto& message =
             request.body().template get<network::rpc::request>().message;

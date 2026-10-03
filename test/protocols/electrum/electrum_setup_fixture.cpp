@@ -152,6 +152,11 @@ bool electrum_setup_fixture::post_handshake(electrum::version version,
     return verify(post(version_request(version, name, id)), version, id);
 }
 
+rpc_client::status electrum_setup_fixture::post_status(const std::string& request)
+{
+    return client_.post_status(request);
+}
+
 boost::json::value electrum_setup_fixture::post_authorized(
     const std::string& request, const std::string& username,
     const std::string& password)

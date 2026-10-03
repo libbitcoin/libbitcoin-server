@@ -114,6 +114,23 @@ BOOST_AUTO_TEST_CASE(electrum__ws__scoped_credential_unlisted_method__dropped)
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__tcp__credentials_configured__dropped)
+{
+    const auto response = get(R"({"id":903,"method":"server.version","params":["test","1.4"]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// disallowed host
+
+BOOST_FIXTURE_TEST_SUITE(electrum_hosted_tests, electrum_hosted_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(electrum__post__disallowed_host__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(post_status(R"({"id":904,"method":"server.version","params":["test","1.4"]})"), rpc_client::status::bad_request);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // websocket
