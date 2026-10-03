@@ -257,7 +257,7 @@ jobs:
             cxx: "g++"
             configuration: release
             link: static
-            options: "-Denable-sha3=ON"
+            options: "-Denable-sha=ON -Denable-aes=ON -Denable-sha3=ON"
             basename: "bs-nix-arm64-sha3"
 
           - image: windows-latest
