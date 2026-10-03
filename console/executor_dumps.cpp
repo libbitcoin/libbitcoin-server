@@ -79,15 +79,21 @@ void executor::dump_hardware() const
     logger(std::format("avx512ifma.. " BS_HARDWARE_COMPILED, try_avx512ifma(), have_avx512ifma));
 #endif
 
-    const auto device = cuda_device();
+    const auto cuda = cuda_device();
     const auto compiled = batched::compiled();
-    const auto incompatible = device && compiled && !batched::accelerated();
-    logger(incompatible ?
-        std::format("cuda........ " BS_HARDWARE_INCOMPATIBLE, device, compiled) :
-        std::format("cuda........ " BS_HARDWARE_COMPILED, device, compiled));
-    logger(std::format("cuda ecc.... " BS_HARDWARE_ENABLED, cuda_ecc(), cuda_ecc_enabled()));
-    logger(std::format("opencl...... " BS_HARDWARE_PLATFORM, opencl_device()));
-    logger(std::format("metal....... " BS_HARDWARE_PLATFORM, metal_device()));
+    const auto incompatible = cuda && compiled && !batched::accelerated();
+    if (incompatible)
+    {
+        logger(std::format("cuda........ " BS_HARDWARE_INCOMPATIBLE, cuda, compiled));
+    }
+    else
+    {
+        logger(std::format("cuda........ " BS_HARDWARE_COMPILED, cuda, compiled));
+        logger(std::format("cuda ecc.... " BS_HARDWARE_ENABLED, cuda_ecc(), cuda_ecc_enabled()));
+    }
+
+    ////logger(std::format("opencl...... " BS_HARDWARE_PLATFORM, opencl_device()));
+    ////logger(std::format("metal....... " BS_HARDWARE_PLATFORM, metal_device()));
 }
 
 // logging compilation and initial values.
