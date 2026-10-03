@@ -186,7 +186,7 @@ jobs:
             cxx: "clang++-21"
             configuration: release
             link: static
-            options: "-Denable-shani=ON"
+            options: "-Denable-avx2=ON -Denable-shani=ON"
             basename: "bs-nix-shani"
 
           - image: ubuntu-26.04
@@ -195,7 +195,7 @@ jobs:
             cxx: "clang++-21"
             configuration: release
             link: static
-            options: "-Denable-shani=ON -Denable-cuda=ON"
+            options: "-Denable-avx2=ON -Denable-shani=ON -Denable-cuda=ON"
             basename: "bs-nix-shani-cuda"
 
           - image: ubuntu-26.04
@@ -215,6 +215,24 @@ jobs:
             link: static
             options: "-Denable-avx512=ON -Denable-cuda=ON"
             basename: "bs-nix-avx512-cuda"
+
+          - image: ubuntu-26.04
+            toolchain: cmake
+            cc: "clang-21"
+            cxx: "clang++-21"
+            configuration: release
+            link: static
+            options: "-Denable-avx512=ON -Denable-shani=ON"
+            basename: "bs-nix-avx512-shani"
+
+          - image: ubuntu-26.04
+            toolchain: cmake
+            cc: "clang-21"
+            cxx: "clang++-21"
+            configuration: release
+            link: static
+            options: "-Denable-avx512=ON -Denable-shani=ON -Denable-cuda=ON"
+            basename: "bs-nix-avx512-shani-cuda"
 
           - image: ubuntu-26.04-arm
             toolchain: cmake
@@ -295,6 +313,24 @@ jobs:
             version: "vs2026"
             options: "--enable-avx512 --enable-cuda"
             basename: "bs-win64-avx512-cuda"
+
+          - image: windows-latest
+            toolchain: msbuild
+            configuration: StaticRelease
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            options: "--enable-avx512 --enable-shani"
+            basename: "bs-win64-avx512-shani"
+
+          - image: windows-latest
+            toolchain: msbuild
+            configuration: StaticRelease
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            options: "--enable-avx512 --enable-shani --enable-cuda"
+            basename: "bs-win64-avx512-shani-cuda"
 
 #          - image: windows-11-vs2026-arm
 #            toolchain: msbuild
