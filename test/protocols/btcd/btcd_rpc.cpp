@@ -210,8 +210,8 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__getheaders__hashstop__bounded)
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
     const auto& result = response.at("result").as_array();
-    BOOST_REQUIRE_EQUAL(result.size(), 2u);
-    BOOST_REQUIRE_EQUAL(as_text(result.back()), encode_base16(test::block7.header().to_data()));
+    BOOST_REQUIRE_EQUAL(result.size(), 3u);
+    BOOST_REQUIRE_EQUAL(as_text(result.back()), encode_base16(test::block8.header().to_data()));
 }
 
 BOOST_AUTO_TEST_CASE(btcd_rpc__getheaders__unknown_locator__headers_from_genesis)
