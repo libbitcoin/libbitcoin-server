@@ -141,10 +141,13 @@
     "   outs      :{}\n" \
     "   candidate :{}\n" \
     "   confirmed :{}\n" \
-    "   ecdsa     :{}\n" \
-    "   schnorr   :{}\n" \
+    "   ecdsa0    :{}\n" \
+    "   ecdsa1    :{}\n" \
+    "   schnorr0  :{}\n" \
+    "   schnorr1  :{}\n" \
     "   silent    :{}\n" \
-    "   prevalid  :{}\n" \
+    "   prevalid0 :{}\n" \
+    "   prevalid1 :{}\n" \
     "   prevout   :{}\n" \
     "   duplicate :{}\n" \
     "   strong_tx :{}\n" \
@@ -161,10 +164,13 @@
     "   outs      :{}\n" \
     "   candidate :{}\n" \
     "   confirmed :{}\n" \
-    "   ecdsa     :{}\n" \
-    "   schnorr   :{}\n" \
+    "   ecdsa0    :{}\n" \
+    "   ecdsa1    :{}\n" \
+    "   schnorr0  :{}\n" \
+    "   schnorr1  :{}\n" \
     "   silent    :{}\n" \
-    "   prevalid  :{}\n" \
+    "   prevalid0 :{}\n" \
+    "   prevalid1 :{}\n" \
     "   duplicate :{}\n" \
     "   strong_tx :{}\n" \
     "   state     :{}\n" \

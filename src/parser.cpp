@@ -2361,24 +2361,24 @@ options_metadata parser::load_settings() THROWS
     (
         "table.ecdsa.size",
         setting<uint64_t>(&configured.database.ecdsa.size),
-        "The minimum allocation of the batch_ecdsa table body, defaults to {}."
+        "The minimum allocation of each batch_ecdsa table body, defaults to {}."
     )
     (
         "table.ecdsa.rate",
         setting<uint16_t>(&configured.database.ecdsa.rate),
-        "The percentage expansion of the batch_ecdsa table body, defaults to {}."
+        "The percentage expansion of each batch_ecdsa table body, defaults to {}."
     )
 
     /* table.schnorr */
     (
         "table.schnorr.size",
         setting<uint64_t>(&configured.database.schnorr.size),
-        "The minimum allocation of the batch_schnorr table body, defaults to {}."
+        "The minimum allocation of each batch_schnorr table body, defaults to {}."
     )
     (
         "table.schnorr.rate",
         setting<uint16_t>(&configured.database.schnorr.rate),
-        "The percentage expansion of the batch_schnorr table body, defaults to {}."
+        "The percentage expansion of each batch_schnorr table body, defaults to {}."
     )
 
     /* table.silent */
@@ -2397,12 +2397,12 @@ options_metadata parser::load_settings() THROWS
     (
         "table.prevalid.size",
         setting<uint64_t>(&configured.database.prevalid.size),
-        "The minimum allocation of the batch_prevalid table body, defaults to {}."
+        "The minimum allocation of each batch_prevalid table body, defaults to {}."
     )
     (
         "table.prevalid.rate",
         setting<uint16_t>(&configured.database.prevalid.rate),
-        "The percentage expansion of the batch_prevalid table, defaults to {}."
+        "The percentage expansion of each batch_prevalid table body, defaults to {}."
     )
 
     /* table.prevout */
