@@ -2143,6 +2143,11 @@ options_metadata parser::load_settings() THROWS
         "Time to await a compact block fill before downloading the block, defaults to {} (0 disables)."
     )
     (
+        "node.compact_missing_percent",
+        setting<uint16_t>(&configured.node.compact_missing_percent),
+        "Maximum percent of a compact block not pooled to fill it, defaults to {}."
+    )
+    (
         "node.currency_window_minutes",
         setting<uint32_t>(&configured.node.currency_window_minutes),
         "Time from present that blocks are considered current, defaults to {} (0 disables)."
