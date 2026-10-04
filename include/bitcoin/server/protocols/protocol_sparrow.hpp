@@ -44,7 +44,8 @@ public:
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : server::protocol_electrum(session, channel, options),
-        network::tracker<protocol_sparrow>(session->log)
+        network::tracker<protocol_sparrow>(session->log),
+        prefix_(session->server_settings().wallet.silent_prefix)
     {
     }
 
@@ -52,6 +53,31 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
+    using tx_link_t = system::silent::batch::tx_link_t;
+    using silent_payment = system::wallet::silent_payment;
+    using matches = std::map<tx_link_t, system::ec_compressed>;
+
+    // Confirmed matches below start (height or time) or above stop are cut.
+    struct silent_cut final
+    {
+        size_t start{};
+        size_t stop{ max_size_t };
+        bool time{};
+    };
+
+    // Subscription to a silent payment address.
+    struct silent_subscription final
+    {
+        silent_payment scanner;
+        object_t subscription{};
+        silent_cut cut{};
+        size_t cursor{};
+    };
+
+    /// Events, adds silent payment notification.
+    bool handle_chase(const code& ec,
+        node::event_value value) NOEXCEPT override;
+
     /// Dispatched from the electrum miss, so that interface is unaffected.
     void handle_unclaimed(
         const network::rpc::request_t& request) NOEXCEPT override;
@@ -81,8 +107,53 @@ private:
         sparrow_dispatcher_.subscribe(BIND_SHARED(method, args));
     }
 
+    /// Notification event handlers.
+    /// -----------------------------------------------------------------------
+
+    void do_silent(node::header_t link) NOEXCEPT;
+
+    /// Silent payment.
+    /// -----------------------------------------------------------------------
+
+    void do_silent_subscribe(const std::string& address,
+        const silent_subscription& subscription,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_silent_subscribe(const code& ec, const object_t& result,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void do_silent_unsubscribe(const std::string& address) NOEXCEPT;
+    void complete_silent_unsubscribe(
+        const network::rpc::value_t& result) NOEXCEPT;
+    void silent_notify(const object_t& subscription, double progress,
+        const array_t& history) NOEXCEPT;
+
+    void scan_silent(silent_subscription& subscription, size_t last,
+        bool initial) NOEXCEPT;
+    array_t confirm_silent(const silent_subscription& subscription,
+        const matches& found) const NOEXCEPT;
+    bool is_cut(const silent_cut& cut, const tx_link_t& link,
+        size_t height) const NOEXCEPT;
+
+    /// Utility.
+    /// -----------------------------------------------------------------------
+
+    static bool to_cut(silent_cut& out,
+        const interface::value_t& value) NOEXCEPT;
+    static bool to_labels(std::vector<uint32_t>& out,
+        const interface::array_t& labels) NOEXCEPT;
+    std::string to_address(const system::ec_secret& scan,
+        const system::ec_compressed& spend) const NOEXCEPT;
+
+    // These are thread safe.
+    const std::string prefix_;
+    std::atomic_bool cancel_{};
+    std::atomic_bool queued_silent_{};
+    std::atomic_bool subscribed_silent_{};
+
     // This is protected by strand.
     sparrow_dispatcher sparrow_dispatcher_{};
+
+    // These are protected by notification strand.
+    std::map<std::string, silent_subscription> silent_subscriptions_{};
 };
 
 } // namespace server

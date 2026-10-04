@@ -75,7 +75,7 @@ protected:
         network::rpc::object_t& features) const NOEXCEPT;
 
     /// Event handlers.
-    bool handle_chase(const code&, node::event_value) NOEXCEPT;
+    virtual bool handle_chase(const code&, node::event_value) NOEXCEPT;
 
     /// Handlers (headers).
     void handle_blockchain_number_of_blocks_subscribe(const code& ec,
@@ -345,8 +345,19 @@ protected:
         return options_;
     }
 
-private:
-    // Post to notification strand.
+    /// Notifications require a full duplex transport.
+    inline bool is_duplex() const NOEXCEPT
+    {
+        return channel_->websocket() || channel_->downgraded();
+    }
+
+    /// Running on the notification strand.
+    inline bool notifying() const NOEXCEPT
+    {
+        return notification_strand_.running_in_this_thread();
+    }
+
+    /// Post to notification strand.
     template <class Derived, typename Method, typename... Args>
     inline auto notify(Method&& method, Args&&... args) NOEXCEPT
     {
@@ -354,6 +365,7 @@ private:
             BIND_SAFE(BIND_SHARED(method, args)));
     }
 
+private:
     // Transformations.
     static array_t transform(const unspent_outputs& unspents) NOEXCEPT;
     static array_t transform(const histories& histories) NOEXCEPT;

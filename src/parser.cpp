@@ -1018,6 +1018,11 @@ options_metadata parser::load_settings() THROWS
         "The witness address prefix, defaults to {} (use 'tb' for testnet)."
     )
     (
+        "wallet.silent_prefix",
+        setting<std::string>(&configured.server.wallet.silent_prefix),
+        "The silent payment address prefix, defaults to {} (use 'tsp' for testnet)."
+    )
+    (
         "wallet.hd_private_prefix",
         setting<uint32_t>(&configured.server.wallet.hd_private_prefix),
         "The extended private key prefix, defaults to {} (use '70615956' for testnet)."

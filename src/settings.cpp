@@ -146,6 +146,7 @@ settings::wallet_settings::wallet_settings(
     p2sh_prefix = value.p2sh;
     wif_prefix = value.wif;
     witness_prefix = value.p2w;
+    silent_prefix = value.sp;
     hd_private_prefix = value.hd.prv;
     hd_public_prefix = value.hd.pub;
 }
@@ -158,7 +159,8 @@ context settings::wallet_settings::to_context() const NOEXCEPT
         witness_prefix,
         p2kh_prefix,
         p2sh_prefix,
-        wif_prefix
+        wif_prefix,
+        silent_prefix
     };
 }
 
