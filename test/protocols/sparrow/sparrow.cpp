@@ -21,6 +21,7 @@
 using namespace system;
 
 static const code not_implemented{ server::error::electrum::method_not_found };
+static const code bad_request{ server::error::electrum::bad_request };
 
 BOOST_FIXTURE_TEST_SUITE(sparrow_tests, sparrow_ten_block_setup_fixture)
 
@@ -68,7 +69,7 @@ BOOST_AUTO_TEST_CASE(sparrow__server_features__silent_payments__advertised)
     BOOST_REQUIRE_EQUAL(result.at("server_version").as_string(), "server_name");
 }
 
-// sparrow interface (stubs)
+// sparrow interface
 
 BOOST_AUTO_TEST_CASE(sparrow__blockchain_block_stats__stub__method_not_found)
 {
@@ -86,28 +87,29 @@ BOOST_AUTO_TEST_CASE(sparrow__blockchain_block_stats__missing_arguments__dropped
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__stub__method_not_found)
+BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__not_indexed__method_not_found)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
-    const auto request =
-        R"({"id":904,"method":"blockchain.silentpayments.subscribe","params":[")"
-        R"(0000000000000000000000000000000000000000000000000000000000000001",")"
-        R"(020000000000000000000000000000000000000000000000000000000000000002"]})" "\n";
-
+    const auto request = R"({"id":904,"method":"blockchain.silentpayments.subscribe","params":["0000000000000000000000000000000000000000000000000000000000000001","020000000000000000000000000000000000000000000000000000000000000002"]})" "\n";
     BOOST_REQUIRE_EQUAL(get_error(request), not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_unsubscribe__stub__method_not_found)
+BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_unsubscribe__not_subscribed__null)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
-    const auto request =
-        R"({"id":905,"method":"blockchain.silentpayments.unsubscribe","params":[")"
-        R"(0000000000000000000000000000000000000000000000000000000000000001",")"
-        R"(020000000000000000000000000000000000000000000000000000000000000002"]})" "\n";
+    const auto response = get(R"({"id":905,"method":"blockchain.silentpayments.unsubscribe","params":["0000000000000000000000000000000000000000000000000000000000000001","020000000000000000000000000000000000000000000000000000000000000002"]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
 
-    BOOST_REQUIRE_EQUAL(get_error(request), not_implemented.value());
+BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_unsubscribe__invalid_scan_key__bad_request)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto request = R"({"id":906,"method":"blockchain.silentpayments.unsubscribe","params":["0000000000000000000000000000000000000000000000000000000000000000","020000000000000000000000000000000000000000000000000000000000000002"]})" "\n";
+    BOOST_REQUIRE_EQUAL(get_error(request), bad_request.value());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

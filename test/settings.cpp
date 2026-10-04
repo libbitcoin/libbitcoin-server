@@ -305,6 +305,7 @@ BOOST_AUTO_TEST_CASE(wallet__defaults__mainnet__expected)
     BOOST_REQUIRE_EQUAL(instance.p2sh_prefix, prefix::p2sh::main::btc);
     BOOST_REQUIRE_EQUAL(instance.wif_prefix, prefix::wif::main::btc);
     BOOST_REQUIRE_EQUAL(instance.witness_prefix, prefix::p2w::main::btc);
+    BOOST_REQUIRE_EQUAL(instance.silent_prefix, prefix::sp::main::btc);
     BOOST_REQUIRE_EQUAL(instance.hd_private_prefix, prefix::hd::main::btc.prv);
     BOOST_REQUIRE_EQUAL(instance.hd_public_prefix, prefix::hd::main::btc.pub);
 }
@@ -316,6 +317,7 @@ BOOST_AUTO_TEST_CASE(wallet__defaults__testnet__expected)
     BOOST_REQUIRE_EQUAL(instance.p2sh_prefix, prefix::p2sh::test::btc);
     BOOST_REQUIRE_EQUAL(instance.wif_prefix, prefix::wif::test::btc);
     BOOST_REQUIRE_EQUAL(instance.witness_prefix, prefix::p2w::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.silent_prefix, prefix::sp::test::btc);
     BOOST_REQUIRE_EQUAL(instance.hd_private_prefix, prefix::hd::test::btc.prv);
     BOOST_REQUIRE_EQUAL(instance.hd_public_prefix, prefix::hd::test::btc.pub);
 }
@@ -327,6 +329,7 @@ BOOST_AUTO_TEST_CASE(wallet__defaults__regtest__testnet_versions_with_regtest_wi
     BOOST_REQUIRE_EQUAL(instance.p2sh_prefix, prefix::p2sh::test::btc);
     BOOST_REQUIRE_EQUAL(instance.wif_prefix, prefix::wif::test::btc);
     BOOST_REQUIRE_EQUAL(instance.witness_prefix, prefix::p2w::regtest::btc);
+    BOOST_REQUIRE_EQUAL(instance.silent_prefix, prefix::sp::regtest::btc);
     BOOST_REQUIRE_EQUAL(instance.hd_private_prefix, prefix::hd::test::btc.prv);
 }
 
@@ -336,6 +339,7 @@ BOOST_AUTO_TEST_CASE(wallet__to_context__mainnet__matches_predefined)
     BOOST_REQUIRE_EQUAL(instance.to_context().hd_prefixes(), ctx::btc::main.hd_prefixes());
     BOOST_REQUIRE_EQUAL(instance.to_context().versions(), ctx::btc::main.versions());
     BOOST_REQUIRE_EQUAL(instance.to_context().p2w, ctx::btc::main.p2w);
+    BOOST_REQUIRE_EQUAL(instance.to_context().sp, ctx::btc::main.sp);
 }
 
 BOOST_AUTO_TEST_CASE(wallet__to_context__regtest__matches_predefined)
@@ -344,6 +348,7 @@ BOOST_AUTO_TEST_CASE(wallet__to_context__regtest__matches_predefined)
     BOOST_REQUIRE_EQUAL(instance.to_context().hd_prefixes(), ctx::btc::regtest.hd_prefixes());
     BOOST_REQUIRE_EQUAL(instance.to_context().versions(), ctx::btc::regtest.versions());
     BOOST_REQUIRE_EQUAL(instance.to_context().p2w, ctx::btc::regtest.p2w);
+    BOOST_REQUIRE_EQUAL(instance.to_context().sp, ctx::btc::regtest.sp);
 }
 
 BOOST_AUTO_TEST_CASE(wallet__to_context__testnet__parses_testnet_descriptor_only)

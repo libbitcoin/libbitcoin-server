@@ -194,6 +194,7 @@ public:
         system::config::byte p2sh_prefix;
         system::config::byte wif_prefix;
         std::string witness_prefix;
+        std::string silent_prefix;
         uint32_t hd_private_prefix;
         uint32_t hd_public_prefix;
 
