@@ -295,6 +295,10 @@
     "The {} database is not initialized, delete and retry."
 #define BS_DATABASE_START_FAIL \
     "Database failed to start with error '{}'."
+#define BS_DATABASE_SCHEMA_FAIL \
+    "Database schema failed to read with error '{}'."
+#define BS_DATABASE_SCHEMA_MISMATCH \
+    "Database schema {} does not match compiled schema {}."
 #define BS_DATABASE_STOPPING \
     "Please wait while database is stopping..."
 #define BS_DATABASE_STOP_FAIL \

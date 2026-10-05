@@ -65,6 +65,7 @@ private:
 
     // Store dumps.
     void dump_version(bool stored) const;
+    void dump_schema();
     void dump_hardware() const;
     void dump_options() const;
     void dump_configuration() const;
