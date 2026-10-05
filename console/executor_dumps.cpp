@@ -74,8 +74,8 @@ void executor::dump_hardware() const
     logger(std::format("sha512...... " BS_HARDWARE_COMPILED, try_sha512(), have_sha512));
     logger(std::format("sse41....... " BS_HARDWARE_COMPILED, try_sse41(), have_sse41));
     logger(std::format("avx2........ " BS_HARDWARE_COMPILED, try_avx2(), have_avx2));
-    logger(std::format("avxifma..... " BS_HARDWARE_COMPILED, try_avxifma(), have_avxifma));
     logger(std::format("avx512...... " BS_HARDWARE_COMPILED, try_avx512(), have_avx512));
+    logger(std::format("avxifma..... " BS_HARDWARE_COMPILED, try_avxifma(), have_avxifma));
     logger(std::format("avx512ifma.. " BS_HARDWARE_COMPILED, try_avx512ifma(), have_avx512ifma));
 #endif
 
