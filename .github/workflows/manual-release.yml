@@ -166,6 +166,7 @@ jobs:
             toolchain: cmake
             cc: "clang-21"
             cxx: "clang++-21"
+            linkflags: "-static-libstdc++ -static-libgcc"
             configuration: release
             link: static
             options: "-Denable-avx2=ON"
@@ -175,15 +176,7 @@ jobs:
             toolchain: cmake
             cc: "clang-21"
             cxx: "clang++-21"
-            configuration: release
-            link: static
-            options: "-Denable-avx2=ON -Denable-cuda=ON"
-            basename: "bs-nix-x64-cuda"
-
-          - image: ubuntu-26.04
-            toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
+            linkflags: "-static-libstdc++ -static-libgcc"
             configuration: release
             link: static
             options: "-Denable-avx2=ON -Denable-shani=ON"
@@ -193,15 +186,7 @@ jobs:
             toolchain: cmake
             cc: "clang-21"
             cxx: "clang++-21"
-            configuration: release
-            link: static
-            options: "-Denable-avx2=ON -Denable-shani=ON -Denable-cuda=ON"
-            basename: "bs-nix-x64-shani-cuda"
-
-          - image: ubuntu-26.04
-            toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
+            linkflags: "-static-libstdc++ -static-libgcc"
             configuration: release
             link: static
             options: "-Denable-avx512=ON"
@@ -211,33 +196,17 @@ jobs:
             toolchain: cmake
             cc: "clang-21"
             cxx: "clang++-21"
-            configuration: release
-            link: static
-            options: "-Denable-avx512=ON -Denable-cuda=ON"
-            basename: "bs-nix-x64-avx512-cuda"
-
-          - image: ubuntu-26.04
-            toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
+            linkflags: "-static-libstdc++ -static-libgcc"
             configuration: release
             link: static
             options: "-Denable-avx512=ON -Denable-shani=ON"
             basename: "bs-nix-x64-avx512-shani"
 
-          - image: ubuntu-26.04
-            toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
-            configuration: release
-            link: static
-            options: "-Denable-avx512=ON -Denable-shani=ON -Denable-cuda=ON"
-            basename: "bs-nix-x64-avx512-shani-cuda"
-
           - image: ubuntu-26.04-arm
             toolchain: cmake
             cc: "gcc"
             cxx: "g++"
+            linkflags: "-static-libstdc++ -static-libgcc"
             configuration: release
             link: static
             basename: "bs-nix-arm64"
@@ -246,6 +215,7 @@ jobs:
             toolchain: cmake
             cc: "gcc"
             cxx: "g++"
+            linkflags: "-static-libstdc++ -static-libgcc"
             configuration: release
             link: static
             options: "-Denable-sha=ON -Denable-aes=ON"
@@ -255,6 +225,7 @@ jobs:
             toolchain: cmake
             cc: "gcc"
             cxx: "g++"
+            linkflags: "-static-libstdc++ -static-libgcc"
             configuration: release
             link: static
             options: "-Denable-sha=ON -Denable-aes=ON -Denable-sha3=ON"
@@ -275,26 +246,8 @@ jobs:
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
-            options: "--enable-avx2 --enable-cuda"
-            basename: "bs-win-x64-cuda"
-
-          - image: windows-latest
-            toolchain: msbuild
-            configuration: StaticRelease
-            platform: "x64"
-            toolset: "v145"
-            version: "vs2026"
             options: "--enable-shani"
             basename: "bs-win-x64-shani"
-
-          - image: windows-latest
-            toolchain: msbuild
-            configuration: StaticRelease
-            platform: "x64"
-            toolset: "v145"
-            version: "vs2026"
-            options: "--enable-shani --enable-cuda"
-            basename: "bs-win-x64-shani-cuda"
 
           - image: windows-latest
             toolchain: msbuild
@@ -311,26 +264,8 @@ jobs:
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
-            options: "--enable-avx512 --enable-cuda"
-            basename: "bs-win-x64-avx512-cuda"
-
-          - image: windows-latest
-            toolchain: msbuild
-            configuration: StaticRelease
-            platform: "x64"
-            toolset: "v145"
-            version: "vs2026"
             options: "--enable-avx512 --enable-shani"
             basename: "bs-win-x64-avx512-shani"
-
-          - image: windows-latest
-            toolchain: msbuild
-            configuration: StaticRelease
-            platform: "x64"
-            toolset: "v145"
-            version: "vs2026"
-            options: "--enable-avx512 --enable-shani --enable-cuda"
-            basename: "bs-win-x64-avx512-shani-cuda"
 
 #          - image: windows-11-vs2026-arm
 #            toolchain: msbuild
@@ -363,6 +298,7 @@ jobs:
       CXX: '${{ matrix.cxx }}'
       CFLAGS: '${{ matrix.flags }}'
       CXXFLAGS: '${{ matrix.flags }}'
+      LDFLAGS: '${{ matrix.linkflags }}'
 
     steps:
       - name: checkout server
