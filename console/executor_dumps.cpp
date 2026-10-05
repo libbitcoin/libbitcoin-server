@@ -54,6 +54,20 @@ void executor::dump_version(bool stored) const
         logger(std::format("database schema...... {}", query_.envelope().schema.to_string()));
 }
 
+// The store is not opened, only its envelope is read.
+void executor::dump_schema()
+{
+    const auto& store = metadata_.configured.database.path;
+    if (!database::file::is_directory(store))
+        return;
+
+    system::config::version schema{};
+    if (const auto ec = store_.read_schema(schema))
+        logger(std::format(BS_DATABASE_SCHEMA_FAIL, ec.message()));
+    else
+        logger(std::format("database schema...... {}", schema.to_string()));
+}
+
 // The "try" functions are safe for instructions not compiled in.
 void executor::dump_hardware() const
 {

@@ -118,6 +118,16 @@ code executor::open_store_coded(bool details)
     }))
     {
         logger(std::format(BS_DATABASE_START_FAIL, ec.message()));
+        if (ec == database::error::schema_version)
+        {
+            system::config::version schema{};
+            if (const auto read = store_.read_schema(schema))
+                logger(std::format(BS_DATABASE_SCHEMA_FAIL, read.message()));
+            else
+                logger(std::format(BS_DATABASE_SCHEMA_MISMATCH, schema.to_string(),
+                    database::envelope::compiled.to_string()));
+        }
+
         return ec;
     }
 
