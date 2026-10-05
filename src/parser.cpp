@@ -51,7 +51,7 @@ parser::parser(system::chain::selection context,
     configured.network.enable_not_found = true;
     configured.network.enable_address_v2 = true;
     configured.network.enable_witness_tx = false;
-    configured.network.enable_compact = false;
+    configured.network.enable_compact = true;
     configured.network.outbound.host_pool_capacity = 10000;
     configured.network.outbound.connections = 100;
     configured.network.inbound.connections = 100;
