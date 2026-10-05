@@ -144,154 +144,154 @@ jobs:
 
       matrix:
         include:
-          - image: macos-latest
-            toolchain: cmake
-            cc: "clang"
-            cxx: "clang++"
+          - basename: "bs-macos-arm64-sha3"
             configuration: release
             link: static
+            toolchain: cmake
             options: "-Denable-sha=ON -Denable-aes=ON -Denable-sha3=ON"
-            basename: "bs-macos-arm64-sha3"
-
-          - image: macos-26-intel
-            toolchain: cmake
             cc: "clang"
             cxx: "clang++"
+            image: macos-latest
+
+          - basename: "bs-macos-x64"
             configuration: release
             link: static
+            toolchain: cmake
             options: "-Denable-aesni=ON -Denable-avx2=ON -Denable-sse41=ON"
-            basename: "bs-macos-x64"
+            cc: "clang"
+            cxx: "clang++"
+            image: macos-26-intel
 
-          - image: ubuntu-26.04
-            toolchain: cmake
-            cc: "clang-21"
-            cxx: "clang++-21"
-            linkflags: "-static-libstdc++ -static-libgcc"
+          - basename: "bs-nix-x64"
             configuration: release
             link: static
+            toolchain: cmake
             options: "-Denable-avx2=ON"
-            basename: "bs-nix-x64"
-
-          - image: ubuntu-26.04
-            toolchain: cmake
             cc: "clang-21"
             cxx: "clang++-21"
             linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04
+
+          - basename: "bs-nix-x64-shani"
             configuration: release
             link: static
+            toolchain: cmake
             options: "-Denable-avx2=ON -Denable-shani=ON"
-            basename: "bs-nix-x64-shani"
-
-          - image: ubuntu-26.04
-            toolchain: cmake
             cc: "clang-21"
             cxx: "clang++-21"
             linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04
+
+          - basename: "bs-nix-x64-avx512"
             configuration: release
             link: static
+            toolchain: cmake
             options: "-Denable-avx512=ON"
-            basename: "bs-nix-x64-avx512"
-
-          - image: ubuntu-26.04
-            toolchain: cmake
             cc: "clang-21"
             cxx: "clang++-21"
             linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04
+
+          - basename: "bs-nix-x64-avx512-shani"
             configuration: release
             link: static
+            toolchain: cmake
             options: "-Denable-avx512=ON -Denable-shani=ON"
-            basename: "bs-nix-x64-avx512-shani"
+            cc: "clang-21"
+            cxx: "clang++-21"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04
 
-          - image: ubuntu-26.04-arm
+          - basename: "bs-nix-arm64"
+            configuration: release
+            link: static
             toolchain: cmake
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static-libstdc++ -static-libgcc"
-            configuration: release
-            link: static
-            basename: "bs-nix-arm64"
+            image: ubuntu-26.04-arm
 
-          - image: ubuntu-26.04-arm
-            toolchain: cmake
-            cc: "gcc"
-            cxx: "g++"
-            linkflags: "-static-libstdc++ -static-libgcc"
+          - basename: "bs-nix-arm64-crypto"
             configuration: release
             link: static
+            toolchain: cmake
             options: "-Denable-sha=ON -Denable-aes=ON"
-            basename: "bs-nix-arm64-crypto"
-
-          - image: ubuntu-26.04-arm
-            toolchain: cmake
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04-arm
+
+          - basename: "bs-nix-arm64-sha3"
             configuration: release
             link: static
+            toolchain: cmake
             options: "-Denable-sha=ON -Denable-aes=ON -Denable-sha3=ON"
-            basename: "bs-nix-arm64-sha3"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04-arm
 
-          - image: windows-latest
-            toolchain: msbuild
+          - basename: "bs-win-x64"
             configuration: StaticRelease
-            platform: "x64"
-            toolset: "v145"
-            version: "vs2026"
+            toolchain: msbuild
             options: "--enable-avx2"
-            basename: "bs-win-x64"
-
-          - image: windows-latest
-            toolchain: msbuild
-            configuration: StaticRelease
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
+            image: windows-latest
+
+          - basename: "bs-win-x64-shani"
+            configuration: StaticRelease
+            toolchain: msbuild
             options: "--enable-shani"
-            basename: "bs-win-x64-shani"
-
-          - image: windows-latest
-            toolchain: msbuild
-            configuration: StaticRelease
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
+            image: windows-latest
+
+          - basename: "bs-win-x64-avx512"
+            configuration: StaticRelease
+            toolchain: msbuild
             options: "--enable-avx512"
-            basename: "bs-win-x64-avx512"
-
-          - image: windows-latest
-            toolchain: msbuild
-            configuration: StaticRelease
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
-            options: "--enable-avx512 --enable-shani"
-            basename: "bs-win-x64-avx512-shani"
+            image: windows-latest
 
-#          - image: windows-11-vs2026-arm
-#            toolchain: msbuild
+          - basename: "bs-win-x64-avx512-shani"
+            configuration: StaticRelease
+            toolchain: msbuild
+            options: "--enable-avx512 --enable-shani"
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-latest
+
+#          - basename: "bs-win-arm64"
 #            configuration: StaticRelease
+#            toolchain: msbuild
 #            platform: "ARM64"
 #            toolset: "v145"
 #            version: "vs2026"
-#            basename: "bs-win-arm64"
+#            image: windows-11-vs2026-arm
 #
-#          - image: windows-11-vs2026-arm
-#            toolchain: msbuild
+#          - basename: "bs-win-arm64-crypto"
 #            configuration: StaticRelease
-#            platform: "ARM64"
-#            toolset: "v145"
-#            version: "vs2026"
+#            toolchain: msbuild
 #            options: "--enable-sha --enable-aes"
-#            basename: "bs-win-arm64-crypto"
-#
-#          - image: windows-11-vs2026-arm
-#            toolchain: msbuild
-#            configuration: StaticRelease
 #            platform: "ARM64"
 #            toolset: "v145"
 #            version: "vs2026"
+#            image: windows-11-vs2026-arm
+#
+#          - basename: "bs-win-arm64-sha3"
+#            configuration: StaticRelease
+#            toolchain: msbuild
 #            options: "--enable-sha3"
-#            basename: "bs-win-arm64-sha3"
+#            platform: "ARM64"
+#            toolset: "v145"
+#            version: "vs2026"
+#            image: windows-11-vs2026-arm
 #
     env:
       CC: '${{ matrix.cc }}'
