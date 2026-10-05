@@ -420,6 +420,7 @@ jobs:
           if [[ -n "${{ matrix.llvm }}" ]]; then
             echo "PATH=/opt/homebrew/opt/${{ matrix.llvm }}/bin:${PATH}" >> $GITHUB_ENV
           fi
+          echo "MACOSX_DEPLOYMENT_TARGET=13.3" >> $GITHUB_ENV
 
       - name: Prepare toolchain [windows]
         if: ${{ startsWith(matrix.image, 'windows') }}
@@ -549,7 +550,11 @@ jobs:
             -print0 | while IFS= read -r -d '' f; do
               if file "$f" | grep -qE "ELF|Mach-O|PE32"; then
                 before=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
-                strip --strip-unneeded --preserve-dates "$f"
+                if [[ "$(uname -s)" == "Darwin" ]]; then
+                  strip -x "$f"
+                else
+                  strip --strip-unneeded --preserve-dates "$f"
+                fi
                 after=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
                 saved=$((before - after))
                 printf "Stripped: %s  (%'d → %'d bytes, saved %'d)\n" \
