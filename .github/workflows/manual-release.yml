@@ -10,9 +10,9 @@ name: Build to Release
 on:
   workflow_dispatch:
     inputs:
-      tag-system:
-        description: "libbitcoin-system tag used for release generation."
-        required: true
+      release-suffix:
+        description: "Suffix applied to release title (server version tag)."
+        required: false
         type: string
       tag-database:
         description: "libbitcoin-database tag used for release generation."
@@ -28,6 +28,10 @@ on:
         type: string
       tag-server:
         description: "libbitcoin-server tag used for release generation."
+        required: true
+        type: string
+      tag-system:
+        description: "libbitcoin-system tag used for release generation."
         required: true
         type: string
 
@@ -804,7 +808,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.event.inputs.tag-server }}
+          tag_name: "${{ github.event.inputs.tag-server }}${{ github.event.inputs.release-suffix || '' }}"
           draft: true
           prerelease: true
           overwrite_files: false
