@@ -76,6 +76,10 @@ public:
 
     /// The populated configuration settings values.
     configuration configured;
+
+protected:
+    /// Derive each unconfigured hashmap bucket count from its expected count.
+    virtual void derive_buckets() NOEXCEPT;
 };
 
 } // namespace server
