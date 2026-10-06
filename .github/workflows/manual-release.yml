@@ -219,7 +219,7 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-sha=ON -Denable-aes=ON"
+            options: "-Denable-sha=ON"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static-libstdc++ -static-libgcc"
@@ -229,7 +229,7 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-sha=ON -Denable-aes=ON -Denable-sha3=ON"
+            options: "-Denable-sha=ON -Denable-sha3=ON"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static-libstdc++ -static-libgcc"
@@ -282,7 +282,7 @@ jobs:
           - basename: "bs-win-arm64-crypto"
             configuration: StaticRelease
             toolchain: msbuild
-            options: "--enable-sha --enable-aes"
+            options: "--enable-sha"
             platform: "ARM64"
             toolset: "v145"
             version: "vs2026"
