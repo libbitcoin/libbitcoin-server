@@ -506,14 +506,15 @@ jobs:
         shell: bash
         run: |
           mkdir candidate
+          WORKSPACE="${{ github.workspace }}"
           if [[ "${{ matrix.toolchain }}" == "cmake" ]]; then
-              CANDIDATE="prefix/bin/bs"
+              CANDIDATE="${WORKSPACE}/prefix/bin/bs"
               CANONICAL="${{ matrix.basename }}"
           elif [[ ${{ matrix.toolchain }} == "gnu" ]]; then
-              CANDIDATE="prefix/bin/bs"
+              CANDIDATE="${WORKSPACE}/prefix/bin/bs"
               CANONICAL="${{ matrix.basename }}"
           elif [[ ${{ matrix.toolchain }} == "presets" ]]; then
-              CANDIDATE="prefix/${{ matrix.preset }}/bin/bs"
+              CANDIDATE="${WORKSPACE}/prefix/${{ matrix.preset }}/bin/bs"
               CANONICAL="${{ matrix.basename }}"
           elif [[ ${{ matrix.toolchain }} == "msbuild" ]]; then
               if [[ "${{ matrix.configuration }}" == *Debug* ]]; then
@@ -524,7 +525,7 @@ jobs:
                   echo "Configuration unexpected."
                   exit 1
               fi
-              CANDIDATE="libbitcoin-server/bin/${{ matrix.platform }}/${CONFIG}/${{ matrix.toolset }}/static/bs.exe"
+              CANDIDATE="${WORKSPACE}/libbitcoin-server/bin/${{ matrix.platform }}/${CONFIG}/${{ matrix.toolset }}/static/bs.exe"
               CANONICAL="${{ matrix.basename }}.exe"
           else
               echo "\e[0;91mUnexpected toolchain provided.\e[0m"
