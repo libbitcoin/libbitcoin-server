@@ -142,6 +142,7 @@ jobs:
       candidate_identifier: ${{ steps.normalizer.outputs.candidate_identifier }}
 
     runs-on: ${{ matrix.image }}
+    container: ${{ matrix.container  || null }}
 
     strategy:
       fail-fast: false
@@ -165,6 +166,50 @@ jobs:
             cc: "clang"
             cxx: "clang++"
             image: macos-26-intel
+
+          - basename: "bs-musl-x64"
+            configuration: release
+            link: static
+            toolchain: gnu
+            options: "--enable-avx2"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04
+            container: alpine:3.20
+
+          - basename: "bs-musl-x64-shani"
+            configuration: release
+            link: static
+            toolchain: gnu
+            options: "--enable-avx2 --enable-shani"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04
+            container: alpine:3.20
+
+          - basename: "bs-musl-x64-avx512"
+            configuration: release
+            link: static
+            toolchain: gnu
+            options: "--enable-avx512"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04
+            container: alpine:3.20
+
+          - basename: "bs-musl-x64-avx512-shani"
+            configuration: release
+            link: static
+            toolchain: gnu
+            options: "--enable-avx512 --enable-shani"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04
+            container: alpine:3.20
 
           - basename: "bs-nix-x64"
             configuration: release
@@ -212,7 +257,7 @@ jobs:
             toolchain: cmake
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
 
           - basename: "bs-nix-arm64-crypto"
@@ -222,7 +267,7 @@ jobs:
             options: "-Denable-sha=ON"
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
 
           - basename: "bs-nix-arm64-sha3"
@@ -232,7 +277,7 @@ jobs:
             options: "-Denable-sha=ON -Denable-sha3=ON"
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
 
           - basename: "bs-win-x64"
@@ -345,12 +390,23 @@ jobs:
           ref: ${{ github.event.inputs.tag-system }}
           repository: ${{ github.repository_owner }}/libbitcoin-system
 
-      - name: Prepare toolchain [linux]
-        if: ${{ startsWith(matrix.image, 'ubuntu') }}
+      - name: Prepare toolchain [linux/glibc]
+        if: ${{ startsWith(matrix.image, 'ubuntu') && matrix.container == '' }}
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y ${{ matrix.packages || '' }} git build-essential autoconf automake libtool pkg-config
+          sudo apt-get install -y ${{ matrix.packages || '' }} \
+            git build-essential autoconf automake libtool pkg-config
+
+      - name: Prepare toolchain [linux/musl -Alpine]
+        if: ${{ startsWith(matrix.container, 'alpine') }}
+        shell: sh
+        run: |
+          apk add --no-cache ${{ matrix.packages || '' }} \
+            build-base linux-headers \
+            g++ make autoconf automake libtool pkgconf \
+            git bash \
+            coreutils
 
       - name: Prepare toolchain [macos]
         if: ${{ startsWith(matrix.image, 'macos') }}
