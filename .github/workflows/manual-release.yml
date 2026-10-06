@@ -211,6 +211,38 @@ jobs:
             image: ubuntu-26.04
             container: alpine:3.20
 
+          - basename: "bs-musl-arm64"
+            configuration: release
+            link: static
+            toolchain: gnu
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04-arm
+            container: alpine:3.20
+
+          - basename: "bs-musl-arm64-crypto"
+            configuration: release
+            link: static
+            toolchain: gnu
+            options: "--enable-sha"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04-arm
+            container: alpine:3.20
+
+          - basename: "bs-musl-arm64-sha3"
+            configuration: release
+            link: static
+            toolchain: gnu
+            options: "--enable-sha --enable-sha3"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04-arm
+            container: alpine:3.20
+
           - basename: "bs-nix-x64"
             configuration: release
             link: static
@@ -257,7 +289,7 @@ jobs:
             toolchain: cmake
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
 
           - basename: "bs-nix-arm64-crypto"
@@ -267,7 +299,7 @@ jobs:
             options: "-Denable-sha=ON"
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
 
           - basename: "bs-nix-arm64-sha3"
@@ -277,7 +309,7 @@ jobs:
             options: "-Denable-sha=ON -Denable-sha3=ON"
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
 
           - basename: "bs-win-x64"
@@ -350,6 +382,10 @@ jobs:
       LDFLAGS: '${{ matrix.linkflags }}'
 
     steps:
+      - name: Address alpine arm64 JavaScript actions
+        if: ${{ endsWith(matrix.image, 'arm') && startsWith(matrix.container, 'alpine') }}
+        uses: laverdet/alpine-arm64@v1
+
       - name: checkout server
         uses: actions/checkout@v6
         with:
