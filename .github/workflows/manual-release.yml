@@ -149,7 +149,7 @@ jobs:
 
       matrix:
         include:
-          - basename: "bs-macos-arm64-sha3"
+          - basename: "bs-macos-arm64"
             configuration: release
             link: static
             toolchain: cmake
@@ -348,32 +348,32 @@ jobs:
             version: "vs2026"
             image: windows-latest
 
-          - basename: "bs-win-arm64"
-            configuration: StaticRelease
-            toolchain: msbuild
-            platform: "ARM64"
-            toolset: "v145"
-            version: "vs2026"
-            image: windows-11-vs2026-arm
-
-          - basename: "bs-win-arm64-crypto"
-            configuration: StaticRelease
-            toolchain: msbuild
-            options: "--enable-sha"
-            platform: "ARM64"
-            toolset: "v145"
-            version: "vs2026"
-            image: windows-11-vs2026-arm
-
-          - basename: "bs-win-arm64-sha3"
-            configuration: StaticRelease
-            toolchain: msbuild
-            options: "--enable-sha3"
-            platform: "ARM64"
-            toolset: "v145"
-            version: "vs2026"
-            image: windows-11-vs2026-arm
-
+#          - basename: "bs-win-arm64"
+#            configuration: StaticRelease
+#            toolchain: msbuild
+#            platform: "ARM64"
+#            toolset: "v145"
+#            version: "vs2026"
+#            image: windows-11-vs2026-arm
+#
+#          - basename: "bs-win-arm64-crypto"
+#            configuration: StaticRelease
+#            toolchain: msbuild
+#            options: "--enable-sha"
+#            platform: "ARM64"
+#            toolset: "v145"
+#            version: "vs2026"
+#            image: windows-11-vs2026-arm
+#
+#          - basename: "bs-win-arm64-sha3"
+#            configuration: StaticRelease
+#            toolchain: msbuild
+#            options: "--enable-sha3"
+#            platform: "ARM64"
+#            toolset: "v145"
+#            version: "vs2026"
+#            image: windows-11-vs2026-arm
+#
     env:
       CC: '${{ matrix.cc }}'
       CXX: '${{ matrix.cxx }}'
