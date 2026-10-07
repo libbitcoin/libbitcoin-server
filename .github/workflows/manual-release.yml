@@ -142,13 +142,14 @@ jobs:
       candidate_identifier: ${{ steps.normalizer.outputs.candidate_identifier }}
 
     runs-on: ${{ matrix.image }}
+    container: ${{ matrix.container  || null }}
 
     strategy:
       fail-fast: false
 
       matrix:
         include:
-          - basename: "bs-macos-arm64-sha3"
+          - basename: "bs-macos-arm64"
             configuration: release
             link: static
             toolchain: cmake
@@ -165,6 +166,82 @@ jobs:
             cc: "clang"
             cxx: "clang++"
             image: macos-26-intel
+
+          - basename: "bs-musl-x64"
+            configuration: release
+            link: static
+            toolchain: gnu
+            options: "--enable-avx2"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04
+            container: alpine:3.20
+
+          - basename: "bs-musl-x64-shani"
+            configuration: release
+            link: static
+            toolchain: gnu
+            options: "--enable-avx2 --enable-shani"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04
+            container: alpine:3.20
+
+          - basename: "bs-musl-x64-avx512"
+            configuration: release
+            link: static
+            toolchain: gnu
+            options: "--enable-avx512"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04
+            container: alpine:3.20
+
+          - basename: "bs-musl-x64-avx512-shani"
+            configuration: release
+            link: static
+            toolchain: gnu
+            options: "--enable-avx512 --enable-shani"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04
+            container: alpine:3.20
+
+          - basename: "bs-musl-arm64"
+            configuration: release
+            link: static
+            toolchain: gnu
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04-arm
+            container: alpine:3.20
+
+          - basename: "bs-musl-arm64-crypto"
+            configuration: release
+            link: static
+            toolchain: gnu
+            options: "--enable-sha"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04-arm
+            container: alpine:3.20
+
+          - basename: "bs-musl-arm64-sha3"
+            configuration: release
+            link: static
+            toolchain: gnu
+            options: "--enable-sha --enable-sha3"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
+            image: ubuntu-26.04-arm
+            container: alpine:3.20
 
           - basename: "bs-nix-x64"
             configuration: release
@@ -219,7 +296,7 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-sha=ON -Denable-aes=ON"
+            options: "-Denable-sha=ON"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static-libstdc++ -static-libgcc"
@@ -229,7 +306,7 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-sha=ON -Denable-aes=ON -Denable-sha3=ON"
+            options: "-Denable-sha=ON -Denable-sha3=ON"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static-libstdc++ -static-libgcc"
@@ -282,7 +359,7 @@ jobs:
 #          - basename: "bs-win-arm64-crypto"
 #            configuration: StaticRelease
 #            toolchain: msbuild
-#            options: "--enable-sha --enable-aes"
+#            options: "--enable-sha"
 #            platform: "ARM64"
 #            toolset: "v145"
 #            version: "vs2026"
@@ -305,6 +382,10 @@ jobs:
       LDFLAGS: '${{ matrix.linkflags }}'
 
     steps:
+      - name: Address alpine arm64 JavaScript actions
+        if: ${{ endsWith(matrix.image, 'arm') && startsWith(matrix.container, 'alpine') }}
+        uses: laverdet/alpine-arm64@v1
+
       - name: checkout server
         uses: actions/checkout@v6
         with:
@@ -345,12 +426,23 @@ jobs:
           ref: ${{ github.event.inputs.tag-system }}
           repository: ${{ github.repository_owner }}/libbitcoin-system
 
-      - name: Prepare toolchain [linux]
-        if: ${{ startsWith(matrix.image, 'ubuntu') }}
+      - name: Prepare toolchain [linux/glibc]
+        if: ${{ startsWith(matrix.image, 'ubuntu') && matrix.container == '' }}
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y ${{ matrix.packages || '' }} git build-essential autoconf automake libtool pkg-config
+          sudo apt-get install -y ${{ matrix.packages || '' }} \
+            git build-essential autoconf automake libtool pkg-config
+
+      - name: Prepare toolchain [linux/musl -Alpine]
+        if: ${{ startsWith(matrix.container, 'alpine') }}
+        shell: sh
+        run: |
+          apk add --no-cache ${{ matrix.packages || '' }} \
+            build-base linux-headers \
+            g++ make autoconf automake libtool pkgconf \
+            git bash \
+            coreutils
 
       - name: Prepare toolchain [macos]
         if: ${{ startsWith(matrix.image, 'macos') }}
@@ -450,14 +542,15 @@ jobs:
         shell: bash
         run: |
           mkdir candidate
+          WORKSPACE="${{ github.workspace }}"
           if [[ "${{ matrix.toolchain }}" == "cmake" ]]; then
-              CANDIDATE="prefix/bin/bs"
+              CANDIDATE="${WORKSPACE}/prefix/bin/bs"
               CANONICAL="${{ matrix.basename }}"
           elif [[ ${{ matrix.toolchain }} == "gnu" ]]; then
-              CANDIDATE="prefix/bin/bs"
+              CANDIDATE="${WORKSPACE}/prefix/bin/bs"
               CANONICAL="${{ matrix.basename }}"
           elif [[ ${{ matrix.toolchain }} == "presets" ]]; then
-              CANDIDATE="prefix/${{ matrix.preset }}/bin/bs"
+              CANDIDATE="${WORKSPACE}/prefix/${{ matrix.preset }}/bin/bs"
               CANONICAL="${{ matrix.basename }}"
           elif [[ ${{ matrix.toolchain }} == "msbuild" ]]; then
               if [[ "${{ matrix.configuration }}" == *Debug* ]]; then
@@ -468,7 +561,7 @@ jobs:
                   echo "Configuration unexpected."
                   exit 1
               fi
-              CANDIDATE="libbitcoin-server/bin/${{ matrix.platform }}/${CONFIG}/${{ matrix.toolset }}/static/bs.exe"
+              CANDIDATE="${WORKSPACE}/libbitcoin-server/bin/${{ matrix.platform }}/${CONFIG}/${{ matrix.toolset }}/static/bs.exe"
               CANONICAL="${{ matrix.basename }}.exe"
           else
               echo "\e[0;91mUnexpected toolchain provided.\e[0m"
