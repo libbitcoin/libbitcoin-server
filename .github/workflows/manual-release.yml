@@ -173,7 +173,7 @@ jobs:
             configuration: release
             link: static
             toolchain: gnu
-            options: "--enable-avx2 --enable-force_static"
+            options: "--enable-avx2"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
@@ -184,7 +184,7 @@ jobs:
             configuration: release
             link: static
             toolchain: gnu
-            options: "--enable-avx2 --enable-shani --enable-force_static"
+            options: "--enable-avx2 --enable-shani"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
@@ -195,7 +195,7 @@ jobs:
             configuration: release
             link: static
             toolchain: gnu
-            options: "--enable-avx512 --enable-force_static"
+            options: "--enable-avx512"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
@@ -206,7 +206,7 @@ jobs:
             configuration: release
             link: static
             toolchain: gnu
-            options: "--enable-avx512 --enable-shani --enable-force_static"
+            options: "--enable-avx512 --enable-shani"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
@@ -217,7 +217,6 @@ jobs:
             configuration: release
             link: static
             toolchain: gnu
-            options: "--enable-force_static"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
@@ -228,7 +227,7 @@ jobs:
             configuration: release
             link: static
             toolchain: gnu
-            options: "--enable-sha --enable-force_static"
+            options: "--enable-sha"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
@@ -239,7 +238,7 @@ jobs:
             configuration: release
             link: static
             toolchain: gnu
-            options: "--enable-sha --enable-sha3 --enable-force_static"
+            options: "--enable-sha --enable-sha3"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
@@ -253,7 +252,7 @@ jobs:
             options: "-Denable-avx2=ON"
             cc: "clang-21"
             cxx: "clang++-21"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
 
           - basename: "bs-nix-x64-shani"
@@ -263,7 +262,7 @@ jobs:
             options: "-Denable-avx2=ON -Denable-shani=ON"
             cc: "clang-21"
             cxx: "clang++-21"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
 
           - basename: "bs-nix-x64-avx512"
@@ -273,7 +272,7 @@ jobs:
             options: "-Denable-avx512=ON"
             cc: "clang-21"
             cxx: "clang++-21"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
 
           - basename: "bs-nix-x64-avx512-shani"
@@ -283,7 +282,7 @@ jobs:
             options: "-Denable-avx512=ON -Denable-shani=ON"
             cc: "clang-21"
             cxx: "clang++-21"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
 
           - basename: "bs-nix-arm64"
@@ -292,7 +291,7 @@ jobs:
             toolchain: cmake
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
 
           - basename: "bs-nix-arm64-crypto"
@@ -302,7 +301,7 @@ jobs:
             options: "-Denable-sha=ON"
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
 
           - basename: "bs-nix-arm64-sha3"
@@ -312,7 +311,7 @@ jobs:
             options: "-Denable-sha=ON -Denable-sha3=ON"
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
 
           - basename: "bs-win-x64"
