@@ -171,77 +171,78 @@ jobs:
             configuration: release
             link: static
             toolchain: gnu
-            options: "--enable-avx2"
+            options: "--enable-avx2 --enable-force_static"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
-            container: alpine:3.20
+            container: alpine:3.22.6
 
           - basename: "bs-musl-x64-shani"
             configuration: release
             link: static
             toolchain: gnu
-            options: "--enable-avx2 --enable-shani"
+            options: "--enable-avx2 --enable-shani --enable-force_static"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
-            container: alpine:3.20
+            container: alpine:3.22.6
 
           - basename: "bs-musl-x64-avx512"
             configuration: release
             link: static
             toolchain: gnu
-            options: "--enable-avx512"
+            options: "--enable-avx512 --enable-force_static"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
-            container: alpine:3.20
+            container: alpine:3.22.6
 
           - basename: "bs-musl-x64-avx512-shani"
             configuration: release
             link: static
             toolchain: gnu
-            options: "--enable-avx512 --enable-shani"
+            options: "--enable-avx512 --enable-shani --enable-force_static"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
-            container: alpine:3.20
+            container: alpine:3.22.6
 
           - basename: "bs-musl-arm64"
             configuration: release
             link: static
             toolchain: gnu
+            options: "--enable-force_static"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
-            container: alpine:3.20
+            container: alpine:3.22.6
 
           - basename: "bs-musl-arm64-crypto"
             configuration: release
             link: static
             toolchain: gnu
-            options: "--enable-sha"
+            options: "--enable-sha --enable-force_static"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
-            container: alpine:3.20
+            container: alpine:3.22.6
 
           - basename: "bs-musl-arm64-sha3"
             configuration: release
             link: static
             toolchain: gnu
-            options: "--enable-sha --enable-sha3"
+            options: "--enable-sha --enable-sha3 --enable-force_static"
             cc: "gcc"
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
-            container: alpine:3.20
+            container: alpine:3.22.6
 
           - basename: "bs-nix-x64"
             configuration: release
@@ -441,8 +442,7 @@ jobs:
           apk add --no-cache ${{ matrix.packages || '' }} \
             build-base linux-headers \
             g++ make autoconf automake libtool pkgconf \
-            git bash \
-            coreutils
+            git bash
 
       - name: Prepare toolchain [macos]
         if: ${{ startsWith(matrix.image, 'macos') }}
@@ -482,6 +482,7 @@ jobs:
         shell: bash
         run: >
           ./libbitcoin-server/builds/cmake/install-cmake.sh
+          --noninteractive
           --build-use-local-src
           --build-src-dir="${{ github.workspace }}"
           --prefix="${{ github.workspace }}/prefix"
@@ -491,7 +492,6 @@ jobs:
           --build-link="${{ matrix.link }}"
           --build-skip-tests
           --build-boost
-          --build-secp256k1
           ${{ matrix.options }}
 
       - name: Build [gnu]
@@ -499,6 +499,7 @@ jobs:
         shell: bash
         run: >
           ./libbitcoin-server/builds/gnu/install-gnu.sh
+          --noninteractive
           --build-use-local-src
           --build-src-dir="${{ github.workspace }}"
           --prefix="${{ github.workspace }}/prefix"
@@ -508,7 +509,6 @@ jobs:
           --build-link="${{ matrix.link }}"
           --build-skip-tests
           --build-boost
-          --build-secp256k1
           ${{ matrix.options }}
 
       - name: Build [msbuild]
@@ -516,6 +516,7 @@ jobs:
         shell: cmd
         run: >
           .\libbitcoin-server\builds\msvc\build-msvc.cmd
+          --noninteractive
           --build-src-dir "${{ github.workspace }}"
           --build-config ${{ matrix.configuration }}
           --build-platform ${{ matrix.platform }}
@@ -529,12 +530,12 @@ jobs:
         shell: bash
         run: >
           ./libbitcoin-server/builds/cmake/install-presets.sh
+          --noninteractive
           --build-use-local-src
           --build-src-dir="${{ github.workspace }}"
           --build-preset="${{ matrix.preset }}"
           --build-skip-tests
           --build-boost
-          --build-secp256k1
           ${{ matrix.options }}
 
       - name: Normalize output location
