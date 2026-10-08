@@ -157,6 +157,7 @@ jobs:
             cc: "clang"
             cxx: "clang++"
             image: macos-latest
+            deployment_target: "13.3"
 
           - basename: "bs-macos-x64"
             configuration: release
@@ -166,6 +167,7 @@ jobs:
             cc: "clang"
             cxx: "clang++"
             image: macos-26-intel
+            deployment_target: "13.3"
 
           - basename: "bs-musl-x64"
             configuration: release
@@ -448,11 +450,28 @@ jobs:
         if: ${{ startsWith(matrix.image, 'macos') }}
         shell: bash
         run: |
+          # install packages
           brew install ${{ matrix.packages || '' }} autoconf automake libtool
+
+          # Ensure Xcode command line tools are properly configured
+          sudo xcode-select --reset
+
+          # conditionally extend path
           if [[ -n "${{ matrix.llvm }}" ]]; then
             echo "PATH=/opt/homebrew/opt/${{ matrix.llvm }}/bin:${PATH}" >> $GITHUB_ENV
+            echo "PATH : /opt/homebrew/opt/${{ matrix.llvm }}/bin:${PATH}"
           fi
-          echo "MACOSX_DEPLOYMENT_TARGET=13.3" >> $GITHUB_ENV
+
+          # Set deployment target to a compatible or declared value
+          MACOSX_VERSION=$(sw_vers -productVersion | cut -d. -f1,2)
+          if [[ -n "${{ matrix.deployment_target }}" ]]; then
+              echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.deployment_target }}" >> $GITHUB_ENV
+              echo "MACOSX_DEPLOYMENT_TARGET  : ${{ matrix.deployment_target }}"
+              echo "MACOSX_VERSION            : ${MACOSX_VERSION}"
+          else
+              echo "MACOSX_DEPLOYMENT_TARGET=${MACOSX_VERSION}" >> $GITHUB_ENV
+              echo "MACOSX_DEPLOYMENT_TARGET  : ${MACOSX_VERSION}"
+          fi
 
       - name: Prepare toolchain [windows]
         if: ${{ startsWith(matrix.image, 'windows') }}
