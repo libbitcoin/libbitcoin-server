@@ -34,6 +34,8 @@
 #                                Default: OFF
 # -Dwith-secp256k1=<ON/OFF>    Use bitcoin-core/secp256k1 library.
 #                                Default: OFF
+# -Dwith-valgrind=<ON/OFF>     Use valgrind memcheck client requests.
+#                                Default: OFF
 # -Denable-cuda=<ON/OFF>       Use cuda (gpu) batch signature verification (inert on macOS).
 #                                Default: ON
 # -Dwith-ssl=<ON/OFF>          Use embedded ssl library.
@@ -344,7 +346,7 @@ main()
             STDLIB="stdc++"
         fi
     else
-        define_message_verbose "STDLIB using defined value '${STDLIB}'"
+        msg_verbose "STDLIB using defined value '${STDLIB}'"
     fi
 
     if [[ -z "${CC}" ]]; then
@@ -1004,6 +1006,8 @@ display_toolchain_variables()
     msg "CFLAGS                          : ${CFLAGS}"
     msg "CXX                             : ${CXX}"
     msg "CXXFLAGS                        : ${CXXFLAGS}"
+    msg "LDFLAGS                         : ${LDFLAGS}"
+    msg "LDADD                           : ${LDADD}"
     msg "LD_RUN_PATH                     : ${LD_RUN_PATH}"
     msg "LD_LIBRARY_PATH                 : ${LD_LIBRARY_PATH}"
     msg "PKG_CONFIG_PATH                 : ${PKG_CONFIG_PATH}"
@@ -1069,6 +1073,8 @@ help()
     msg "-Denable-aes=<ON/OFF>        Use ARM AES and PMULL Extensions."
     msg "                               Default: OFF"
     msg "-Dwith-secp256k1=<ON/OFF>    Use bitcoin-core/secp256k1 library."
+    msg "                               Default: OFF"
+    msg "-Dwith-valgrind=<ON/OFF>     Use valgrind memcheck client requests."
     msg "                               Default: OFF"
     msg "-Denable-cuda=<ON/OFF>       Use cuda (gpu) batch signature verification (inert on macOS)."
     msg "                               Default: ON"

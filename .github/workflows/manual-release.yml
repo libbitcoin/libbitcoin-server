@@ -157,6 +157,7 @@ jobs:
             cc: "clang"
             cxx: "clang++"
             image: macos-latest
+            deployment_target: "13.3"
 
           - basename: "bs-macos-x64"
             configuration: release
@@ -166,6 +167,7 @@ jobs:
             cc: "clang"
             cxx: "clang++"
             image: macos-26-intel
+            deployment_target: "13.3"
 
           - basename: "bs-musl-x64"
             configuration: release
@@ -176,7 +178,7 @@ jobs:
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
-            container: alpine:3.20
+            container: alpine:3.22.6
 
           - basename: "bs-musl-x64-shani"
             configuration: release
@@ -187,7 +189,7 @@ jobs:
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
-            container: alpine:3.20
+            container: alpine:3.22.6
 
           - basename: "bs-musl-x64-avx512"
             configuration: release
@@ -198,7 +200,7 @@ jobs:
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
-            container: alpine:3.20
+            container: alpine:3.22.6
 
           - basename: "bs-musl-x64-avx512-shani"
             configuration: release
@@ -209,7 +211,7 @@ jobs:
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
-            container: alpine:3.20
+            container: alpine:3.22.6
 
           - basename: "bs-musl-arm64"
             configuration: release
@@ -219,7 +221,7 @@ jobs:
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
-            container: alpine:3.20
+            container: alpine:3.22.6
 
           - basename: "bs-musl-arm64-crypto"
             configuration: release
@@ -230,7 +232,7 @@ jobs:
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
-            container: alpine:3.20
+            container: alpine:3.22.6
 
           - basename: "bs-musl-arm64-sha3"
             configuration: release
@@ -241,7 +243,7 @@ jobs:
             cxx: "g++"
             linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
-            container: alpine:3.20
+            container: alpine:3.22.6
 
           - basename: "bs-nix-x64"
             configuration: release
@@ -250,7 +252,7 @@ jobs:
             options: "-Denable-avx2=ON"
             cc: "clang-21"
             cxx: "clang++-21"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
 
           - basename: "bs-nix-x64-shani"
@@ -260,7 +262,7 @@ jobs:
             options: "-Denable-avx2=ON -Denable-shani=ON"
             cc: "clang-21"
             cxx: "clang++-21"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
 
           - basename: "bs-nix-x64-avx512"
@@ -270,7 +272,7 @@ jobs:
             options: "-Denable-avx512=ON"
             cc: "clang-21"
             cxx: "clang++-21"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
 
           - basename: "bs-nix-x64-avx512-shani"
@@ -280,7 +282,7 @@ jobs:
             options: "-Denable-avx512=ON -Denable-shani=ON"
             cc: "clang-21"
             cxx: "clang++-21"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
 
           - basename: "bs-nix-arm64"
@@ -289,7 +291,7 @@ jobs:
             toolchain: cmake
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
 
           - basename: "bs-nix-arm64-crypto"
@@ -299,7 +301,7 @@ jobs:
             options: "-Denable-sha=ON"
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
 
           - basename: "bs-nix-arm64-sha3"
@@ -309,7 +311,7 @@ jobs:
             options: "-Denable-sha=ON -Denable-sha3=ON"
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static-libstdc++ -static-libgcc"
+            linkflags: "-static -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
 
           - basename: "bs-win-x64"
@@ -441,18 +443,34 @@ jobs:
           apk add --no-cache ${{ matrix.packages || '' }} \
             build-base linux-headers \
             g++ make autoconf automake libtool pkgconf \
-            git bash \
-            coreutils
+            git bash
 
       - name: Prepare toolchain [macos]
         if: ${{ startsWith(matrix.image, 'macos') }}
         shell: bash
         run: |
+          # install packages
           brew install ${{ matrix.packages || '' }} autoconf automake libtool
+
+          # Ensure Xcode command line tools are properly configured
+          sudo xcode-select --reset
+
+          # conditionally extend path
           if [[ -n "${{ matrix.llvm }}" ]]; then
             echo "PATH=/opt/homebrew/opt/${{ matrix.llvm }}/bin:${PATH}" >> $GITHUB_ENV
+            echo "PATH : /opt/homebrew/opt/${{ matrix.llvm }}/bin:${PATH}"
           fi
-          echo "MACOSX_DEPLOYMENT_TARGET=13.3" >> $GITHUB_ENV
+
+          # Set deployment target to a compatible or declared value
+          MACOSX_VERSION=$(sw_vers -productVersion | cut -d. -f1,2)
+          if [[ -n "${{ matrix.deployment_target }}" ]]; then
+              echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.deployment_target }}" >> $GITHUB_ENV
+              echo "MACOSX_DEPLOYMENT_TARGET  : ${{ matrix.deployment_target }}"
+              echo "MACOSX_VERSION            : ${MACOSX_VERSION}"
+          else
+              echo "MACOSX_DEPLOYMENT_TARGET=${MACOSX_VERSION}" >> $GITHUB_ENV
+              echo "MACOSX_DEPLOYMENT_TARGET  : ${MACOSX_VERSION}"
+          fi
 
       - name: Prepare toolchain [windows]
         if: ${{ startsWith(matrix.image, 'windows') }}
@@ -482,6 +500,7 @@ jobs:
         shell: bash
         run: >
           ./libbitcoin-server/builds/cmake/install-cmake.sh
+          --noninteractive
           --build-use-local-src
           --build-src-dir="${{ github.workspace }}"
           --prefix="${{ github.workspace }}/prefix"
@@ -491,7 +510,6 @@ jobs:
           --build-link="${{ matrix.link }}"
           --build-skip-tests
           --build-boost
-          --build-secp256k1
           ${{ matrix.options }}
 
       - name: Build [gnu]
@@ -499,6 +517,7 @@ jobs:
         shell: bash
         run: >
           ./libbitcoin-server/builds/gnu/install-gnu.sh
+          --noninteractive
           --build-use-local-src
           --build-src-dir="${{ github.workspace }}"
           --prefix="${{ github.workspace }}/prefix"
@@ -508,7 +527,6 @@ jobs:
           --build-link="${{ matrix.link }}"
           --build-skip-tests
           --build-boost
-          --build-secp256k1
           ${{ matrix.options }}
 
       - name: Build [msbuild]
@@ -516,6 +534,7 @@ jobs:
         shell: cmd
         run: >
           .\libbitcoin-server\builds\msvc\build-msvc.cmd
+          --noninteractive
           --build-src-dir "${{ github.workspace }}"
           --build-config ${{ matrix.configuration }}
           --build-platform ${{ matrix.platform }}
@@ -529,12 +548,12 @@ jobs:
         shell: bash
         run: >
           ./libbitcoin-server/builds/cmake/install-presets.sh
+          --noninteractive
           --build-use-local-src
           --build-src-dir="${{ github.workspace }}"
           --build-preset="${{ matrix.preset }}"
           --build-skip-tests
           --build-boost
-          --build-secp256k1
           ${{ matrix.options }}
 
       - name: Normalize output location
@@ -637,6 +656,7 @@ jobs:
               file "$f"
               case "$(uname -s)" in
                 Linux)
+                  ldd "$f"
                   if ldd "$f" 2>/dev/null | grep -q .; then
                     echo "--- Dynamic dependencies (ldd) ---"
                     ldd "$f" || true
@@ -648,6 +668,7 @@ jobs:
                   readelf -d "$f" 2>/dev/null | grep -E 'NEEDED|RPATH|RUNPATH|SONAME' || echo "(none)"
                   ;;
                 Darwin)
+                  otool -L "$f"
                   echo "--- Linked libraries (otool -L) ---"
                   otool -L "$f" || true
                   ;;
