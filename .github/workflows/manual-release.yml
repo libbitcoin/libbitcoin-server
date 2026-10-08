@@ -656,6 +656,7 @@ jobs:
               file "$f"
               case "$(uname -s)" in
                 Linux)
+                  ldd "$f"
                   if ldd "$f" 2>/dev/null | grep -q .; then
                     echo "--- Dynamic dependencies (ldd) ---"
                     ldd "$f" || true
@@ -667,6 +668,7 @@ jobs:
                   readelf -d "$f" 2>/dev/null | grep -E 'NEEDED|RPATH|RUNPATH|SONAME' || echo "(none)"
                   ;;
                 Darwin)
+                  otool -L "$f"
                   echo "--- Linked libraries (otool -L) ---"
                   otool -L "$f" || true
                   ;;
