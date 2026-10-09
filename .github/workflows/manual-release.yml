@@ -176,7 +176,7 @@ jobs:
             options: "--enable-avx2"
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static -no-pie -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
             container: alpine:3.22.6
 
@@ -187,7 +187,7 @@ jobs:
             options: "--enable-avx2 --enable-shani"
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static -no-pie -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
             container: alpine:3.22.6
 
@@ -198,7 +198,7 @@ jobs:
             options: "--enable-avx512"
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static -no-pie -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
             container: alpine:3.22.6
 
@@ -209,7 +209,7 @@ jobs:
             options: "--enable-avx512 --enable-shani"
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static -no-pie -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04
             container: alpine:3.22.6
 
@@ -219,7 +219,7 @@ jobs:
             toolchain: gnu
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static -no-pie -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
             container: alpine:3.22.6
 
@@ -230,7 +230,7 @@ jobs:
             options: "--enable-sha"
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static -no-pie -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
             container: alpine:3.22.6
 
@@ -241,7 +241,7 @@ jobs:
             options: "--enable-sha --enable-sha3"
             cc: "gcc"
             cxx: "g++"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static -no-pie -static-libstdc++ -static-libgcc"
             image: ubuntu-26.04-arm
             container: alpine:3.22.6
 
@@ -370,7 +370,7 @@ jobs:
           - basename: "bs-windows-arm64-sha3"
             configuration: StaticRelease
             toolchain: msbuild
-            options: "--enable-sha3"
+            options: "--enable-sha --enable-sha3"
             platform: "ARM64"
             toolset: "v145"
             version: "vs2026"
