@@ -245,76 +245,76 @@ jobs:
             image: ubuntu-26.04-arm
             container: alpine:3.22.6
 
-          - basename: "bs-nix-x64"
+          - basename: "bs-linux-x64"
             configuration: release
             link: static
             toolchain: cmake
             options: "-Denable-avx2=ON"
             cc: "clang-18"
             cxx: "clang++-18"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-24.04
 
-          - basename: "bs-nix-x64-shani"
+          - basename: "bs-linux-x64-shani"
             configuration: release
             link: static
             toolchain: cmake
             options: "-Denable-avx2=ON -Denable-shani=ON"
             cc: "clang-18"
             cxx: "clang++-18"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-24.04
 
-          - basename: "bs-nix-x64-avx512"
+          - basename: "bs-linux-x64-avx512"
             configuration: release
             link: static
             toolchain: cmake
             options: "-Denable-avx512=ON"
             cc: "clang-18"
             cxx: "clang++-18"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-24.04
 
-          - basename: "bs-nix-x64-avx512-shani"
+          - basename: "bs-linux-x64-avx512-shani"
             configuration: release
             link: static
             toolchain: cmake
             options: "-Denable-avx512=ON -Denable-shani=ON"
             cc: "clang-18"
             cxx: "clang++-18"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-24.04
 
-          - basename: "bs-nix-arm64"
+          - basename: "bs-linux-arm64"
             configuration: release
             link: static
             toolchain: cmake
             cc: "gcc-14"
             cxx: "g++-14"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-24.04-arm
 
-          - basename: "bs-nix-arm64-crypto"
+          - basename: "bs-linux-arm64-crypto"
             configuration: release
             link: static
             toolchain: cmake
             options: "-Denable-sha=ON"
             cc: "gcc-14"
             cxx: "g++-14"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-24.04-arm
 
-          - basename: "bs-nix-arm64-sha3"
+          - basename: "bs-linux-arm64-sha3"
             configuration: release
             link: static
             toolchain: cmake
             options: "-Denable-sha=ON -Denable-sha3=ON"
             cc: "gcc-14"
             cxx: "g++-14"
-            linkflags: "-static -static-libstdc++ -static-libgcc"
+            linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-24.04-arm
 
-          - basename: "bs-win-x64"
+          - basename: "bs-windows-x64"
             configuration: StaticRelease
             toolchain: msbuild
             options: "--enable-avx2"
@@ -323,7 +323,7 @@ jobs:
             version: "vs2026"
             image: windows-latest
 
-          - basename: "bs-win-x64-shani"
+          - basename: "bs-windows-x64-shani"
             configuration: StaticRelease
             toolchain: msbuild
             options: "--enable-shani"
@@ -332,7 +332,7 @@ jobs:
             version: "vs2026"
             image: windows-latest
 
-          - basename: "bs-win-x64-avx512"
+          - basename: "bs-windows-x64-avx512"
             configuration: StaticRelease
             toolchain: msbuild
             options: "--enable-avx512"
@@ -341,7 +341,7 @@ jobs:
             version: "vs2026"
             image: windows-latest
 
-          - basename: "bs-win-x64-avx512-shani"
+          - basename: "bs-windows-x64-avx512-shani"
             configuration: StaticRelease
             toolchain: msbuild
             options: "--enable-avx512 --enable-shani"
@@ -350,7 +350,7 @@ jobs:
             version: "vs2026"
             image: windows-latest
 
-          - basename: "bs-win-arm64"
+          - basename: "bs-windows-arm64"
             configuration: StaticRelease
             toolchain: msbuild
             platform: "ARM64"
@@ -358,7 +358,7 @@ jobs:
             version: "vs2026"
             image: windows-11-vs2026-arm
 
-          - basename: "bs-win-arm64-crypto"
+          - basename: "bs-windows-arm64-crypto"
             configuration: StaticRelease
             toolchain: msbuild
             options: "--enable-sha"
@@ -367,7 +367,7 @@ jobs:
             version: "vs2026"
             image: windows-11-vs2026-arm
 
-          - basename: "bs-win-arm64-sha3"
+          - basename: "bs-windows-arm64-sha3"
             configuration: StaticRelease
             toolchain: msbuild
             options: "--enable-sha3"
