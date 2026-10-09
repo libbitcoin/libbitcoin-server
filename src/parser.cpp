@@ -165,6 +165,8 @@ parser::parser(system::chain::selection context,
     configured.database.ecdsa.rate = 1;
     configured.database.schnorr.size = 0;
     configured.database.schnorr.rate = 1;
+    configured.database.scan.size = 0;
+    configured.database.scan.rate = 1;
     configured.database.silent.size = 0;
     configured.database.silent.rate = 1;
     configured.database.prevalid.size = 0;
@@ -182,6 +184,10 @@ parser::parser(system::chain::selection context,
     configured.database.state.buckets = 950'001;
     configured.database.state.size = 0;
     configured.database.state.rate = 1;
+
+    configured.database.silent_bk.buckets = 950'001;
+    configured.database.silent_bk.size = 0;
+    configured.database.silent_bk.rate = 1;
 
     // pool and spends (disabled by zero buckets)
     configured.database.pool.expected = 10'000'000;
@@ -2408,16 +2414,28 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of each batch_schnorr table body, defaults to {}."
     )
 
+    /* table.scan */
+    (
+        "table.scan.size",
+        setting<uint64_t>(&configured.database.scan.size),
+        "The minimum allocation of the batch_scan table body, defaults to {}."
+    )
+    (
+        "table.scan.rate",
+        setting<uint16_t>(&configured.database.scan.rate),
+        "The percentage expansion of the batch_scan table body, defaults to {}."
+    )
+
     /* table.silent */
     (
         "table.silent.size",
         setting<uint64_t>(&configured.database.silent.size),
-        "The minimum allocation of the batch_silent table body, defaults to {}."
+        "The minimum allocation of each batch_silent table body, defaults to {}."
     )
     (
         "table.silent.rate",
         setting<uint16_t>(&configured.database.silent.rate),
-        "The percentage expansion of the batch_silent table body, defaults to {}."
+        "The percentage expansion of each batch_silent table body, defaults to {}."
     )
 
     /* table.prevalid */
@@ -2486,6 +2504,23 @@ options_metadata parser::load_settings() THROWS
         "table.state.rate",
         setting<uint16_t>(&configured.database.state.rate),
         "The percentage expansion of the state table body, defaults to {}."
+    )
+
+    /* table.silent_bk */
+    (
+        "table.silent_bk.buckets",
+        setting<uint32_t>(&configured.database.silent_bk.buckets),
+        "The number of buckets in the cache_silent_bk table head, defaults to {}."
+    )
+    (
+        "table.silent_bk.size",
+        setting<uint64_t>(&configured.database.silent_bk.size),
+        "The minimum allocation of the cache_silent_bk table body, defaults to {}."
+    )
+    (
+        "table.silent_bk.rate",
+        setting<uint16_t>(&configured.database.silent_bk.rate),
+        "The percentage expansion of the cache_silent_bk table body, defaults to {}."
     )
 
     /* table.pool */
