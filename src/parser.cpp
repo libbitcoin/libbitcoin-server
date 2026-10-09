@@ -749,12 +749,12 @@ options_metadata parser::load_settings() THROWS
     (
         "peer.handshake_timeout_seconds",
         setting<uint32_t>(&configured.network.handshake_timeout_seconds),
-        "The time limit to complete the connection handshake, defaults to {}."
+        "The time limit to complete the connection handshake, defaults to {} (0 disables)."
     )
     (
         "peer.channel_heartbeat_minutes",
         setting<uint32_t>(&configured.network.channel_heartbeat_minutes),
-        "The time between ping messages, defaults to {}."
+        "The time between ping messages, defaults to {} (0 disables)."
     )
     (
         "peer.maximum_skew_minutes",
@@ -801,12 +801,12 @@ options_metadata parser::load_settings() THROWS
     (
         "outbound.inactivity_minutes",
         setting<uint32_t>(&configured.network.outbound.inactivity_minutes),
-        "The inactivity time limit for any connection, defaults to {}."
+        "The inactivity time limit for any connection, defaults to {} (0 disables)."
     )
     (
         "outbound.expiration_minutes",
         setting<uint32_t>(&configured.network.outbound.expiration_minutes),
-        "The age limit for any connection, defaults to {}."
+        "The age limit for any connection, defaults to {} (0 disables)."
     )
     (
         "outbound.minimum_buffer",
@@ -888,12 +888,12 @@ options_metadata parser::load_settings() THROWS
     (
         "inbound.inactivity_minutes",
         setting<uint32_t>(&configured.network.inbound.inactivity_minutes),
-        "The inactivity time limit for any connection, defaults to {}."
+        "The inactivity time limit for any connection, defaults to {} (0 disables)."
     )
     (
         "inbound.expiration_minutes",
         setting<uint32_t>(&configured.network.inbound.expiration_minutes),
-        "The age limit for any connection, defaults to {}."
+        "The age limit for any connection, defaults to {} (0 disables)."
     )
     (
         "inbound.minimum_buffer",
@@ -970,12 +970,12 @@ options_metadata parser::load_settings() THROWS
     (
         "manual.inactivity_minutes",
         setting<uint32_t>(&configured.network.manual.inactivity_minutes),
-        "The inactivity time limit for any connection, defaults to {} (will attempt reconnect)."
+        "The inactivity time limit for any connection, defaults to {} (0 disables, will attempt reconnect)."
     )
     (
         "manual.expiration_minutes",
         setting<uint32_t>(&configured.network.manual.expiration_minutes),
-        "The age limit for any connection, defaults to {} (will attempt reconnect)."
+        "The age limit for any connection, defaults to {} (0 disables, will attempt reconnect)."
     )
     (
         "manual.minimum_buffer",
