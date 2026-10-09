@@ -161,7 +161,6 @@ void executor::dump_body_sizes() const
         query_.duplicate_body_size(),
         query_.strong_tx_body_size(),
         query_.state_body_size(),
-        query_.silent_bk_body_size(),
         query_.pool_body_size(),
         query_.spends_body_size(),
         query_.filter_bk_body_size(),
@@ -189,7 +188,6 @@ void executor::dump_records() const
         query_.duplicate_records(),
         query_.strong_tx_records(),
         query_.state_records(),
-        query_.silent_bk_records(),
         query_.pool_records(),
         query_.spends_records(),
         query_.filter_bk_records()));
@@ -207,7 +205,6 @@ void executor::dump_buckets() const
         query_.duplicate_buckets(),
         query_.strong_tx_buckets(),
         query_.state_buckets(),
-        query_.silent_bk_buckets(),
         query_.pool_buckets(),
         query_.filter_bk_buckets(),
         query_.filter_tx_buckets()));

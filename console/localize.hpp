@@ -154,7 +154,6 @@
     "   duplicate :{}\n" \
     "   strong_tx :{}\n" \
     "   state     :{}\n" \
-    "   silent_bk :{}\n" \
     "   pool      :{}\n" \
     "   spends    :{}\n" \
     "   filter_bk :{}\n" \
@@ -179,7 +178,6 @@
     "   duplicate :{}\n" \
     "   strong_tx :{}\n" \
     "   state     :{}\n" \
-    "   silent_bk :{}\n" \
     "   pool      :{}\n" \
     "   spends    :{}\n" \
     "   filter_bk :{}"
@@ -194,7 +192,6 @@
     "   duplicate :{}\n" \
     "   strong_tx :{}\n" \
     "   state     :{}\n" \
-    "   silent_bk :{}\n" \
     "   pool      :{}\n" \
     "   filter_bk :{}\n" \
     "   filter_tx :{}"

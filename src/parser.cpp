@@ -185,10 +185,6 @@ parser::parser(system::chain::selection context,
     configured.database.state.size = 0;
     configured.database.state.rate = 1;
 
-    configured.database.silent_bk.buckets = 950'001;
-    configured.database.silent_bk.size = 0;
-    configured.database.silent_bk.rate = 1;
-
     // pool and spends (disabled by zero buckets)
     configured.database.pool.expected = 10'000'000;
     configured.database.pool.size = 0;
@@ -2504,23 +2500,6 @@ options_metadata parser::load_settings() THROWS
         "table.state.rate",
         setting<uint16_t>(&configured.database.state.rate),
         "The percentage expansion of the state table body, defaults to {}."
-    )
-
-    /* table.silent_bk */
-    (
-        "table.silent_bk.buckets",
-        setting<uint32_t>(&configured.database.silent_bk.buckets),
-        "The number of buckets in the cache_silent_bk table head, defaults to {}."
-    )
-    (
-        "table.silent_bk.size",
-        setting<uint64_t>(&configured.database.silent_bk.size),
-        "The minimum allocation of the cache_silent_bk table body, defaults to {}."
-    )
-    (
-        "table.silent_bk.rate",
-        setting<uint16_t>(&configured.database.silent_bk.rate),
-        "The percentage expansion of the cache_silent_bk table body, defaults to {}."
     )
 
     /* table.pool */
