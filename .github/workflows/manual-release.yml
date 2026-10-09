@@ -250,69 +250,69 @@ jobs:
             link: static
             toolchain: cmake
             options: "-Denable-avx2=ON"
-            cc: "clang-21"
-            cxx: "clang++-21"
+            cc: "clang-18"
+            cxx: "clang++-18"
             linkflags: "-static -static-libstdc++ -static-libgcc"
-            image: ubuntu-26.04
+            image: ubuntu-24.04
 
           - basename: "bs-nix-x64-shani"
             configuration: release
             link: static
             toolchain: cmake
             options: "-Denable-avx2=ON -Denable-shani=ON"
-            cc: "clang-21"
-            cxx: "clang++-21"
+            cc: "clang-18"
+            cxx: "clang++-18"
             linkflags: "-static -static-libstdc++ -static-libgcc"
-            image: ubuntu-26.04
+            image: ubuntu-24.04
 
           - basename: "bs-nix-x64-avx512"
             configuration: release
             link: static
             toolchain: cmake
             options: "-Denable-avx512=ON"
-            cc: "clang-21"
-            cxx: "clang++-21"
+            cc: "clang-18"
+            cxx: "clang++-18"
             linkflags: "-static -static-libstdc++ -static-libgcc"
-            image: ubuntu-26.04
+            image: ubuntu-24.04
 
           - basename: "bs-nix-x64-avx512-shani"
             configuration: release
             link: static
             toolchain: cmake
             options: "-Denable-avx512=ON -Denable-shani=ON"
-            cc: "clang-21"
-            cxx: "clang++-21"
+            cc: "clang-18"
+            cxx: "clang++-18"
             linkflags: "-static -static-libstdc++ -static-libgcc"
-            image: ubuntu-26.04
+            image: ubuntu-24.04
 
           - basename: "bs-nix-arm64"
             configuration: release
             link: static
             toolchain: cmake
-            cc: "gcc"
-            cxx: "g++"
+            cc: "gcc-14"
+            cxx: "g++-14"
             linkflags: "-static -static-libstdc++ -static-libgcc"
-            image: ubuntu-26.04-arm
+            image: ubuntu-24.04-arm
 
           - basename: "bs-nix-arm64-crypto"
             configuration: release
             link: static
             toolchain: cmake
             options: "-Denable-sha=ON"
-            cc: "gcc"
-            cxx: "g++"
+            cc: "gcc-14"
+            cxx: "g++-14"
             linkflags: "-static -static-libstdc++ -static-libgcc"
-            image: ubuntu-26.04-arm
+            image: ubuntu-24.04-arm
 
           - basename: "bs-nix-arm64-sha3"
             configuration: release
             link: static
             toolchain: cmake
             options: "-Denable-sha=ON -Denable-sha3=ON"
-            cc: "gcc"
-            cxx: "g++"
+            cc: "gcc-14"
+            cxx: "g++-14"
             linkflags: "-static -static-libstdc++ -static-libgcc"
-            image: ubuntu-26.04-arm
+            image: ubuntu-24.04-arm
 
           - basename: "bs-win-x64"
             configuration: StaticRelease
