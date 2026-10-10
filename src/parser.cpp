@@ -158,6 +158,8 @@ parser::parser(system::chain::selection context,
     configured.database.strong_tx.expected = 1'359'871'695;
     configured.database.strong_tx.size = 149'585'887;
     configured.database.strong_tx.rate = 1;
+    configured.database.scan.size = 0;
+    configured.database.scan.rate = 1;
 
     // caches
 
@@ -165,8 +167,6 @@ parser::parser(system::chain::selection context,
     configured.database.ecdsa.rate = 1;
     configured.database.schnorr.size = 0;
     configured.database.schnorr.rate = 1;
-    configured.database.scan.size = 0;
-    configured.database.scan.rate = 1;
     configured.database.silent.size = 0;
     configured.database.silent.rate = 1;
     configured.database.prevalid.size = 0;
@@ -2391,6 +2391,18 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of the index_strong table body, defaults to {}."
     )
 
+    /* table.scan */
+    (
+        "table.scan.size",
+        setting<uint64_t>(&configured.database.scan.size),
+        "The minimum allocation of the index_scan table body, defaults to {}."
+    )
+    (
+        "table.scan.rate",
+        setting<uint16_t>(&configured.database.scan.rate),
+        "The percentage expansion of the index_scan table body, defaults to {}."
+    )
+
     /* table.ecdsa */
     (
         "table.ecdsa.size",
@@ -2413,18 +2425,6 @@ options_metadata parser::load_settings() THROWS
         "table.schnorr.rate",
         setting<uint16_t>(&configured.database.schnorr.rate),
         "The percentage expansion of each batch_schnorr table body, defaults to {}."
-    )
-
-    /* table.scan */
-    (
-        "table.scan.size",
-        setting<uint64_t>(&configured.database.scan.size),
-        "The minimum allocation of the index_scan table body, defaults to {}."
-    )
-    (
-        "table.scan.rate",
-        setting<uint16_t>(&configured.database.scan.rate),
-        "The percentage expansion of the index_scan table body, defaults to {}."
     )
 
     /* table.silent */
