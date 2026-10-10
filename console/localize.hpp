@@ -145,9 +145,11 @@
     "   ecdsa1    :{}\n" \
     "   schnorr0  :{}\n" \
     "   schnorr1  :{}\n" \
-    "   silent    :{}\n" \
     "   prevalid0 :{}\n" \
     "   prevalid1 :{}\n" \
+    "   silent0   :{}\n" \
+    "   silent1   :{}\n" \
+    "   scan      :{}\n" \
     "   prevout   :{}\n" \
     "   duplicate :{}\n" \
     "   strong_tx :{}\n" \
@@ -168,9 +170,11 @@
     "   ecdsa1    :{}\n" \
     "   schnorr0  :{}\n" \
     "   schnorr1  :{}\n" \
-    "   silent    :{}\n" \
     "   prevalid0 :{}\n" \
     "   prevalid1 :{}\n" \
+    "   silent0   :{}\n" \
+    "   silent1   :{}\n" \
+    "   scan      :{}\n" \
     "   duplicate :{}\n" \
     "   strong_tx :{}\n" \
     "   state     :{}\n" \

@@ -53,7 +53,7 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
-    using tx_link_t = system::silent::batch::tx_link_t;
+    using tx_link_t = system::scan::batch::tx_link_t;
     using silent_payment = system::wallet::silent_payment;
     using matches = std::map<tx_link_t, system::ec_compressed>;
 

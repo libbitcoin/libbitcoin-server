@@ -165,6 +165,8 @@ parser::parser(system::chain::selection context,
     configured.database.ecdsa.rate = 1;
     configured.database.schnorr.size = 0;
     configured.database.schnorr.rate = 1;
+    configured.database.scan.size = 0;
+    configured.database.scan.rate = 1;
     configured.database.silent.size = 0;
     configured.database.silent.rate = 1;
     configured.database.prevalid.size = 0;
@@ -2408,16 +2410,28 @@ options_metadata parser::load_settings() THROWS
         "The percentage expansion of each batch_schnorr table body, defaults to {}."
     )
 
+    /* table.scan */
+    (
+        "table.scan.size",
+        setting<uint64_t>(&configured.database.scan.size),
+        "The minimum allocation of the batch_scan table body, defaults to {}."
+    )
+    (
+        "table.scan.rate",
+        setting<uint16_t>(&configured.database.scan.rate),
+        "The percentage expansion of the batch_scan table body, defaults to {}."
+    )
+
     /* table.silent */
     (
         "table.silent.size",
         setting<uint64_t>(&configured.database.silent.size),
-        "The minimum allocation of the batch_silent table body, defaults to {}."
+        "The minimum allocation of each batch_silent table body, defaults to {}."
     )
     (
         "table.silent.rate",
         setting<uint16_t>(&configured.database.silent.rate),
-        "The percentage expansion of the batch_silent table body, defaults to {}."
+        "The percentage expansion of each batch_silent table body, defaults to {}."
     )
 
     /* table.prevalid */
