@@ -149,10 +149,10 @@
     "   prevalid1 :{}\n" \
     "   silent0   :{}\n" \
     "   silent1   :{}\n" \
-    "   scan      :{}\n" \
     "   prevout   :{}\n" \
     "   duplicate :{}\n" \
     "   strong_tx :{}\n" \
+    "   scan      :{}\n" \
     "   state     :{}\n" \
     "   pool      :{}\n" \
     "   spends    :{}\n" \
@@ -174,9 +174,9 @@
     "   prevalid1 :{}\n" \
     "   silent0   :{}\n" \
     "   silent1   :{}\n" \
-    "   scan      :{}\n" \
     "   duplicate :{}\n" \
     "   strong_tx :{}\n" \
+    "   scan      :{}\n" \
     "   state     :{}\n" \
     "   pool      :{}\n" \
     "   spends    :{}\n" \
