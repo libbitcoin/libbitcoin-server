@@ -2120,7 +2120,7 @@ options_metadata parser::load_settings() THROWS
     (
         "node.batch_silent",
         setting<uint64_t>(&configured.node.batch_silent),
-        "Count of silent payment records to compute in each GPU batch, defaults to {} (0 disables)."
+        "Count of silent payment transactions to compute in each GPU batch, defaults to {} (0 disables)."
     )
     (
         "node.fee_estimate_horizon",
