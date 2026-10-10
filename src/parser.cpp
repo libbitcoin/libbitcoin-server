@@ -714,6 +714,11 @@ options_metadata parser::load_settings() THROWS
         "Enable not found messages, defaults to {}."
     )
     (
+        "peer.enable_memory_pool",
+        setting<bool>(&configured.network.enable_memory_pool),
+        "Enable memory pool messages, defaults to {}."
+    )
+    (
         "peer.enable_relay",
         setting<bool>(&configured.network.enable_relay),
         "Enable transaction relay, defaults to {}."
