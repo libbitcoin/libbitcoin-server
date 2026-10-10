@@ -2419,12 +2419,12 @@ options_metadata parser::load_settings() THROWS
     (
         "table.scan.size",
         setting<uint64_t>(&configured.database.scan.size),
-        "The minimum allocation of the batch_scan table body, defaults to {}."
+        "The minimum allocation of the index_scan table body, defaults to {}."
     )
     (
         "table.scan.rate",
         setting<uint16_t>(&configured.database.scan.rate),
-        "The percentage expansion of the batch_scan table body, defaults to {}."
+        "The percentage expansion of the index_scan table body, defaults to {}."
     )
 
     /* table.silent */
