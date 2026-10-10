@@ -297,17 +297,14 @@ check_PROGRAMS = test/libbitcoin-server-test
 
 test_libbitcoin_server_test_CPPFLAGS = \
     ${boost_BUILD_CPPFLAGS} \
-    ${boost_unit_test_framework_BUILD_CPPFLAGS} \
     ${src_libbitcoin_server_la_CPPFLAGS}
 
 test_libbitcoin_server_test_LDFLAGS = \
     ${boost_LDFLAGS} \
-    ${boost_unit_test_framework_LDFLAGS} \
     ${src_libbitcoin_server_la_LDFLAGS}
 
 test_libbitcoin_server_test_LDADD = \
     ${boost_LIBS} \
-    ${boost_unit_test_framework_LIBS} \
     ${src_libbitcoin_server_la_LIBS} \
     ${src_libbitcoin_server_la_LIBADD}
 
