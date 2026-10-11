@@ -64,7 +64,7 @@ public:
     {
         BC_ASSERT(stranded());
         rpc_dispatcher_.stop(ec);
-        network::protocol_http::stopping(ec);
+        server::protocol_http::stopping(ec);
     }
 
 protected:

@@ -104,7 +104,7 @@ void protocol_btcd::stopping(const code& ec) NOEXCEPT
     stopping_.store(true);
     btcd_dispatcher_.stop(ec);
     unsubscribe_chase();
-    network::protocol_http::stopping(ec);
+    protocol_bitcoind::stopping(ec);
 }
 
 // Dispatch.

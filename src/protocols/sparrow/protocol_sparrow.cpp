@@ -55,7 +55,6 @@ void protocol_sparrow::start() NOEXCEPT
 void protocol_sparrow::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    cancel_.store(true);
     sparrow_dispatcher_.stop(ec);
     protocol_electrum::stopping(ec);
 }
@@ -336,7 +335,7 @@ void protocol_sparrow::scan_silent(silent_subscription& subscription,
     matches found{};
     auto& query = archive();
     const auto& keys = subscription.scanner.keys();
-    if (!query.scan_silent(cancel_, keys, subscription.cursor, last,
+    if (!query.scan_silent(stopping_, keys, subscription.cursor, last,
         [&](const code&, tx_link_t link, const ec_compressed& tweak) NOEXCEPT
         {
             std::unique_lock lock{ mutex };

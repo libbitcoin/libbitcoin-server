@@ -145,7 +145,6 @@ private:
 
     // These are thread safe.
     const std::string prefix_;
-    std::atomic_bool cancel_{};
     std::atomic_bool queued_silent_{};
     std::atomic_bool subscribed_silent_{};
 
