@@ -169,11 +169,11 @@ void protocol_electrum::scripthash_unsubscribe(
         return;
     }
 
-    POST_NOTIFY(do_scripthash_unsubscribe, hash);
+    POST_NOTIFY(do_scripthash_unsubscribe, hash, gate());
 }
 
 void protocol_electrum::do_scripthash_unsubscribe(
-    const hash_digest& hash) NOEXCEPT
+    const hash_digest& hash, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
@@ -181,10 +181,11 @@ void protocol_electrum::do_scripthash_unsubscribe(
     if (is_zero(address_subscriptions_.size()))
         subscribed_address_.store(false, relaxed);
 
-    POST(complete_scripthash_unsubscribe, found);
+    POST(complete_scripthash_unsubscribe, found, gate);
 }
 
-void protocol_electrum::complete_scripthash_unsubscribe(bool found) NOEXCEPT
+void protocol_electrum::complete_scripthash_unsubscribe(bool found,
+    const gate_t::ptr&) NOEXCEPT
 {
     send_result(found);
 }

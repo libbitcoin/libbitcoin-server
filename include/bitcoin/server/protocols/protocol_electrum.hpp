@@ -306,8 +306,10 @@ protected:
     void complete_scripthash_subscribe(const code& ec,
         const hash_digest& status, const gate_t::ptr& gate) NOEXCEPT;
     void scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
-    void do_scripthash_unsubscribe(const hash_digest& hash) NOEXCEPT;
-    void complete_scripthash_unsubscribe(bool found) NOEXCEPT;
+    void do_scripthash_unsubscribe(const hash_digest& hash,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_scripthash_unsubscribe(bool found,
+        const gate_t::ptr& gate) NOEXCEPT;
     void scripthash_notify(const hash_digest& status, const hash_digest& hash,
         notify_t type) NOEXCEPT;
 
@@ -322,8 +324,10 @@ protected:
     void complete_outpoint_subscribe(const code& ec,
         const outpoint_subscription& sub, const point& prevout,
         const gate_t::ptr& gate) NOEXCEPT;
-    void do_outpoint_unsubscribe(const point& prevout) NOEXCEPT;
-    void complete_outpoint_unsubscribe(bool found) NOEXCEPT;
+    void do_outpoint_unsubscribe(const point& prevout,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_outpoint_unsubscribe(bool found,
+        const gate_t::ptr& gate) NOEXCEPT;
     void outpoint_notify(const std::unique_ptr<interface::object_t>& status,
         const point& prevout) NOEXCEPT;
 

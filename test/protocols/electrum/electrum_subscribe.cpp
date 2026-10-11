@@ -623,6 +623,21 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__subscribed__tr
     REQUIRE_NO_THROW_TRUE(response2.at("result").as_bool());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__pipelined_request__own_ids)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4_2));
+
+    constexpr auto request = R"({{"id":1110,"method":"blockchain.scripthash.unsubscribe","params":["{}"]}})" "\n" R"({{"id":1111,"method":"server.ping","params":[]}})" "\n";
+    const auto response1 = get(std::format(request, bogus_scripthash));
+    const auto response2 = receive();
+    BOOST_REQUIRE_MESSAGE(response1.is_object() && response1.as_object().contains("result"), serialize(response1));
+    BOOST_REQUIRE_MESSAGE(response2.is_object() && response2.as_object().contains("result"), serialize(response2));
+    BOOST_REQUIRE_EQUAL(response1.at("id").as_int64(), 1110);
+    BOOST_REQUIRE_EQUAL(response2.at("id").as_int64(), 1111);
+    REQUIRE_NO_THROW_TRUE(response1.at("result").is_bool());
+    REQUIRE_NO_THROW_TRUE(response2.at("result").is_null());
+}
+
 // blockchain.scriptpubkey.subscribe
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__insufficient_version__wrong_version)

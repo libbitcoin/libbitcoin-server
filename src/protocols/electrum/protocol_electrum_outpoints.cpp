@@ -224,10 +224,11 @@ void protocol_electrum::handle_blockchain_outpoint_unsubscribe(const code& ec,
         return;
     }
 
-    POST_NOTIFY(do_outpoint_unsubscribe, point{ hash, index });
+    POST_NOTIFY(do_outpoint_unsubscribe, point{ hash, index }, gate());
 }
 
-void protocol_electrum::do_outpoint_unsubscribe(const point& prevout) NOEXCEPT
+void protocol_electrum::do_outpoint_unsubscribe(const point& prevout,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
@@ -235,10 +236,11 @@ void protocol_electrum::do_outpoint_unsubscribe(const point& prevout) NOEXCEPT
     if (is_zero(outpoint_subscriptions_.size()))
         subscribed_outpoint_.store(false, relaxed);
 
-    POST(complete_outpoint_unsubscribe, found);
+    POST(complete_outpoint_unsubscribe, found, gate);
 }
 
-void protocol_electrum::complete_outpoint_unsubscribe(bool found) NOEXCEPT
+void protocol_electrum::complete_outpoint_unsubscribe(bool found,
+    const gate_t::ptr&) NOEXCEPT
 {
     send_result(found);
 }
