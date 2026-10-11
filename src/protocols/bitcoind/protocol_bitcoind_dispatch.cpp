@@ -54,7 +54,7 @@ void CLASS::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     rpc_dispatcher_.stop(ec);
-    network::protocol_http::stopping(ec);
+    protocol_bitcoind::stopping(ec);
 }
 
 // The post transport of the interface subgroup.

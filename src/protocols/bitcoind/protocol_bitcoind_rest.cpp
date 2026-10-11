@@ -71,7 +71,7 @@ void protocol_bitcoind_rest::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     rest_dispatcher_.stop(ec);
-    network::protocol_http::stopping(ec);
+    protocol_bitcoind::stopping(ec);
 }
 
 // Dispatch.

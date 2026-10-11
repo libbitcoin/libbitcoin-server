@@ -428,7 +428,6 @@ private:
     const uint32_t flags_;
     const std::string witness_;
     network::deadline::ptr ping_timer_;
-    std::atomic_bool stopping_{};
     std::atomic_bool subscribed_height_{};
     std::atomic_bool subscribed_header_{};
     std::atomic_bool subscribed_address_{};
@@ -443,6 +442,10 @@ private:
     // These are protected by notification strand.
     std::map<point, outpoint_subscription> outpoint_subscriptions_{};
     std::map<hash_digest, address_subscription> address_subscriptions_{};
+
+protected:
+    // This is thread safe.
+    std::atomic_bool stopping_{};
 };
 
 } // namespace server
