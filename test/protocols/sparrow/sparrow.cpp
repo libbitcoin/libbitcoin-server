@@ -221,6 +221,78 @@ BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__indexed__resu
 
 BOOST_AUTO_TEST_SUITE_END()
 
+/// The simple send indexed against the block five coinbase (tx link 5), so
+/// the row starts the scan of blocks at or above five, with every block
+/// mapped as the transaction chaser would map it (the node is current).
+struct sparrow_silent_mapped_setup_fixture
+  : electrum_setup_fixture
+{
+    inline sparrow_silent_mapped_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query)
+                && query.set_silent(5, simple_send)
+                && query.set_scan_start(query.to_header(test::genesis.hash()), 0)
+                && query.set_scan_start(query.to_header(test::block1_hash), 0)
+                && query.set_scan_start(query.to_header(test::block2_hash), 0)
+                && query.set_scan_start(query.to_header(test::block3_hash), 0)
+                && query.set_scan_start(query.to_header(test::block4_hash), 0)
+                && query.set_scan_start(query.to_header(test::block5_hash), 1)
+                && query.set_scan_start(query.to_header(test::block6_hash), 1)
+                && query.set_scan_start(query.to_header(test::block7_hash), 1)
+                && query.set_scan_start(query.to_header(test::block8_hash), 1)
+                && query.set_scan_start(query.to_header(test::block9_hash), 1);
+        }, true, [](configuration& config)
+        {
+            config.node.silent_start_height = 0;
+            config.database.initialize(config.bitcoin, false, 0);
+        }, service::sparrow)
+    {
+    }
+};
+
+BOOST_FIXTURE_TEST_SUITE(sparrow_silent_mapped_tests, sparrow_silent_mapped_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__mapped_height_start__scans_from_start)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto response = get(R"({"id":908,"method":"blockchain.silentpayments.subscribe","params":["0f694e068028a717f8af6b9411f9a133dd3565258714cc226594b34db90c1f2c","025cc9856d6f8375350e123978daac200c260cb5b5ae83106cab90484dcd8fcf36",9]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BOOST_REQUIRE_EQUAL(response.at("result").as_object().at("start_height").to_number<uint64_t>(), 9u);
+
+    const auto notification = receive();
+    const auto& params = notification.at("params").as_object();
+    BOOST_REQUIRE_EQUAL(params.at("progress").to_number<double>(), 1.0);
+    BOOST_REQUIRE_EQUAL(params.at("history").as_array().size(), 0u);
+}
+
+BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__height_start_below_row__scans_row)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto response = get(R"({"id":908,"method":"blockchain.silentpayments.subscribe","params":["0f694e068028a717f8af6b9411f9a133dd3565258714cc226594b34db90c1f2c","025cc9856d6f8375350e123978daac200c260cb5b5ae83106cab90484dcd8fcf36",4]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto notification = receive();
+    const auto& params = notification.at("params").as_object();
+    BOOST_REQUIRE_EQUAL(params.at("history").as_array().size(), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__time_start__scans_from_mtp_floor)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto response = get(R"({"id":908,"method":"blockchain.silentpayments.subscribe","params":["0f694e068028a717f8af6b9411f9a133dd3565258714cc226594b34db90c1f2c","025cc9856d6f8375350e123978daac200c260cb5b5ae83106cab90484dcd8fcf36",1231470988]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto notification = receive();
+    const auto& params = notification.at("params").as_object();
+    BOOST_REQUIRE_EQUAL(params.at("history").as_array().size(), 0u);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 // electrum does not serve the sparrow interface
 
 BOOST_FIXTURE_TEST_SUITE(sparrow_electrum_tests, electrum_ten_block_setup_fixture)
