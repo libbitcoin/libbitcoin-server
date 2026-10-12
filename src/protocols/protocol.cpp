@@ -23,48 +23,5 @@
 namespace libbitcoin {
 namespace server {
 
-using namespace system;
-
-BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-
-// Broadcast tx retention.
-// ----------------------------------------------------------------------------
-
-void protocol::retain_tx(const chain::transaction::cptr& tx) NOEXCEPT
-{
-    BC_ASSERT(channel_->stranded());
-
-    auto hash = tx->hash(false);
-    if (retained_tx(hash))
-        return;
-
-    if (retained_.size() >= maximum_retained)
-        retained_.pop_front();
-
-    retained_.emplace_back(std::move(hash), tx);
-}
-
-const protocol::retained_txs& protocol::retained() const NOEXCEPT
-{
-    BC_ASSERT(channel_->stranded());
-    return retained_;
-}
-
-chain::transaction::cptr protocol::retained_tx(
-    const hash_digest& hash) const NOEXCEPT
-{
-    BC_ASSERT(channel_->stranded());
-
-    const auto match = [&hash](const auto& entry) NOEXCEPT
-    {
-        return entry.first == hash;
-    };
-
-    const auto it = std::find_if(retained_.begin(), retained_.end(), match);
-    return it == retained_.end() ? nullptr : it->second;
-}
-
-BC_POP_WARNING()
-
 } // namespace server
 } // namespace libbitcoin

@@ -592,17 +592,14 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_id_from_pos__fractional_po
 
 BOOST_AUTO_TEST_SUITE_END()
 
-// Broadcast tx retention.
+// broadcast
 // ----------------------------------------------------------------------------
-// There is no tx pool, so a successfully-broadcast tx is retained on the
-// channel that sent it, and reported to that client until it is archived.
 
-BOOST_FIXTURE_TEST_SUITE(electrum_retain_tests, electrum_broadcast_setup_fixture)
+BOOST_FIXTURE_TEST_SUITE(electrum_broadcast_tests, electrum_broadcast_setup_fixture)
 
 using namespace system;
-static const code retain_daemon_error{ server::error::electrum::daemon_error };
+static const code broadcast_daemon_error{ server::error::electrum::daemon_error };
 
-// The tx1c fee, which the store cannot report for an unarchived tx.
 static constexpr int64_t tx1c_fee = 0x64 - 0x5a;
 
 static std::string tx1c_text() NOEXCEPT
@@ -615,7 +612,7 @@ static std::string tx1c_hash() NOEXCEPT
     return encode_hash(test::tx1c.hash(false));
 }
 
-// The scripthash tx1c pays to (not archived, so unknown to the store).
+// The scripthash tx1c pays to.
 static std::string received_scripthash() NOEXCEPT
 {
     return encode_hash(test::tx1c.outputs_ptr()->front()->script().hash());
@@ -646,10 +643,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__not_broadcast__daemon
     constexpr auto request = R"({{"id":2001,"method":"blockchain.transaction.get","params":["{}",false]}})" "\n";
     const auto response = get(std::format(request, tx1c_hash()));
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), retain_daemon_error.value());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), broadcast_daemon_error.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__broadcast__retained_tx)
+BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__broadcast__archived_tx)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
 
@@ -674,7 +671,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__broadcast__rec
     const auto response = get(std::format(request, received_scripthash()));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
-    // The store knows nothing of this scripthash, so the tx is the only entry.
+    // The tx is the only entry.
     const auto& history = response.at("result").as_array();
     BOOST_REQUIRE_EQUAL(history.size(), 1u);
 
@@ -753,7 +750,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__below_fee_rate_
     constexpr auto request = R"({{"id":2100,"method":"blockchain.transaction.broadcast","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, tx1c_text()));
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), retain_daemon_error.value());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), broadcast_daemon_error.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__above_fee_rate__txid)

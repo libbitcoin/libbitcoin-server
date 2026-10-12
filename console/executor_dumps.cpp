@@ -210,7 +210,6 @@ void executor::dump_buckets() const
         query_.prevout_buckets(),
         query_.duplicate_buckets(),
         query_.strong_tx_buckets(),
-        query_.state_buckets(),
         query_.pool_buckets(),
         query_.filter_bk_buckets(),
         query_.filter_tx_buckets()));

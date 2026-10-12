@@ -197,7 +197,6 @@
     "   prevout   :{}\n" \
     "   duplicate :{}\n" \
     "   strong_tx :{}\n" \
-    "   state     :{}\n" \
     "   pool      :{}\n" \
     "   filter_bk :{}\n" \
     "   filter_tx :{}"
