@@ -141,7 +141,7 @@ protected:
     bool handle_get_mempool_descendants(const code& ec,
         rpc_interface::get_mempool_descendants) NOEXCEPT;
     bool handle_get_mempool_entry(const code& ec,
-        rpc_interface::get_mempool_entry) NOEXCEPT;
+        rpc_interface::get_mempool_entry, const std::string& txid) NOEXCEPT;
     bool handle_get_mempool_info(const code& ec,
         rpc_interface::get_mempool_info) NOEXCEPT;
     bool handle_get_raw_mempool(const code& ec,
@@ -191,7 +191,10 @@ private:
     void complete_scan(const code& ec, network::rpc::object_t& result,
         const gate_t::ptr& gate) NOEXCEPT;
 
-    void do_get_raw_mempool(bool sequence, const gate_t::ptr& gate) NOEXCEPT;
+    bool mempool_entry(network::rpc::object_t& out,
+        const database::tx_link& link) const NOEXCEPT;
+    void do_get_raw_mempool(bool verbose, bool sequence,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_mempool(const code& ec, network::rpc::value_t& result,
         const gate_t::ptr& gate) NOEXCEPT;
 

@@ -107,7 +107,7 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_mempool_ancestors, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_mempool_cluster, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_mempool_descendants, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_get_mempool_entry, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_mempool_entry, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_mempool_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_raw_mempool, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_tx_spending_prevout, _1, _2);
@@ -1556,11 +1556,37 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_descendants(const code& ec
     return true;
 }
 
+// A tx is in the mempool if a stored instance of it is pooled and confirmable.
 bool protocol_bitcoind_blockchain::handle_get_mempool_entry(const code& ec,
-    rpc_interface::get_mempool_entry) NOEXCEPT
+    rpc_interface::get_mempool_entry, const std::string& txid) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::bitcoind::client_mempool_disabled);
+
+    hash_digest hash{};
+    if (!decode_hash(hash, txid))
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    const auto& query = archive();
+    for (const auto& link: query.to_duplicates(hash))
+    {
+        if (!query.is_pooled(link) || !query.is_confirmable_tx(link))
+            continue;
+
+        object_t entry{};
+        if (!mempool_entry(entry, link))
+        {
+            send_error(error::bitcoind::internal_error);
+            return true;
+        }
+
+        send_result(std::move(entry));
+        return true;
+    }
+
+    send_error(error::bitcoind::invalid_address_or_key);
     return true;
 }
 
@@ -1606,19 +1632,13 @@ bool protocol_bitcoind_blockchain::handle_get_raw_mempool(const code& ec,
         return true;
     }
 
-    if (verbose)
-    {
-        send_result(object_t{});
-        return true;
-    }
-
-    PARALLEL(do_get_raw_mempool, mempool_sequence, gate());
+    PARALLEL(do_get_raw_mempool, verbose, mempool_sequence, gate());
     return true;
 }
 
 // There is no mempool sequence (zmq), so it is reported as constant.
-void protocol_bitcoind_blockchain::do_get_raw_mempool(bool sequence,
-    const gate_t::ptr& gate) NOEXCEPT
+void protocol_bitcoind_blockchain::do_get_raw_mempool(bool verbose,
+    bool sequence, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
@@ -1628,6 +1648,27 @@ void protocol_bitcoind_blockchain::do_get_raw_mempool(bool sequence,
     {
         POST(complete_mempool, error::bitcoind::internal_error, value_t{},
             gate);
+        return;
+    }
+
+    if (verbose)
+    {
+        object_t entries{};
+        for (const auto& link: links)
+        {
+            object_t entry{};
+            if (!mempool_entry(entry, link))
+            {
+                POST(complete_mempool, error::bitcoind::internal_error,
+                    value_t{}, gate);
+                return;
+            }
+
+            const auto txid = encode_hash(query.get_tx_key(link));
+            entries.emplace(txid, std::move(entry));
+        }
+
+        POST(complete_mempool, code{}, value_t{ std::move(entries) }, gate);
         return;
     }
 
@@ -1649,6 +1690,55 @@ void protocol_bitcoind_blockchain::do_get_raw_mempool(bool sequence,
     };
 
     POST(complete_mempool, code{}, std::move(result), gate);
+}
+
+// The ancestor and descendant aggregates require the tx graph, so are omitted.
+// The entry height is that of the chain top, below the pooled context height.
+bool protocol_bitcoind_blockchain::mempool_entry(object_t& out,
+    const database::tx_link& link) const NOEXCEPT
+{
+    const auto& query = archive();
+
+    uint32_t time{};
+    database::fee_rate rate{};
+    size_t light{}, heavy{};
+    if (!query.get_tx_fees(rate, link) ||
+        !query.get_tx_sizes(light, heavy, link) ||
+        !query.get_pooled_time(time, link))
+        return false;
+
+    const auto to_txids = [&query](const database::tx_links& links) NOEXCEPT
+    {
+        array_t txids{};
+        txids.reserve(links.size());
+        for (const auto& fk: links)
+            txids.push_back(value_t{ encode_hash(query.get_tx_key(fk)) });
+
+        return txids;
+    };
+
+    const auto fee = to_floating(rate.fee) / chain::satoshi_per_bitcoin;
+    const object_t fees
+    {
+        { "base", fee },
+        { "modified", fee }
+    };
+
+    out = object_t
+    {
+        { "vsize", rate.bytes },
+        { "weight", chain::weighted_size(light, heavy) },
+        { "time", time },
+        { "height", sub1(rate.height) },
+        { "wtxid", encode_hash(query.get_wtxid(link)) },
+        { "fees", fees },
+        { "depends", to_txids(query.to_confirmable_parents(link)) },
+        { "spentby", to_txids(query.to_confirmable_children(link)) },
+        { "bip125-replaceable", false },
+        { "unbroadcast", false }
+    };
+
+    return true;
 }
 
 void protocol_bitcoind_blockchain::complete_mempool(const code& ec,
