@@ -221,7 +221,7 @@ void executor::scan_collisions(const std::string& name, size_t records,
     filters.clear();
     filters.shrink_to_fit();
 
-    std_array<size_t, add1(max_uint8)> frequencies{};
+    std_array<size_t, add1<size_t>(max_uint8)> frequencies{};
     for (const auto length: lengths)
         ++frequencies.at(length);
 
