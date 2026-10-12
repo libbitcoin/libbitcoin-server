@@ -183,7 +183,6 @@ parser::parser(system::chain::selection context,
     configured.database.duplicate.rate = 1;
 
     configured.database.state.buckets = 950'001;
-    configured.database.state.size = 0;
     configured.database.state.rate = 1;
 
     // pool and spends (disabled by zero buckets)
@@ -2500,17 +2499,12 @@ options_metadata parser::load_settings() THROWS
     (
         "table.state.buckets",
         setting<uint32_t>(&configured.database.state.buckets),
-        "The number of buckets in the state table head, defaults to {}."
-    )
-    (
-        "table.state.size",
-        setting<uint64_t>(&configured.database.state.size),
-        "The minimum allocation of the state table body, defaults to {}."
+        "The number of buckets provisioned in the index_state table head, defaults to {}."
     )
     (
         "table.state.rate",
         setting<uint16_t>(&configured.database.state.rate),
-        "The percentage expansion of the state table body, defaults to {}."
+        "The percentage expansion of the index_state table head, defaults to {}."
     )
 
     /* table.pool */
