@@ -1595,8 +1595,6 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
     return true;
 }
 
-// Pooled txs are not indexed, so they cannot be enumerated, and bitcoind
-// never errors here, so report empty.
 bool protocol_bitcoind_blockchain::handle_get_raw_mempool(const code& ec,
     rpc_interface::get_raw_mempool, bool verbose, bool mempool_sequence) NOEXCEPT
 {
@@ -1608,21 +1606,62 @@ bool protocol_bitcoind_blockchain::handle_get_raw_mempool(const code& ec,
         return true;
     }
 
-    if (mempool_sequence)
-    {
-        send_result(object_t{ { "txids", array_t{} },
-            { "mempool_sequence", 1 } });
-        return true;
-    }
-
     if (verbose)
     {
         send_result(object_t{});
         return true;
     }
 
-    send_result(array_t{});
+    PARALLEL(do_get_raw_mempool, mempool_sequence, gate());
     return true;
+}
+
+// There is no mempool sequence (zmq), so it is reported as constant.
+void protocol_bitcoind_blockchain::do_get_raw_mempool(bool sequence,
+    const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    database::tx_links links{};
+    const auto& query = archive();
+    if (query.get_confirmable_txs(links))
+    {
+        POST(complete_mempool, error::bitcoind::internal_error, value_t{},
+            gate);
+        return;
+    }
+
+    array_t txids{};
+    txids.reserve(links.size());
+    for (const auto& link: links)
+        txids.push_back(value_t{ encode_hash(query.get_tx_key(link)) });
+
+    if (!sequence)
+    {
+        POST(complete_mempool, code{}, value_t{ std::move(txids) }, gate);
+        return;
+    }
+
+    value_t result = object_t
+    {
+        { "txids", std::move(txids) },
+        { "mempool_sequence", 1 }
+    };
+
+    POST(complete_mempool, code{}, std::move(result), gate);
+}
+
+void protocol_bitcoind_blockchain::complete_mempool(const code& ec,
+    value_t& result, const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (stopped())
+        return;
+
+    if (ec)
+        send_error(ec);
+    else
+        send_result(std::move(result));
 }
 
 bool protocol_bitcoind_blockchain::handle_get_tx_spending_prevout(const code& ec,

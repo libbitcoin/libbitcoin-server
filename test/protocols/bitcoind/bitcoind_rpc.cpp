@@ -3906,6 +3906,34 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__spendable__txid)
     BOOST_REQUIRE_EQUAL(as_text(response.at("result")), encode_hash(test::tx1c.hash(false)));
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__broadcast__txid)
+{
+    const auto sent = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]");
+    BOOST_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto response = rpc("getrawmempool", "[]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& txids = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(txids.size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(txids.front()), encode_hash(test::tx1c.hash(false)));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__broadcast_mempool_sequence__txid_with_sequence)
+{
+    const auto sent = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]");
+    BOOST_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto response = rpc("getrawmempool", "[false,true]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& result = response.at("result");
+    const auto& txids = result.at("txids").as_array();
+    BOOST_REQUIRE_EQUAL(txids.size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(txids.front()), encode_hash(test::tx1c.hash(false)));
+    BOOST_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 1);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // closed tx pool

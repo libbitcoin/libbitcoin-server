@@ -191,6 +191,10 @@ private:
     void complete_scan(const code& ec, network::rpc::object_t& result,
         const gate_t::ptr& gate) NOEXCEPT;
 
+    void do_get_raw_mempool(bool sequence, const gate_t::ptr& gate) NOEXCEPT;
+    void complete_mempool(const code& ec, network::rpc::value_t& result,
+        const gate_t::ptr& gate) NOEXCEPT;
+
     // This is thread safe.
     std::atomic_bool stopping_{};
 
