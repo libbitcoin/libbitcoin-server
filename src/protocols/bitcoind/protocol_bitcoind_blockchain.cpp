@@ -1136,8 +1136,7 @@ bool protocol_bitcoind_blockchain::handle_get_chain_states(const code& ec,
     {
         // Validated above the fork point does not imply confirmability.
         size_t fork{};
-        const auto span = query.get_validated_fork(fork,
-            system_settings().top_checkpoint().height());
+        const auto span = query.get_validated_fork(fork);
         const auto validated = progress(fork + span.size(), candidate);
 
         link = query.to_candidate(candidate);
