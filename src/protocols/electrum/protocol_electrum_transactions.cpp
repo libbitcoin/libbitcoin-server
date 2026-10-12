@@ -276,7 +276,6 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
         return;
     }
 
-    size_t size{};
     boost::json::value value{};
     if (!verbose)
     {
@@ -287,7 +286,6 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
             return;
         }
 
-        size = two * tx.size();
         value = encode_base16(tx);
     }
     else
@@ -308,8 +306,6 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
         }
 
         inject_tx_scripts(value.as_object(), *tx, p2kh_, p2sh_, witness_);
-
-        size = two * tx->serialized_size(true);
         if (const auto block = query.find_strong(link); !block.is_terminal())
         {
             using namespace system;
@@ -492,13 +488,10 @@ void protocol_electrum::complete_submit_package(const code& ec, size_t index,
         return;
 
     array_t errors{};
-    size_t size{};
-
     const auto failed = ec && ec != node::error::duplicate_transaction;
     if (failed)
     {
         auto message = ec.message();
-        size = message.size();
         errors.push_back(object_t
         {
             { "txid", encode_hash(txs->at(index)->hash(false)) },
