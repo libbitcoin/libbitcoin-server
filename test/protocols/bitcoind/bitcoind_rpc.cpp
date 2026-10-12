@@ -1608,7 +1608,6 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__default__empty_pool)
     REQUIRE_NO_THROW_TRUE(result.at("loaded").as_bool());
     BOOST_REQUIRE_EQUAL(result.at("size").as_int64(), 0);
     BOOST_REQUIRE_EQUAL(result.at("bytes").as_int64(), 0);
-    BOOST_REQUIRE_EQUAL(result.at("usage").as_int64(), 0);
     BOOST_REQUIRE_EQUAL(result.at("unbroadcastcount").as_int64(), 0);
     BOOST_REQUIRE(!result.at("fullrbf").as_bool());
 }
@@ -3959,6 +3958,22 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__broadcast_verbose__entry)
     const auto& entry = entries.at(encode_hash(test::tx1c.hash(false)));
     BOOST_REQUIRE_EQUAL(entry.at("vsize").as_int64(), to_signed(test::tx1c.virtual_size()));
     BOOST_REQUIRE_EQUAL(as_text(entry.at("wtxid")), encode_hash(test::tx1c.hash(true)));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__broadcast__expected)
+{
+    const auto sent = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]");
+    BOOST_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto response = rpc("getmempoolinfo", "[]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(result.at("size").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(result.at("bytes").as_int64(), to_signed(test::tx1c.virtual_size()));
+    BOOST_REQUIRE_EQUAL(result.at("total_fee").as_double(), 10.0 / chain::satoshi_per_bitcoin);
+    BOOST_REQUIRE(result.at("usage").as_int64() > 0);
+    BOOST_REQUIRE(result.at("maxmempool").as_int64() > 0);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__broadcast__txid)
