@@ -27,6 +27,7 @@ namespace server {
 #define CLASS protocol_esplora
 
 using namespace system;
+using namespace boost::json;
 using namespace database;
 using namespace std::placeholders;
 
@@ -145,13 +146,13 @@ void protocol_esplora::complete_get_address(const code& ec,
         return;
     }
 
-    boost::json::object out{};
+    object out{};
     if (address.has_value())
         out["address"] = address.value();
     else
         out["scripthash"] = encode_base16(key);
 
-    out["chain_stats"] = boost::json::object
+    out["chain_stats"] = object
     {
         { "funded_txo_count", stats.funded_count },
         { "funded_txo_sum", stats.funded_sum },
@@ -161,7 +162,7 @@ void protocol_esplora::complete_get_address(const code& ec,
     };
 
     // There is no tx pool.
-    out["mempool_stats"] = boost::json::object
+    out["mempool_stats"] = object
     {
         { "funded_txo_count", 0 },
         { "funded_txo_sum", 0 },
@@ -219,7 +220,7 @@ bool protocol_esplora::handle_get_address_txs_mempool(const code& ec,
     }
 
     // There is no tx pool.
-    send_json(boost::json::array{}, 42);
+    send_json(array{}, 42);
     return true;
 }
 
@@ -303,18 +304,18 @@ void protocol_esplora::complete_get_address_txs(const code& ec,
     }
 
     const auto& query = archive();
-    boost::json::array out{};
+    array out{};
     for (auto item = first; item != history.rend() &&
         out.size() < address_page; ++item)
     {
-        boost::json::object object{};
-        if (!to_tx(object, query.to_tx(item->tx.hash())))
+        object tx{};
+        if (!to_tx(tx, query.to_tx(item->tx.hash())))
         {
             send_internal_server_error(database::error::integrity);
             return;
         }
 
-        out.emplace_back(std::move(object));
+        out.emplace_back(std::move(tx));
     }
 
     send_json(std::move(out), address_page * 1024);
@@ -380,11 +381,11 @@ void protocol_esplora::complete_get_address_utxo(const code& ec,
     }
 
     const auto& query = archive();
-    boost::json::array out{};
+    array out{};
     for (const auto& item: unspent)
     {
         const auto& point = item.out.point();
-        out.emplace_back(boost::json::object
+        out.emplace_back(object
         {
             { "txid", encode_hash(point.hash()) },
             { "vout", point.index() },

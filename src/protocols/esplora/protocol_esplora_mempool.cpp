@@ -27,6 +27,7 @@ namespace server {
 #define CLASS protocol_esplora
 
 using namespace system;
+using namespace boost::json;
 using namespace network::rpc;
 using namespace std::placeholders;
 
@@ -119,7 +120,7 @@ void protocol_esplora::do_get_mempool(const gate_t::ptr& gate) NOEXCEPT
     if (!archive().get_confirmable_fees(rates))
     {
         POST(complete_get_mempool, database::error::integrity,
-            boost::json::value{}, zero, gate);
+            value{}, zero, gate);
         return;
     }
 
@@ -133,12 +134,12 @@ void protocol_esplora::do_get_mempool(const gate_t::ptr& gate) NOEXCEPT
 
     const auto bins = to_fee_histogram(rates, histogram_bin);
     const auto size = add1(bins.size()) * 64;
-    boost::json::value out = boost::json::object
+    value out = object
     {
         { "count", rates.size() },
         { "vsize", vsize },
         { "total_fee", fee },
-        { "fee_histogram", boost::json::value_from(bins) }
+        { "fee_histogram", value_from(bins) }
     };
 
     POST(complete_get_mempool, code{}, std::move(out), size, gate);
@@ -153,17 +154,17 @@ void protocol_esplora::do_get_mempool_txids(const gate_t::ptr& gate) NOEXCEPT
     if (query.get_confirmable_txs(links))
     {
         POST(complete_get_mempool, database::error::integrity,
-            boost::json::value{}, zero, gate);
+            value{}, zero, gate);
         return;
     }
 
-    boost::json::array txids{};
+    array txids{};
     txids.reserve(links.size());
     for (const auto& link: links)
         txids.emplace_back(encode_hash(query.get_tx_key(link)));
 
     const auto size = add1(links.size()) * 68;
-    POST(complete_get_mempool, code{}, boost::json::value{ std::move(txids) },
+    POST(complete_get_mempool, code{}, value{ std::move(txids) },
         size, gate);
 }
 
@@ -177,42 +178,42 @@ void protocol_esplora::do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT
     if (query.get_confirmable_txs(links))
     {
         POST(complete_get_mempool, database::error::integrity,
-            boost::json::value{}, zero, gate);
+            value{}, zero, gate);
         return;
     }
 
-    boost::json::array recent{};
+    array recent{};
     const auto count = std::min(recent_count, links.size());
     const auto end = std::next(links.crbegin(), count);
     for (auto link = links.crbegin(); link != end; ++link)
     {
         size_t vsize{};
-        uint64_t fee{}, value{};
+        uint64_t fee{}, spend{};
         if (!query.get_tx_fee(fee, *link) ||
             !query.get_tx_virtual_size(vsize, *link) ||
-            !query.get_tx_spend(value, *link))
+            !query.get_tx_spend(spend, *link))
         {
             POST(complete_get_mempool, database::error::integrity,
-                boost::json::value{}, zero, gate);
+                value{}, zero, gate);
             return;
         }
 
-        recent.push_back(boost::json::object
+        recent.push_back(object
         {
             { "txid", encode_hash(query.get_tx_key(*link)) },
             { "fee", fee },
             { "vsize", vsize },
-            { "value", value }
+            { "value", spend }
         });
     }
 
     const auto size = add1(count) * 128;
-    POST(complete_get_mempool, code{}, boost::json::value{ std::move(recent) },
+    POST(complete_get_mempool, code{}, value{ std::move(recent) },
         size, gate);
 }
 
 void protocol_esplora::complete_get_mempool(const code& ec,
-    boost::json::value& out, size_t size, const gate_t::ptr&) NOEXCEPT
+    value& out, size_t size, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -271,7 +272,7 @@ void protocol_esplora::complete_estimate(const code& ec, uint64_t fee,
 
     // An unavailable target is omitted, as there is no null convention.
     if (!disabled)
-        estimates_[serialize(targets.at(index))] = fee;
+        estimates_[system::serialize(targets.at(index))] = fee;
 
     next_estimate(add1(index));
 }

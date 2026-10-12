@@ -27,6 +27,7 @@ namespace server {
 #define CLASS protocol_esplora
 
 using namespace system;
+using namespace boost::json;
 using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
@@ -40,7 +41,7 @@ constexpr size_t block_page = 10;
 // Serializers.
 // ----------------------------------------------------------------------------
 
-bool protocol_esplora::to_block(boost::json::object& out,
+bool protocol_esplora::to_block(object& out,
     const database::header_link& link) NOEXCEPT
 {
     const auto& query = archive();
@@ -120,7 +121,7 @@ bool protocol_esplora::handle_get_block(const code& ec, interface::block,
         return true;
     }
 
-    boost::json::object out{};
+    object out{};
     if (!to_block(out, link))
     {
         send_not_found();
@@ -161,17 +162,17 @@ bool protocol_esplora::handle_get_block_txs(const code& ec,
 
     const auto position = ceilinged_add<size_t>(start, tx_page);
     const auto end = std::min(position, txs.size());
-    boost::json::array out{};
+    array out{};
     for (auto index = start; index < end; ++index)
     {
-        boost::json::object object{};
-        if (!to_tx(object, txs.at(index)))
+        object tx{};
+        if (!to_tx(tx, txs.at(index)))
         {
             send_internal_server_error(database::error::integrity);
             return true;
         }
 
-        out.emplace_back(std::move(object));
+        out.emplace_back(std::move(tx));
     }
 
     send_json(std::move(out), tx_page * 1024);
@@ -229,7 +230,7 @@ bool protocol_esplora::handle_get_block_status(const code& ec,
     }
 
     const auto confirmed = query.is_confirmed_block(link);
-    boost::json::object out{ { "in_best_chain", confirmed } };
+    object out{ { "in_best_chain", confirmed } };
 
     if (confirmed && height < query.get_top_confirmed())
         out["next_best"] = encode_hash(query.get_header_key(
@@ -259,7 +260,7 @@ bool protocol_esplora::handle_get_block_txids(const code& ec,
         return true;
     }
 
-    boost::json::array out(keys.size());
+    array out(keys.size());
     std::ranges::transform(keys, out.begin(), [](const auto& key) NOEXCEPT
     {
         return encode_hash(key);
@@ -339,14 +340,14 @@ bool protocol_esplora::handle_get_blocks(const code& ec, interface::blocks,
         return true;
     }
 
-    boost::json::array out{};
+    array out{};
     for (size_t index{}; index < block_page; ++index)
     {
-        boost::json::object object{};
-        if (!to_block(object, query.to_confirmed(start)))
+        object block{};
+        if (!to_block(block, query.to_confirmed(start)))
             break;
 
-        out.emplace_back(std::move(object));
+        out.emplace_back(std::move(block));
         if (is_zero(start))
             break;
 
@@ -369,7 +370,7 @@ bool protocol_esplora::handle_get_tip_height(const code& ec,
         return true;
     }
 
-    send_text(serialize(archive().get_top_confirmed()));
+    send_text(system::serialize(archive().get_top_confirmed()));
     return true;
 }
 
