@@ -2115,14 +2115,29 @@ options_metadata parser::load_settings() THROWS
         "Provide opportunistic connection encryption, defaults to {}."
     )
     (
+        "node.use_gpu",
+        setting<bool>(&configured.node.use_gpu),
+        "Use the GPU where available, defaults to {}."
+    )
+    (
+        "node.cpu_batch_verify",
+        setting<bool>(&configured.node.cpu_batch_verify),
+        "Batch signature verification on the CPU when the GPU is not used, defaults to {}."
+    )
+    (
+        "node.cpu_batch_silent",
+        setting<bool>(&configured.node.cpu_batch_silent),
+        "Batch silent payment indexing on the CPU when the GPU is not used, defaults to {}."
+    )
+    (
         "node.batch_verify",
         setting<uint64_t>(&configured.node.batch_verify),
-        "Count of signatures to verify in each GPU batch, defaults to {} (0 disables)."
+        "Count of signatures to verify in each batch, defaults to {} (0 disables)."
     )
     (
         "node.batch_silent",
         setting<uint64_t>(&configured.node.batch_silent),
-        "Count of silent payment transactions to compute in each GPU batch, defaults to {} (0 disables)."
+        "Count of silent payment transactions to index in each batch, defaults to {} (0 disables)."
     )
     (
         "node.fee_estimate_horizon",
@@ -2210,6 +2225,11 @@ options_metadata parser::load_settings() THROWS
         "database.turbo",
         setting<bool>(&configured.database.turbo),
         "Allow individual non-validation queries to use all CPUs, defaults to {}."
+    )
+    (
+        "database.gpu_scan_minimum",
+        setting<uint32_t>(&configured.database.gpu_scan_minimum),
+        "Minimum transactions for a silent payment scan to use the GPU, defaults to {}."
     )
     (
         "database.mark_unconfirmable",

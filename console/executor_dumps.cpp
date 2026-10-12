@@ -95,7 +95,8 @@ void executor::dump_hardware() const
 
     const auto cuda = cuda_device();
     const auto compiled = batched::compiled();
-    const auto incompatible = cuda && compiled && !batched::accelerated();
+    const auto incompatible = cuda && compiled &&
+        metadata_.configured.node.use_gpu && !batched::accelerated();
     if (incompatible)
     {
         logger(std::format("cuda........ " BS_HARDWARE_INCOMPATIBLE, cuda, compiled));

@@ -56,14 +56,15 @@ void executor::warn_hardware(system::string_list& out) const
         out.emplace_back(BS_HARDWARE_AVX2_UNCOMPILED);
 #endif
 
+    const auto& node = metadata_.configured.node;
     const auto device = database::cuda_device();
     if (device && !batched::compiled())
         out.emplace_back(BS_HARDWARE_GPU_UNCOMPILED);
 
-    if (device && batched::compiled() && !batched::accelerated())
+    if (device && node.use_gpu && batched::compiled() &&
+        !batched::accelerated())
         out.emplace_back(BS_HARDWARE_UNSUPPORTED);
 
-    const auto& node = metadata_.configured.node;
     if (batched::accelerated() && !node.batch_verify_enabled() &&
         !node.batch_silent_enabled())
         out.emplace_back(BS_HARDWARE_UNCONFIGURED);

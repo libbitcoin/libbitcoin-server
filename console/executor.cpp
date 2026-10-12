@@ -43,13 +43,6 @@ std::optional<std::thread> executor::poller_thread_{};
 executor& executor::factory(parser& metadata, std::istream& input,
     std::ostream& output, std::ostream& error)
 {
-    // Suppress configured batch cache sizing when batching cannot run.
-    if (!system::batched::accelerated())
-    {
-        metadata.configured.database.ecdsa.size = 0;
-        metadata.configured.database.schnorr.size = 0;
-    }
-
     static executor instance(metadata, input, output, error);
     return instance;
 }
