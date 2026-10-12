@@ -237,7 +237,7 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
         }
 
         const auto check = system_settings().top_checkpoint().height();
-        const auto bypass = context.height < check || query.is_milestone(link);
+        const auto bypass = query.is_bypass(link);
 
         object["state"] = boost::json::object
         {
