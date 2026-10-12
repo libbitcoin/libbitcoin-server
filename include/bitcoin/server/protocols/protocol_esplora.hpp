@@ -231,6 +231,11 @@ private:
 
     void do_get_address_utxo(const system::hash_digest& key,
         const gate_t::ptr& gate) NOEXCEPT;
+    void do_get_mempool(const gate_t::ptr& gate) NOEXCEPT;
+    void do_get_mempool_txids(const gate_t::ptr& gate) NOEXCEPT;
+    void do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_mempool(const code& ec, boost::json::value& out,
+        size_t size, const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_address_utxo(const code& ec,
         const database::unspent_outputs& unspent,
         const gate_t::ptr& gate) NOEXCEPT;

@@ -19,6 +19,7 @@
 #include <bitcoin/server/protocols/protocol_esplora.hpp>
 
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/utilities/utilities.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -38,6 +39,10 @@ constexpr std::array<size_t, 28> targets
     21, 22, 23, 24, 25, 144, 504, 1008
 };
 
+// The vsize of a fee histogram bin, and the count of recent txs (electrs).
+constexpr size_t histogram_bin = 50'000;
+constexpr size_t recent_count = 10;
+
 bool protocol_esplora::handle_get_mempool(const code& ec, interface::mempool,
     uint8_t media) NOEXCEPT
 {
@@ -50,14 +55,7 @@ bool protocol_esplora::handle_get_mempool(const code& ec, interface::mempool,
         return true;
     }
 
-    // There is no tx pool.
-    send_json(boost::json::object
-    {
-        { "count", 0 },
-        { "vsize", 0 },
-        { "total_fee", 0 },
-        { "fee_histogram", boost::json::array{} }
-    }, 128);
+    PARALLEL(do_get_mempool, gate());
     return true;
 }
 
@@ -73,8 +71,7 @@ bool protocol_esplora::handle_get_mempool_txids(const code& ec,
         return true;
     }
 
-    // There is no tx pool.
-    send_json(boost::json::array{}, 42);
+    PARALLEL(do_get_mempool_txids, gate());
     return true;
 }
 
@@ -90,8 +87,7 @@ bool protocol_esplora::handle_get_mempool_recent(const code& ec,
         return true;
     }
 
-    // There is no tx pool.
-    send_json(boost::json::array{}, 42);
+    PARALLEL(do_get_mempool_recent, gate());
     return true;
 }
 
@@ -114,6 +110,123 @@ bool protocol_esplora::handle_get_fee_estimates(const code& ec,
 
 // Completion handlers.
 // ----------------------------------------------------------------------------
+
+void protocol_esplora::do_get_mempool(const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    database::fee_rates rates{};
+    if (!archive().get_confirmable_fees(rates))
+    {
+        POST(complete_get_mempool, database::error::integrity,
+            boost::json::value{}, zero, gate);
+        return;
+    }
+
+    size_t vsize{};
+    uint64_t fee{};
+    for (const auto& rate: rates)
+    {
+        vsize = ceilinged_add(vsize, rate.bytes);
+        fee = ceilinged_add(fee, rate.fee);
+    }
+
+    const auto bins = to_fee_histogram(rates, histogram_bin);
+    const auto size = add1(bins.size()) * 64;
+    boost::json::value out = boost::json::object
+    {
+        { "count", rates.size() },
+        { "vsize", vsize },
+        { "total_fee", fee },
+        { "fee_histogram", boost::json::value_from(bins) }
+    };
+
+    POST(complete_get_mempool, code{}, std::move(out), size, gate);
+}
+
+void protocol_esplora::do_get_mempool_txids(const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    database::tx_links links{};
+    const auto& query = archive();
+    if (query.get_confirmable_txs(links))
+    {
+        POST(complete_get_mempool, database::error::integrity,
+            boost::json::value{}, zero, gate);
+        return;
+    }
+
+    boost::json::array txids{};
+    txids.reserve(links.size());
+    for (const auto& link: links)
+        txids.emplace_back(encode_hash(query.get_tx_key(link)));
+
+    const auto size = add1(links.size()) * 68;
+    POST(complete_get_mempool, code{}, boost::json::value{ std::move(txids) },
+        size, gate);
+}
+
+// The pool is ordered by entry, so the most recent are at its end.
+void protocol_esplora::do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    database::tx_links links{};
+    const auto& query = archive();
+    if (query.get_confirmable_txs(links))
+    {
+        POST(complete_get_mempool, database::error::integrity,
+            boost::json::value{}, zero, gate);
+        return;
+    }
+
+    boost::json::array recent{};
+    const auto count = std::min(recent_count, links.size());
+    const auto end = std::next(links.crbegin(), count);
+    for (auto link = links.crbegin(); link != end; ++link)
+    {
+        size_t vsize{};
+        uint64_t fee{}, value{};
+        if (!query.get_tx_fee(fee, *link) ||
+            !query.get_tx_virtual_size(vsize, *link) ||
+            !query.get_tx_spend(value, *link))
+        {
+            POST(complete_get_mempool, database::error::integrity,
+                boost::json::value{}, zero, gate);
+            return;
+        }
+
+        recent.push_back(boost::json::object
+        {
+            { "txid", encode_hash(query.get_tx_key(*link)) },
+            { "fee", fee },
+            { "vsize", vsize },
+            { "value", value }
+        });
+    }
+
+    const auto size = add1(count) * 128;
+    POST(complete_get_mempool, code{}, boost::json::value{ std::move(recent) },
+        size, gate);
+}
+
+void protocol_esplora::complete_get_mempool(const code& ec,
+    boost::json::value& out, size_t size, const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    if (ec)
+    {
+        send_internal_server_error(ec);
+        return;
+    }
+
+    send_json(std::move(out), size);
+}
 
 void protocol_esplora::next_estimate(size_t index) NOEXCEPT
 {

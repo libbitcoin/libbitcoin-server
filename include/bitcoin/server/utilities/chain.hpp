@@ -29,6 +29,14 @@ BCS_API uint32_t median_time(const node::query& query,
     const system::settings& settings,
     const database::header_link& link) NOEXCEPT;
 
+/// Fee rate (satoshis per vbyte) and total vsize of each histogram bin.
+using fee_histogram = std::vector<std::pair<double, size_t>>;
+
+/// Histogram of descending fee rates, each bin exceeding the bin vsize
+/// before a lower rate begins a new bin (electrs).
+BCS_API fee_histogram to_fee_histogram(database::fee_rates rates,
+    size_t bin) NOEXCEPT;
+
 } // namespace server
 } // namespace libbitcoin
 

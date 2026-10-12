@@ -46,5 +46,39 @@ uint32_t median_time(const node::query& query,
 
 BC_POP_WARNING()
 
+fee_histogram to_fee_histogram(database::fee_rates rates, size_t bin) NOEXCEPT
+{
+    const auto rate = [](const database::fee_rate& tx) NOEXCEPT
+    {
+        return is_zero(tx.bytes) ? 0.0 : to_floating(tx.fee) / tx.bytes;
+    };
+
+    std::ranges::sort(rates, [&](const auto& left, const auto& right) NOEXCEPT
+    {
+        return rate(left) > rate(right);
+    });
+
+    double last{};
+    size_t size{};
+    fee_histogram out{};
+    for (const auto& tx: rates)
+    {
+        const auto current = rate(tx);
+        if (size > bin && current != last)
+        {
+            out.emplace_back(last, size);
+            size = zero;
+        }
+
+        last = current;
+        size = ceilinged_add(size, tx.bytes);
+    }
+
+    if (is_nonzero(size))
+        out.emplace_back(last, size);
+
+    return out;
+}
+
 } // namespace server
 } // namespace libbitcoin
