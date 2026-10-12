@@ -120,9 +120,10 @@ private:
         const gate_t::ptr& gate) NOEXCEPT;
     void complete_silent_subscribe(const code& ec, const object_t& result,
         const gate_t::ptr& gate) NOEXCEPT;
-    void do_silent_unsubscribe(const std::string& address) NOEXCEPT;
-    void complete_silent_unsubscribe(
-        const network::rpc::value_t& result) NOEXCEPT;
+    void do_silent_unsubscribe(const std::string& address,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_silent_unsubscribe(const network::rpc::value_t& result,
+        const gate_t::ptr& gate) NOEXCEPT;
     void silent_notify(const object_t& subscription, double progress,
         const array_t& history) NOEXCEPT;
 
