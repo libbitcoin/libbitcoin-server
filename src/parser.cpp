@@ -159,6 +159,7 @@ parser::parser(system::chain::selection context,
     configured.database.strong_tx.expected = 1'359'871'695;
     configured.database.strong_tx.size = 149'585'887;
     configured.database.strong_tx.rate = 1;
+    configured.database.scan.buckets = 950'001;
     configured.database.scan.size = 0;
     configured.database.scan.rate = 1;
 
@@ -172,6 +173,8 @@ parser::parser(system::chain::selection context,
     configured.database.silent.rate = 1;
     configured.database.prevalid.size = 0;
     configured.database.prevalid.rate = 1;
+    configured.database.presilent.size = 0;
+    configured.database.presilent.rate = 1;
 
     configured.database.prevout.buckets = 0;
     configured.database.prevout.size = 0;
@@ -2398,6 +2401,11 @@ options_metadata parser::load_settings() THROWS
 
     /* table.scan */
     (
+        "table.scan.buckets",
+        setting<uint32_t>(&configured.database.scan.buckets),
+        "The number of buckets provisioned in the index_scan table head, defaults to {}."
+    )
+    (
         "table.scan.size",
         setting<uint64_t>(&configured.database.scan.size),
         "The minimum allocation of the index_scan table body, defaults to {}."
@@ -2454,6 +2462,18 @@ options_metadata parser::load_settings() THROWS
         "table.prevalid.rate",
         setting<uint16_t>(&configured.database.prevalid.rate),
         "The percentage expansion of each batch_prevalid table body, defaults to {}."
+    )
+
+    /* table.presilent */
+    (
+        "table.presilent.size",
+        setting<uint64_t>(&configured.database.presilent.size),
+        "The minimum allocation of each batch_presilent table body, defaults to {}."
+    )
+    (
+        "table.presilent.rate",
+        setting<uint16_t>(&configured.database.presilent.rate),
+        "The percentage expansion of each batch_presilent table body, defaults to {}."
     )
 
     /* table.prevout */

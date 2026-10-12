@@ -147,6 +147,8 @@
     "   schnorr1  :{}\n" \
     "   prevalid0 :{}\n" \
     "   prevalid1 :{}\n" \
+    "   presilent0:{}\n" \
+    "   presilent1:{}\n" \
     "   silent0   :{}\n" \
     "   silent1   :{}\n" \
     "   silent0pfx:{}\n" \
@@ -175,6 +177,8 @@
     "   schnorr1  :{}\n" \
     "   prevalid0 :{}\n" \
     "   prevalid1 :{}\n" \
+    "   presilent0:{}\n" \
+    "   presilent1:{}\n" \
     "   silent0   :{}\n" \
     "   silent1   :{}\n" \
     "   silent0pfx:{}\n" \

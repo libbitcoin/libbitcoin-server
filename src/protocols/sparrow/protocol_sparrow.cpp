@@ -230,13 +230,18 @@ void protocol_sparrow::do_silent_subscribe(const std::string& address,
         }
     }
 
+    // The scan starts at the floor of the cut, a time cut resolved by mtp.
     auto& sub = it->second;
-    sub.cursor = zero;
+    const auto& query = archive();
+    auto height = sub.cut.start;
+    if (sub.cut.time && !query.get_mtp_height(height, sub.cut.start))
+        height = max_size_t;
+
+    sub.cursor = query.get_scan_floor(height).value;
     subscribed_silent_.store(true, relaxed);
     POST(complete_silent_subscribe, error::success, sub.subscription, gate);
 
-    const auto& query = archive();
-    scan_silent(sub, query.get_silent_frontier(zero), true);
+    scan_silent(sub, query.get_silent_frontier(sub.cursor), true);
 }
 
 void protocol_sparrow::complete_silent_subscribe(const code& ec,
@@ -415,10 +420,10 @@ bool protocol_sparrow::is_cut(const silent_cut& cut, const tx_link_t& link,
     if (!cut.time)
         return height < cut.start || height > cut.stop;
 
-    uint32_t timestamp{};
+    database::context ctx{};
     const auto& query = archive();
-    return !query.get_timestamp(timestamp, query.find_strong(link)) ||
-        timestamp < cut.start || timestamp > cut.stop;
+    return !query.get_context(ctx, query.find_strong(link)) ||
+        ctx.mtp < cut.start || ctx.mtp > cut.stop;
 }
 
 void protocol_sparrow::silent_notify(const object_t& subscription,
