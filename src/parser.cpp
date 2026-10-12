@@ -172,6 +172,8 @@ parser::parser(system::chain::selection context,
     configured.database.silent.rate = 1;
     configured.database.prevalid.size = 0;
     configured.database.prevalid.rate = 1;
+    configured.database.presilent.size = 0;
+    configured.database.presilent.rate = 1;
 
     configured.database.prevout.buckets = 0;
     configured.database.prevout.size = 0;
@@ -2454,6 +2456,18 @@ options_metadata parser::load_settings() THROWS
         "table.prevalid.rate",
         setting<uint16_t>(&configured.database.prevalid.rate),
         "The percentage expansion of each batch_prevalid table body, defaults to {}."
+    )
+
+    /* table.presilent */
+    (
+        "table.presilent.size",
+        setting<uint64_t>(&configured.database.presilent.size),
+        "The minimum allocation of each batch_presilent table body, defaults to {}."
+    )
+    (
+        "table.presilent.rate",
+        setting<uint16_t>(&configured.database.presilent.rate),
+        "The percentage expansion of each batch_presilent table body, defaults to {}."
     )
 
     /* table.prevout */
