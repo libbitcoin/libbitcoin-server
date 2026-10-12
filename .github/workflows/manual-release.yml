@@ -442,7 +442,7 @@ jobs:
         run: |
           apk add --no-cache ${{ matrix.packages || '' }} \
             build-base linux-headers \
-            g++ make autoconf automake libtool pkgconf \
+            g++ make autoconf automake libtool pkgconf cmake \
             git bash
 
       - name: Prepare toolchain [macos]
