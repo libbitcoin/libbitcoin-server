@@ -1589,9 +1589,8 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_entry(const code& ec,
     return true;
 }
 
-// Pooled txs are not indexed, so they cannot be enumerated or counted, and
-// bitcoind never errors here, so report empty. The minimum is that sent to
-// peers (feefilter), while the relay minimum is the configured rate.
+// The minimum is that sent to peers (feefilter), while the relay minimum is
+// the configured rate.
 bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
     rpc_interface::get_mempool_info) NOEXCEPT
 {
@@ -1603,21 +1602,57 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
     const auto relay = to_floating(settings.minimum_fee_rate_()) /
         chain::satoshi_per_bitcoin;
 
-    send_result(object_t
+    PARALLEL(do_get_mempool_info, minimum, relay, settings.minimum_bump_rate,
+        gate());
+    return true;
+}
+
+// The pool is stored, so usage is the size of its tables, and the maximum is
+// the space available to the store (shared with all tables and the volume).
+void protocol_bitcoind_blockchain::do_get_mempool_info(double minimum,
+    double relay, double increment, const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    size_t space{};
+    database::fee_rates rates{};
+    const auto& query = archive();
+    if (!query.get_confirmable_fees(rates) ||
+        !database::file::space(space, database_settings().path))
+    {
+        POST(complete_mempool, error::bitcoind::internal_error, value_t{},
+            gate);
+        return;
+    }
+
+    size_t bytes{};
+    uint64_t fee{};
+    for (const auto& rate: rates)
+    {
+        bytes = ceilinged_add(bytes, rate.bytes);
+        fee = ceilinged_add(fee, rate.fee);
+    }
+
+    const auto indexes = ceilinged_add(query.spends_size(), query.wtxid_size());
+    const auto usage = ceilinged_add(query.pool_size(), indexes);
+    const auto total_fee = to_floating(fee) / chain::satoshi_per_bitcoin;
+
+    object_t result
     {
         { "loaded", true },
-        { "size", 0 },
-        { "bytes", 0 },
-        { "usage", 0 },
-        { "total_fee", 0 },
-        { "maxmempool", 0 },
+        { "size", rates.size() },
+        { "bytes", bytes },
+        { "usage", usage },
+        { "total_fee", total_fee },
+        { "maxmempool", space },
         { "mempoolminfee", minimum },
         { "minrelaytxfee", relay },
-        { "incrementalrelayfee", settings.minimum_bump_rate },
+        { "incrementalrelayfee", increment },
         { "unbroadcastcount", 0 },
         { "fullrbf", false }
-    });
-    return true;
+    };
+
+    POST(complete_mempool, code{}, value_t{ std::move(result) }, gate);
 }
 
 bool protocol_bitcoind_blockchain::handle_get_raw_mempool(const code& ec,

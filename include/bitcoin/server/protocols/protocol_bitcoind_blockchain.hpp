@@ -191,6 +191,8 @@ private:
     void complete_scan(const code& ec, network::rpc::object_t& result,
         const gate_t::ptr& gate) NOEXCEPT;
 
+    void do_get_mempool_info(double minimum, double relay, double increment,
+        const gate_t::ptr& gate) NOEXCEPT;
     bool mempool_entry(network::rpc::object_t& out,
         const database::tx_link& link) const NOEXCEPT;
     void do_get_raw_mempool(bool verbose, bool sequence,

@@ -20,7 +20,7 @@
 #include "localize.hpp"
 
 #include <algorithm>
-#include <map>
+#include <cmath>
 
 namespace libbitcoin {
 namespace server {
@@ -150,265 +150,154 @@ void executor::scan_buckets() const
         span.count()));
 }
 
-// hashmap collision distributions.
-// BUGBUG: the vector allocations are exceessive and can result in sigkill.
-// BUGBUG: must process each header independently as buckets may not coincide.
-void executor::scan_collisions() const
+// hashmap head filter (derived as in hashhead).
+template <typename Schema>
+struct head_filter
+{
+    static constexpr size_t m = to_bits(Schema::cell) - Schema::link::bits;
+    static constexpr size_t k_max = (m < two) ? zero :
+        std::min(m, bits<uint64_t> / ceilinged_log2(m));
+    using type = bloom<m, k_max>;
+};
+
+// hashmap bucket length distribution and filter collisions of one head.
+template <typename Schema>
+void executor::scan_collisions(const std::string& name, size_t records,
+    size_t buckets, size_t k, size_t frequency,
+    const auto& get_key) const
 {
     using namespace database;
-    using hint = header_link::integer;
-    constexpr auto empty = 0u;
-    constexpr auto block_frequency = 10'000u;
-    constexpr auto tx_frequency = 1'000'000u;
-    constexpr auto put_frequency = 10'000'000u;
-    constexpr auto count = [](const auto& list)
+    using bucket_t = typename Schema::link::integer;
+    using filter_t = typename head_filter<Schema>::type;
+    using filter = typename filter_t::type;
+    constexpr auto filtered = !filter_t::disabled;
+    constexpr auto empty = unmask_right<filter>(head_filter<Schema>::m);
+    constexpr auto points = is_same_type<typename Schema::key, chain::point>;
+
+    if (is_zero(buckets))
+        return;
+
+    std_vector<uint8_t> lengths(buckets, zero);
+    std_vector<filter> filters(filtered ? buckets : zero, empty);
+    const auto count = possible_narrow_cast<bucket_t>(buckets);
+    const auto start = logger::now();
+    size_t collisions{};
+    size_t nulls{};
+    size_t index{};
+
+    for (; !canceled() && index < records; ++index)
     {
-        return std::accumulate(list.begin(), list.end(), zero,
-            [](size_t total, const auto& value)
-            {
-                return total + to_int(to_bool(value));
-            });
-    };
-    constexpr auto dump = [&](const auto& list)
-    {
-        // map frequency to length.
-        std::map<size_t, size_t> map{};
-        for (const auto value: list)
-            ++map[value];
-
-        return map;
-    };
-
-    logger(BS_OPERATION_INTERRUPT);
-
-    // header & txs (txs is a proxy for state)
-    // ------------------------------------------------------------------------
-
-    auto index = max_size_t;
-    auto start = logger::now();
-    const auto header_buckets = query_.header_buckets();
-    const auto header_records = query_.header_records();
-    std_vector<size_t> header(header_buckets, empty);
-    std_vector<size_t> txs(header_buckets, empty);
-    while (!canceled() && (++index < header_records))
-    {
-        const header_link link{ possible_narrow_cast<hint>(index) };
-        const auto key = query_.get_header_key(link.value);
-        ++header.at(database::keys::hash(key) % header_buckets);
-        ++txs.at(database::keys::hash(
-            link.operator data_array<header_link::size>()) %
-            header_buckets);
-
-        if (is_zero(index % block_frequency))
-            logger(std::format("header/txs" BS_READ_ROW, index,
+        if (is_zero(index % frequency))
+            logger(std::format("{}" BS_READ_ROW, name, index,
                 duration_cast<seconds>(logger::now() - start).count()));
-    }
 
-    if (canceled())
-        logger(BS_OPERATION_CANCELED);
-
-    // ........................................................................
-    
-    const auto header_count = count(header);
-    auto span = duration_cast<seconds>(logger::now() - start);
-    logger(std::format("header: {} in {}s buckets {} filled {} rate {} ",
-        index, span.count(), header_buckets, header_count,
-        (to_double(header_count) / header_buckets)));
-
-    for (const auto& entry: dump(header))
-        logger(std::format("header: {} frequency: {}",
-            entry.first, entry.second));
-
-    header.clear();
-    header.shrink_to_fit();
-
-    // ........................................................................
-
-    const auto txs_count = count(txs);
-    span = duration_cast<seconds>(logger::now() - start);
-    logger(std::format("txs: {} in {}s buckets {} filled {} rate {}",
-        index, span.count(), header_buckets, txs_count,
-        (to_double(txs_count) / header_buckets)));
-
-    for (const auto& entry: dump(txs))
-        logger(std::format("txs: {} frequency: {}",
-            entry.first, entry.second));
- 
-    txs.clear();
-    txs.shrink_to_fit();
-
-    // tx & strong_tx (strong_tx is a proxy for pool)
-    // ------------------------------------------------------------------------
-
-    index = max_size_t;
-    start = logger::now();
-    const auto tx_buckets = query_.tx_buckets();
-    const auto tx_records = query_.tx_records();
-    std_vector<size_t> tx(tx_buckets, empty);
-    std_vector<size_t> strong_tx(tx_buckets, empty);
-    while (!canceled() && (++index < tx_records))
-    {
-        const tx_link link{ possible_narrow_cast<tx_link::integer>(index) };
-        const auto key = query_.get_tx_key(link.value);
-        ++tx.at(database::keys::hash(key) % tx_buckets);
-        ++strong_tx.at(database::keys::hash(
-            link.operator data_array<tx_link::size>()) % tx_buckets);
-    
-        if (is_zero(index % tx_frequency))
-            logger(std::format("tx & strong_tx" BS_READ_ROW, index,
-                duration_cast<seconds>(logger::now() - start).count()));
-    }
-    
-    if (canceled())
-        logger(BS_OPERATION_CANCELED);
-    
-    // ........................................................................
-    
-    const auto tx_count = count(tx);
-    span = duration_cast<seconds>(logger::now() - start);
-    logger(std::format("tx: {} in {}s buckets {} filled {} rate {}",
-        index, span.count(), tx_buckets, tx_count,
-        (to_double(tx_count) / tx_buckets)));
-    
-    for (const auto& entry: dump(tx))
-        logger(std::format("tx: {} frequency: {}",
-            entry.first, entry.second));
-    
-    tx.clear();
-    tx.shrink_to_fit();
-    
-    // ........................................................................
-    
-    const auto strong_tx_count = count(strong_tx);
-    span = duration_cast<seconds>(logger::now() - start);
-    logger(std::format("strong_tx: {} in {}s buckets {} filled {} rate {}",
-        index, span.count(), tx_buckets, strong_tx_count,
-        (to_double(strong_tx_count) / tx_buckets)));
-    
-    for (const auto& entry: dump(strong_tx))
-        logger(std::format("strong_tx: {} frequency: {}",
-            entry.first, entry.second));
-    
-    strong_tx.clear();
-    strong_tx.shrink_to_fit();
-    
-    // point
-    // ------------------------------------------------------------------------
-
-    index = max_size_t;
-    start = logger::now();
-    const auto point_buckets = query_.ins_buckets();
-    std_vector<size_t> spend(point_buckets, empty);
-    auto inserts = zero;
-
-    // TODO: expose filter type from hashhead to table.
-    ///////////////////////////////////////////////////////////////////////////
-    constexpr size_t m = 32;
-    constexpr size_t k_max = 12;
-    using bloom_t = bloom<m, k_max>;
-    const auto k = store_.ins.filter_k();
-    ////using sieve_t = sieve<m, 3>;
-    ///////////////////////////////////////////////////////////////////////////
-
-    constexpr auto empty_bloom = unmask_right<bloom_t::type>(m);
-    std_vector<bloom_t::type> bloom_filter(point_buckets, empty_bloom);
-    size_t bloom_collisions{};
-    size_t bloom_subtotal{};
-
-    ////constexpr auto empty_sieve = unmask_right<sieve_t::type>(m);
-    ////std_vector<sieve_t::type> sieve_filter(point_buckets, empty_sieve);
-    ////size_t sieve_collisions{};
-    ////size_t sieve_subtotal{};
-
-    size_t coinbases{};
-    size_t window{};
-
-    const auto top = query_.get_top_associated();
-    for (index = zero; index <= top && !canceled(); ++index)
-    {
-        ++coinbases;
-        const auto link = query_.to_candidate(index);
-        const auto transactions = query_.to_transactions(link);
-        for (const auto& transaction: transactions)
+        const auto key = get_key(index);
+        if constexpr (points)
         {
-            const auto points = query_.to_points(transaction);
-            for (const auto& point: points)
+            if (key.index() == chain::point::null_index)
             {
-                // If and only if coinbase bucket is one.
-                const auto key = query_.get_point(point);
-                const auto bucket = database::keys::bucket(key, point_buckets);
-                const auto entropy = database::keys::thumb(key);
-                ++spend.at(bucket);
-                ++inserts;
-                ++window;
-
-                auto prev = bloom_filter.at(bucket);
-                auto next = bloom_t::screen(prev, entropy, k);
-                bloom_filter.at(bucket) = next;
-                auto coll = to_int(bloom_t::is_collision(prev, next));
-                bloom_collisions += coll;
-                bloom_subtotal += coll;
-
-                ////prev = sieve_filter.at(bucket);
-                ////next = sieve_t::screen(prev, entropy);
-                ////sieve_filter.at(bucket) = next;
-                ////coll = to_int(sieve_t::is_collision(prev, next));
-                ////sieve_collisions += coll;
-                ////sieve_subtotal += coll;
-
-                if (is_zero(inserts % put_frequency))
-                {
-                    logger(std::format("point: {} bloom fps {} rate %3$.7f in {} secs.",
-                        inserts, bloom_collisions,
-                        (to_double(bloom_subtotal) / window),
-                        duration_cast<seconds>(logger::now() - start).count()));
-
-                    ////logger(format("point: %1% sieve fps %2% rate %3$.7f in %4% secs.") %
-                    ////    inserts % sieve_collisions % 
-                    ////    (to_double(sieve_subtotal) / window) %
-                    ////    duration_cast<seconds>(logger::now() - start).count());
-
-                    ////sieve_subtotal = zero;
-                    bloom_subtotal = zero;
-                    window = zero;
-                }
+                ++nulls;
+                continue;
             }
+        }
+
+        const auto bucket = keys::bucket(key, count);
+        auto& length = lengths.at(bucket);
+        if (length < max_uint8)
+            ++length;
+
+        if constexpr (filtered)
+        {
+            auto& value = filters.at(bucket);
+            const auto next = filter_t::screen(value, keys::thumb(key), k);
+            collisions += to_int(filter_t::is_collision(value, next));
+            value = next;
         }
     }
 
     if (canceled())
         logger(BS_OPERATION_CANCELED);
 
-    // ........................................................................
+    filters.clear();
+    filters.shrink_to_fit();
 
-    const auto point_count = count(spend);
-    span = duration_cast<seconds>(logger::now() - start);
-    logger(std::format("point: {} in {}s buckets {} filled {} rate {}",
-        inserts, span.count(), point_buckets, point_count,
-        (to_double(point_count) / point_buckets)));
+    std_array<size_t, add1(max_uint8)> frequencies{};
+    for (const auto length: lengths)
+        ++frequencies.at(length);
 
-    const auto spends = inserts - coinbases;
-    const auto bloom_spend_collisions = bloom_collisions - coinbases;
-    logger(std::format("bloom k {}: {} fps of {} spends (ex {} cbs) rate {}",
-        k, bloom_spend_collisions, spends, coinbases,
-        (to_double(bloom_spend_collisions) / spends)));
+    lengths.clear();
+    lengths.shrink_to_fit();
 
-    ////const auto sieve_spend_collisions = sieve_collisions - coinbases;
-    ////logger(format("sieve: %1% fps of %2% spends (ex %3% cbs) rate %4%") %
-    ////    sieve_spend_collisions % spends % coinbases %
-    ////    (to_double(sieve_spend_collisions) / spends));
+    const auto puts = index - nulls;
+    const auto load = to_double(puts) / buckets;
+    const auto filled = buckets - frequencies.front();
+    const auto span = duration_cast<seconds>(logger::now() - start);
+    logger(std::format("{}: {} keys in {}s buckets {} filled {} load {:.6f} "
+        "fill {:.6f} (poisson {:.6f})", name, puts, span.count(), buckets,
+        filled, load, (to_double(filled) / buckets), (1.0 - std::exp(-load))));
 
-    for (const auto& entry: dump(spend))
-        logger(std::format("point: {} frequency: {}",
-            entry.first, entry.second));
+    if constexpr (points)
+        logger(std::format("{}: {} null points excluded", name, nulls));
 
+    if constexpr (filtered)
+        logger(std::format("{}: k {} m {} collisions {} rate {:.7f}", name, k,
+            head_filter<Schema>::m, collisions, (to_double(collisions) /
+                std::max(puts, one))));
 
-    ////spend.clear();
-    ////spend.shrink_to_fit();
-    ////bloom_filter.clear();
-    ////bloom_filter.shrink_to_fit();
-    ////sieve_filter.clear();
-    ////sieve_filter.shrink_to_fit();
+    auto poisson = std::exp(-load);
+    for (size_t length{}; length < frequencies.size(); ++length)
+    {
+        if (is_nonzero(length))
+            poisson *= load / to_double(length);
+
+        if (is_nonzero(frequencies.at(length)))
+            logger(std::format("{}: length {} buckets {} (poisson {:.0f})",
+                name, length, frequencies.at(length), (poisson * buckets)));
+    }
+}
+
+// hashmap collision distributions, one head at a time.
+void executor::scan_collisions()
+{
+    using namespace database;
+    constexpr auto block_frequency = 10'000u;
+    constexpr auto tx_frequency = 1'000'000u;
+    constexpr auto put_frequency = 10'000'000u;
+
+    logger(BS_OPERATION_INTERRUPT);
+
+    scan_collisions<schema::header>("header", query_.header_records(),
+        query_.header_buckets(), store_.header.filter_k(), block_frequency,
+        [&](size_t index)
+        {
+            return query_.get_header_key(possible_narrow_cast<
+                header_link::integer>(index));
+        });
+
+    scan_collisions<schema::transaction>("tx", query_.tx_records(),
+        query_.tx_buckets(), store_.tx.filter_k(), tx_frequency,
+        [&](size_t index)
+        {
+            return query_.get_tx_key(possible_narrow_cast<
+                tx_link::integer>(index));
+        });
+
+    scan_collisions<schema::strong_tx>("strong_tx",
+        query_.strong_tx_records(), query_.strong_tx_buckets(),
+        store_.strong_tx.filter_k(), tx_frequency,
+        [&](size_t index)
+        {
+            return store_.strong_tx.get_key(possible_narrow_cast<
+                table::strong_tx::link::integer>(index));
+        });
+
+    scan_collisions<schema::ins>("ins", query_.ins_records(),
+        query_.ins_buckets(), store_.ins.filter_k(), put_frequency,
+        [&](size_t index)
+        {
+            return query_.get_point_key(possible_narrow_cast<
+                ins_link::integer>(index));
+        });
 }
 
 } // namespace server
