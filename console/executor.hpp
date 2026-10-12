@@ -98,7 +98,11 @@ private:
     // Long-running queries (scans).
     void scan_flags() const;
     void scan_buckets() const;
-    void scan_collisions() const;
+    void scan_collisions();
+    template <typename Schema>
+    void scan_collisions(const std::string& name, size_t records,
+        size_t buckets, size_t k, size_t frequency,
+        const auto& get_key) const;
 
     // Command line (defaults to do_run).
     bool do_help();
