@@ -277,11 +277,11 @@ void protocol_sparrow::handle_blockchain_silent_payments_unsubscribe(
         return;
     }
 
-    POST_NOTIFY(do_silent_unsubscribe, to_address(scan, spend));
+    POST_NOTIFY(do_silent_unsubscribe, to_address(scan, spend), gate());
 }
 
-void protocol_sparrow::do_silent_unsubscribe(
-    const std::string& address) NOEXCEPT
+void protocol_sparrow::do_silent_unsubscribe(const std::string& address,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(notifying());
 
@@ -290,11 +290,11 @@ void protocol_sparrow::do_silent_unsubscribe(
         subscribed_silent_.store(false, relaxed);
 
     const auto result = found ? value_t{ address } : value_t{};
-    POST(complete_silent_unsubscribe, result);
+    POST(complete_silent_unsubscribe, result, gate);
 }
 
-void protocol_sparrow::complete_silent_unsubscribe(
-    const value_t& result) NOEXCEPT
+void protocol_sparrow::complete_silent_unsubscribe(const value_t& result,
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
     if (stopped())

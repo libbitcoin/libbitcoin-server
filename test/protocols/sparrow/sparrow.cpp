@@ -112,6 +112,21 @@ BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_unsubscribe__invalid_sca
     BOOST_REQUIRE_EQUAL(get_error(request), bad_request.value());
 }
 
+BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_unsubscribe__pipelined_request__own_ids)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto request = R"({"id":909,"method":"blockchain.silentpayments.unsubscribe","params":["0000000000000000000000000000000000000000000000000000000000000001","020000000000000000000000000000000000000000000000000000000000000002"]})" "\n" R"({"id":910,"method":"server.ping","params":[]})" "\n";
+    const auto response1 = get(request);
+    const auto response2 = receive();
+    BOOST_REQUIRE_MESSAGE(response1.is_object() && response1.as_object().contains("result"), serialize(response1));
+    BOOST_REQUIRE_MESSAGE(response2.is_object() && response2.as_object().contains("result"), serialize(response2));
+    BOOST_REQUIRE_EQUAL(response1.at("id").as_int64(), 909);
+    BOOST_REQUIRE_EQUAL(response2.at("id").as_int64(), 910);
+    REQUIRE_NO_THROW_TRUE(response1.at("result").is_null());
+    REQUIRE_NO_THROW_TRUE(response2.at("result").is_null());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // sparrow silent payments (indexed)
