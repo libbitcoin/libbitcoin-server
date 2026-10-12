@@ -159,6 +159,7 @@ parser::parser(system::chain::selection context,
     configured.database.strong_tx.expected = 1'359'871'695;
     configured.database.strong_tx.size = 149'585'887;
     configured.database.strong_tx.rate = 1;
+    configured.database.scan.buckets = 950'001;
     configured.database.scan.size = 0;
     configured.database.scan.rate = 1;
 
@@ -2399,6 +2400,11 @@ options_metadata parser::load_settings() THROWS
     )
 
     /* table.scan */
+    (
+        "table.scan.buckets",
+        setting<uint32_t>(&configured.database.scan.buckets),
+        "The number of buckets provisioned in the index_scan table head, defaults to {}."
+    )
     (
         "table.scan.size",
         setting<uint64_t>(&configured.database.scan.size),
