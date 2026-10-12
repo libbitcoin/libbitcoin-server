@@ -274,12 +274,10 @@ protected:
 
     void complete_get_balance(const code& ec, uint64_t confirmed,
         int64_t unconfirmed, const gate_t::ptr& gate) NOEXCEPT;
-    void complete_get_history(const code& ec, const hash_digest& scripthash,
-        const histories& histories, bool wrap,
-        const gate_t::ptr& gate) NOEXCEPT;
-    void complete_get_mempool(const code& ec, const hash_digest& scripthash,
-        const histories& histories, bool wrap,
-        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_history(const code& ec, const histories& histories,
+        bool wrap, const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_mempool(const code& ec, const histories& histories,
+        bool wrap, const gate_t::ptr& gate) NOEXCEPT;
     void complete_list_unspent(const code& ec,
         const unspent_outputs& unspents, bool wrap,
         const gate_t::ptr& gate) NOEXCEPT;
@@ -408,17 +406,8 @@ private:
     void complete_submit_package(const code& ec, size_t index,
         const system::chain::transactions_cptr& txs) NOEXCEPT;
 
-    // Send a tx retained by this channel's broadcast (unconfirmed).
-    void send_retained_tx(const system::chain::transaction& tx,
-        bool verbose) NOEXCEPT;
-
-    // Append txs retained by this channel's broadcast to unconfirmed history.
     static network::rpc::value_t wrapped(array_t&& out,
         const network::rpc::string_t& key, bool wrap) NOEXCEPT;
-    void append_retained(array_t& out,
-        const hash_digest& scripthash) const NOEXCEPT;
-    static bool touches(const system::chain::transaction& tx,
-        const hash_digest& scripthash) NOEXCEPT;
 
     // These are thread safe.
     const options_t& options_;

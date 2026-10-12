@@ -271,13 +271,6 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
     const auto link = query.to_tx(hash);
     if (link.is_terminal())
     {
-        // This client may have broadcast it (there is no tx pool).
-        if (const auto tx = retained_tx(hash))
-        {
-            send_retained_tx(*tx, verbose);
-            return;
-        }
-
         // electrumx passes tx lookup to its daemon, failing as daemon error.
         send_code(error::electrum::daemon_error);
         return;
@@ -518,28 +511,6 @@ void protocol_electrum::complete_submit_package(const code& ec, size_t index,
         { "success", !failed },
         { "errors", std::move(errors) }
     });
-}
-
-// A retained tx is unconfirmed, so carries no block context.
-void protocol_electrum::send_retained_tx(const chain::transaction& tx,
-    bool verbose) NOEXCEPT
-{
-    if (!verbose)
-    {
-        const auto data = tx.to_data(true);
-        send_result(encode_base16(data));
-        return;
-    }
-
-    auto value = value_from(bitcoind(tx, flags_));
-    if (!value.is_object())
-    {
-        send_code(error::electrum::daemon_error);
-        return;
-    }
-
-    inject_tx_scripts(value.as_object(), tx, p2kh_, p2sh_, witness_);
-    send_result(std::move(value));
 }
 
 BC_POP_WARNING()
