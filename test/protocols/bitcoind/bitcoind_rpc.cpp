@@ -3931,8 +3931,14 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolentry__broadcast__expected)
     BOOST_REQUIRE_EQUAL(entry.at("height").as_int64(), 1);
     BOOST_REQUIRE(entry.at("time").as_int64() > 0);
     BOOST_REQUIRE_EQUAL(as_text(entry.at("wtxid")), encode_hash(test::tx1c.hash(true)));
+    BOOST_REQUIRE_EQUAL(entry.at("descendantcount").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(entry.at("descendantsize").as_int64(), to_signed(test::tx1c.virtual_size()));
+    BOOST_REQUIRE_EQUAL(entry.at("ancestorcount").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(entry.at("ancestorsize").as_int64(), to_signed(test::tx1c.virtual_size()));
     BOOST_REQUIRE_EQUAL(entry.at("fees").at("base").as_double(), fee);
     BOOST_REQUIRE_EQUAL(entry.at("fees").at("modified").as_double(), fee);
+    BOOST_REQUIRE_EQUAL(entry.at("fees").at("ancestor").as_double(), fee);
+    BOOST_REQUIRE_EQUAL(entry.at("fees").at("descendant").as_double(), fee);
     BOOST_REQUIRE(entry.at("depends").as_array().empty());
     BOOST_REQUIRE(entry.at("spentby").as_array().empty());
     BOOST_REQUIRE(!entry.at("bip125-replaceable").as_bool());

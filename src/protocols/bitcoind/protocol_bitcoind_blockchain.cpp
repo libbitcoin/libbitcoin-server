@@ -1692,7 +1692,6 @@ void protocol_bitcoind_blockchain::do_get_raw_mempool(bool verbose,
     POST(complete_mempool, code{}, std::move(result), gate);
 }
 
-// The ancestor and descendant aggregates require the tx graph, so are omitted.
 // The entry height is that of the chain top, below the pooled context height.
 bool protocol_bitcoind_blockchain::mempool_entry(object_t& out,
     const database::tx_link& link) const NOEXCEPT
@@ -1701,10 +1700,13 @@ bool protocol_bitcoind_blockchain::mempool_entry(object_t& out,
 
     uint32_t time{};
     database::fee_rate rate{};
+    database::fee_totals ancestors{}, descendants{};
     size_t light{}, heavy{};
     if (!query.get_tx_fees(rate, link) ||
         !query.get_tx_sizes(light, heavy, link) ||
-        !query.get_pooled_time(time, link))
+        !query.get_pooled_time(time, link) ||
+        !query.get_ancestor_totals(ancestors, link) ||
+        !query.get_descendant_totals(descendants, link))
         return false;
 
     const auto to_txids = [&query](const database::tx_links& links) NOEXCEPT
@@ -1717,11 +1719,17 @@ bool protocol_bitcoind_blockchain::mempool_entry(object_t& out,
         return txids;
     };
 
-    const auto fee = to_floating(rate.fee) / chain::satoshi_per_bitcoin;
+    const auto to_btc = [](uint64_t satoshis) NOEXCEPT
+    {
+        return to_floating(satoshis) / chain::satoshi_per_bitcoin;
+    };
+
     const object_t fees
     {
-        { "base", fee },
-        { "modified", fee }
+        { "base", to_btc(rate.fee) },
+        { "modified", to_btc(rate.fee) },
+        { "ancestor", to_btc(ancestors.fee) },
+        { "descendant", to_btc(descendants.fee) }
     };
 
     out = object_t
@@ -1730,6 +1738,10 @@ bool protocol_bitcoind_blockchain::mempool_entry(object_t& out,
         { "weight", chain::weighted_size(light, heavy) },
         { "time", time },
         { "height", sub1(rate.height) },
+        { "descendantcount", descendants.count },
+        { "descendantsize", descendants.bytes },
+        { "ancestorcount", ancestors.count },
+        { "ancestorsize", ancestors.bytes },
         { "wtxid", encode_hash(query.get_wtxid(link)) },
         { "fees", fees },
         { "depends", to_txids(query.to_confirmable_parents(link)) },
