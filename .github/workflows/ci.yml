@@ -19,6 +19,8 @@ on:
       - 'src/**'
       - 'test/**'
   push:
+    tags-ignore:
+      - "**"
     paths:
       - 'builds/cmake/**'
       - 'builds/gnu/**'
@@ -33,12 +35,18 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.repository_owner == 'libbitcoin' && (github.event.pull_request.number || github.run_id) || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   information:
     runs-on: ubuntu-latest
 
     env:
       CONCURRENCY_GROUP: ${{ github.workflow }}-${{ github.repository_owner == 'libbitcoin' && (github.event.pull_request.number || github.run_id) || github.ref }}
+
+    permissions:
+      actions: write
 
     steps:
         - name: state
@@ -51,6 +59,14 @@ jobs:
             echo "ref      : ${{ github.ref }}"
             echo "base_ref : ${{ github.base_ref }}"
             echo "head_ref : ${{ github.head_ref }}"
+
+        - name: cancel on pull_request closed
+          if: github.event_name == 'pull_request' && github.event.action == 'closed'
+          env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          run: |
+            gh api --method POST \
+              -H "Accept: application/vnd.github+json"   "/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/cancel"
 
 
   gnu:
@@ -134,7 +150,7 @@ jobs:
       - name: Checkout repository [libbitcoin-system]
         id: checkout-libbitcoin-system
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-system'
@@ -152,7 +168,7 @@ jobs:
       - name: Checkout repository [libbitcoin-database]
         id: checkout-libbitcoin-database
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-database'
@@ -170,7 +186,7 @@ jobs:
       - name: Checkout repository [libbitcoin-network]
         id: checkout-libbitcoin-network
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-network'
@@ -188,7 +204,7 @@ jobs:
       - name: Checkout repository [libbitcoin-node]
         id: checkout-libbitcoin-node
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-node'
@@ -205,7 +221,7 @@ jobs:
 
       - name: Checkout repository [libbitcoin-server]
         id: checkout-libbitcoin-server
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-server'
@@ -274,7 +290,7 @@ jobs:
         shell: bash
         working-directory: 'libbitcoin-server'
         env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.github_token }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -sLO https://github.com/coverallsapp/coverage-reporter/releases/latest/download/coveralls-linux-x86_64.tar.gz
           curl -sLO https://github.com/coverallsapp/coverage-reporter/releases/latest/download/coveralls-checksums.txt
@@ -335,7 +351,7 @@ jobs:
 
       - name: Test artifact upload
         if: failure()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: testlogs
           path: ${{ github.workspace }}/*.errors
@@ -423,7 +439,7 @@ jobs:
       - name: Checkout repository [libbitcoin-system]
         id: checkout-libbitcoin-system
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-system'
@@ -441,7 +457,7 @@ jobs:
       - name: Checkout repository [libbitcoin-database]
         id: checkout-libbitcoin-database
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-database'
@@ -459,7 +475,7 @@ jobs:
       - name: Checkout repository [libbitcoin-network]
         id: checkout-libbitcoin-network
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-network'
@@ -477,7 +493,7 @@ jobs:
       - name: Checkout repository [libbitcoin-node]
         id: checkout-libbitcoin-node
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-node'
@@ -494,7 +510,7 @@ jobs:
 
       - name: Checkout repository [libbitcoin-server]
         id: checkout-libbitcoin-server
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-server'
@@ -563,7 +579,7 @@ jobs:
         shell: bash
         working-directory: 'libbitcoin-server'
         env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.github_token }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -sLO https://github.com/coverallsapp/coverage-reporter/releases/latest/download/coveralls-linux-x86_64.tar.gz
           curl -sLO https://github.com/coverallsapp/coverage-reporter/releases/latest/download/coveralls-checksums.txt
@@ -624,7 +640,7 @@ jobs:
 
       - name: Test artifact upload
         if: failure()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: testlogs
           path: ${{ github.workspace }}/*.errors
@@ -678,7 +694,7 @@ jobs:
       - name: Checkout repository [libbitcoin-system]
         id: checkout-libbitcoin-system
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-system'
@@ -696,7 +712,7 @@ jobs:
       - name: Checkout repository [libbitcoin-database]
         id: checkout-libbitcoin-database
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-database'
@@ -714,7 +730,7 @@ jobs:
       - name: Checkout repository [libbitcoin-network]
         id: checkout-libbitcoin-network
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-network'
@@ -732,7 +748,7 @@ jobs:
       - name: Checkout repository [libbitcoin-node]
         id: checkout-libbitcoin-node
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-node'
@@ -749,7 +765,7 @@ jobs:
 
       - name: Checkout repository [libbitcoin-server]
         id: checkout-libbitcoin-server
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-server'
@@ -813,7 +829,7 @@ jobs:
         shell: bash
         working-directory: 'libbitcoin-server'
         env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.github_token }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -sLO https://github.com/coverallsapp/coverage-reporter/releases/latest/download/coveralls-linux-x86_64.tar.gz
           curl -sLO https://github.com/coverallsapp/coverage-reporter/releases/latest/download/coveralls-checksums.txt
@@ -874,7 +890,7 @@ jobs:
 
       - name: Test artifact upload
         if: failure()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: testlogs
           path: ${{ github.workspace }}/*.errors
@@ -915,17 +931,18 @@ jobs:
           fi
 
       - name: Set msbuild path
-        uses: microsoft/setup-msbuild@v3
+        uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3
         with:
           msbuild-architecture: x64
 
       - name: Checkout repository [libbitcoin-system]
         id: checkout-libbitcoin-system
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-system'
+          persist-credentials: false
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-system
 
@@ -939,10 +956,11 @@ jobs:
       - name: Checkout repository [libbitcoin-database]
         id: checkout-libbitcoin-database
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-database'
+          persist-credentials: false
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-database
 
@@ -956,10 +974,11 @@ jobs:
       - name: Checkout repository [libbitcoin-network]
         id: checkout-libbitcoin-network
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-network'
+          persist-credentials: false
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-network
 
@@ -973,10 +992,11 @@ jobs:
       - name: Checkout repository [libbitcoin-node]
         id: checkout-libbitcoin-node
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-node'
+          persist-credentials: false
           ref: ${{ steps.get-branch.outputs.branch }}
           repository: ${{ github.repository_owner }}/libbitcoin-node
 
@@ -989,10 +1009,11 @@ jobs:
 
       - name: Checkout repository [libbitcoin-server]
         id: checkout-libbitcoin-server
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: 'libbitcoin-server'
+          persist-credentials: false
           repository: ${{ github.repository }}
 
       - name: Execute build
