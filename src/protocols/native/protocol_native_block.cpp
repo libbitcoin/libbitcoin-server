@@ -236,7 +236,6 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
             return true;
         }
 
-        const auto check = system_settings().top_checkpoint().height();
         const auto bypass = query.is_bypass(link);
 
         object["state"] = boost::json::object
@@ -245,7 +244,7 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
             { "weight", chain::weighted_size(nominal, maximal) },
             { "count", query.get_tx_count(link) },
             { "validated", bypass || query.is_validated(link) },
-            { "confirmed", check || query.is_confirmed_block(link) },
+            { "confirmed", query.is_confirmed_block(link) },
             { "confirmable", bypass || query.is_confirmable(link) },
             { "unconfirmable", !bypass && query.is_unconfirmable(link) }
         };
