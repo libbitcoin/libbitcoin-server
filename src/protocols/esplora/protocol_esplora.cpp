@@ -25,6 +25,7 @@ namespace libbitcoin {
 namespace server {
 
 using namespace system;
+using namespace boost::json;
 using namespace network;
 using namespace network::http;
 using namespace std::placeholders;
@@ -267,7 +268,7 @@ void protocol_esplora::set_body(rpc::request_t& model,
 // Senders.
 // ----------------------------------------------------------------------------
 
-void protocol_esplora::send_json(boost::json::value&& model, size_t size_hint,
+void protocol_esplora::send_json(value&& model, size_t size_hint,
     const request& request) NOEXCEPT
 {
     BC_ASSERT(stranded());

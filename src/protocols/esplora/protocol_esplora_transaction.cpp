@@ -27,6 +27,7 @@ namespace server {
 #define CLASS protocol_esplora
 
 using namespace system;
+using namespace boost::json;
 using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
@@ -64,11 +65,11 @@ std::string protocol_esplora::to_script_type(
     }
 }
 
-boost::json::object protocol_esplora::to_output(
+object protocol_esplora::to_output(
     const chain::output& output) NOEXCEPT
 {
     const auto& script = output.script();
-    boost::json::object out
+    object out
     {
         { "scriptpubkey", encode_base16(script.to_data(false)) },
         { "scriptpubkey_asm", script.to_string(flags_, true) },
@@ -84,17 +85,17 @@ boost::json::object protocol_esplora::to_output(
     return out;
 }
 
-boost::json::object protocol_esplora::to_input(const chain::input& input,
+object protocol_esplora::to_input(const chain::input& input,
     bool coinbase) NOEXCEPT
 {
     const auto& script = input.script();
     const auto& point = input.point();
 
-    boost::json::array witness{};
+    array witness{};
     for (const auto& stack: input.witness().stack())
         witness.emplace_back(encode_base16(*stack));
 
-    boost::json::object out
+    object out
     {
         { "txid", encode_hash(point.hash()) },
         { "vout", point.index() },
@@ -112,7 +113,7 @@ boost::json::object protocol_esplora::to_input(const chain::input& input,
     return out;
 }
 
-boost::json::object protocol_esplora::to_status(
+object protocol_esplora::to_status(
     const database::tx_link& link) NOEXCEPT
 {
     const auto& query = archive();
@@ -132,7 +133,7 @@ boost::json::object protocol_esplora::to_status(
     };
 }
 
-bool protocol_esplora::to_tx(boost::json::object& out,
+bool protocol_esplora::to_tx(object& out,
     const database::tx_link& link) NOEXCEPT
 {
     auto& query = archive();
@@ -144,8 +145,8 @@ bool protocol_esplora::to_tx(boost::json::object& out,
     const auto nominal = tx->serialized_size(false);
     const auto maximal = tx->serialized_size(true);
 
-    boost::json::array inputs{};
-    boost::json::array outputs{};
+    array inputs{};
+    array outputs{};
 
     // Prevouts are required for the fee and for each input's prevout object.
     const auto populated = !coinbase && query.populate_with_metadata(*tx);
@@ -191,7 +192,7 @@ bool protocol_esplora::handle_get_tx(const code& ec, interface::tx,
 
     if (media == json)
     {
-        boost::json::object out{};
+        object out{};
         if (!to_tx(out, link))
         {
             send_internal_server_error(database::error::integrity);
@@ -337,13 +338,13 @@ bool protocol_esplora::handle_get_tx_merkle_proof(const code& ec,
     const auto position = to_unsigned(index);
     const auto proof = chain::block::merkle_branch(index, std::move(hashes));
 
-    boost::json::array branch(proof.size());
+    array branch(proof.size());
     std::ranges::transform(proof, branch.begin(), [](const auto& item) NOEXCEPT
     {
         return encode_hash(item);
     });
 
-    send_json(boost::json::object
+    send_json(object
     {
         { "block_height", height },
         { "merkle", std::move(branch) },
@@ -373,7 +374,7 @@ bool protocol_esplora::handle_get_tx_outspend(const code& ec,
         return true;
     }
 
-    boost::json::object out{};
+    object out{};
     if (!to_outspend(out, *hash, index))
     {
         send_not_found();
@@ -406,10 +407,10 @@ bool protocol_esplora::handle_get_tx_outspends(const code& ec,
     }
 
     const auto count = tx->outputs_ptr()->size();
-    boost::json::array out{};
+    array out{};
     for (uint32_t index{}; index < count; ++index)
     {
-        boost::json::object spend{};
+        object spend{};
         if (!to_outspend(spend, *hash, index))
         {
             send_internal_server_error(database::error::integrity);
@@ -487,7 +488,7 @@ bool protocol_esplora::handle_broadcast_package(const code& ec,
 }
 
 // The spending status of one output, false if the output does not exist.
-bool protocol_esplora::to_outspend(boost::json::object& out,
+bool protocol_esplora::to_outspend(object& out,
     const hash_digest& hash, uint32_t index) NOEXCEPT
 {
     const auto& query = archive();
