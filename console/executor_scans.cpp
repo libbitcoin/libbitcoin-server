@@ -41,10 +41,11 @@ void executor::scan_flags() const
     const auto error = code{ database::error::integrity }.message();
     const auto top = query_.get_top_candidate();
     uint32_t flags{};
+    size_t height{};
 
     logger(BS_OPERATION_INTERRUPT);
 
-    for (size_t height{}; !canceled() && height <= top; ++height)
+    for (; !canceled() && height <= top; ++height)
     {
         database::context ctx{};
         const auto link = query_.to_candidate(height);
@@ -69,84 +70,7 @@ void executor::scan_flags() const
         logger(BS_OPERATION_CANCELED);
 
     const auto span = duration_cast<milliseconds>(logger::now() - start);
-    logger(std::format("Scanned {} headers for rule forks in {} ms.", top,
-        span.count()));
-}
-
-// hashmap bucket fill rates.
-void executor::scan_buckets() const
-{
-    constexpr auto block_frequency = 10'000u;
-    constexpr auto tx_frequency = 1'000'000u;
-    constexpr auto put_frequency = 10'000'000u;
-
-    logger(BS_OPERATION_INTERRUPT);
-
-    auto filled = zero;
-    auto bucket = max_size_t;
-    auto start = logger::now();
-    while (!canceled() && (++bucket < query_.header_buckets()))
-    {
-        const auto top = query_.top_header(bucket);
-        if (!top.is_terminal())
-            ++filled;
-
-        if (is_zero(bucket % block_frequency))
-            logger(std::format("header" BS_READ_ROW, bucket,
-                duration_cast<seconds>(logger::now() - start).count()));
-    }
-
-    if (canceled())
-        logger(BS_OPERATION_CANCELED);
-
-    auto span = duration_cast<seconds>(logger::now() - start);
-    logger(std::format("header" BS_READ_ROW, (to_double(filled) / bucket),
-        span.count()));
-
-    // ------------------------------------------------------------------------
-
-    filled = zero;
-    bucket = max_size_t;
-    start = logger::now();
-    while (!canceled() && (++bucket < query_.tx_buckets()))
-    {
-        const auto top = query_.top_tx(bucket);
-        if (!top.is_terminal())
-            ++filled;
-
-        if (is_zero(bucket % tx_frequency))
-            logger(std::format("tx" BS_READ_ROW, bucket,
-                duration_cast<seconds>(logger::now() - start).count()));
-    }
-
-    if (canceled())
-        logger(BS_OPERATION_CANCELED);
-
-    span = duration_cast<seconds>(logger::now() - start);
-    logger(std::format("tx" BS_READ_ROW, (to_double(filled) / bucket),
-        span.count()));
-
-    // ------------------------------------------------------------------------
-
-    filled = zero;
-    bucket = max_size_t;
-    start = logger::now();
-    while (!canceled() && (++bucket < query_.ins_buckets()))
-    {
-        const auto top = query_.top_point(bucket);
-        if (!top.is_terminal())
-            ++filled;
-
-        if (is_zero(bucket % put_frequency))
-            logger(std::format("point" BS_READ_ROW, bucket,
-                duration_cast<seconds>(logger::now() - start).count()));
-    }
-
-    if (canceled())
-        logger(BS_OPERATION_CANCELED);
-
-    span = duration_cast<seconds>(logger::now() - start);
-    logger(std::format("point" BS_READ_ROW, (to_double(filled) / bucket),
+    logger(std::format("Scanned {} headers for rule forks in {} ms.", height,
         span.count()));
 }
 
@@ -157,6 +81,55 @@ static std::string to_grouped(size_t value)
         text.insert(at - 3u, ",");
 
     return text;
+}
+
+// hashmap bucket fill of one head (head only).
+template <typename Table>
+void executor::scan_buckets(const std::string& name, const Table& table,
+    size_t records) const
+{
+    using key_t = typename Table::key;
+    using bucket_t = typename Table::link::integer;
+    constexpr auto linked = is_std_array<key_t> &&
+        (array_count<key_t> < hash_size);
+
+    const auto buckets = table.buckets();
+    if (is_zero(buckets) || canceled())
+        return;
+
+    const auto start = logger::now();
+    size_t filled{};
+    size_t bucket{};
+    for (; !canceled() && bucket < buckets; ++bucket)
+        if (!table.top(possible_narrow_cast<bucket_t>(bucket)).is_terminal())
+            ++filled;
+
+    const auto load = to_double(records) / buckets;
+    const auto expect = linked ? std::min(load, 1.0) : 1.0 - std::exp(-load);
+    const auto span = duration_cast<seconds>(logger::now() - start);
+    logger(std::format("{:<10} {:>15} {:>15} {:>9.6f} {:>8.6f} {:>8.6f} "
+        "{:>6}", name, to_grouped(bucket), to_grouped(records), load,
+        (to_double(filled) / std::max(bucket, one)), expect, span.count()));
+}
+
+// hashmap bucket fill rates, all heads.
+void executor::scan_buckets() const
+{
+    logger(BS_OPERATION_INTERRUPT);
+    logger("table              buckets         records      load     "
+        "fill   expect   secs");
+
+    scan_buckets("header", store_.header, query_.header_records());
+    scan_buckets("tx", store_.tx, query_.tx_records());
+    scan_buckets("ins", store_.ins, query_.ins_records());
+    scan_buckets("address", store_.outs, query_.outs_records());
+    scan_buckets("strong_tx", store_.strong_tx, query_.strong_tx_records());
+    scan_buckets("duplicate", store_.duplicate, query_.duplicate_records());
+    scan_buckets("pool", store_.pool, query_.pool_records());
+    scan_buckets("wtxid", store_.wtxid, query_.wtxid_records());
+
+    if (canceled())
+        logger(BS_OPERATION_CANCELED);
 }
 
 // hashmap bucket distribution and filter false positives of one head.

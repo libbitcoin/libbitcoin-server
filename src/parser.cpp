@@ -334,7 +334,7 @@ options_metadata parser::load_options() THROWS
         alias(buckets_variable, 'k').c_str(),
         value<bool>(&configured.buckets)->
             default_value(false)->zero_tokens(),
-        "Scan and display all bucket densities."
+        "Scan and display hashmap bucket fill."
     )
     (
         alias(collisions_variable, 'l').c_str(),

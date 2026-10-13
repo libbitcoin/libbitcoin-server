@@ -98,6 +98,9 @@ private:
     // Long-running queries (scans).
     void scan_flags() const;
     void scan_buckets() const;
+    template <typename Table>
+    void scan_buckets(const std::string& name, const Table& table,
+        size_t records) const;
     void scan_collisions();
     template <typename Table>
     void scan_collisions(const std::string& name, size_t records,

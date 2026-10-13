@@ -328,7 +328,7 @@ Options (named):
 -g [--get]           Run built-in read test and display.                 
 -h [--help]          Display command line options.                       
 -i [--information]   Scan and display store information.                 
--k [--buckets]       Scan and display all bucket densities.              
+-k [--buckets]       Scan and display hashmap bucket fill.               
 -l [--collisions]    Scan and display hashmap collision stats (may exceed
                      RAM and result in SIGKILL).                         
 -n [--newstore]      Create new store in configured directory.           
