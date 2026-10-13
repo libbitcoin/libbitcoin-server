@@ -114,6 +114,18 @@ struct native_address_setup_fixture
     }
 };
 
+struct native_unconfirmed_setup_fixture
+  : native_setup_fixture
+{
+    inline native_unconfirmed_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_three_block_unconfirmed_address_store(query);
+        })
+    {
+    }
+};
+
 struct native_unassociated_setup_fixture
   : native_setup_fixture
 {

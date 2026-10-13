@@ -78,9 +78,9 @@ BOOST_AUTO_TEST_CASE(native__address_confirmed__unfunded__not_found)
 // address/unconfirmed
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(native__address_unconfirmed__any__not_implemented)
+BOOST_AUTO_TEST_CASE(native__address_unconfirmed__confirmed__not_found)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/v1/address/" + funded + "/unconfirmed?format=data"), http::status::not_implemented);
+    BOOST_REQUIRE_EQUAL(get_status("/v1/address/" + funded + "/unconfirmed?format=data"), http::status::not_found);
 }
 
 // address/balance
@@ -148,6 +148,28 @@ BOOST_AUTO_TEST_CASE(native__configuration__no_address__disabled)
     const auto response = get_json("/v1/configuration?format=json");
     BOOST_REQUIRE(response.is_object());
     BOOST_REQUIRE(!response.as_object().at("address").as_bool());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// address/unconfirmed (unconfirmed)
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(native_unconfirmed_tests, native_unconfirmed_setup_fixture)
+
+static const auto& output4 = *test::tx4.outputs_ptr()->front();
+static const std::string unconfirmed = encode_hash(sha256_hash(output4.script().to_data(false)));
+static const chain::outpoint outpoint4{ chain::point{ test::tx4.hash(false), 0 }, 0x08 };
+static const chain::outpoint outpoint5{ chain::point{ test::tx5.hash(false), 0 }, 0x85 };
+
+BOOST_AUTO_TEST_CASE(native__address_unconfirmed__json__unconfirmed_outputs)
+{
+    const auto response = get_json("/v1/address/" + unconfirmed + "/unconfirmed?format=json");
+    BOOST_REQUIRE(response.is_array());
+
+    const auto& outputs = response.as_array();
+    BOOST_REQUIRE(contains(outputs, value_from(outpoint4)));
+    BOOST_REQUIRE(contains(outputs, value_from(outpoint5)));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
