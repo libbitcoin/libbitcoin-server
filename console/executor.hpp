@@ -99,10 +99,10 @@ private:
     void scan_flags() const;
     void scan_buckets() const;
     void scan_collisions();
-    template <typename Schema>
+    template <typename Table>
     void scan_collisions(const std::string& name, size_t records,
-        size_t buckets, size_t k, size_t frequency,
-        const auto& get_key) const;
+        size_t buckets, size_t k, system::string_list& distributions,
+        system::string_list& filters, const auto& get_key) const;
 
     // Command line (defaults to do_run).
     bool do_help();
