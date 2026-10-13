@@ -158,6 +158,23 @@ struct head_filter
     static constexpr size_t k_max = (m < two) ? zero :
         std::min(m, bits<uint64_t> / ceilinged_log2(m));
     using type = bloom<m, k_max>;
+
+    // Expected fp of a new key, its bucket holding Poisson(load) prior keys.
+    static double false_positive(size_t k, double load) NOEXCEPT
+    {
+        const auto retain = 1.0 - (1.0 / to_double(m));
+        const auto span = load + 10.0 * std::sqrt(load) + 10.0;
+        auto poisson = std::exp(-load);
+        auto rate = 0.0;
+        for (size_t n{}; to_double(n) <= span; ++n)
+        {
+            rate += poisson * std::pow(1.0 - std::pow(retain,
+                to_double(k * n)), to_double(k));
+            poisson *= load / to_double(add1(n));
+        }
+
+        return rate;
+    }
 };
 
 // hashmap bucket length distribution and filter collisions of one head.
@@ -181,15 +198,39 @@ void executor::scan_collisions(const std::string& name, size_t records,
     std_vector<filter> filters(filtered ? buckets : zero, empty);
     const auto count = possible_narrow_cast<bucket_t>(buckets);
     const auto start = logger::now();
+    size_t window_collisions{};
+    size_t window_puts{};
     size_t collisions{};
     size_t nulls{};
     size_t index{};
 
+    const auto progress = [&]() NOEXCEPT
+    {
+        const auto secs = duration_cast<seconds>(logger::now() - start);
+        if constexpr (filtered)
+        {
+            if (is_zero(window_puts))
+                return;
+
+            const auto load = to_double(index - nulls) / buckets;
+            logger(std::format("{}: {} keys load {:.6f} fp {:.7f} "
+                "(model {:.7f}) in {} secs.", name, (index - nulls), load,
+                (to_double(window_collisions) / window_puts),
+                head_filter<Schema>::false_positive(k, load), secs.count()));
+
+            window_collisions = zero;
+            window_puts = zero;
+        }
+        else
+        {
+            logger(std::format("{}" BS_READ_ROW, name, index, secs.count()));
+        }
+    };
+
     for (; !canceled() && index < records; ++index)
     {
         if (is_zero(index % frequency))
-            logger(std::format("{}" BS_READ_ROW, name, index,
-                duration_cast<seconds>(logger::now() - start).count()));
+            progress();
 
         const auto key = get_key(index);
         if constexpr (points)
@@ -210,10 +251,15 @@ void executor::scan_collisions(const std::string& name, size_t records,
         {
             auto& value = filters.at(bucket);
             const auto next = filter_t::screen(value, keys::thumb(key), k);
-            collisions += to_int(filter_t::is_collision(value, next));
+            const auto collision = to_int(filter_t::is_collision(value, next));
+            window_collisions += collision;
+            collisions += collision;
+            ++window_puts;
             value = next;
         }
     }
+
+    progress();
 
     if (canceled())
         logger(BS_OPERATION_CANCELED);
@@ -240,7 +286,7 @@ void executor::scan_collisions(const std::string& name, size_t records,
         logger(std::format("{}: {} null points excluded", name, nulls));
 
     if constexpr (filtered)
-        logger(std::format("{}: k {} m {} collisions {} rate {:.7f}", name, k,
+        logger(std::format("{}: k {} m {} fps {} rate {:.7f}", name, k,
             head_filter<Schema>::m, collisions, (to_double(collisions) /
                 std::max(puts, one))));
 
