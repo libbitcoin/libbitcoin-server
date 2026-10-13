@@ -128,97 +128,102 @@
 // --information
 #define BS_INFORMATION_START \
     "Configuration...\n" \
-    "   dirty     :{:d}\n" \
-    "   interval  :{}"
+    "   dirty         :{:d}\n" \
+    "   interval      :{}"
 #define BS_INFORMATION_SIZES \
     "Body sizes...\n" \
-    "   header    :{}\n" \
-    "   txs       :{}\n" \
-    "   tx        :{}\n" \
-    "   input     :{}\n" \
-    "   output    :{}\n" \
-    "   ins       :{}\n" \
-    "   outs      :{}\n" \
-    "   candidate :{}\n" \
-    "   confirmed :{}\n" \
-    "   ecdsa0    :{}\n" \
-    "   ecdsa1    :{}\n" \
-    "   schnorr0  :{}\n" \
-    "   schnorr1  :{}\n" \
-    "   prevalid0 :{}\n" \
-    "   prevalid1 :{}\n" \
-    "   presilent0:{}\n" \
-    "   presilent1:{}\n" \
-    "   silent0   :{}\n" \
-    "   silent1   :{}\n" \
-    "   silent0pfx:{}\n" \
-    "   silent1pfx:{}\n" \
-    "   prevout   :{}\n" \
-    "   duplicate :{}\n" \
-    "   strong    :{}\n" \
-    "   scan      :{}\n" \
-    "   scanprefix:{}\n" \
-    "   state     :{}\n" \
-    "   pool      :{}\n" \
-    "   spends    :{}\n" \
-    "   filter_bk :{}\n" \
-    "   filter_tx :{}"
+    "   header        :{}\n" \
+    "   txs           :{}\n" \
+    "   tx            :{}\n" \
+    "   input         :{}\n" \
+    "   output        :{}\n" \
+    "   ins           :{}\n" \
+    "   outs          :{}\n" \
+    "   candidate     :{}\n" \
+    "   confirmed     :{}\n" \
+    "   ecdsa0        :{}\n" \
+    "   ecdsa1        :{}\n" \
+    "   schnorr0      :{}\n" \
+    "   schnorr1      :{}\n" \
+    "   prevalid0     :{}\n" \
+    "   prevalid1     :{}\n" \
+    "   presilent0    :{}\n" \
+    "   presilent1    :{}\n" \
+    "   silent0       :{}\n" \
+    "   silent1       :{}\n" \
+    "   silent0_prefix:{}\n" \
+    "   silent1_prefix:{}\n" \
+    "   prevout       :{}\n" \
+    "   duplicate     :{}\n" \
+    "   strong        :{}\n" \
+    "   scan          :{}\n" \
+    "   scan_prefix   :{}\n" \
+    "   state         :{}\n" \
+    "   pool          :{}\n" \
+    "   wtxid         :{}\n" \
+    "   spends        :{}\n" \
+    "   filter_bk     :{}\n" \
+    "   filter_tx     :{}"
 #define BS_INFORMATION_RECORDS \
     "Table records...\n" \
-    "   header    :{}\n" \
-    "   tx        :{}\n" \
-    "   ins       :{}\n" \
-    "   outs      :{}\n" \
-    "   candidate :{}\n" \
-    "   confirmed :{}\n" \
-    "   ecdsa0    :{}\n" \
-    "   ecdsa1    :{}\n" \
-    "   schnorr0  :{}\n" \
-    "   schnorr1  :{}\n" \
-    "   prevalid0 :{}\n" \
-    "   prevalid1 :{}\n" \
-    "   presilent0:{}\n" \
-    "   presilent1:{}\n" \
-    "   silent0   :{}\n" \
-    "   silent1   :{}\n" \
-    "   silent0pfx:{}\n" \
-    "   silent1pfx:{}\n" \
-    "   duplicate :{}\n" \
-    "   strong    :{}\n" \
-    "   scan      :{}\n" \
-    "   scanprefix:{}\n" \
-    "   state     :{}\n" \
-    "   pool      :{}\n" \
-    "   spends    :{}\n" \
-    "   filter_bk :{}"
+    "   header        :{}\n" \
+    "   tx            :{}\n" \
+    "   ins           :{}\n" \
+    "   outs          :{}\n" \
+    "   candidate     :{}\n" \
+    "   confirmed     :{}\n" \
+    "   ecdsa0        :{}\n" \
+    "   ecdsa1        :{}\n" \
+    "   schnorr0      :{}\n" \
+    "   schnorr1      :{}\n" \
+    "   prevalid0     :{}\n" \
+    "   prevalid1     :{}\n" \
+    "   presilent0    :{}\n" \
+    "   presilent1    :{}\n" \
+    "   silent0       :{}\n" \
+    "   silent1       :{}\n" \
+    "   silent0_prefix:{}\n" \
+    "   silent1_prefix:{}\n" \
+    "   duplicate     :{}\n" \
+    "   strong        :{}\n" \
+    "   scan          :{}\n" \
+    "   scan_prefix   :{}\n" \
+    "   state         :{}\n" \
+    "   pool          :{}\n" \
+    "   wtxid         :{}\n" \
+    "   spends        :{}\n" \
+    "   filter_bk     :{}"
 #define BS_INFORMATION_BUCKETS \
     "Head buckets...\n" \
-    "   header    :{}\n" \
-    "   txs       :{}\n" \
-    "   tx        :{}\n" \
-    "   ins       :{}\n" \
-    "   outs      :{}\n" \
-    "   prevout   :{}\n" \
-    "   duplicate :{}\n" \
-    "   strong    :{}\n" \
-    "   pool      :{}\n" \
-    "   filter_bk :{}\n" \
-    "   filter_tx :{}"
+    "   header        :{}\n" \
+    "   txs           :{}\n" \
+    "   tx            :{}\n" \
+    "   ins           :{}\n" \
+    "   outs          :{}\n" \
+    "   prevout       :{}\n" \
+    "   duplicate     :{}\n" \
+    "   strong        :{}\n" \
+    "   pool          :{}\n" \
+    "   wtxid         :{}\n" \
+    "   filter_bk     :{}\n" \
+    "   filter_tx     :{}"
 #define BS_INFORMATION_COLLISION_RATES \
     "Collision rates...\n" \
-    "   header    :{}\n" \
-    "   tx        :{}\n" \
-    "   ins       :{}\n" \
-    "   strong    :{}\n" \
-    "   pool      :{}"
-#define BS_INFORMATION_COLLISION_RATES_ADDRESS \
+    "   header        :{}\n" \
+    "   tx            :{}\n" \
+    "   ins           :{}\n" \
+    "   strong        :{}\n" \
+    "   pool          :{}\n" \
+    "   wtxid         :{}"
+#define BS_INFORMATION_COLLISION_RATES_OUTS \
     "Collision rates...\n" \
-    "   header    :{}\n" \
-    "   tx        :{}\n" \
-    "   ins       :{}\n" \
-    "   outs      :{}\n" \
-    "   strong    :{}\n" \
-    "   pool      :{}"
+    "   header        :{}\n" \
+    "   tx            :{}\n" \
+    "   ins           :{}\n" \
+    "   outs          :{}\n" \
+    "   strong        :{}\n" \
+    "   pool          :{}\n" \
+    "   wtxid         :{}"
 #define BS_INFORMATION_PROGRESS_START \
     "Thinking..."
 #define BS_INFORMATION_PROGRESS \

@@ -2255,192 +2255,192 @@ options_metadata parser::load_settings() THROWS
     (
         "table.header.buckets",
         setting<uint32_t>(&configured.database.header.buckets),
-        "The number of buckets in the archive_header table head, dynamic default."
+        "The number of buckets in the header table head, dynamic default."
     )
     (
         "table.header.expected",
         setting<uint64_t>(&configured.database.header.expected),
-        "The expected element count of the archive_header table, defaults to {}."
+        "The expected element count of the header table, defaults to {}."
     )
     (
         "table.header.size",
         setting<uint64_t>(&configured.database.header.size),
-        "The minimum allocation of the archive_header table body, defaults to {}."
+        "The minimum allocation of the header table body, defaults to {}."
     )
     (
         "table.header.rate",
         setting<uint16_t>(&configured.database.header.rate),
-        "The percentage expansion of the archive_header table body, defaults to {}."
+        "The percentage expansion of the header table body, defaults to {}."
     )
 
     /* table.input */
     (
         "table.input.size",
         setting<uint64_t>(&configured.database.input.size),
-        "The minimum allocation of the archive_input table body, defaults to {}."
+        "The minimum allocation of the input table body, defaults to {}."
     )
     (
         "table.input.rate",
         setting<uint16_t>(&configured.database.input.rate),
-        "The percentage expansion of the archive_input table body, defaults to {}."
+        "The percentage expansion of the input table body, defaults to {}."
     )
 
     /* table.output */
     (
         "table.output.size",
         setting<uint64_t>(&configured.database.output.size),
-        "The minimum allocation of the archive_output table body, defaults to {}."
+        "The minimum allocation of the output table body, defaults to {}."
     )
     (
         "table.output.rate",
         setting<uint16_t>(&configured.database.output.rate),
-        "The percentage expansion of the archive_output table body, defaults to {}."
+        "The percentage expansion of the output table body, defaults to {}."
     )
 
     /* table.ins */
     (
         "table.ins.buckets",
         setting<uint32_t>(&configured.database.ins.buckets),
-        "The number of buckets in the archive_ins table head, dynamic default."
+        "The number of buckets in the ins table head, dynamic default."
     )
     (
         "table.ins.expected",
         setting<uint64_t>(&configured.database.ins.expected),
-        "The expected element count of the archive_ins table, defaults to {}."
+        "The expected element count of the ins table, defaults to {}."
     )
     (
         "table.ins.size",
         setting<uint64_t>(&configured.database.ins.size),
-        "The minimum allocation of the archive_ins table body, defaults to {}."
+        "The minimum allocation of the ins table body, defaults to {}."
     )
     (
         "table.ins.rate",
         setting<uint16_t>(&configured.database.ins.rate),
-        "The percentage expansion of the archive_ins table body, defaults to {}."
+        "The percentage expansion of the ins table body, defaults to {}."
     )
 
     /* table.outs */
     (
         "table.outs.buckets",
         setting<uint32_t>(&configured.database.outs.buckets),
-        "The number of buckets in the archive_outs table head, dynamic default (0 disables address index)."
+        "The number of buckets in the outs table head, dynamic default (0 disables address index)."
     )
     (
         "table.outs.expected",
         setting<uint64_t>(&configured.database.outs.expected),
-        "The expected element count of the archive_outs table, defaults to {}."
+        "The expected element count of the outs table, defaults to {}."
     )
     (
         "table.outs.size",
         setting<uint64_t>(&configured.database.outs.size),
-        "The minimum allocation of the archive_outs table body, defaults to {}."
+        "The minimum allocation of the outs table body, defaults to {}."
     )
     (
         "table.outs.rate",
         setting<uint16_t>(&configured.database.outs.rate),
-        "The percentage expansion of the archive_outs table body, defaults to {}."
+        "The percentage expansion of the outs table body, defaults to {}."
     )
 
     /* table.tx */
     (
         "table.tx.buckets",
         setting<uint32_t>(&configured.database.tx.buckets),
-        "The number of buckets in the archive_tx table head, dynamic default."
+        "The number of buckets in the tx table head, dynamic default."
     )
     (
         "table.tx.expected",
         setting<uint64_t>(&configured.database.tx.expected),
-        "The expected element count of the archive_tx table, defaults to {}."
+        "The expected element count of the tx table, defaults to {}."
     )
     (
         "table.tx.size",
         setting<uint64_t>(&configured.database.tx.size),
-        "The minimum allocation of the archive_tx table body, defaults to {}."
+        "The minimum allocation of the tx table body, defaults to {}."
     )
     (
         "table.tx.rate",
         setting<uint16_t>(&configured.database.tx.rate),
-        "The percentage expansion of the archive_tx table body, defaults to {}."
+        "The percentage expansion of the tx table body, defaults to {}."
     )
 
     /* table.txs */
     (
         "table.txs.buckets",
         setting<uint32_t>(&configured.database.txs.buckets),
-        "The number of buckets in the archive_txs table head, defaults to {}."
+        "The number of buckets in the txs table head, defaults to {}."
     )
     (
         "table.txs.size",
         setting<uint64_t>(&configured.database.txs.size),
-        "The minimum allocation of the archive_txs table body, defaults to {}."
+        "The minimum allocation of the txs table body, defaults to {}."
     )
     (
         "table.txs.rate",
         setting<uint16_t>(&configured.database.txs.rate),
-        "The percentage expansion of the archive_txs table body, defaults to {}."
+        "The percentage expansion of the txs table body, defaults to {}."
     )
 
     /* table.candidate */
     (
         "table.candidate.buckets",
         setting<uint32_t>(&configured.database.candidate.buckets),
-        "The number of buckets provisioned in the index_candidate table head, defaults to {}."
+        "The number of buckets provisioned in the candidate table head, defaults to {}."
     )
     (
         "table.candidate.rate",
         setting<uint16_t>(&configured.database.candidate.rate),
-        "The percentage expansion of the index_candidate table head, defaults to {}."
+        "The percentage expansion of the candidate table head, defaults to {}."
     )
 
     /* table.confirmed */
     (
         "table.confirmed.buckets",
         setting<uint32_t>(&configured.database.confirmed.buckets),
-        "The number of buckets provisioned in the index_confirmed table head, defaults to {}."
+        "The number of buckets provisioned in the confirmed table head, defaults to {}."
     )
     (
         "table.confirmed.rate",
         setting<uint16_t>(&configured.database.confirmed.rate),
-        "The percentage expansion of the index_confirmed table head, defaults to {}."
+        "The percentage expansion of the confirmed table head, defaults to {}."
     )
 
     /* table.strong */
     (
         "table.strong.buckets",
         setting<uint32_t>(&configured.database.strong.buckets),
-        "The number of buckets in the index_strong table head, dynamic default."
+        "The number of buckets in the strong table head, dynamic default."
     )
     (
         "table.strong.expected",
         setting<uint64_t>(&configured.database.strong.expected),
-        "The expected element count of the index_strong table, defaults to {}."
+        "The expected element count of the strong table, defaults to {}."
     )
     (
         "table.strong.size",
         setting<uint64_t>(&configured.database.strong.size),
-        "The minimum allocation of the index_strong table body, defaults to {}."
+        "The minimum allocation of the strong table body, defaults to {}."
     )
     (
         "table.strong.rate",
         setting<uint16_t>(&configured.database.strong.rate),
-        "The percentage expansion of the index_strong table body, defaults to {}."
+        "The percentage expansion of the strong table body, defaults to {}."
     )
 
     /* table.scan */
     (
         "table.scan.buckets",
         setting<uint32_t>(&configured.database.scan.buckets),
-        "The number of buckets provisioned in the index_scan table head, defaults to {}."
+        "The number of buckets provisioned in the scan table head, defaults to {}."
     )
     (
         "table.scan.size",
         setting<uint64_t>(&configured.database.scan.size),
-        "The minimum allocation of the index_scan table body, defaults to {}."
+        "The minimum allocation of the scan table body, defaults to {}."
     )
     (
         "table.scan.rate",
         setting<uint16_t>(&configured.database.scan.rate),
-        "The percentage expansion of the index_scan table body, defaults to {}."
+        "The percentage expansion of the scan table body, defaults to {}."
     )
 
     /* table.wtxid */
@@ -2529,51 +2529,51 @@ options_metadata parser::load_settings() THROWS
     (
         "table.prevout.buckets",
         setting<uint32_t>(&configured.database.prevout.buckets),
-        "The minimum number of buckets in the cache_prevout table head, defaults to {}."
+        "The minimum number of buckets in the prevout table head, defaults to {}."
     )
     (
         "table.prevout.size",
         setting<uint64_t>(&configured.database.prevout.size),
-        "The minimum allocation of the cache_prevout table body, defaults to {}."
+        "The minimum allocation of the prevout table body, defaults to {}."
     )
     (
         "table.prevout.rate",
         setting<uint16_t>(&configured.database.prevout.rate),
-        "The percentage expansion of the cache_prevout table, defaults to {}."
+        "The percentage expansion of the prevout table, defaults to {}."
     )
 
     /* table.duplicate */
     (
         "table.duplicate.buckets",
         setting<uint32_t>(&configured.database.duplicate.buckets),
-        "The minimum number of buckets in the cache_duplicate table head, defaults to {}."
+        "The minimum number of buckets in the duplicate table head, defaults to {}."
     )
     (
         "table.duplicate.expected",
         setting<uint64_t>(&configured.database.duplicate.expected),
-        "The expected element count of the cache_duplicate table, defaults to {}."
+        "The expected element count of the duplicate table, defaults to {}."
     )
     (
         "table.duplicate.size",
         setting<uint64_t>(&configured.database.duplicate.size),
-        "The minimum allocation of the cache_duplicate table body, defaults to {}."
+        "The minimum allocation of the duplicate table body, defaults to {}."
     )
     (
         "table.duplicate.rate",
         setting<uint16_t>(&configured.database.duplicate.rate),
-        "The percentage expansion of the cache_duplicate table, defaults to {}."
+        "The percentage expansion of the duplicate table, defaults to {}."
     )
 
     /* table.state */
     (
         "table.state.buckets",
         setting<uint32_t>(&configured.database.state.buckets),
-        "The number of buckets provisioned in the index_state table head, defaults to {}."
+        "The number of buckets provisioned in the state table head, defaults to {}."
     )
     (
         "table.state.rate",
         setting<uint16_t>(&configured.database.state.rate),
-        "The percentage expansion of the index_state table head, defaults to {}."
+        "The percentage expansion of the state table head, defaults to {}."
     )
 
     /* table.pool */
@@ -2614,34 +2614,34 @@ options_metadata parser::load_settings() THROWS
     (
         "table.filter_bk.buckets",
         setting<uint32_t>(&configured.database.filter_bk.buckets),
-        "The number of buckets in the option_filter_bk table head, defaults to {} (0 disables)."
+        "The number of buckets in the filter_bk table head, defaults to {} (0 disables)."
     )
     (
         "table.filter_bk.size",
         setting<uint64_t>(&configured.database.filter_bk.size),
-        "The minimum allocation of the option_filter_bk table body, defaults to {}."
+        "The minimum allocation of the filter_bk table body, defaults to {}."
     )
     (
         "table.filter_bk.rate",
         setting<uint16_t>(&configured.database.filter_bk.rate),
-        "The percentage expansion of the option_filter_bk table body, defaults to {}."
+        "The percentage expansion of the filter_bk table body, defaults to {}."
     )
 
     /* table.filter_tx */
     (
         "table.filter_tx.buckets",
         setting<uint32_t>(&configured.database.filter_tx.buckets),
-        "The number of buckets in the option_filter_tx table head, defaults to {} (0 disables)."
+        "The number of buckets in the filter_tx table head, defaults to {} (0 disables)."
     )
     (
         "table.filter_tx.size",
         setting<uint64_t>(&configured.database.filter_tx.size),
-        "The minimum allocation of the option_filter_tx table body, defaults to {}."
+        "The minimum allocation of the filter_tx table body, defaults to {}."
     )
     (
         "table.filter_tx.rate",
         setting<uint16_t>(&configured.database.filter_tx.rate),
-        "The percentage expansion of the option_filter_tx table body, defaults to {}."
+        "The percentage expansion of the filter_tx table body, defaults to {}."
     )
 
     /* [log] */
