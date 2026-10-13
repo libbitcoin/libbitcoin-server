@@ -104,13 +104,13 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_wait_for_block, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_wait_for_block_height, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_wait_for_new_block, _1, _2, _3, _4);
-    SUBSCRIBE_BITCOIND(handle_get_mempool_ancestors, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_mempool_ancestors, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_mempool_cluster, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_get_mempool_descendants, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_mempool_descendants, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_mempool_entry, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_mempool_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_raw_mempool, _1, _2, _3, _4);
-    SUBSCRIBE_BITCOIND(handle_get_tx_spending_prevout, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_tx_spending_prevout, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_import_mempool, _1, _2);
     subscribe_chase(BIND(handle_chase, _1, _2));
     protocol_bitcoind_dispatch<rpc_interface>::start();
@@ -1622,11 +1622,11 @@ bool protocol_bitcoind_blockchain::handle_wait_for_new_block(const code& ec,
 }
 
 bool protocol_bitcoind_blockchain::handle_get_mempool_ancestors(const code& ec,
-    rpc_interface::get_mempool_ancestors) NOEXCEPT
+    rpc_interface::get_mempool_ancestors, const std::string& txid,
+    bool verbose) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::bitcoind::client_mempool_disabled);
-    return true;
+    return get_mempool_relatives(txid, verbose, true);
 }
 
 bool protocol_bitcoind_blockchain::handle_get_mempool_cluster(const code& ec,
@@ -1638,14 +1638,54 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_cluster(const code& ec,
 }
 
 bool protocol_bitcoind_blockchain::handle_get_mempool_descendants(const code& ec,
-    rpc_interface::get_mempool_descendants) NOEXCEPT
+    rpc_interface::get_mempool_descendants, const std::string& txid,
+    bool verbose) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::bitcoind::client_mempool_disabled);
+    return get_mempool_relatives(txid, verbose, false);
+}
+
+bool protocol_bitcoind_blockchain::get_mempool_relatives(
+    const std::string& txid, bool verbose, bool ancestors) NOEXCEPT
+{
+    hash_digest hash{};
+    if (!decode_hash(hash, txid))
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    PARALLEL(do_get_mempool_relatives, hash, verbose, ancestors, gate());
     return true;
 }
 
-// A tx is in the mempool if a stored instance of it is pooled and confirmable.
+void protocol_bitcoind_blockchain::do_get_mempool_relatives(
+    const hash_digest& hash, bool verbose, bool ancestors,
+    const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    const auto link = to_mempool_tx(hash);
+    if (link.is_terminal())
+    {
+        POST(fail, error::bitcoind::invalid_address_or_key, gate);
+        return;
+    }
+
+    const auto& query = archive();
+    const auto links = ancestors ? query.to_confirmable_ancestors(link) :
+        query.to_confirmable_descendants(link);
+
+    value_t result{};
+    if (!mempool_txs(result, links, verbose))
+    {
+        POST(fail, error::bitcoind::internal_error, gate);
+        return;
+    }
+
+    POST(complete_value, std::move(result), gate);
+}
+
 bool protocol_bitcoind_blockchain::handle_get_mempool_entry(const code& ec,
     rpc_interface::get_mempool_entry, const std::string& txid) NOEXCEPT
 {
@@ -1667,24 +1707,21 @@ void protocol_bitcoind_blockchain::do_get_mempool_entry(
 {
     BC_ASSERT(!stranded());
 
-    const auto& query = archive();
-    for (const auto& link: query.to_duplicates(hash))
+    const auto link = to_mempool_tx(hash);
+    if (link.is_terminal())
     {
-        if (!query.is_pooled(link) || !query.is_confirmable_tx(link))
-            continue;
-
-        object_t entry{};
-        if (!mempool_entry(entry, link))
-        {
-            POST(fail, error::bitcoind::internal_error, gate);
-            return;
-        }
-
-        POST(complete_value, value_t{ std::move(entry) }, gate);
+        POST(fail, error::bitcoind::invalid_address_or_key, gate);
         return;
     }
 
-    POST(fail, error::bitcoind::invalid_address_or_key, gate);
+    object_t entry{};
+    if (!mempool_entry(entry, link))
+    {
+        POST(fail, error::bitcoind::internal_error, gate);
+        return;
+    }
+
+    POST(complete_value, value_t{ std::move(entry) }, gate);
 }
 
 // The minimum is that sent to peers (feefilter), while the relay minimum is
@@ -1774,42 +1811,18 @@ void protocol_bitcoind_blockchain::do_get_raw_mempool(bool verbose,
 {
     BC_ASSERT(!stranded());
 
+    value_t txs{};
     database::tx_links links{};
-    const auto& query = archive();
-    if (query.get_confirmable_txs(links))
+    if (archive().get_confirmable_txs(links) ||
+        !mempool_txs(txs, links, verbose))
     {
         POST(fail, error::bitcoind::internal_error, gate);
         return;
     }
 
-    if (verbose)
+    if (verbose || !sequence)
     {
-        object_t entries{};
-        for (const auto& link: links)
-        {
-            object_t entry{};
-            if (!mempool_entry(entry, link))
-            {
-                POST(fail, error::bitcoind::internal_error, gate);
-                return;
-            }
-
-            const auto txid = encode_hash(query.get_tx_key(link));
-            entries.emplace(txid, std::move(entry));
-        }
-
-        POST(complete_value, value_t{ std::move(entries) }, gate);
-        return;
-    }
-
-    array_t txids{};
-    txids.reserve(links.size());
-    for (const auto& link: links)
-        txids.push_back(value_t{ encode_hash(query.get_tx_key(link)) });
-
-    if (!sequence)
-    {
-        POST(complete_value, value_t{ std::move(txids) }, gate);
+        POST(complete_value, std::move(txs), gate);
         return;
     }
 
@@ -1817,10 +1830,53 @@ void protocol_bitcoind_blockchain::do_get_raw_mempool(bool verbose,
     {
         object_t
         {
-            { "txids", std::move(txids) },
+            { "txids", std::move(txs) },
             { "mempool_sequence", 1 }
         }
     }, gate);
+}
+
+// A tx is in the mempool if a stored instance of it is pooled and confirmable.
+database::tx_link protocol_bitcoind_blockchain::to_mempool_tx(
+    const hash_digest& hash) const NOEXCEPT
+{
+    const auto& query = archive();
+    for (const auto& link: query.to_duplicates(hash))
+        if (query.is_pooled(link) && query.is_confirmable_tx(link))
+            return link;
+
+    return {};
+}
+
+// An array of txids, or an object of entries keyed by txid (verbose).
+bool protocol_bitcoind_blockchain::mempool_txs(value_t& out,
+    const database::tx_links& links, bool verbose) const NOEXCEPT
+{
+    const auto& query = archive();
+    if (verbose)
+    {
+        object_t entries{};
+        for (const auto& link: links)
+        {
+            object_t entry{};
+            if (!mempool_entry(entry, link))
+                return false;
+
+            const auto txid = encode_hash(query.get_tx_key(link));
+            entries.emplace(txid, std::move(entry));
+        }
+
+        out = std::move(entries);
+        return true;
+    }
+
+    array_t txids{};
+    txids.reserve(links.size());
+    for (const auto& link: links)
+        txids.push_back(value_t{ encode_hash(query.get_tx_key(link)) });
+
+    out = std::move(txids);
+    return true;
 }
 
 // The entry height is that of the chain top, below the pooled context height.
@@ -1884,12 +1940,133 @@ bool protocol_bitcoind_blockchain::mempool_entry(object_t& out,
     return true;
 }
 
+// The spender index is complete, so mempool_only defaults to false.
 bool protocol_bitcoind_blockchain::handle_get_tx_spending_prevout(const code& ec,
-    rpc_interface::get_tx_spending_prevout) NOEXCEPT
+    rpc_interface::get_tx_spending_prevout, const array_t& outputs,
+    const std::optional<object_t>& options) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::bitcoind::client_mempool_disabled);
+
+    if (outputs.empty())
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    auto mempool_only = false;
+    auto return_tx = false;
+    for (const auto& [name, value]: options.value_or(object_t{}))
+    {
+        const auto flag = std::get_if<boolean_t>(&value.value());
+        if (is_null(flag))
+        {
+            send_error(error::bitcoind::type_error);
+            return true;
+        }
+
+        if (name == "mempool_only")
+            mempool_only = *flag;
+        else if (name == "return_spending_tx")
+            return_tx = *flag;
+        else
+        {
+            send_error(error::bitcoind::type_error);
+            return true;
+        }
+    }
+
+    chain::points prevouts{};
+    prevouts.reserve(outputs.size());
+    for (const auto& output: outputs)
+    {
+        const auto fields = std::get_if<object_t>(&output.value());
+        if (is_null(fields) || fields->size() != two)
+        {
+            send_error(error::bitcoind::type_error);
+            return true;
+        }
+
+        const auto txid = fields->find("txid");
+        const auto vout = fields->find("vout");
+        if (txid == fields->end() || vout == fields->end() ||
+            !std::holds_alternative<string_t>(txid->second.value()) ||
+            !std::holds_alternative<number_t>(vout->second.value()))
+        {
+            send_error(error::bitcoind::type_error);
+            return true;
+        }
+
+        hash_digest hash{};
+        uint32_t index{};
+        if (!decode_hash(hash, std::get<string_t>(txid->second.value())) ||
+            !to_integer(index, std::get<number_t>(vout->second.value())))
+        {
+            send_error(error::bitcoind::invalid_parameter);
+            return true;
+        }
+
+        prevouts.emplace_back(hash, index);
+    }
+
+    PARALLEL(do_get_tx_spending_prevout, std::move(prevouts), mempool_only,
+        return_tx, gate());
     return true;
+}
+
+// The mempool spender has precedence, as with bitcoind.
+void protocol_bitcoind_blockchain::do_get_tx_spending_prevout(
+    const chain::points& prevouts, bool mempool_only, bool return_tx,
+    const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    const auto& query = archive();
+    array_t results{};
+    results.reserve(prevouts.size());
+    for (const auto& prevout: prevouts)
+    {
+        object_t result
+        {
+            { "txid", encode_hash(prevout.hash()) },
+            { "vout", prevout.index() }
+        };
+
+        auto confirmed = false;
+        auto spender = query.find_confirmable_spender(prevout);
+        if (spender.is_terminal() && !mempool_only)
+        {
+            spender = query.find_confirmed_spender(prevout);
+            confirmed = !spender.is_terminal();
+        }
+
+        if (!spender.is_terminal())
+        {
+            const auto tx = query.to_input_tx(spender);
+            result["spendingtxid"] = encode_hash(query.get_tx_key(tx));
+
+            if (return_tx)
+            {
+                const auto spending = query.get_transaction(tx, true);
+                if (!spending)
+                {
+                    POST(fail, error::bitcoind::internal_error, gate);
+                    return;
+                }
+
+                result["spendingtx"] = encode_base16(spending->to_data(true));
+            }
+
+            if (confirmed)
+            {
+                const auto block = query.find_confirmed_block(tx);
+                result["blockhash"] = encode_hash(query.get_header_key(block));
+            }
+        }
+
+        results.emplace_back(std::move(result));
+    }
+
+    POST(complete_value, value_t{ std::move(results) }, gate);
 }
 
 bool protocol_bitcoind_blockchain::handle_import_mempool(const code& ec,
