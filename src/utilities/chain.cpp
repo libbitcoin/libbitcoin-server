@@ -128,5 +128,77 @@ fee_histogram to_compact_fee_histogram(const database::fee_rates& rates,
     return out;
 }
 
+// mempool.dat
+// ----------------------------------------------------------------------------
+
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+
+constexpr uint64_t mempool_unobfuscated = 1;
+constexpr uint64_t mempool_obfuscated = 2;
+constexpr size_t mempool_key_size = 8;
+constexpr size_t mempool_key_offset = sizeof(uint64_t) + one;
+constexpr size_t mempool_body_offset = mempool_key_offset + mempool_key_size;
+
+bool serialize_mempool(data_chunk& out, const node::query& query) NOEXCEPT
+{
+    database::tx_links links{};
+    if (query.get_confirmable_txs(links))
+        return false;
+
+    out.clear();
+    write::bytes::data sink{ out };
+    sink.write_8_bytes_little_endian(mempool_unobfuscated);
+    sink.write_8_bytes_little_endian(links.size());
+    for (const auto& link: links)
+    {
+        uint32_t time{};
+        const auto tx = query.get_transaction(link, true);
+        if (!tx || !query.get_pooled_time(time, link))
+            return false;
+
+        tx->to_data(sink, true);
+        sink.write_8_bytes_little_endian(time);
+        sink.write_8_bytes_little_endian(zero);
+    }
+
+    sink.write_variable(zero);
+    sink.write_variable(zero);
+    sink.flush();
+    return true;
+}
+
+// Version 2 obfuscates each byte that follows its key, by file position.
+bool parse_mempool(chain::transaction_cptrs& out, data_chunk& data) NOEXCEPT
+{
+    read::bytes::copy source{ data };
+    const auto version = source.read_8_bytes_little_endian();
+    if (version == mempool_obfuscated)
+    {
+        if (source.read_size() != mempool_key_size ||
+            data.size() < mempool_body_offset)
+            return false;
+
+        source.skip_bytes(mempool_key_size);
+        for (auto index = mempool_body_offset; index < data.size(); ++index)
+            data.at(index) ^= data.at(mempool_key_offset +
+                (index % mempool_key_size));
+    }
+    else if (version != mempool_unobfuscated)
+    {
+        return false;
+    }
+
+    const auto count = source.read_8_bytes_little_endian();
+    for (uint64_t tx{}; tx < count && source; ++tx)
+    {
+        out.push_back(to_shared<chain::transaction>(source, true));
+        source.skip_bytes(sizeof(uint64_t) + sizeof(int64_t));
+    }
+
+    return !!source;
+}
+
+BC_POP_WARNING()
+
 } // namespace server
 } // namespace libbitcoin

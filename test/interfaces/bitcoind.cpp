@@ -72,7 +72,6 @@ constexpr bool bitcoind_unserved(const std::string_view& name) NOEXCEPT
 static_assert(bitcoind_served("getchaintxstats"));
 static_assert(bitcoind_served("gettxoutsetinfo"));
 static_assert(bitcoind_unserved("pruneblockchain"));
-static_assert(bitcoind_unserved("savemempool"));
 static_assert(bitcoind_served("scantxoutset"));
 
 // no-op that returns true (store is reliable, see protocol).
@@ -93,6 +92,8 @@ static_assert(bitcoind_served("getmempoolentry"));
 static_assert(bitcoind_served("getmempoolinfo"));
 static_assert(bitcoind_served("getrawmempool"));
 static_assert(bitcoind_served("gettxspendingprevout"));
+static_assert(bitcoind_served("importmempool"));
+static_assert(bitcoind_served("savemempool"));
 static_assert(bitcoind_served("verifymessage"));
 static_assert(bitcoind_served("getindexinfo"));
 
@@ -123,12 +124,13 @@ static_assert(!declared<bitcoind_blockchain_methods>("getindexinfo", true));
 static_assert(bitcoind_blockchain_methods::names ==
     "getbestblockhash getblock getblockchaininfo getblockcount "
     "getblockfilter getblockhash getblockheader getblockstats "
-    "getchaintxstats gettxout gettxoutsetinfo scantxoutset verifychain "
-    "gettxoutproof verifytxoutproof getchainstates getchaintips "
-    "getdeploymentinfo getdescriptoractivity getdifficulty preciousblock "
-    "scanblocks waitforblock waitforblockheight waitfornewblock "
-    "getmempoolancestors getmempooldescendants getmempoolentry "
-    "getmempoolinfo getrawmempool gettxspendingprevout");
+    "getchaintxstats gettxout gettxoutsetinfo savemempool scantxoutset "
+    "verifychain gettxoutproof verifytxoutproof getchainstates "
+    "getchaintips getdeploymentinfo getdescriptoractivity getdifficulty "
+    "preciousblock scanblocks waitforblock waitforblockheight "
+    "waitfornewblock getmempoolancestors getmempooldescendants "
+    "getmempoolentry getmempoolinfo getrawmempool gettxspendingprevout "
+    "importmempool");
 static_assert(bitcoind_control_methods::names ==
     "help getmemoryinfo getopenrpcinfo getrpcinfo logging uptime "
     "rpc.discover");

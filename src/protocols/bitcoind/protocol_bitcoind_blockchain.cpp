@@ -111,7 +111,7 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_mempool_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_raw_mempool, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_tx_spending_prevout, _1, _2, _3, _4);
-    SUBSCRIBE_BITCOIND(handle_import_mempool, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_import_mempool, _1, _2, _3, _4);
     subscribe_chase(BIND(handle_chase, _1, _2));
     protocol_bitcoind_dispatch<rpc_interface>::start();
 }
@@ -803,7 +803,7 @@ bool protocol_bitcoind_blockchain::handle_save_mempool(const code& ec,
     rpc_interface::save_mempool) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::bitcoind::client_mempool_disabled);
+    PARALLEL(do_save_mempool, gate());
     return true;
 }
 
@@ -2069,11 +2069,23 @@ void protocol_bitcoind_blockchain::do_get_tx_spending_prevout(
     POST(complete_value, value_t{ std::move(results) }, gate);
 }
 
+// Each tx is submitted individually, in file order, and failures are skipped.
 bool protocol_bitcoind_blockchain::handle_import_mempool(const code& ec,
-    rpc_interface::import_mempool) NOEXCEPT
+    rpc_interface::import_mempool, const std::string& filepath,
+    const std::optional<object_t>& options) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    send_error(error::bitcoind::client_mempool_disabled);
+
+    for (const auto& [name, value]: options.value_or(object_t{}))
+    {
+        if (!std::holds_alternative<boolean_t>(value.value()))
+        {
+            send_error(error::bitcoind::type_error);
+            return true;
+        }
+    }
+
+    PARALLEL(do_import_mempool, filepath, gate());
     return true;
 }
 
@@ -2234,6 +2246,87 @@ void protocol_bitcoind_blockchain::complete_value(value_t& result,
         return;
 
     send_result(std::move(result));
+}
+
+// mempool.dat
+// ----------------------------------------------------------------------------
+
+constexpr auto mempool_file = "mempool.dat";
+
+void protocol_bitcoind_blockchain::do_save_mempool(
+    const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    data_chunk data{};
+    if (!serialize_mempool(data, archive()))
+    {
+        POST(fail, error::bitcoind::misc_error, gate);
+        return;
+    }
+
+    std::error_code ec{};
+    const auto path = database_settings().path / mempool_file;
+    const auto absolute = std::filesystem::absolute(path, ec);
+    auto temporary = path;
+    temporary += ".new";
+
+    if (ec || !database::file::create_file(temporary, data.data(),
+        data.size()) || !database::file::rename(temporary, path))
+    {
+        POST(fail, error::bitcoind::misc_error, gate);
+        return;
+    }
+
+    POST(complete_value, value_t{ object_t
+    {
+        { "filename", from_path(absolute) }
+    } }, gate);
+}
+
+void protocol_bitcoind_blockchain::do_import_mempool(
+    const std::string& filepath, const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    ifstream file(to_path(filepath), std::ios::binary);
+    data_chunk data(std::istreambuf_iterator<char>(file),
+        std::istreambuf_iterator<char>{});
+
+    const auto txs = to_shared<chain::transaction_cptrs>();
+    if (!file.is_open() || !parse_mempool(*txs, data))
+    {
+        POST(fail, error::bitcoind::misc_error, gate);
+        return;
+    }
+
+    POST(next_import, txs, zero, gate);
+}
+
+void protocol_bitcoind_blockchain::next_import(
+    const chain::transactions_cptr& txs, size_t index,
+    const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (stopped())
+        return;
+
+    if (index == txs->size())
+    {
+        send_result(object_t{});
+        return;
+    }
+
+    constexpr auto test = false;
+    const auto tx = to_shared(chain::transaction_cptrs{ txs->at(index) });
+    submit(tx, test, BIND(handle_import, _1, _2, txs, index, gate));
+}
+
+void protocol_bitcoind_blockchain::handle_import(const code&, size_t,
+    const chain::transactions_cptr& txs, size_t index,
+    const gate_t::ptr& gate) NOEXCEPT
+{
+    POST(next_import, txs, add1(index), gate);
 }
 
 BC_POP_WARNING()

@@ -158,7 +158,6 @@ const std::vector<method_params> scope_methods
 const std::vector<method_code> pending_methods
 {
     { "getmempoolcluster", R"([""])", -33 },
-    { "importmempool", R"([""])", -33 },
     { "abortprivatebroadcast", R"([""])", -32601 },
     { "getprivatebroadcastinfo", "[]", -32601 },
     { "submitblock", R"([""])", -33 },
@@ -1563,8 +1562,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__not_implemented__error)
 {
     const std::vector<std::pair<std::string, std::string>> methods
     {
-        { "pruneblockchain", "[1]" },
-        { "savemempool", "[]" }
+        { "pruneblockchain", "[1]" }
     };
 
     for (const auto& [method, params]: methods)
@@ -4237,6 +4235,118 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitpackage__orphan__failed)
     const auto& child = result.at("tx-results").at(encode_hash(tx1c_child.hash(true)));
     BOOST_REQUIRE(child.as_object().contains("error"));
     BOOST_REQUIRE(!child.as_object().contains("fees"));
+}
+
+// The mempool.dat content of one tx (version 1).
+static data_chunk mempool_data(const chain::transaction& tx) NOEXCEPT
+{
+    data_chunk data{};
+    write::bytes::data sink{ data };
+    sink.write_8_bytes_little_endian(1);
+    sink.write_8_bytes_little_endian(1);
+    tx.to_data(sink, true);
+    sink.write_8_bytes_little_endian(0);
+    sink.write_8_bytes_little_endian(0);
+    sink.write_variable(0);
+    sink.write_variable(0);
+    sink.flush();
+    return data;
+}
+
+// The mempool.dat content of one tx (version 2), obfuscated by position.
+static data_chunk obfuscated_mempool_data(const chain::transaction& tx) NOEXCEPT
+{
+    constexpr data_array<8> key{ 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+    const auto body = mempool_data(tx);
+
+    data_chunk data{};
+    write::bytes::data sink{ data };
+    sink.write_8_bytes_little_endian(2);
+    sink.write_variable(key.size());
+    sink.write_bytes(key);
+    sink.write_bytes(body.data() + 8, body.size() - 8);
+    sink.flush();
+
+    for (size_t index = 17; index < data.size(); ++index)
+        data.at(index) ^= key.at(index % 8);
+
+    return data;
+}
+
+static std::string write_file(const std::string& name, const data_chunk& data) NOEXCEPT
+{
+    const auto path = TEST_DIRECTORY + "/" + name;
+    std::ofstream file(path, std::ios::binary);
+    file.write(pointer_cast<const char>(data.data()), data.size());
+    return path;
+}
+
+static std::string import_param(const std::string& path) NOEXCEPT
+{
+    boost::json::array params{ boost::json::string{ path } };
+    return boost::json::serialize(params);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__savemempool__broadcast__written)
+{
+    const auto sent = rpc("sendrawtransaction", send_param(test::tx1c));
+    BOOST_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto response = rpc("savemempool", "[]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const std::filesystem::path path{ as_text(response.at("result").at("filename")) };
+    const auto expected = mempool_data(test::tx1c).size();
+    BOOST_REQUIRE_EQUAL(path.filename().string(), "mempool.dat");
+    BOOST_REQUIRE_EQUAL(std::filesystem::file_size(path), expected);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__importmempool__unobfuscated__pooled)
+{
+    const auto path = write_file("import.dat", mempool_data(test::tx1c));
+    const auto response = rpc("importmempool", import_param(path));
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BOOST_REQUIRE(response.at("result").as_object().empty());
+
+    const auto pooled = rpc("getrawmempool", "[]");
+    BOOST_REQUIRE_EQUAL(pooled.at("result").as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(pooled.at("result").at(0)), encode_hash(test::tx1c.hash(false)));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__importmempool__obfuscated__pooled)
+{
+    const auto path = write_file("import.dat", obfuscated_mempool_data(test::tx1c));
+    const auto response = rpc("importmempool", import_param(path));
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto pooled = rpc("getrawmempool", "[]");
+    BOOST_REQUIRE_EQUAL(pooled.at("result").as_array().size(), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__importmempool__invalid_tx__skipped)
+{
+    const auto path = write_file("import.dat", mempool_data(tx1c_child));
+    const auto response = rpc("importmempool", import_param(path));
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto pooled = rpc("getrawmempool", "[]");
+    BOOST_REQUIRE(pooled.at("result").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__importmempool__missing_file__misc_error)
+{
+    BOOST_REQUIRE(has_code(rpc("importmempool", import_param(TEST_DIRECTORY + "/missing.dat")), -1));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__importmempool__truncated__misc_error)
+{
+    const auto path = write_file("import.dat", data_chunk{ 0x01, 0x00 });
+    BOOST_REQUIRE(has_code(rpc("importmempool", import_param(path)), -1));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__importmempool__non_boolean_option__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("importmempool", R"(["x", {"use_current_time":1}])"), -3));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__empty__invalid_parameter)
