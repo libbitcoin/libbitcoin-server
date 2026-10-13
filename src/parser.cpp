@@ -156,9 +156,9 @@ parser::parser(system::chain::selection context,
     configured.database.confirmed.buckets = 950'001;
     configured.database.confirmed.rate = 1;
 
-    configured.database.strong_tx.expected = 1'359'871'695;
-    configured.database.strong_tx.size = 149'585'887;
-    configured.database.strong_tx.rate = 1;
+    configured.database.strong.expected = 1'359'871'695;
+    configured.database.strong.size = 149'585'887;
+    configured.database.strong.rate = 1;
     configured.database.scan.buckets = 950'001;
     configured.database.scan.size = 0;
     configured.database.scan.rate = 1;
@@ -235,8 +235,8 @@ void parser::derive_buckets() NOEXCEPT
             database.outs.expected, address_contested, address_target);
 
     if (!is_configured("table.strong.buckets"))
-        database.strong_tx.buckets = table::strong_tx::derive_buckets(
-            database.strong_tx.expected, contested, target);
+        database.strong.buckets = table::strong::derive_buckets(
+            database.strong.expected, contested, target);
 
     if (!is_configured("table.pool.buckets"))
         database.pool.buckets = table::pool::derive_buckets(
@@ -2400,22 +2400,22 @@ options_metadata parser::load_settings() THROWS
     /* table.strong */
     (
         "table.strong.buckets",
-        setting<uint32_t>(&configured.database.strong_tx.buckets),
+        setting<uint32_t>(&configured.database.strong.buckets),
         "The number of buckets in the index_strong table head, dynamic default."
     )
     (
         "table.strong.expected",
-        setting<uint64_t>(&configured.database.strong_tx.expected),
+        setting<uint64_t>(&configured.database.strong.expected),
         "The expected element count of the index_strong table, defaults to {}."
     )
     (
         "table.strong.size",
-        setting<uint64_t>(&configured.database.strong_tx.size),
+        setting<uint64_t>(&configured.database.strong.size),
         "The minimum allocation of the index_strong table body, defaults to {}."
     )
     (
         "table.strong.rate",
-        setting<uint16_t>(&configured.database.strong_tx.rate),
+        setting<uint16_t>(&configured.database.strong.rate),
         "The percentage expansion of the index_strong table body, defaults to {}."
     )
 

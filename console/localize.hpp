@@ -155,7 +155,7 @@
     "   silent1pfx:{}\n" \
     "   prevout   :{}\n" \
     "   duplicate :{}\n" \
-    "   strong_tx :{}\n" \
+    "   strong    :{}\n" \
     "   scan      :{}\n" \
     "   scanprefix:{}\n" \
     "   state     :{}\n" \
@@ -184,7 +184,7 @@
     "   silent0pfx:{}\n" \
     "   silent1pfx:{}\n" \
     "   duplicate :{}\n" \
-    "   strong_tx :{}\n" \
+    "   strong    :{}\n" \
     "   scan      :{}\n" \
     "   scanprefix:{}\n" \
     "   state     :{}\n" \
@@ -200,7 +200,7 @@
     "   outs      :{}\n" \
     "   prevout   :{}\n" \
     "   duplicate :{}\n" \
-    "   strong_tx :{}\n" \
+    "   strong    :{}\n" \
     "   pool      :{}\n" \
     "   filter_bk :{}\n" \
     "   filter_tx :{}"
@@ -209,7 +209,7 @@
     "   header    :{}\n" \
     "   tx        :{}\n" \
     "   ins       :{}\n" \
-    "   strong_tx :{}\n" \
+    "   strong    :{}\n" \
     "   pool      :{}"
 #define BS_INFORMATION_COLLISION_RATES_ADDRESS \
     "Collision rates...\n" \
@@ -217,7 +217,7 @@
     "   tx        :{}\n" \
     "   ins       :{}\n" \
     "   outs      :{}\n" \
-    "   strong_tx :{}\n" \
+    "   strong    :{}\n" \
     "   pool      :{}"
 #define BS_INFORMATION_PROGRESS_START \
     "Thinking..."
