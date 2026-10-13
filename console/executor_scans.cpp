@@ -313,9 +313,10 @@ void executor::scan_collisions(const std::string& name, size_t records,
         squares += to_double(occurrences) * size * size;
         hits += to_double(occurrences) * size * (size + 1.0) / 2.0;
         longest = length;
+        const auto expect = linked ? perfect(length) : poisson * buckets;
         logger(std::format(BS_COLLISIONS_LENGTHS_ROW, length,
-            to_grouped(occurrences), (linked ? perfect(length) :
-                poisson * buckets)));
+            to_grouped(occurrences),
+            to_grouped(to_integer<size_t>(std::round(expect)))));
     }
 
     if constexpr (nullable)

@@ -270,7 +270,7 @@
 #define BS_COLLISIONS_LENGTHS \
     "         length         buckets          expect"
 #define BS_COLLISIONS_LENGTHS_ROW \
-    "{:>15} {:>15} {:>15.0f}"
+    "{:>15} {:>15} {:>15}"
 #define BS_COLLISIONS_NULLS \
     "{:>15} null keys excluded"
 #define BS_COLLISIONS_DISTRIBUTION \
