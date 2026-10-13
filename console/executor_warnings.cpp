@@ -65,7 +65,7 @@ void executor::warn_hardware(system::string_list& out) const
         !batched::accelerated())
         out.emplace_back(BS_HARDWARE_UNSUPPORTED);
 
-    if (batched::accelerated() && !node.batch_verify_enabled() &&
+    if (node.use_gpu_() && !node.batch_verify_enabled() &&
         !node.batch_silent_enabled())
         out.emplace_back(BS_HARDWARE_UNCONFIGURED);
 }
