@@ -192,6 +192,9 @@ parser::parser(system::chain::selection context,
     configured.database.pool.expected = 10'000'000;
     configured.database.pool.size = 0;
     configured.database.pool.rate = 1;
+    configured.database.wtxid.expected = 10'000'000;
+    configured.database.wtxid.size = 0;
+    configured.database.wtxid.rate = 1;
     configured.database.spends.size = 0;
     configured.database.spends.rate = 1;
 
@@ -241,6 +244,10 @@ void parser::derive_buckets() NOEXCEPT
     if (!is_configured("table.pool.buckets"))
         database.pool.buckets = table::pool::derive_buckets(
             database.pool.expected, contested, target);
+
+    if (!is_configured("table.wtxid.buckets"))
+        database.wtxid.buckets = table::wtxid::derive_buckets(
+            database.wtxid.expected, contested, target);
 }
 
 // Composes a variable name with its command line shortcut.
@@ -2434,6 +2441,28 @@ options_metadata parser::load_settings() THROWS
         "table.scan.rate",
         setting<uint16_t>(&configured.database.scan.rate),
         "The percentage expansion of the index_scan table body, defaults to {}."
+    )
+
+    /* table.wtxid */
+    (
+        "table.wtxid.buckets",
+        setting<uint32_t>(&configured.database.wtxid.buckets),
+        "The number of buckets in the wtxid table head, dynamic default (0 disables)."
+    )
+    (
+        "table.wtxid.expected",
+        setting<uint64_t>(&configured.database.wtxid.expected),
+        "The expected element count of the wtxid table, defaults to {}."
+    )
+    (
+        "table.wtxid.size",
+        setting<uint64_t>(&configured.database.wtxid.size),
+        "The minimum allocation of the wtxid table body, defaults to {}."
+    )
+    (
+        "table.wtxid.rate",
+        setting<uint16_t>(&configured.database.wtxid.rate),
+        "The percentage expansion of the wtxid table body, defaults to {}."
     )
 
     /* table.ecdsa */
