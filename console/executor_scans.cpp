@@ -74,6 +74,16 @@ void executor::scan_flags() const
         span.count()));
 }
 
+// Link keys are narrower than hashes, other keys are hashed.
+template <typename Key>
+constexpr bool is_linked() NOEXCEPT
+{
+    if constexpr (is_std_array<Key>)
+        return (array_count<Key>) < hash_size;
+    else
+        return false;
+}
+
 static std::string to_grouped(size_t value)
 {
     auto text = std::to_string(value);
@@ -90,8 +100,7 @@ void executor::scan_buckets(const std::string& name, const Table& table,
 {
     using key_t = typename Table::key;
     using bucket_t = typename Table::link::integer;
-    constexpr auto linked = is_std_array<key_t> &&
-        (array_count<key_t> < hash_size);
+    constexpr auto linked = is_linked<key_t>();
 
     const auto buckets = table.buckets();
     if (is_zero(buckets) || canceled())
@@ -148,7 +157,7 @@ void executor::scan_collisions(const std::string& name, size_t records,
     constexpr auto filtered = !filter_t::disabled;
     constexpr auto empty = unmask_right<filter>(m);
     constexpr auto points = is_same_type<key_t, chain::point>;
-    constexpr auto linked = !points && (keys::size<key_t>() < hash_size);
+    constexpr auto linked = is_linked<key_t>();
 
     if (is_zero(buckets))
         return;
