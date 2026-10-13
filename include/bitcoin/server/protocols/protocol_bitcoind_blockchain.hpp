@@ -170,14 +170,6 @@ private:
         wait_race::ptr race;
     };
 
-    void arm_wait(waiter&& waiting, double timeout) NOEXCEPT;
-    void do_wait_event() NOEXCEPT;
-    void handle_wait_timeout(const code& ec,
-        const waiter::ptr& waiting) NOEXCEPT;
-    void complete_wait(const code& ec) NOEXCEPT;
-    bool wait_done(const waiter& waiting) const NOEXCEPT;
-    void send_top() NOEXCEPT;
-
     void handle_prioritize(const code& ec, size_t height) NOEXCEPT;
     void do_precious_block(const code& ec) NOEXCEPT;
 
@@ -188,8 +180,11 @@ private:
     void do_scan_tx_out_set(
         const std::shared_ptr<network::rpc::array_t>& objects,
         const gate_t::ptr& gate) NOEXCEPT;
-    void complete_scan(const code& ec, network::rpc::object_t& result,
-        const gate_t::ptr& gate) NOEXCEPT;
+
+    void do_get_descriptor_activity(
+        const std::shared_ptr<network::rpc::array_t>& blockhashes,
+        const std::shared_ptr<network::rpc::array_t>& scanobjects,
+        bool include_mempool, const gate_t::ptr& gate) NOEXCEPT;
 
     void do_get_mempool_info(double minimum, double relay, double increment,
         const gate_t::ptr& gate) NOEXCEPT;
@@ -198,6 +193,20 @@ private:
     void do_get_raw_mempool(bool verbose, bool sequence,
         const gate_t::ptr& gate) NOEXCEPT;
     void complete_mempool(const code& ec, network::rpc::value_t& result,
+        const gate_t::ptr& gate) NOEXCEPT;
+
+    // Wait machinery.
+    void arm_wait(waiter&& waiting, double timeout) NOEXCEPT;
+    void do_wait_event() NOEXCEPT;
+    void handle_wait_timeout(const code& ec,
+        const waiter::ptr& waiting) NOEXCEPT;
+    void complete_wait(const code& ec) NOEXCEPT;
+    bool wait_done(const waiter& waiting) const NOEXCEPT;
+    void send_top() NOEXCEPT;
+
+    // Utilities.
+    void fail_scan(const code& ec, const gate_t::ptr& gate) NOEXCEPT;
+    void complete_scan(network::rpc::object_t& result,
         const gate_t::ptr& gate) NOEXCEPT;
 
     // This is thread safe.

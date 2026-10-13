@@ -696,7 +696,6 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
 {
     BC_ASSERT(!stranded());
 
-    object_t result{};
     const auto& query = archive();
     const auto link = query.to_confirmed(height);
 
@@ -704,8 +703,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
     database::header_links branch{};
     if (!query.get_ancestry(branch, link, height))
     {
-        POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result), gate);
+        POST(fail_scan, error::bitcoind::internal_error, gate);
         return;
     }
 
@@ -724,20 +722,18 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
 
     if (ec)
     {
-        POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result), gate);
+        POST(fail_scan, error::bitcoind::internal_error, gate);
         return;
     }
 
     // A reorganization across the pinned top voids the scan.
     if (!query.is_confirmed_block(link))
     {
-        POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result), gate);
+        POST(fail_scan, error::bitcoind::internal_error, gate);
         return;
     }
 
-    result = object_t
+    object_t result
     {
         { "height", height },
         { "bestblock", encode_hash(query.get_header_key(link)) },
@@ -770,7 +766,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
     if (type == set_hash::muhash)
         result.emplace("muhash", encode_hash(digest));
 
-    POST(complete_scan, code{}, std::move(result), gate);
+    POST(complete_scan, std::move(result), gate);
 }
 
 bool protocol_bitcoind_blockchain::handle_prune_block_chain(const code& ec,
@@ -827,14 +823,12 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 {
     BC_ASSERT(!stranded());
 
-    object_t result{};
     chain::scripts scripts{};
     for (const auto& item: *objects)
     {
         if (!expand_scan_object(scripts, item, context_))
         {
-            POST(complete_scan, error::bitcoind::invalid_address_or_key,
-                std::move(result), gate);
+            POST(fail_scan, error::bitcoind::invalid_address_or_key, gate);
             return;
         }
     }
@@ -903,35 +897,19 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 
     if (ec)
     {
-        POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result), gate);
+        POST(fail_scan, error::bitcoind::internal_error, gate);
         return;
     }
 
     // A reorganization across the pinned top voids the scan.
     if (!query.is_confirmed_block(link))
     {
-        POST(complete_scan, error::bitcoind::internal_error,
-            std::move(result), gate);
+        POST(fail_scan, error::bitcoind::internal_error, gate);
         return;
     }
 
-    result = scan_result(coins, query, scripts, top, txouts, bip30,
-        p2kh_, p2sh_, witness_);
-    POST(complete_scan, code{}, std::move(result), gate);
-}
-
-void protocol_bitcoind_blockchain::complete_scan(const code& ec,
-    object_t& result, const gate_t::ptr&) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    if (stopped())
-        return;
-
-    if (ec)
-        send_error(ec);
-    else
-        send_result(std::move(result));
+    POST(complete_scan, scan_result(coins, query, scripts, top, txouts, bip30,
+        p2kh_, p2sh_, witness_), gate);
 }
 
 bool protocol_bitcoind_blockchain::handle_verify_chain(const code& ec,
@@ -1268,13 +1246,31 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
     if (stopped(ec))
         return false;
 
+    if (include_mempool && !archive().address_enabled())
+    {
+        send_error(error::bitcoind::misc_error);
+        return true;
+    }
+
+    PARALLEL(do_get_descriptor_activity, emplace_shared<array_t>(blockhashes),
+        emplace_shared<array_t>(scanobjects), include_mempool, gate());
+    return true;
+}
+
+void protocol_bitcoind_blockchain::do_get_descriptor_activity(
+    const std::shared_ptr<array_t>& blockhashes,
+    const std::shared_ptr<array_t>& scanobjects, bool include_mempool,
+    const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
     chain::scripts derived{};
-    for (const auto& item: scanobjects)
+    for (const auto& item: *scanobjects)
     {
         if (!expand_scan_object(derived, item, context_))
         {
-            send_error(error::bitcoind::invalid_address_or_key);
-            return true;
+            POST(fail_scan, error::bitcoind::invalid_address_or_key, gate);
+            return;
         }
     }
 
@@ -1284,14 +1280,14 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
 
     const auto& query = archive();
     array_t activity{};
-    for (const auto& item: blockhashes)
+    for (const auto& item: *blockhashes)
     {
         hash_digest hash{};
         if (!std::holds_alternative<string_t>(item.value()) ||
             !decode_hash(hash, std::get<string_t>(item.value())))
         {
-            send_error(error::bitcoind::invalid_parameter);
-            return true;
+            POST(fail_scan, error::bitcoind::invalid_parameter, gate);
+            return;
         }
 
         constexpr auto witness = true;
@@ -1299,22 +1295,22 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
         const auto block = query.get_block(link, witness);
         if (!block)
         {
-            send_error(error::bitcoind::invalid_address_or_key);
-            return true;
+            POST(fail_scan, error::bitcoind::invalid_address_or_key, gate);
+            return;
         }
 
         size_t height{};
         if (!query.get_height(height, link))
         {
-            send_error(error::bitcoind::internal_error);
-            return true;
+            POST(fail_scan, error::bitcoind::internal_error, gate);
+            return;
         }
 
         // Confirmed spends are unconditional.
         if (!query.populate_without_metadata(*block))
         {
-            send_error(error::bitcoind::internal_error);
-            return true;
+            POST(fail_scan, error::bitcoind::internal_error, gate);
+            return;
         }
 
         inject_activity(activity, *block, height, encode_hash(hash), watch,
@@ -1324,10 +1320,24 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
     if (include_mempool)
     {
         database::tx_links links{};
-        if (query.get_confirmable_txs(links))
+        std::unordered_set<database::tx_link::integer> seen{};
+        for (const auto& script: derived)
         {
-            send_error(error::bitcoind::internal_error);
-            return true;
+            database::histories history{};
+            const auto key = sha256_hash(script.to_data(false));
+            if (query.get_unconfirmed_history(stopping_, history, key,
+                max_size_t, database_settings().turbo))
+            {
+                POST(fail_scan, error::bitcoind::internal_error, gate);
+                return;
+            }
+
+            for (const auto& item: history)
+            {
+                const auto link = query.to_tx(item.tx.hash());
+                if (seen.insert(link.value).second)
+                    links.push_back(link.value);
+            }
         }
 
         for (const auto& link: links)
@@ -1335,8 +1345,8 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
             const auto tx = query.get_transaction(link, true);
             if (!tx || !query.populate_without_metadata(*tx))
             {
-                send_error(error::bitcoind::internal_error);
-                return true;
+                POST(fail_scan, error::bitcoind::internal_error, gate);
+                return;
             }
 
             inject_activity(activity, *tx, {}, watch, p2kh_, p2sh_, witness_,
@@ -1344,8 +1354,7 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
         }
     }
 
-    send_result(object_t{ { "activity", std::move(activity) } });
-    return true;
+    POST(complete_scan, object_t{ { "activity", std::move(activity) } }, gate);
 }
 
 bool protocol_bitcoind_blockchain::handle_get_difficulty(const code& ec,
@@ -1963,6 +1972,29 @@ void protocol_bitcoind_blockchain::send_top() NOEXCEPT
         { "hash", encode_hash(query.get_header_key(query.to_confirmed(top))) },
         { "height", top }
     });
+}
+
+// Utilities.
+// ----------------------------------------------------------------------------
+
+void protocol_bitcoind_blockchain::fail_scan(const code& ec,
+    const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (stopped())
+        return;
+
+    send_error(ec);
+}
+
+void protocol_bitcoind_blockchain::complete_scan(object_t& result,
+    const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (stopped())
+        return;
+
+    send_result(std::move(result));
 }
 
 BC_POP_WARNING()
