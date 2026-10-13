@@ -173,8 +173,8 @@ void protocol_native::do_get_address_unconfirmed(uint8_t media, bool turbo,
 
     database::outpoints set{};
     const auto& query = archive();
-    auto ec = query.get_unconfirmed_unspent_outpoints(stopping_, set, *hash,
-        options().maximum_history, turbo);
+    const auto ec = query.get_unconfirmed_unspent_outpoints(stopping_, set,
+        *hash, options().maximum_history, turbo);
     POST(complete_get_address, ec, media, std::move(set), gate);
 }
 
