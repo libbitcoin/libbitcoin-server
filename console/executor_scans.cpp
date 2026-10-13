@@ -290,16 +290,16 @@ void executor::scan_collisions(const std::string& name, size_t records,
         if (is_nonzero(length))
             poisson *= load / to_double(length);
 
-        const auto frequency = frequencies.at(length);
-        if (is_zero(frequency))
+        const auto occurrences = frequencies.at(length);
+        if (is_zero(occurrences))
             continue;
 
         const auto size = to_double(length);
-        squares += to_double(frequency) * size * size;
-        hits += to_double(frequency) * size * (size + 1.0) / 2.0;
+        squares += to_double(occurrences) * size * size;
+        hits += to_double(occurrences) * size * (size + 1.0) / 2.0;
         longest = length;
         logger(std::format("{:>15} {:>15} {:>15.0f}", length,
-            to_grouped(frequency), (linked ? perfect(length) :
+            to_grouped(occurrences), (linked ? perfect(length) :
                 poisson * buckets)));
     }
 
