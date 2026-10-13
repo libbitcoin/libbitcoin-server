@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/utilities/chain.hpp>
 
+#include <map>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -76,6 +77,53 @@ fee_histogram to_fee_histogram(database::fee_rates rates, size_t bin) NOEXCEPT
 
     if (is_nonzero(size))
         out.emplace_back(last, size);
+
+    return out;
+}
+
+fee_histogram to_compact_fee_histogram(const database::fee_rates& rates,
+    size_t bin) NOEXCEPT
+{
+    constexpr auto growth = 1.1;
+    constexpr uint64_t tenths = 10;
+
+    std::map<uint64_t, size_t, std::greater<>> sizes{};
+    for (const auto& tx: rates)
+    {
+        const auto fee = ceilinged_multiply(tx.fee, tenths);
+        const auto rate = is_zero(tx.bytes) ? 0_u64 : fee / tx.bytes;
+        auto& size = sizes[rate];
+        size = ceilinged_add(size, tx.bytes);
+    }
+
+    const auto to_rate = [](uint64_t rate) NOEXCEPT
+    {
+        return to_floating(rate) / tenths;
+    };
+
+    size_t size{};
+    uint64_t last{};
+    fee_histogram out{};
+    auto limit = to_floating(bin);
+    for (const auto& [rate, bytes]: sizes)
+    {
+        if (is_nonzero(size) && to_floating(bytes) > 2.0 * limit)
+        {
+            out.emplace_back(to_rate(last), size);
+            limit *= growth;
+            size = zero;
+        }
+
+        size = ceilinged_add(size, bytes);
+        if (to_floating(size) > limit)
+        {
+            out.emplace_back(to_rate(rate), size);
+            limit *= growth;
+            size = zero;
+        }
+
+        last = rate;
+    }
 
     return out;
 }

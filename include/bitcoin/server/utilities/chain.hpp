@@ -37,6 +37,10 @@ using fee_histogram = std::vector<std::pair<double, size_t>>;
 BCS_API fee_histogram to_fee_histogram(database::fee_rates rates,
     size_t bin) NOEXCEPT;
 
+/// Fee histogram with bins growing by a tenth, partial omitted (electrumx).
+BCS_API fee_histogram to_compact_fee_histogram(
+    const database::fee_rates& rates, size_t bin) NOEXCEPT;
+
 } // namespace server
 } // namespace libbitcoin
 

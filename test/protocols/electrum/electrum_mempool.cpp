@@ -142,3 +142,52 @@ BOOST_AUTO_TEST_CASE(electrum__mempool_recent__empty_params__empty)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+// to_compact_fee_histogram
+
+BOOST_AUTO_TEST_SUITE(electrum_histogram_tests)
+
+BOOST_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__empty__empty)
+{
+    BOOST_REQUIRE(to_compact_fee_histogram({}, 100).empty());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__growing_bins__trailing_omitted)
+{
+    const database::fee_rates rates
+    {
+        { 60, 600 },
+        { 60, 540 },
+        { 300, 600 },
+        { 50, 50 }
+    };
+
+    const fee_histogram expected{ { 9.0, 120 }, { 2.0, 300 } };
+    BOOST_REQUIRE(to_compact_fee_histogram(rates, 100) == expected);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__lump__prior_bin_closed)
+{
+    const database::fee_rates rates
+    {
+        { 60, 600 },
+        { 300, 600 }
+    };
+
+    const fee_histogram expected{ { 10.0, 60 }, { 2.0, 300 } };
+    BOOST_REQUIRE(to_compact_fee_histogram(rates, 100) == expected);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__tenths__floored_and_merged)
+{
+    const database::fee_rates rates
+    {
+        { 10, 25 },
+        { 20, 51 }
+    };
+
+    const fee_histogram expected{ { 2.5, 30 } };
+    BOOST_REQUIRE(to_compact_fee_histogram(rates, 20) == expected);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

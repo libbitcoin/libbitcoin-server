@@ -646,6 +646,40 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__not_broadcast__daemon
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), broadcast_daemon_error.value());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__mempool_recent__broadcast__expected)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+
+    constexpr auto broadcast = R"({{"id":2010,"method":"blockchain.transaction.broadcast","params":["{}"]}})" "\n";
+    BOOST_REQUIRE(get(std::format(broadcast, tx1c_text())).as_object().contains("result"));
+
+    const auto response = get(R"({"id":2011,"method":"mempool.recent","params":[]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    const auto& recent = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(recent.size(), 1u);
+
+    const auto& tx = recent.front().as_object();
+    const auto vsize = to_signed(test::tx1c.virtual_size());
+    BOOST_REQUIRE_EQUAL(tx.at("txid").as_string(), tx1c_hash());
+    BOOST_REQUIRE_EQUAL(tx.at("fee").as_int64(), tx1c_fee);
+    BOOST_REQUIRE_EQUAL(tx.at("vsize").as_int64(), vsize);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__broadcast_partial_bin__empty)
+{
+    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+
+    constexpr auto broadcast = R"({{"id":2012,"method":"blockchain.transaction.broadcast","params":["{}"]}})" "\n";
+    BOOST_REQUIRE(get(std::format(broadcast, tx1c_text())).as_object().contains("result"));
+
+    const auto response = get(R"({"id":2013,"method":"mempool.get_fee_histogram","params":[]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+    BOOST_REQUIRE(response.at("result").as_array().empty());
+}
+
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_get__broadcast__archived_tx)
 {
     BOOST_REQUIRE(handshake(electrum::version::v1_4));
