@@ -493,7 +493,10 @@ bool protocol_esplora::to_outspend(object& out,
 {
     const auto& query = archive();
     const chain::point prevout{ hash, index };
-    const auto spender = query.find_confirmed_spender(prevout);
+    auto spender = query.find_confirmed_spender(prevout);
+    if (spender.is_terminal())
+        spender = query.find_confirmable_spender(prevout);
+
     if (spender.is_terminal())
     {
         out = { { "spent", false } };

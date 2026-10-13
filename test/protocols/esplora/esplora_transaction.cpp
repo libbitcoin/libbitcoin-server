@@ -325,6 +325,24 @@ BOOST_AUTO_TEST_CASE(esplora__broadcast__valid__txid)
     BOOST_REQUIRE_EQUAL(post_text("/tx", tx1c), encode_hash(test::tx1c.hash(false)));
 }
 
+BOOST_AUTO_TEST_CASE(esplora__tx_outspend__broadcast_spender__unconfirmed)
+{
+    const auto tx1c = encode_base16(test::tx1c.to_data(true));
+    const auto tx1c_hash = encode_hash(test::tx1c.hash(false));
+    const auto funder = encode_hash(test::block1c.transactions_ptr()->front()->hash(false));
+    BOOST_REQUIRE(!get_json("/tx/" + funder + "/outspend/0").as_object().at("spent").as_bool());
+    BOOST_REQUIRE_EQUAL(post_text("/tx", tx1c), tx1c_hash);
+
+    const auto response = get_json("/tx/" + funder + "/outspend/0");
+    BOOST_REQUIRE(response.is_object());
+
+    const auto& spend = response.as_object();
+    BOOST_REQUIRE(spend.at("spent").as_bool());
+    BOOST_REQUIRE_EQUAL(spend.at("txid").as_string(), tx1c_hash);
+    BOOST_REQUIRE_EQUAL(spend.at("vin").as_int64(), 0);
+    BOOST_REQUIRE(!spend.at("status").as_object().at("confirmed").as_bool());
+}
+
 BOOST_AUTO_TEST_CASE(esplora__broadcast__duplicate__txid)
 {
     const auto tx1c = encode_base16(test::tx1c.to_data(true));
