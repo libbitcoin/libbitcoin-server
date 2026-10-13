@@ -51,7 +51,7 @@ void executor::scan_flags() const
         const auto link = query_.to_candidate(height);
         if (!query_.get_context(ctx, link) || (ctx.height != height))
         {
-            logger(std::format("Error: {}", error));
+            logger(std::format(BS_FLAGS_ERROR, error));
             return;
         }
 
@@ -59,8 +59,8 @@ void executor::scan_flags() const
         {
             const binary prev{ flag_bits, to_big_endian(flags) };
             const binary next{ flag_bits, to_big_endian(ctx.flags) };
-            logger(std::format("Forked from [{}] to [{}] at [{}:{}]",
-                prev.encoded(), next.encoded(),
+            logger(std::format(BS_FLAGS_FORKED, prev.encoded(),
+                next.encoded(),
                 encode_hash(query_.get_header_key(link)), height));
             flags = ctx.flags;
         }
@@ -70,8 +70,7 @@ void executor::scan_flags() const
         logger(BS_OPERATION_CANCELED);
 
     const auto span = duration_cast<milliseconds>(logger::now() - start);
-    logger(std::format("Scanned {} headers for rule forks in {} ms.", height,
-        span.count()));
+    logger(std::format(BS_FLAGS_SCANNED, height, span.count()));
 }
 
 // Link keys are narrower than hashes, other keys are hashed.
@@ -80,6 +79,24 @@ constexpr bool is_linked() NOEXCEPT
 {
     if constexpr (is_std_array<Key>)
         return (array_count<Key>) < hash_size;
+    else
+        return false;
+}
+
+// Null points (coinbase) and null search keys (unwritten rows) are excluded.
+template <typename Key>
+constexpr bool is_nullable() NOEXCEPT
+{
+    return is_same_type<Key, chain::point> || database::keys::is_search<Key>;
+}
+
+template <typename Key>
+constexpr bool is_null(const Key& key) NOEXCEPT
+{
+    if constexpr (is_same_type<Key, chain::point>)
+        return key.index() == chain::point::null_index;
+    else if constexpr (database::keys::is_search<Key>)
+        return key.value == null_hash;
     else
         return false;
 }
@@ -116,17 +133,16 @@ void executor::scan_buckets(const std::string& name, const Table& table,
     const auto load = to_double(records) / buckets;
     const auto expect = linked ? std::min(load, 1.0) : 1.0 - std::exp(-load);
     const auto span = duration_cast<seconds>(logger::now() - start);
-    logger(std::format("{:<10} {:>15} {:>15} {:>9.6f} {:>8.6f} {:>8.6f} "
-        "{:>6}", name, to_grouped(bucket), to_grouped(records), load,
-        (to_double(filled) / std::max(bucket, one)), expect, span.count()));
+    logger(std::format(BS_BUCKETS_ROW, name, to_grouped(bucket),
+        to_grouped(records), load, (to_double(filled) / std::max(bucket, one)),
+        expect, span.count()));
 }
 
 // hashmap bucket fill rates, all heads.
 void executor::scan_buckets() const
 {
     logger(BS_OPERATION_INTERRUPT);
-    logger("table              buckets         records      load     "
-        "fill   expect   secs");
+    logger(BS_BUCKETS_HEADER);
 
     scan_buckets("header", store_.header, query_.header_records());
     scan_buckets("tx", store_.tx, query_.tx_records());
@@ -156,25 +172,18 @@ void executor::scan_collisions(const std::string& name, size_t records,
     constexpr auto rows = 20_size;
     constexpr auto filtered = !filter_t::disabled;
     constexpr auto empty = unmask_right<filter>(m);
-    constexpr auto points = is_same_type<key_t, chain::point>;
+    constexpr auto nullable = is_nullable<key_t>();
     constexpr auto linked = is_linked<key_t>();
 
     if (is_zero(buckets))
         return;
 
-    const auto kind = linked ? "link" : "hash";
+    const auto kind = linked ? BS_COLLISIONS_LINK : BS_COLLISIONS_HASH;
     if constexpr (filtered)
-    {
-        logger(std::format("\n{} ({} keyed, filter m {} k {} k_max {})",
-            name, kind, m, k, Table::filter_k_max));
-        logger("           keys      load         fp      model       "
-            "walk      model   secs");
-    }
+        logger(std::format(BS_COLLISIONS_FILTERED, name, kind, m, k,
+            Table::filter_k_max));
     else
-    {
-        logger(std::format("\n{} ({} keyed, unfiltered)", name, kind));
-        logger("           keys      load   secs");
-    }
+        logger(std::format(BS_COLLISIONS_UNFILTERED, name, kind));
 
     std_vector<uint8_t> lengths(buckets, zero);
     std_vector<filter> screens(filtered ? buckets : zero, empty);
@@ -208,8 +217,8 @@ void executor::scan_collisions(const std::string& name, size_t records,
             const auto cost = Table::expected_walk(k, middle);
             fp_model += rate * window;
             walk_model += cost * window;
-            logger(std::format("{:>15} {:>9.6f} {:>10.7f} {:>10.7f} "
-                "{:>10.7f} {:>10.7f} {:>6}", to_grouped(keyed), load,
+            logger(std::format(BS_COLLISIONS_FILTERED_ROW,
+                to_grouped(keyed), load,
                 (to_double(window_collisions) / window), rate,
                 (to_double(window_walk) / window), cost, secs.count()));
 
@@ -218,8 +227,8 @@ void executor::scan_collisions(const std::string& name, size_t records,
         }
         else
         {
-            logger(std::format("{:>15} {:>9.6f} {:>6}", to_grouped(keyed),
-                load, secs.count()));
+            logger(std::format(BS_COLLISIONS_UNFILTERED_ROW,
+                to_grouped(keyed), load, secs.count()));
         }
 
         window_start = keyed;
@@ -231,13 +240,10 @@ void executor::scan_collisions(const std::string& name, size_t records,
             progress();
 
         const auto key = get_key(index);
-        if constexpr (points)
+        if (is_null(key))
         {
-            if (key.index() == chain::point::null_index)
-            {
-                ++nulls;
-                continue;
-            }
+            ++nulls;
+            continue;
         }
 
         const auto bucket = keys::bucket(key, count);
@@ -289,7 +295,7 @@ void executor::scan_collisions(const std::string& name, size_t records,
         return 0.0;
     };
 
-    logger("         length         buckets          expect");
+    logger(BS_COLLISIONS_LENGTHS);
     auto poisson = std::exp(-load);
     auto squares = 0.0;
     auto hits = 0.0;
@@ -307,13 +313,14 @@ void executor::scan_collisions(const std::string& name, size_t records,
         squares += to_double(occurrences) * size * size;
         hits += to_double(occurrences) * size * (size + 1.0) / 2.0;
         longest = length;
-        logger(std::format("{:>15} {:>15} {:>15.0f}", length,
-            to_grouped(occurrences), (linked ? perfect(length) :
-                poisson * buckets)));
+        const auto expect = linked ? perfect(length) : poisson * buckets;
+        logger(std::format(BS_COLLISIONS_LENGTHS_ROW, length,
+            to_grouped(occurrences),
+            to_grouped(to_integer<size_t>(std::round(expect)))));
     }
 
-    if constexpr (points)
-        logger(std::format("{:>15} null points excluded", to_grouped(nulls)));
+    if constexpr (nullable)
+        logger(std::format(BS_COLLISIONS_NULLS, to_grouped(nulls)));
 
     const auto divisor = to_double(std::max(keyed, one));
     const auto empty_load = is_zero(keyed);
@@ -329,8 +336,7 @@ void executor::scan_collisions(const std::string& name, size_t records,
         ((1.0 - part) * whole * (whole + 1.0) / 2.0 +
             part * (whole + 1.0) * (whole + 2.0) / 2.0) / load;
 
-    distributions.push_back(std::format("{:<10} {:>15} {:>15} {:>9.6f} "
-        "{:>8.6f} {:>8.6f} {:>7.4f} {:>7.4f} {:>7.4f} {:>7.4f} {:>4}",
+    distributions.push_back(std::format(BS_COLLISIONS_DISTRIBUTION_ROW,
         name, to_grouped(buckets), to_grouped(keyed), load, filled,
         fill_expect, dispersion, dispersion_expect, walked, walk_expect,
         longest));
@@ -338,8 +344,7 @@ void executor::scan_collisions(const std::string& name, size_t records,
     if constexpr (filtered)
     {
         const auto optimal = Table::optimal_k(keyed, buckets);
-        filters.push_back(std::format("{:<10} {:>3} {:>3} {:>3} {:>10.7f} "
-            "{:>10.7f} {:>10.7f} {:>10.7f} {:>10.7f} {:>10.7f}", name, m, k,
+        filters.push_back(std::format(BS_COLLISIONS_FILTER_ROW, name, m, k,
             optimal, (to_double(collisions) / divisor),
             (fp_model / divisor), (to_double(walk) / divisor),
             (walk_model / divisor), Table::false_positive(k, load),
@@ -389,15 +394,27 @@ void executor::scan_collisions()
                 ins_link::integer>(index));
         });
 
-    logger("\nDistribution (measured, expected)...");
-    logger("table              buckets            keys      load     "
-        "fill   expect    disp  expect    walk  expect  max");
+    scan_collisions<table::outs>("outs", query_.outs_records(),
+        query_.outs_buckets(), store_.outs.filter_k(), distributions, filters,
+        [&](size_t index)
+        {
+            return table::outs::key{ query_.get_outs_key(possible_narrow_cast<
+                outs_link::integer>(index)) };
+        });
+
+    scan_collisions<table::wtxid>("wtxid", query_.wtxid_records(),
+        query_.wtxid_buckets(), store_.wtxid.filter_k(), distributions,
+        filters, [&](size_t index)
+        {
+            return table::wtxid::key{ query_.get_wtxid_key(
+                possible_narrow_cast<pool_link::integer>(index)) };
+        });
+
+    logger(BS_COLLISIONS_DISTRIBUTION);
     for (const auto& row: distributions)
         logger(row);
 
-    logger("\nFilter (measured vs model over growth, fp at load by k)...");
-    logger("table        m   k opt         fp      model       walk      "
-        "model      fp(k)    fp(opt)");
+    logger(BS_COLLISIONS_FILTER);
     for (const auto& row: filters)
         logger(row);
 }

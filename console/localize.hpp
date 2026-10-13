@@ -139,8 +139,6 @@
     "   output        :{}\n" \
     "   ins           :{}\n" \
     "   outs          :{}\n" \
-    "   candidate     :{}\n" \
-    "   confirmed     :{}\n" \
     "   ecdsa0        :{}\n" \
     "   ecdsa1        :{}\n" \
     "   schnorr0      :{}\n" \
@@ -158,7 +156,6 @@
     "   strong        :{}\n" \
     "   scan          :{}\n" \
     "   scan_prefix   :{}\n" \
-    "   state         :{}\n" \
     "   pool          :{}\n" \
     "   wtxid         :{}\n" \
     "   spends        :{}\n" \
@@ -170,8 +167,6 @@
     "   tx            :{}\n" \
     "   ins           :{}\n" \
     "   outs          :{}\n" \
-    "   candidate     :{}\n" \
-    "   confirmed     :{}\n" \
     "   ecdsa0        :{}\n" \
     "   ecdsa1        :{}\n" \
     "   schnorr0      :{}\n" \
@@ -188,7 +183,6 @@
     "   strong        :{}\n" \
     "   scan          :{}\n" \
     "   scan_prefix   :{}\n" \
-    "   state         :{}\n" \
     "   pool          :{}\n" \
     "   wtxid         :{}\n" \
     "   spends        :{}\n" \
@@ -200,23 +194,27 @@
     "   tx            :{}\n" \
     "   ins           :{}\n" \
     "   outs          :{}\n" \
+    "   candidate     :{}\n" \
+    "   confirmed     :{}\n" \
     "   prevout       :{}\n" \
     "   duplicate     :{}\n" \
     "   strong        :{}\n" \
+    "   scan          :{}\n" \
+    "   state         :{}\n" \
     "   pool          :{}\n" \
     "   wtxid         :{}\n" \
     "   filter_bk     :{}\n" \
     "   filter_tx     :{}"
-#define BS_INFORMATION_COLLISION_RATES \
-    "Collision rates...\n" \
+#define BS_INFORMATION_LOAD_FACTORS \
+    "Load factors...\n" \
     "   header        :{}\n" \
     "   tx            :{}\n" \
     "   ins           :{}\n" \
     "   strong        :{}\n" \
     "   pool          :{}\n" \
     "   wtxid         :{}"
-#define BS_INFORMATION_COLLISION_RATES_OUTS \
-    "Collision rates...\n" \
+#define BS_INFORMATION_LOAD_FACTORS_OUTS \
+    "Load factors...\n" \
     "   header        :{}\n" \
     "   tx            :{}\n" \
     "   ins           :{}\n" \
@@ -226,15 +224,69 @@
     "   wtxid         :{}"
 #define BS_INFORMATION_PROGRESS_START \
     "Thinking..."
+#define BS_INFORMATION_INCOMPLETE \
+    "incomplete"
 #define BS_INFORMATION_PROGRESS \
     "Chain progress...\n" \
-    "   fork pt   :{}\n" \
-    "   top conf  :{}:{}\n" \
-    "   top cand  :{}:{}\n" \
-    "   top assoc :{}\n" \
-    "   associated:{}\n" \
-    "   wire conf :{}\n" \
-    "   wire cand :{}"
+    "   fork pt       :{}\n" \
+    "   top conf      :{}:{}\n" \
+    "   top cand      :{}:{}\n" \
+    "   top assoc     :{}\n" \
+    "   associated    :{}\n" \
+    "   wire conf     :{}\n" \
+    "   wire cand     :{}"
+
+// --flags
+#define BS_FLAGS_ERROR \
+    "Error: {}"
+#define BS_FLAGS_FORKED \
+    "Forked from [{}] to [{}] at [{}:{}]"
+#define BS_FLAGS_SCANNED \
+    "Scanned {} headers for rule forks in {} ms."
+
+// --buckets
+#define BS_BUCKETS_HEADER \
+    "table              buckets         records      load     fill   expect  " \
+    " secs"
+#define BS_BUCKETS_ROW \
+    "{:<10} {:>15} {:>15} {:>9.6f} {:>8.6f} {:>8.6f} {:>6}"
+
+// --collisions
+#define BS_COLLISIONS_HASH \
+    "hash"
+#define BS_COLLISIONS_LINK \
+    "link"
+#define BS_COLLISIONS_FILTERED \
+    "\n{} ({} keyed, filter m {} k {} k_max {})\n" \
+    "           keys      load         fp      model       walk      model   " \
+    "secs"
+#define BS_COLLISIONS_FILTERED_ROW \
+    "{:>15} {:>9.6f} {:>10.7f} {:>10.7f} {:>10.7f} {:>10.7f} {:>6}"
+#define BS_COLLISIONS_UNFILTERED \
+    "\n{} ({} keyed, unfiltered)\n" \
+    "           keys      load   secs"
+#define BS_COLLISIONS_UNFILTERED_ROW \
+    "{:>15} {:>9.6f} {:>6}"
+#define BS_COLLISIONS_LENGTHS \
+    "         length         buckets          expect"
+#define BS_COLLISIONS_LENGTHS_ROW \
+    "{:>15} {:>15} {:>15}"
+#define BS_COLLISIONS_NULLS \
+    "{:>15} null keys excluded"
+#define BS_COLLISIONS_DISTRIBUTION \
+    "\nDistribution (measured, expected)...\n" \
+    "table              buckets            keys      load     fill   expect  " \
+    "  disp  expect    walk  expect  max"
+#define BS_COLLISIONS_DISTRIBUTION_ROW \
+    "{:<10} {:>15} {:>15} {:>9.6f} {:>8.6f} {:>8.6f} {:>7.4f} {:>7.4f} " \
+    "{:>7.4f} {:>7.4f} {:>4}"
+#define BS_COLLISIONS_FILTER \
+    "\nFilter (measured vs model over growth, fp at load by k)...\n" \
+    "table        m   k opt         fp      model       walk      model      " \
+    "fp(k)    fp(opt)"
+#define BS_COLLISIONS_FILTER_ROW \
+    "{:<10} {:>3} {:>3} {:>3} {:>10.7f} {:>10.7f} {:>10.7f} {:>10.7f} " \
+    "{:>10.7f} {:>10.7f}"
 
 // --read
 #define BS_READ_ROW \

@@ -140,17 +140,35 @@ void protocol_native::do_get_address_confirmed(uint8_t media, bool turbo,
 // ----------------------------------------------------------------------------
 
 bool protocol_native::handle_get_address_unconfirmed(const code& ec,
-    interface::address_unconfirmed, uint8_t, uint8_t,
-    const hash_cptr&, bool) NOEXCEPT
+    interface::address_unconfirmed, uint8_t, uint8_t media,
+    const hash_cptr& hash, bool turbo) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (stopped(ec))
         return false;
 
-    // TODO: there are currently no unconfirmed txs.
-    send_not_implemented();
+    if (!archive().address_enabled())
+    {
+        send_not_implemented();
+        return true;
+    }
+
+    PARALLEL(do_get_address_unconfirmed, media, turbo && turbo_, hash, gate());
     return true;
+}
+
+// private
+void protocol_native::do_get_address_unconfirmed(uint8_t media, bool turbo,
+    const hash_cptr& hash, const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    database::outpoints set{};
+    const auto& query = archive();
+    auto ec = query.get_unconfirmed_unspent_outpoints(stopping_, set, *hash,
+        turbo);
+    POST(complete_get_address, ec, media, std::move(set), gate);
 }
 
 // handle_get_address_balance

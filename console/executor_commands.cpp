@@ -135,7 +135,7 @@ bool executor::do_information()
     dump_body_sizes();
     dump_records();
     dump_buckets();
-    dump_collisions();
+    dump_load_factors();
 
     // This one can take a few seconds on cold iron.
     logger(BS_INFORMATION_PROGRESS_START);

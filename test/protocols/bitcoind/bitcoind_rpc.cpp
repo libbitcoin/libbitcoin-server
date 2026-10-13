@@ -3976,6 +3976,47 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__broadcast__expected)
     BOOST_REQUIRE(result.at("maxmempool").as_int64() > 0);
 }
 
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__broadcast_spent__null)
+{
+    const auto sent = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]");
+    BOOST_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto prevout = test::block1c.transactions_ptr()->front()->hash(false);
+    const auto included = rpc("gettxout", hash_param(prevout, "0"));
+    const auto excluded = rpc("gettxout", hash_param(prevout, "0, false"));
+    REQUIRE_NO_THROW_TRUE(included.at("result").is_null());
+    REQUIRE_NO_THROW_TRUE(excluded.at("result").is_object());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxout__broadcast_output__zero_confirmations)
+{
+    const auto sent = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]");
+    BOOST_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto included = rpc("gettxout", hash_param(test::tx1c.hash(false), "0"));
+    const auto excluded = rpc("gettxout", hash_param(test::tx1c.hash(false), "0, false"));
+    BOOST_REQUIRE_EQUAL(included.at("result").at("confirmations").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(included.at("result").at("value").as_double(), 90.0 / chain::satoshi_per_bitcoin);
+    REQUIRE_NO_THROW_TRUE(excluded.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getdescriptoractivity__broadcast__mempool_receive)
+{
+    const auto sent = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]");
+    BOOST_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto script = encode_base16(test::tx1c.outputs_ptr()->front()->script().to_data(false));
+    const auto included = rpc("getdescriptoractivity", "[[], [\"raw(" + script + ")\"]]");
+    const auto excluded = rpc("getdescriptoractivity", "[[], [\"raw(" + script + ")\"], false]");
+    const auto& activity = included.at("result").at("activity");
+    BOOST_REQUIRE_EQUAL(activity.as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(activity.at(0).at("type")), "receive");
+    BOOST_REQUIRE_EQUAL(as_text(activity.at(0).at("txid")), encode_hash(test::tx1c.hash(false)));
+    BOOST_REQUIRE(!activity.at(0).as_object().contains("blockhash"));
+    BOOST_REQUIRE(!activity.at(0).as_object().contains("height"));
+    BOOST_REQUIRE(excluded.at("result").at("activity").as_array().empty());
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__broadcast__txid)
 {
     const auto sent = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]");

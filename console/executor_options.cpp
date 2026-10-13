@@ -179,7 +179,7 @@ void executor::do_info() const
     dump_body_sizes();
     dump_records();
     dump_buckets();
-    dump_collisions();
+    dump_load_factors();
 }
 
 // [m]enu

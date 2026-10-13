@@ -549,9 +549,10 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
     return true;
 }
 
+// The mempool is the set of pooled and confirmable txs.
 bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
     rpc_interface::get_tx_out, const std::string& txid, double n,
-    bool) NOEXCEPT
+    bool include_mempool) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -567,7 +568,8 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
     // Return only unspent output.
     const auto& query = archive();
     const auto output_link = query.to_output(hash, index);
-    if (output_link.is_terminal() || query.is_confirmed_spent(output_link))
+    if (output_link.is_terminal() || query.is_confirmed_spent(output_link) ||
+        (include_mempool && query.is_confirmable_spent(output_link)))
     {
         send_result(null_t{});
         return true;
@@ -583,15 +585,19 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
         return true;
     }
 
-    // Return only confirmed output.
-    size_t height{};
-    if (!query.get_tx_height(height, tx_link))
+    // Return only confirmed output, or mempool output if included.
+    size_t depth{};
+    if (size_t height{}; query.get_tx_height(height, tx_link))
+    {
+        depth = add1(floored_subtract(top, height));
+    }
+    else if (!include_mempool || !query.is_pooled(tx_link) ||
+        !query.is_confirmable_tx(tx_link))
     {
         send_result(null_t{});
         return true;
     }
 
-    const auto depth = add1(floored_subtract(top, height));
     const auto coins = to_floating(output->value()) /
         chain::satoshi_per_bitcoin;
 
@@ -1256,7 +1262,8 @@ bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
 // The mempool option is meaningless here (no mempool), always applied false.
 bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
     const code& ec, rpc_interface::get_descriptor_activity,
-    const array_t& blockhashes, const array_t& scanobjects, bool) NOEXCEPT
+    const array_t& blockhashes, const array_t& scanobjects,
+    bool include_mempool) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -1312,6 +1319,29 @@ bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
 
         inject_activity(activity, *block, height, encode_hash(hash), watch,
             p2kh_, p2sh_, witness_, flags_);
+    }
+
+    if (include_mempool)
+    {
+        database::tx_links links{};
+        if (query.get_confirmable_txs(links))
+        {
+            send_error(error::bitcoind::internal_error);
+            return true;
+        }
+
+        for (const auto& link: links)
+        {
+            const auto tx = query.get_transaction(link, true);
+            if (!tx || !query.populate_without_metadata(*tx))
+            {
+                send_error(error::bitcoind::internal_error);
+                return true;
+            }
+
+            inject_activity(activity, *tx, {}, watch, p2kh_, p2sh_, witness_,
+                flags_);
+        }
     }
 
     send_result(object_t{ { "activity", std::move(activity) } });

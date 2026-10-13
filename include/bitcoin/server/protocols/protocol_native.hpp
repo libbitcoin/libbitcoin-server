@@ -230,8 +230,8 @@ private:
         const system::hash_cptr& hash, const gate_t::ptr& gate) NOEXCEPT;
     void do_get_address_confirmed(uint8_t media, bool turbo,
         const system::hash_cptr& hash, const gate_t::ptr& gate) NOEXCEPT;
-    ////void do_get_address_unconfirmed(uint8_t media, bool turbo,
-    ////    const system::hash_cptr& hash) NOEXCEPT;
+    void do_get_address_unconfirmed(uint8_t media, bool turbo,
+        const system::hash_cptr& hash, const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_address(const code& ec, uint8_t media,
         const database::outpoints& set, const gate_t::ptr& gate) NOEXCEPT;
 

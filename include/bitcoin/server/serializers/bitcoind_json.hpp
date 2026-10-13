@@ -72,6 +72,13 @@ BCS_API void inject_activity(network::rpc::array_t& out,
     const std::unordered_set<std::string>& watch, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT;
 
+/// As above for one tx, with its block location (empty if unconfirmed).
+BCS_API void inject_activity(network::rpc::array_t& out,
+    const system::chain::transaction& tx,
+    const network::rpc::object_t& location,
+    const std::unordered_set<std::string>& watch, uint8_t p2kh,
+    uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT;
+
 /// The bitcoind chain name, resolved from the genesis block.
 BCS_API std::string chain_name(const node::query& query) NOEXCEPT;
 
