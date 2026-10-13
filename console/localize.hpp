@@ -139,8 +139,6 @@
     "   output        :{}\n" \
     "   ins           :{}\n" \
     "   outs          :{}\n" \
-    "   candidate     :{}\n" \
-    "   confirmed     :{}\n" \
     "   ecdsa0        :{}\n" \
     "   ecdsa1        :{}\n" \
     "   schnorr0      :{}\n" \
@@ -158,7 +156,6 @@
     "   strong        :{}\n" \
     "   scan          :{}\n" \
     "   scan_prefix   :{}\n" \
-    "   state         :{}\n" \
     "   pool          :{}\n" \
     "   wtxid         :{}\n" \
     "   spends        :{}\n" \
@@ -170,8 +167,6 @@
     "   tx            :{}\n" \
     "   ins           :{}\n" \
     "   outs          :{}\n" \
-    "   candidate     :{}\n" \
-    "   confirmed     :{}\n" \
     "   ecdsa0        :{}\n" \
     "   ecdsa1        :{}\n" \
     "   schnorr0      :{}\n" \
@@ -188,7 +183,6 @@
     "   strong        :{}\n" \
     "   scan          :{}\n" \
     "   scan_prefix   :{}\n" \
-    "   state         :{}\n" \
     "   pool          :{}\n" \
     "   wtxid         :{}\n" \
     "   spends        :{}\n" \
@@ -200,23 +194,27 @@
     "   tx            :{}\n" \
     "   ins           :{}\n" \
     "   outs          :{}\n" \
+    "   candidate     :{}\n" \
+    "   confirmed     :{}\n" \
     "   prevout       :{}\n" \
     "   duplicate     :{}\n" \
     "   strong        :{}\n" \
+    "   scan          :{}\n" \
+    "   state         :{}\n" \
     "   pool          :{}\n" \
     "   wtxid         :{}\n" \
     "   filter_bk     :{}\n" \
     "   filter_tx     :{}"
-#define BS_INFORMATION_COLLISION_RATES \
-    "Collision rates...\n" \
+#define BS_INFORMATION_LOAD_FACTORS \
+    "Load factors...\n" \
     "   header        :{}\n" \
     "   tx            :{}\n" \
     "   ins           :{}\n" \
     "   strong        :{}\n" \
     "   pool          :{}\n" \
     "   wtxid         :{}"
-#define BS_INFORMATION_COLLISION_RATES_OUTS \
-    "Collision rates...\n" \
+#define BS_INFORMATION_LOAD_FACTORS_OUTS \
+    "Load factors...\n" \
     "   header        :{}\n" \
     "   tx            :{}\n" \
     "   ins           :{}\n" \
@@ -226,15 +224,17 @@
     "   wtxid         :{}"
 #define BS_INFORMATION_PROGRESS_START \
     "Thinking..."
+#define BS_INFORMATION_INCOMPLETE \
+    "incomplete"
 #define BS_INFORMATION_PROGRESS \
     "Chain progress...\n" \
-    "   fork pt   :{}\n" \
-    "   top conf  :{}:{}\n" \
-    "   top cand  :{}:{}\n" \
-    "   top assoc :{}\n" \
-    "   associated:{}\n" \
-    "   wire conf :{}\n" \
-    "   wire cand :{}"
+    "   fork pt       :{}\n" \
+    "   top conf      :{}:{}\n" \
+    "   top cand      :{}:{}\n" \
+    "   top assoc     :{}\n" \
+    "   associated    :{}\n" \
+    "   wire conf     :{}\n" \
+    "   wire cand     :{}"
 
 // --read
 #define BS_READ_ROW \

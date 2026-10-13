@@ -147,8 +147,6 @@ void executor::dump_body_sizes() const
         query_.output_body_size(),
         query_.ins_body_size(),
         query_.outs_body_size(),
-        query_.candidate_body_size(),
-        query_.confirmed_body_size(),
         query_.ecdsa0_body_size(),
         query_.ecdsa1_body_size(),
         query_.schnorr0_body_size(),
@@ -166,7 +164,6 @@ void executor::dump_body_sizes() const
         query_.strong_body_size(),
         query_.scan_body_size(),
         query_.scan_prefix_body_size(),
-        query_.state_body_size(),
         query_.pool_body_size(),
         query_.wtxid_body_size(),
         query_.spends_body_size(),
@@ -181,8 +178,6 @@ void executor::dump_records() const
         query_.tx_records(),
         query_.ins_records(),
         query_.outs_records(),
-        query_.candidate_records(),
-        query_.confirmed_records(),
         query_.ecdsa0_records(),
         query_.ecdsa1_records(),
         query_.schnorr0_records(),
@@ -199,7 +194,6 @@ void executor::dump_records() const
         query_.strong_records(),
         query_.scan_records(),
         query_.scan_prefix_records(),
-        query_.state_records(),
         query_.pool_records(),
         query_.wtxid_records(),
         query_.spends_records(),
@@ -214,44 +208,53 @@ void executor::dump_buckets() const
         query_.tx_buckets(),
         query_.ins_buckets(),
         query_.outs_buckets(),
+        query_.candidate_buckets(),
+        query_.confirmed_buckets(),
         query_.prevout_buckets(),
         query_.duplicate_buckets(),
         query_.strong_buckets(),
+        query_.scan_buckets(),
+        query_.state_buckets(),
         query_.pool_buckets(),
         query_.wtxid_buckets(),
         query_.filter_bk_buckets(),
         query_.filter_tx_buckets()));
 }
 
-void executor::dump_collisions() const
+void executor::dump_load_factors() const
 {
-    const auto rate = [](size_t records, size_t buckets)
+    const auto load = [](size_t records, size_t buckets)
     {
         return is_zero(buckets) ? 0.0 : to_double(records) / buckets;
     };
 
-    const auto header = rate(query_.header_records(), query_.header_buckets());
-    const auto tx     = rate(query_.tx_records(), query_.tx_buckets());
-    const auto ins    = rate(query_.ins_records(), query_.ins_buckets());
-    const auto strong = rate(query_.strong_records(), query_.strong_buckets());
-    const auto pool   = rate(query_.pool_records(), query_.pool_buckets());
-    const auto wtxid  = rate(query_.wtxid_records(), query_.wtxid_buckets());
+    const auto header = load(query_.header_records(), query_.header_buckets());
+    const auto tx     = load(query_.tx_records(), query_.tx_buckets());
+    const auto ins    = load(query_.ins_records(), query_.ins_buckets());
+    const auto strong = load(query_.strong_records(), query_.strong_buckets());
+    const auto pool   = load(query_.pool_records(), query_.pool_buckets());
+    const auto wtxid  = load(query_.wtxid_records(), query_.wtxid_buckets());
 
     if (query_.address_enabled())
     {
-        const auto outs = rate(query_.outs_records(), query_.outs_buckets());
-        logger(std::format(BS_INFORMATION_COLLISION_RATES_OUTS,
+        const auto outs = load(query_.outs_records(), query_.outs_buckets());
+        logger(std::format(BS_INFORMATION_LOAD_FACTORS_OUTS,
             header, tx, ins, outs, strong, pool, wtxid));
         return;
     }
 
-    logger(std::format(BS_INFORMATION_COLLISION_RATES,
+    logger(std::format(BS_INFORMATION_LOAD_FACTORS,
         header, tx, ins, strong, pool, wtxid));
 }
 
 void executor::dump_progress() const
 {
     using namespace system;
+    const auto wire = [](size_t size)
+    {
+        return size == max_size_t ? std::string{ BS_INFORMATION_INCOMPLETE } :
+            std::to_string(size);
+    };
 
     logger(std::format(BS_INFORMATION_PROGRESS,
         query_.get_fork(),
@@ -261,8 +264,8 @@ void executor::dump_progress() const
         encode_hash(query_.get_top_candidate_hash()),
         query_.get_top_associated(),
         (query_.get_top_candidate() - query_.get_unassociated_count()),
-        query_.get_confirmed_size(),
-        query_.get_candidate_size()));
+        wire(query_.get_confirmed_size()),
+        wire(query_.get_candidate_size())));
 }
 
 } // namespace server

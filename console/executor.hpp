@@ -73,7 +73,7 @@ private:
     void dump_records() const;
     void dump_buckets() const;
     void dump_progress() const;
-    void dump_collisions() const;
+    void dump_load_factors() const;
 
     // Warnings.
     void warn_hardware(system::string_list& out) const;
