@@ -84,6 +84,24 @@ constexpr bool is_linked() NOEXCEPT
         return false;
 }
 
+// Null points (coinbase) and null search keys (unwritten rows) are excluded.
+template <typename Key>
+constexpr bool is_nullable() NOEXCEPT
+{
+    return is_same_type<Key, chain::point> || database::keys::is_search<Key>;
+}
+
+template <typename Key>
+constexpr bool is_null(const Key& key) NOEXCEPT
+{
+    if constexpr (is_same_type<Key, chain::point>)
+        return key.index() == chain::point::null_index;
+    else if constexpr (database::keys::is_search<Key>)
+        return key.value == null_hash;
+    else
+        return false;
+}
+
 static std::string to_grouped(size_t value)
 {
     auto text = std::to_string(value);
@@ -156,7 +174,7 @@ void executor::scan_collisions(const std::string& name, size_t records,
     constexpr auto rows = 20_size;
     constexpr auto filtered = !filter_t::disabled;
     constexpr auto empty = unmask_right<filter>(m);
-    constexpr auto points = is_same_type<key_t, chain::point>;
+    constexpr auto nullable = is_nullable<key_t>();
     constexpr auto linked = is_linked<key_t>();
 
     if (is_zero(buckets))
@@ -231,13 +249,10 @@ void executor::scan_collisions(const std::string& name, size_t records,
             progress();
 
         const auto key = get_key(index);
-        if constexpr (points)
+        if (is_null(key))
         {
-            if (key.index() == chain::point::null_index)
-            {
-                ++nulls;
-                continue;
-            }
+            ++nulls;
+            continue;
         }
 
         const auto bucket = keys::bucket(key, count);
@@ -312,8 +327,8 @@ void executor::scan_collisions(const std::string& name, size_t records,
                 poisson * buckets)));
     }
 
-    if constexpr (points)
-        logger(std::format("{:>15} null points excluded", to_grouped(nulls)));
+    if constexpr (nullable)
+        logger(std::format("{:>15} null keys excluded", to_grouped(nulls)));
 
     const auto divisor = to_double(std::max(keyed, one));
     const auto empty_load = is_zero(keyed);
@@ -387,6 +402,22 @@ void executor::scan_collisions()
         {
             return query_.get_point_key(possible_narrow_cast<
                 ins_link::integer>(index));
+        });
+
+    scan_collisions<table::outs>("outs", query_.outs_records(),
+        query_.outs_buckets(), store_.outs.filter_k(), distributions, filters,
+        [&](size_t index)
+        {
+            return table::outs::key{ query_.get_outs_key(possible_narrow_cast<
+                outs_link::integer>(index)) };
+        });
+
+    scan_collisions<table::wtxid>("wtxid", query_.wtxid_records(),
+        query_.wtxid_buckets(), store_.wtxid.filter_k(), distributions,
+        filters, [&](size_t index)
+        {
+            return table::wtxid::key{ query_.get_wtxid_key(
+                possible_narrow_cast<pool_link::integer>(index)) };
         });
 
     logger("\nDistribution (measured, expected)...");
