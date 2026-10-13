@@ -68,7 +68,7 @@ void protocol_bitcoind_transaction::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_utxo_update_psbt, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_abort_private_broadcast, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_private_broadcast_info, _1, _2);
-    SUBSCRIBE_BITCOIND(handle_submit_package, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_submit_package, _1, _2, _3, _4, _5);
     SUBSCRIBE_BITCOIND(handle_combine_raw_transaction, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_sign_raw_transaction_with_key, _1, _2);
     protocol_bitcoind_dispatch<rpc_interface>::start();
@@ -826,11 +826,67 @@ bool protocol_bitcoind_transaction::handle_get_private_broadcast_info(const code
 }
 
 bool protocol_bitcoind_transaction::handle_submit_package(const code& ec,
-    rpc_interface::submit_package) NOEXCEPT
+    rpc_interface::submit_package, const array_t& package, double,
+    double) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::client_mempool_disabled);
+    if (stopped(ec))
+        return false;
+
+    if (package.empty() || package.size() > maximum_package)
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    chain::transaction_cptrs txs{};
+    txs.reserve(package.size());
+    for (const auto& item: package)
+    {
+        if (!std::holds_alternative<string_t>(item.value()))
+        {
+            send_error(error::bitcoind::type_error);
+            return true;
+        }
+
+        read::base16::copy hexer{ std::get<string_t>(item.value()) };
+        const auto tx = to_shared<chain::transaction>(hexer, true);
+        if (!tx->is_valid() || !hexer.is_exhausted())
+        {
+            send_error(error::bitcoind::deserialization_error);
+            return true;
+        }
+
+        txs.push_back(tx);
+    }
+
+    constexpr auto test = false;
+    const auto txs_ptr = to_shared<chain::transaction_cptrs>(std::move(txs));
+    submit(txs_ptr, test, BIND(handle_package, _1, _2, txs_ptr));
     return true;
+}
+
+void protocol_bitcoind_transaction::handle_package(const code& ec,
+    size_t index, const chain::transactions_cptr& txs) NOEXCEPT
+{
+    POST(complete_package, ec, index, txs);
+}
+
+void protocol_bitcoind_transaction::complete_package(const code& ec,
+    size_t index, const chain::transactions_cptr& txs) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    boost::json::object result{};
+    if (!package_result(result, archive(), ec, index, *txs))
+    {
+        send_error(error::bitcoind::internal_error);
+        return;
+    }
+
+    send_result(boost::json::value{ std::move(result) });
 }
 
 bool protocol_bitcoind_transaction::handle_combine_raw_transaction(

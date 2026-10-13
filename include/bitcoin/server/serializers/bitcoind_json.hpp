@@ -79,6 +79,12 @@ BCS_API void inject_activity(network::rpc::array_t& out,
     const std::unordered_set<std::string>& watch, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT;
 
+/// The submitpackage result of a submitted package, with the failing tx at
+/// index. False if the store is inconsistent, the caller sends the error.
+BCS_API bool package_result(boost::json::object& out,
+    const node::query& query, const code& ec, size_t index,
+    const system::chain::transaction_cptrs& txs) NOEXCEPT;
+
 /// The bitcoind chain name, resolved from the genesis block.
 BCS_API std::string chain_name(const node::query& query) NOEXCEPT;
 

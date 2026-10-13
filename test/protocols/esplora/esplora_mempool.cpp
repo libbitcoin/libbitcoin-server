@@ -77,12 +77,22 @@ BOOST_AUTO_TEST_CASE(esplora__fee_estimates__extra_segment__not_found)
     BOOST_REQUIRE_EQUAL(status, http::status::not_found);
 }
 
-// unimplemented
+// txs/package
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__broadcast_package__unsubscribed__not_implemented)
+BOOST_AUTO_TEST_CASE(esplora__broadcast_package__empty__bad_request)
 {
-    BOOST_REQUIRE_EQUAL(post_status("/txs/package", "[]"), http::status::not_implemented);
+    BOOST_REQUIRE_EQUAL(post_status("/txs/package", "[]"), http::status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__broadcast_package__malformed__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(post_status("/txs/package", "[42]"), http::status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__broadcast_package__undecodable__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(post_status("/txs/package", "[\"00\"]"), http::status::bad_request);
 }
 
 BOOST_AUTO_TEST_CASE(esplora__invalid_target__not_found)
@@ -140,6 +150,23 @@ BOOST_AUTO_TEST_SUITE_END()
 // ----------------------------------------------------------------------------
 
 BOOST_FIXTURE_TEST_SUITE(esplora_broadcast_tests, esplora_broadcast_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(esplora__broadcast_package__broadcast__success)
+{
+    const auto package = "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]";
+    const auto response = boost::json::parse(post_text("/txs/package", package));
+    BOOST_REQUIRE(response.is_object());
+
+    const auto& result = response.as_object();
+    BOOST_REQUIRE_EQUAL(result.at("package_msg").as_string(), "success");
+
+    const auto& tx = result.at("tx-results").as_object().at(encode_hash(test::tx1c.hash(true))).as_object();
+    BOOST_REQUIRE_EQUAL(tx.at("txid").as_string(), encode_hash(test::tx1c.hash(false)));
+    BOOST_REQUIRE_EQUAL(tx.at("vsize").as_int64(), to_signed(test::tx1c.virtual_size()));
+
+    const auto txids = get_json("/mempool/txids");
+    BOOST_REQUIRE_EQUAL(txids.as_array().size(), 1u);
+}
 
 BOOST_AUTO_TEST_CASE(esplora__mempool__broadcast__expected)
 {

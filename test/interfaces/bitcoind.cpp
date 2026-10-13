@@ -103,6 +103,7 @@ static_assert(bitcoind_served("createrawtransaction"));
 static_assert(bitcoind_served("decoderawtransaction"));
 static_assert(bitcoind_served("decodescript"));
 static_assert(bitcoind_served("testmempoolaccept"));
+static_assert(bitcoind_served("submitpackage"));
 static_assert(bitcoind_served("validateaddress"));
 
 // A name absent from the interface satisfies neither.
@@ -143,7 +144,7 @@ static_assert(bitcoind_transaction_methods::names ==
     "createrawtransaction decoderawtransaction getrawtransaction "
     "sendrawtransaction testmempoolaccept analyzepsbt combinepsbt "
     "converttopsbt createpsbt decodepsbt finalizepsbt joinpsbts "
-    "utxoupdatepsbt combinerawtransaction");
+    "utxoupdatepsbt submitpackage combinerawtransaction");
 static_assert(bitcoind_utility_methods::names ==
     "decodescript validateaddress createmultisig deriveaddresses "
     "getdescriptorinfo verifymessage getindexinfo estimatesmartfee");

@@ -64,7 +64,7 @@ void protocol_esplora::start() NOEXCEPT
     SUBSCRIBE_ESPLORA(handle_get_tx_outspend, _1, _2, _3, _4, _5);
     SUBSCRIBE_ESPLORA(handle_get_tx_outspends, _1, _2, _3, _4);
     SUBSCRIBE_ESPLORA(handle_broadcast, _1, _2, _3, _4);
-    SUBSCRIBE_ESPLORA(handle_broadcast_package, _1, _2);
+    SUBSCRIBE_ESPLORA(handle_broadcast_package, _1, _2, _3, _4);
 
     // Block methods.
     SUBSCRIBE_ESPLORA(handle_get_block, _1, _2, _3, _4);
@@ -260,9 +260,30 @@ void protocol_esplora::set_body(rpc::request_t& model,
     using object_t = network::rpc::object_t;
     auto& params = std::get<object_t>(model.params.value());
     if (model.method == interface::broadcast::name)
+    {
         params["transaction"] = body;
-    else
-        params["transactions"] = network::rpc::array_t{};
+        return;
+    }
+
+    // A malformed package body is presented as an empty package.
+    network::rpc::array_t transactions{};
+    boost::system::error_code ec{};
+    const auto parsed = boost::json::parse(body, ec);
+    if (!ec && parsed.is_array())
+    {
+        for (const auto& item: parsed.as_array())
+        {
+            if (!item.is_string())
+            {
+                transactions.clear();
+                break;
+            }
+
+            transactions.emplace_back(std::string{ item.as_string() });
+        }
+    }
+
+    params["transactions"] = std::move(transactions);
 }
 
 // Senders.

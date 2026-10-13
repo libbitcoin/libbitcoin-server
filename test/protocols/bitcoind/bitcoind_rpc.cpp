@@ -161,7 +161,6 @@ const std::vector<method_code> pending_methods
     { "importmempool", R"([""])", -33 },
     { "abortprivatebroadcast", R"([""])", -32601 },
     { "getprivatebroadcastinfo", "[]", -32601 },
-    { "submitpackage", R"([[]])", -33 },
     { "submitblock", R"([""])", -33 },
     { "getblocktemplate", R"([{}])", -33 },
     { "getprioritisedtransactions", "[]", -33 },
@@ -1662,11 +1661,24 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__pending__core_shaped_params__expected_code)
 {
     const auto prioritise = rpc("prioritisetransaction", R"(["0000000000000000000000000000000000000000000000000000000000000001",null,100])");
     const auto blocktemplate = rpc("getblocktemplate", R"([{"rules":["segwit"]}])");
-    const auto package = rpc("submitpackage", "[[],0.1,0]");
 
     BOOST_REQUIRE(has_code(prioritise, -33));
     BOOST_REQUIRE(has_code(blocktemplate, -33));
-    BOOST_REQUIRE(has_code(package, -33));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitpackage__empty__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("submitpackage", "[[],0.1,0]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitpackage__undecodable__deserialization_error)
+{
+    BOOST_REQUIRE(has_code(rpc("submitpackage", R"([["00"]])"), -22));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitpackage__non_string__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("submitpackage", "[[42]]"), -3));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__verifychain__noop__true)
@@ -4188,6 +4200,43 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__confirmed_spender_mempo
     const auto response = rpc("gettxspendingprevout", prevout_param(one_hash, 0x18, ", {\"mempool_only\":true}"));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().front().as_object().size(), 2u);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitpackage__parent_and_child__success)
+{
+    const auto package = "[[\"" + encode_base16(test::tx1c.to_data(true)) + "\", \"" + encode_base16(tx1c_child.to_data(true)) + "\"]]";
+    const auto response = rpc("submitpackage", package);
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("package_msg")), "success");
+    BOOST_REQUIRE(result.at("replaced-transactions").as_array().empty());
+
+    const auto& results = result.at("tx-results").as_object();
+    BOOST_REQUIRE_EQUAL(results.size(), 2u);
+
+    const auto& parent = results.at(encode_hash(test::tx1c.hash(true)));
+    const auto vsize = to_signed(test::tx1c.virtual_size());
+    BOOST_REQUIRE_EQUAL(as_text(parent.at("txid")), encode_hash(test::tx1c.hash(false)));
+    BOOST_REQUIRE_EQUAL(parent.at("vsize").as_int64(), vsize);
+    BOOST_REQUIRE_EQUAL(parent.at("fees").at("base").as_double(), 10.0 / chain::satoshi_per_bitcoin);
+
+    const auto pooled = rpc("getrawmempool", "[]");
+    BOOST_REQUIRE_EQUAL(pooled.at("result").as_array().size(), 2u);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitpackage__orphan__failed)
+{
+    const auto package = "[[\"" + encode_base16(tx1c_child.to_data(true)) + "\"]]";
+    const auto response = rpc("submitpackage", package);
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& result = response.at("result");
+    BOOST_REQUIRE_EQUAL(as_text(result.at("package_msg")), "transaction failed");
+
+    const auto& child = result.at("tx-results").at(encode_hash(tx1c_child.hash(true)));
+    BOOST_REQUIRE(child.as_object().contains("error"));
+    BOOST_REQUIRE(!child.as_object().contains("fees"));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__empty__invalid_parameter)
