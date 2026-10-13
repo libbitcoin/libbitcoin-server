@@ -190,6 +190,41 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__getutxos__outpoints)
     const auto& object = params_of(out);
     BOOST_REQUIRE_EQUAL(media_of(object), to_value(media_type::application_json));
     BOOST_REQUIRE_EQUAL(std::get<array_t>(object.at("outpoints").value()).size(), 2u);
+    BOOST_REQUIRE(std::get<bool>(object.at("mempool").value()));
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__getutxos_unchecked__no_mempool)
+{
+    request_t out{};
+    const auto path = "/rest/getutxos/" + test_hash + "-0.json";
+    BOOST_REQUIRE(!bitcoind_target(out, path));
+    BOOST_REQUIRE(!params_of(out).contains("mempool"));
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__mempool_info__mempool_information)
+{
+    request_t out{};
+    BOOST_REQUIRE(!bitcoind_target(out, "/rest/mempool/info.json"));
+    BOOST_REQUIRE_EQUAL(out.method, "mempool_information");
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__mempool_contents__mempool)
+{
+    request_t out{};
+    BOOST_REQUIRE(!bitcoind_target(out, "/rest/mempool/contents.json"));
+    BOOST_REQUIRE_EQUAL(out.method, "mempool");
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__mempool_contents_hex__invalid_target)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/mempool/contents.hex"), server::error::invalid_target);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__mempool_missing__missing_target)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(bitcoind_target(out, "/rest/mempool"), server::error::missing_target);
 }
 
 BOOST_AUTO_TEST_CASE(parsers__bitcoind_target__spenttxouts__block_spent_tx_outputs)

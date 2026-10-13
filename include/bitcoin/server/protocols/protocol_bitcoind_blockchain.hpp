@@ -197,10 +197,6 @@ private:
         const gate_t::ptr& gate) NOEXCEPT;
     database::tx_link to_mempool_tx(
         const system::hash_digest& hash) const NOEXCEPT;
-    bool mempool_entry(network::rpc::object_t& out,
-        const database::tx_link& link) const NOEXCEPT;
-    bool mempool_txs(network::rpc::value_t& out,
-        const database::tx_links& links, bool verbose) const NOEXCEPT;
     bool get_mempool_relatives(const std::string& txid, bool verbose,
         bool ancestors) NOEXCEPT;
     void do_get_mempool_relatives(const system::hash_digest& hash,

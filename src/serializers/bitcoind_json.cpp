@@ -348,6 +348,160 @@ bool chain_info(network::rpc::object_t& out,
     return true;
 }
 
+// The entry height is that of the chain top, below the pooled context height.
+bool mempool_entry(boost::json::object& out, const node::query& query,
+    const database::tx_link& link) NOEXCEPT
+{
+    uint32_t time{};
+    database::fee_rate rate{};
+    database::fee_totals ancestors{}, descendants{};
+    size_t light{}, heavy{};
+    if (!query.get_tx_fees(rate, link) ||
+        !query.get_tx_sizes(light, heavy, link) ||
+        !query.get_pooled_time(time, link) ||
+        !query.get_ancestor_totals(ancestors, link) ||
+        !query.get_descendant_totals(descendants, link))
+        return false;
+
+    const auto to_txids = [&query](const database::tx_links& links) NOEXCEPT
+    {
+        boost::json::array txids{};
+        txids.reserve(links.size());
+        for (const auto& fk: links)
+            txids.emplace_back(encode_hash(query.get_tx_key(fk)));
+
+        return txids;
+    };
+
+    const auto to_btc = [](uint64_t satoshis) NOEXCEPT
+    {
+        return to_floating(satoshis) / chain::satoshi_per_bitcoin;
+    };
+
+    const boost::json::object fees
+    {
+        { "base", to_btc(rate.fee) },
+        { "modified", to_btc(rate.fee) },
+        { "ancestor", to_btc(ancestors.fee) },
+        { "descendant", to_btc(descendants.fee) }
+    };
+
+    out = boost::json::object
+    {
+        { "vsize", rate.bytes },
+        { "weight", chain::weighted_size(light, heavy) },
+        { "time", time },
+        { "height", sub1(rate.height) },
+        { "descendantcount", descendants.count },
+        { "descendantsize", descendants.bytes },
+        { "ancestorcount", ancestors.count },
+        { "ancestorsize", ancestors.bytes },
+        { "wtxid", encode_hash(query.get_wtxid(link)) },
+        { "fees", fees },
+        { "depends", to_txids(query.to_confirmable_parents(link)) },
+        { "spentby", to_txids(query.to_confirmable_children(link)) },
+        { "bip125-replaceable", false },
+        { "unbroadcast", false }
+    };
+
+    return true;
+}
+
+bool mempool_txs(boost::json::value& out, const node::query& query,
+    const database::tx_links& links, bool verbose) NOEXCEPT
+{
+    if (verbose)
+    {
+        boost::json::object entries{};
+        for (const auto& link: links)
+        {
+            boost::json::object entry{};
+            if (!mempool_entry(entry, query, link))
+                return false;
+
+            entries[encode_hash(query.get_tx_key(link))] = std::move(entry);
+        }
+
+        out = std::move(entries);
+        return true;
+    }
+
+    boost::json::array txids{};
+    txids.reserve(links.size());
+    for (const auto& link: links)
+        txids.emplace_back(encode_hash(query.get_tx_key(link)));
+
+    out = std::move(txids);
+    return true;
+}
+
+// There is no mempool sequence (zmq), so it is reported as constant.
+bool raw_mempool(boost::json::value& out, const node::query& query,
+    bool verbose, bool sequence) NOEXCEPT
+{
+    database::tx_links links{};
+    boost::json::value txs{};
+    if (query.get_confirmable_txs(links) ||
+        !mempool_txs(txs, query, links, verbose))
+        return false;
+
+    if (verbose || !sequence)
+    {
+        out = std::move(txs);
+        return true;
+    }
+
+    out = boost::json::object
+    {
+        { "txids", std::move(txs) },
+        { "mempool_sequence", 1 }
+    };
+
+    return true;
+}
+
+// The pool is stored, so usage is the size of its tables, and the maximum is
+// the space available to the store (shared with all tables and the volume).
+bool mempool_info(boost::json::object& out, const node::query& query,
+    const std::filesystem::path& store, double minimum, double relay,
+    double increment) NOEXCEPT
+{
+    size_t space{};
+    database::fee_rates rates{};
+    if (!query.get_confirmable_fees(rates) ||
+        !database::file::space(space, store))
+        return false;
+
+    size_t bytes{};
+    uint64_t fee{};
+    for (const auto& rate: rates)
+    {
+        bytes = ceilinged_add(bytes, rate.bytes);
+        fee = ceilinged_add(fee, rate.fee);
+    }
+
+    const auto indexes = ceilinged_add(query.spends_size(), query.wtxid_size());
+    const auto usage = ceilinged_add(query.pool_size(), indexes);
+    const auto total_fee = to_floating(fee) / chain::satoshi_per_bitcoin;
+
+    out = boost::json::object
+    {
+        { "loaded", true },
+        { "size", rates.size() },
+        { "bytes", bytes },
+        { "usage", usage },
+        { "total_fee", total_fee },
+        { "maxmempool", space },
+        { "mempoolminfee", minimum },
+        { "minrelaytxfee", relay },
+        { "incrementalrelayfee", increment },
+        { "unbroadcastcount", 0 },
+        { "fullrbf", false }
+    };
+
+    return true;
+}
+
 bool package_result(boost::json::object& out, const node::query& query,
     const code& ec, size_t index,
     const chain::transaction_cptrs& txs) NOEXCEPT

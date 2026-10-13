@@ -53,6 +53,24 @@ BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__no_query__target_default)
     BOOST_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("count").value()), 5u);
 }
 
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__booleans__overlaid)
+{
+    request_t out{};
+    const auto target = "/rest/mempool/contents.json?verbose=false&mempool_sequence=true";
+    BOOST_REQUIRE(!bitcoind_target(out, target));
+    BOOST_REQUIRE(bitcoind_query(out, target));
+    BOOST_REQUIRE(!std::get<bool>(params_of(out).at("verbose").value()));
+    BOOST_REQUIRE(std::get<bool>(params_of(out).at("mempool_sequence").value()));
+}
+
+BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__malformed_boolean__false)
+{
+    request_t out{};
+    const auto target = "/rest/mempool/contents.json?verbose=yes";
+    BOOST_REQUIRE(!bitcoind_target(out, target));
+    BOOST_REQUIRE(!bitcoind_query(out, target));
+}
+
 BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__malformed_count__false)
 {
     request_t out{};
