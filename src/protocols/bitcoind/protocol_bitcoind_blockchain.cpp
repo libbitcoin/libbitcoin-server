@@ -1379,7 +1379,6 @@ bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
     return true;
 }
 
-// The mempool option is meaningless here (no mempool), always applied false.
 bool protocol_bitcoind_blockchain::handle_get_descriptor_activity(
     const code& ec, rpc_interface::get_descriptor_activity,
     const array_t& blockhashes, const array_t& scanobjects,
