@@ -163,11 +163,12 @@ void executor::dump_body_sizes() const
         query_.silent1_prefix_body_size(),
         query_.prevout_body_size(),
         query_.duplicate_body_size(),
-        query_.strong_tx_body_size(),
+        query_.strong_body_size(),
         query_.scan_body_size(),
         query_.scan_prefix_body_size(),
         query_.state_body_size(),
         query_.pool_body_size(),
+        query_.wtxid_body_size(),
         query_.spends_body_size(),
         query_.filter_bk_body_size(),
         query_.filter_tx_body_size()));
@@ -195,11 +196,12 @@ void executor::dump_records() const
         query_.silent0_prefix_records(),
         query_.silent1_prefix_records(),
         query_.duplicate_records(),
-        query_.strong_tx_records(),
+        query_.strong_records(),
         query_.scan_records(),
         query_.scan_prefix_records(),
         query_.state_records(),
         query_.pool_records(),
+        query_.wtxid_records(),
         query_.spends_records(),
         query_.filter_bk_records()));
 }
@@ -214,8 +216,9 @@ void executor::dump_buckets() const
         query_.outs_buckets(),
         query_.prevout_buckets(),
         query_.duplicate_buckets(),
-        query_.strong_tx_buckets(),
+        query_.strong_buckets(),
         query_.pool_buckets(),
+        query_.wtxid_buckets(),
         query_.filter_bk_buckets(),
         query_.filter_tx_buckets()));
 }
@@ -230,19 +233,20 @@ void executor::dump_collisions() const
     const auto header = rate(query_.header_records(), query_.header_buckets());
     const auto tx     = rate(query_.tx_records(), query_.tx_buckets());
     const auto ins    = rate(query_.ins_records(), query_.ins_buckets());
-    const auto strong = rate(query_.strong_tx_records(), query_.strong_tx_buckets());
+    const auto strong = rate(query_.strong_records(), query_.strong_buckets());
     const auto pool   = rate(query_.pool_records(), query_.pool_buckets());
+    const auto wtxid  = rate(query_.wtxid_records(), query_.wtxid_buckets());
 
     if (query_.address_enabled())
     {
         const auto outs = rate(query_.outs_records(), query_.outs_buckets());
-        logger(std::format(BS_INFORMATION_COLLISION_RATES_ADDRESS,
-            header, tx, ins, outs, strong, pool));
+        logger(std::format(BS_INFORMATION_COLLISION_RATES_OUTS,
+            header, tx, ins, outs, strong, pool, wtxid));
         return;
     }
 
     logger(std::format(BS_INFORMATION_COLLISION_RATES,
-        header, tx, ins, strong, pool));
+        header, tx, ins, strong, pool, wtxid));
 }
 
 void executor::dump_progress() const
