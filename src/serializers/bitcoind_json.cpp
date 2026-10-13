@@ -189,65 +189,79 @@ void inject_activity(network::rpc::array_t& out, const chain::block& block,
     const std::unordered_set<std::string>& watch, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT
 {
-    using namespace network::rpc;
-    for (const auto& tx: *block.transactions_ptr())
+    const network::rpc::object_t location
     {
-        const auto txid = encode_hash(tx->hash(false));
-        uint32_t index{};
-        for (const auto& put: *tx->outputs_ptr())
+        { "blockhash", blockhash },
+        { "height", height }
+    };
+
+    for (const auto& tx: *block.transactions_ptr())
+        inject_activity(out, *tx, location, watch, p2kh, p2sh, witness, flags);
+}
+
+void inject_activity(network::rpc::array_t& out, const chain::transaction& tx,
+    const network::rpc::object_t& location,
+    const std::unordered_set<std::string>& watch, uint8_t p2kh,
+    uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT
+{
+    using namespace network::rpc;
+    const auto txid = encode_hash(tx.hash(false));
+    uint32_t index{};
+    for (const auto& put: *tx.outputs_ptr())
+    {
+        const auto script = encode_base16(put->script().to_data(false));
+        if (watch.contains(script))
         {
-            const auto script = encode_base16(put->script().to_data(false));
-            if (watch.contains(script))
+            auto output = to_script_public_key(put->script(), p2kh, p2sh,
+                witness, flags);
+
+            object_t entry
             {
-                auto output = to_script_public_key(put->script(), p2kh, p2sh,
-                    witness, flags);
+                { "type", std::string{ "receive" } },
+                { "amount", put->value() /
+                    to_floating(chain::satoshi_per_bitcoin) },
+                { "txid", txid },
+                { "vout", index },
+                { "output_spk", std::move(output) }
+            };
 
-                out.emplace_back(object_t
-                {
-                    { "type", std::string{ "receive" } },
-                    { "amount", put->value() /
-                        to_floating(chain::satoshi_per_bitcoin) },
-                    { "blockhash", blockhash },
-                    { "height", height },
-                    { "txid", txid },
-                    { "vout", index },
-                    { "output_spk", std::move(output) }
-                });
-            }
-
-            ++index;
+            entry.insert(location.cbegin(), location.cend());
+            out.emplace_back(std::move(entry));
         }
 
-        if (tx->is_coinbase())
-            continue;
+        ++index;
+    }
 
-        uint32_t spend{};
-        for (const auto& in: *tx->inputs_ptr())
+    if (tx.is_coinbase())
+        return;
+
+    uint32_t spend{};
+    for (const auto& in: *tx.inputs_ptr())
+    {
+        const auto& prevout = *in->prevout;
+        const auto script = encode_base16(prevout.script().to_data(false));
+        if (watch.contains(script))
         {
-            const auto& prevout = *in->prevout;
-            const auto script = encode_base16(prevout.script().to_data(false));
-            if (watch.contains(script))
+            auto output = to_script_public_key(prevout.script(), p2kh, p2sh,
+                witness, flags);
+
+            object_t entry
             {
-                auto output = to_script_public_key(prevout.script(), p2kh, p2sh,
-                    witness, flags);
+                { "type", std::string{ "spend" } },
+                { "amount", prevout.value() /
+                    to_floating(chain::satoshi_per_bitcoin) },
+                { "spend_txid", txid },
+                { "spend_vin", spend },
+                { "prevout_txid", encode_hash(in->point().hash()) },
+                { "prevout_vout", in->point().index() },
+                { "prevout_spk", std::move(output) }
+            };
 
-                out.emplace_back(object_t
-                {
-                    { "type", std::string{ "spend" } },
-                    { "amount", prevout.value() /
-                        to_floating(chain::satoshi_per_bitcoin) },
-                    { "blockhash", blockhash },
-                    { "height", height },
-                    { "spend_txid", txid },
-                    { "spend_vin", spend },
-                    { "prevout_txid", encode_hash(in->point().hash()) },
-                    { "prevout_vout", in->point().index() },
-                    { "prevout_spk", std::move(output) }
-                });
-            }
-
-            ++spend;
+            entry.insert(location.cbegin(), location.cend());
+            out.emplace_back(std::move(entry));
         }
+
+        ++spend;
     }
 }
 
