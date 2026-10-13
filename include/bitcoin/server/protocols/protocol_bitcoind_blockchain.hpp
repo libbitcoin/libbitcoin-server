@@ -186,13 +186,13 @@ private:
         const std::shared_ptr<network::rpc::array_t>& scanobjects,
         bool include_mempool, const gate_t::ptr& gate) NOEXCEPT;
 
+    void do_get_mempool_entry(const system::hash_digest& hash,
+        const gate_t::ptr& gate) NOEXCEPT;
     void do_get_mempool_info(double minimum, double relay, double increment,
         const gate_t::ptr& gate) NOEXCEPT;
     bool mempool_entry(network::rpc::object_t& out,
         const database::tx_link& link) const NOEXCEPT;
     void do_get_raw_mempool(bool verbose, bool sequence,
-        const gate_t::ptr& gate) NOEXCEPT;
-    void complete_mempool(const code& ec, network::rpc::value_t& result,
         const gate_t::ptr& gate) NOEXCEPT;
 
     // Wait machinery.
@@ -205,8 +205,10 @@ private:
     void send_top() NOEXCEPT;
 
     // Utilities.
-    void fail_scan(const code& ec, const gate_t::ptr& gate) NOEXCEPT;
-    void complete_scan(network::rpc::object_t& result,
+    void fail(const code& ec, const gate_t::ptr& gate) NOEXCEPT;
+    void complete_object(network::rpc::object_t& result,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_value(network::rpc::value_t& result,
         const gate_t::ptr& gate) NOEXCEPT;
 
     // This is thread safe.
