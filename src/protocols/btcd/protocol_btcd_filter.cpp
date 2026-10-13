@@ -836,6 +836,53 @@ void protocol_btcd::do_disconnected(node::header_t link_value) NOEXCEPT
     POST_BTCD(notify_disconnected, header, height);
 }
 
+// The amount is the sum of the output values (btcd).
+void protocol_btcd::do_transaction(node::transaction_t link_value) NOEXCEPT
+{
+    BC_ASSERT(notification_strand_.running_in_this_thread());
+
+    constexpr auto witness = true;
+    const database::tx_link link{ link_value };
+    const auto& query = archive();
+    const auto tx = query.get_transaction(link, witness);
+    if (!tx)
+        return;
+
+    if (!verbose_transactions_.load(relaxed))
+    {
+        const auto amount = tx->spend() /
+            to_floating(chain::satoshi_per_bitcoin);
+
+        POST_BTCD(notify_transaction, false, emplace_shared<array_t>(array_t
+        {
+            encode_hash(tx->hash(false)),
+            amount
+        }));
+        return;
+    }
+
+    const auto model = btcd::search_transaction(query, link, *tx, {}, false,
+        p2kh_, p2sh_, witness_, flags_);
+
+    POST_BTCD(notify_transaction, true, emplace_shared<array_t>(array_t
+    {
+        boost::json::value{ model }
+    }));
+}
+
+void protocol_btcd::notify_transaction(bool verbose,
+    const array_ptr& params) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped() || !subscribed_transactions_.load(relaxed))
+        return;
+
+    auto notification = *params;
+    send_notification(verbose ? "txacceptedverbose" : "txaccepted",
+        std::move(notification));
+}
+
 void protocol_btcd::notify_connected(const header_cptr& header,
     size_t height, const array_ptr& txs, const legacy_ptr& received,
     const legacy_ptr& redeemed) NOEXCEPT

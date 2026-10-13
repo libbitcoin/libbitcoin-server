@@ -259,18 +259,25 @@ bool protocol_btcd::handle_stop_notify_blocks(const code& ec,
 }
 
 bool protocol_btcd::handle_notify_new_transactions(const code& ec,
-    btcd_interface::notify_new_transactions, bool) NOEXCEPT
+    btcd_interface::notify_new_transactions, bool verbose) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::btcd::unimplemented);
+    if (stopped(ec))
+        return false;
+
+    verbose_transactions_.store(verbose, relaxed);
+    subscribed_transactions_.store(true, relaxed);
+    send_result({});
     return true;
 }
 
 bool protocol_btcd::handle_stop_notify_new_transactions(const code& ec,
     btcd_interface::stop_notify_new_transactions) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::btcd::unimplemented);
+    if (stopped(ec))
+        return false;
+
+    subscribed_transactions_.store(false, relaxed);
+    send_result({});
     return true;
 }
 
@@ -358,6 +365,16 @@ bool protocol_btcd::handle_chase(const code&, node::event_value value) NOEXCEPT
             {
                 POST_NOTIFY(do_disconnected,
                     node::to_payload<node::chase::reorganized>(value).link);
+            }
+
+            break;
+        }
+        case node::chase::transaction:
+        {
+            if (subscribed_transactions_.load(relaxed))
+            {
+                POST_NOTIFY(do_transaction,
+                    node::to_payload<node::chase::transaction>(value).link);
             }
 
             break;

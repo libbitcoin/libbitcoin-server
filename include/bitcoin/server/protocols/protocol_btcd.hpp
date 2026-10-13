@@ -219,11 +219,13 @@ protected:
 
     void do_connected(node::header_t link) NOEXCEPT;
     void do_disconnected(node::header_t link) NOEXCEPT;
+    void do_transaction(node::transaction_t link) NOEXCEPT;
     void notify_connected(const header_cptr& header, size_t height,
         const array_ptr& txs, const legacy_ptr& received,
         const legacy_ptr& redeemed) NOEXCEPT;
     void notify_disconnected(const header_cptr& header,
         size_t height) NOEXCEPT;
+    void notify_transaction(bool verbose, const array_ptr& params) NOEXCEPT;
 
     /// Utilities.
     /// -----------------------------------------------------------------------
@@ -290,6 +292,8 @@ private:
     const bool turbo_;
     std::atomic_bool stopping_{};
     std::atomic_bool subscribed_blocks_{};
+    std::atomic_bool subscribed_transactions_{};
+    std::atomic_bool verbose_transactions_{};
 
     // Set once a legacy watch arms, so handle_chase posts do_connected
     // even without notifyblocks (unlike loadtxfilter, not required here).
