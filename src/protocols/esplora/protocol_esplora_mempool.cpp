@@ -40,7 +40,7 @@ constexpr std::array<size_t, 28> targets
     21, 22, 23, 24, 25, 144, 504, 1008
 };
 
-// The vsize of a fee histogram bin, and the count of recent txs (electrs).
+// The vsize of a fee histogram bin, and the count of recent txs.
 constexpr size_t histogram_bin = 50'000;
 constexpr size_t recent_count = 10;
 

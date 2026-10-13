@@ -223,9 +223,7 @@ BC_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__indexed__result_
 
 BC_AUTO_TEST_SUITE_END()
 
-/// The simple send indexed against the block five coinbase (tx link 5), so
-/// the row starts the scan of blocks at or above five, with every block
-/// mapped as the transaction chaser would map it (the node is current).
+/// The simple send indexed at tx link 5, with every block's scan start mapped.
 struct sparrow_silent_mapped_setup_fixture
   : electrum_setup_fixture
 {
