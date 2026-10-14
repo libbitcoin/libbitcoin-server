@@ -153,7 +153,7 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-sha=ON -Denable-aes=ON -Denable-sha3=ON"
+            options: "-Denable-sha3=ON -Denable-sha=ON -Denable-aes=ON"
             cc: "clang"
             cxx: "clang++"
             image: macos-latest
@@ -163,7 +163,7 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-aesni=ON -Denable-avx2=ON -Denable-sse41=ON"
+            options: "-Denable-avx2=ON -Denable-sse41=ON -Denable-aesni=ON"
             cc: "clang"
             cxx: "clang++"
             image: macos-26-intel
@@ -173,7 +173,7 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-avx2=ON"
+            options: "-Denable-avx2=ON -Denable-sse41=ON"
             cc: "clang-18"
             cxx: "clang++-18"
             linkflags: "-static-libstdc++ -static-libgcc"
@@ -183,7 +183,17 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-avx2=ON -Denable-shani=ON"
+            options: "-Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            cc: "clang-18"
+            cxx: "clang++-18"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04
+
+          - basename: "bs-linux-x64-avxifma-shani"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-avxifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
             cc: "clang-18"
             cxx: "clang++-18"
             linkflags: "-static-libstdc++ -static-libgcc"
@@ -193,7 +203,7 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-avx512=ON"
+            options: "-Denable-avx512=ON -Denable-avx2=ON -Denable-sse41=ON"
             cc: "clang-18"
             cxx: "clang++-18"
             linkflags: "-static-libstdc++ -static-libgcc"
@@ -203,7 +213,17 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-avx512=ON -Denable-shani=ON"
+            options: "-Denable-avx512=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            cc: "clang-18"
+            cxx: "clang++-18"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04
+
+          - basename: "bs-linux-x64-avx512-avxifma-shani"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-avx512=ON -Denable-avxifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
             cc: "clang-18"
             cxx: "clang++-18"
             linkflags: "-static-libstdc++ -static-libgcc"
@@ -242,7 +262,7 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-avx2=ON"
+            options: "-Denable-avx2=ON -Denable-sse41=ON"
             cc: "gcc"
             cxx: "g++"
             linkflags: "--static -static-libstdc++ -static-libgcc"
@@ -253,7 +273,18 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-avx2=ON -Denable-shani=ON"
+            options: "-Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "--static -static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04
+            container: alpine:3.22.6
+
+          - basename: "bs-musl-x64-avxifma-shani"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-avxifma=ON -Denable-shani=ON  -Denable-avx2=ON -Denable-sse41=ON"
             cc: "gcc"
             cxx: "g++"
             linkflags: "--static -static-libstdc++ -static-libgcc"
@@ -264,7 +295,7 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-avx512=ON"
+            options: "-Denable-avx512=ON -Denable-avx2=ON -Denable-sse41=ON"
             cc: "gcc"
             cxx: "g++"
             linkflags: "--static -static-libstdc++ -static-libgcc"
@@ -275,7 +306,18 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-avx512=ON -Denable-shani=ON"
+            options: "-Denable-avx512=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "--static -static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04
+            container: alpine:3.22.6
+
+          - basename: "bs-musl-x64-avx512-avxifma-shani"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-avx512=ON -Denable-avxifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
             cc: "gcc"
             cxx: "g++"
             linkflags: "--static -static-libstdc++ -static-libgcc"
@@ -317,7 +359,7 @@ jobs:
           - basename: "bs-windows-x64"
             configuration: StaticRelease
             toolchain: msbuild
-            options: "--enable-avx2"
+            options: "--enable-avx2 --enable-sse41"
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
@@ -326,7 +368,16 @@ jobs:
           - basename: "bs-windows-x64-shani"
             configuration: StaticRelease
             toolchain: msbuild
-            options: "--enable-shani"
+            options: "--enable-shani --enable-avx2 --enable-sse41"
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-latest
+
+          - basename: "bs-windows-x64-avxifma-shani"
+            configuration: StaticRelease
+            toolchain: msbuild
+            options: "--enable-avxifma --enable-shani --enable-avx2 --enable-sse41"
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
@@ -335,7 +386,7 @@ jobs:
           - basename: "bs-windows-x64-avx512"
             configuration: StaticRelease
             toolchain: msbuild
-            options: "--enable-avx512"
+            options: "--enable-avx512 --enable-avx2 --enable-sse41"
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
@@ -344,7 +395,16 @@ jobs:
           - basename: "bs-windows-x64-avx512-shani"
             configuration: StaticRelease
             toolchain: msbuild
-            options: "--enable-avx512 --enable-shani"
+            options: "--enable-avx512 --enable-shani --enable-avx2 --enable-sse41"
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-latest
+
+          - basename: "bs-windows-x64-avx512-avxifma-shani"
+            configuration: StaticRelease
+            toolchain: msbuild
+            options: "--enable-avx512 --enable-avxifma --enable-shani --enable-avx2 --enable-sse41"
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
@@ -478,6 +538,12 @@ jobs:
         uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3
         with:
           msbuild-architecture: x64
+
+      - name: Prepare toolchain - nuget cleanup [windows]
+        if: ${{ startsWith(matrix.image, 'windows') }}
+        shell: cmd
+        run: |
+          nuget locals all -clear
 
       - name: Compute Environmental Variables
         if: ${{ matrix.toolchain == 'cmake' || matrix.toolchain == 'gnu' || matrix.toolchain == 'presets' }}
