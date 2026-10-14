@@ -57,6 +57,9 @@ struct electrum_setup_fixture
     bool post_handshake(electrum::version version,
         const std::string& name="test", network::rpc::code_t id={});
 
+    // As post(), returning only the http status.
+    rpc_client::status post_status(const std::string& request);
+
     // As post(), with basic authorization.
     boost::json::value post_authorized(const std::string& request,
         const std::string& username, const std::string& password);
@@ -198,6 +201,22 @@ struct electrum_legacy_version_setup_fixture
         }, true, [](configuration& config)
         {
             config.server.electrum.protocol_minimum = { 0, 6 };
+        })
+    {
+    }
+};
+
+// Configured with an allowed host that the test client does not send.
+struct electrum_hosted_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_hosted_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, true, [](configuration& config)
+        {
+            config.server.electrum.hosts = { { "example.com" } };
         })
     {
     }
