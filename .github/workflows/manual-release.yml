@@ -479,6 +479,12 @@ jobs:
         with:
           msbuild-architecture: x64
 
+      - name: Prepare toolchain - nuget cleanup [windows]
+        if: ${{ startsWith(matrix.image, 'windows') }}
+        shell: cmd
+        run: |
+          nuget locals all -clear
+
       - name: Compute Environmental Variables
         if: ${{ matrix.toolchain == 'cmake' || matrix.toolchain == 'gnu' || matrix.toolchain == 'presets' }}
         shell: bash
