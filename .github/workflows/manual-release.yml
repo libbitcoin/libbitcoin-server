@@ -501,6 +501,7 @@ jobs:
         shell: bash
         run: >
           ./libbitcoin-server/builds/cmake/install-cmake.sh
+          -DCMAKE_SKIP_INSTALL_RPATH=${{ matrix.link == 'static' && 'ON' || 'OFF' }}
           --noninteractive
           --build-use-local-src
           --build-src-dir="${{ github.workspace }}"
@@ -590,6 +591,28 @@ jobs:
 
           cp -L -n ${CANDIDATE} candidate/${CANONICAL}
           echo "candidate_identifier=${CANONICAL}" >> "$GITHUB_OUTPUT"
+
+      - name: Remove embedded RUNPATH/RPATH
+        if: ${{
+            matrix.link == 'static' &&
+            matrix.toolchain != 'msbuild' &&
+            startsWith(matrix.image, 'ubuntu') &&
+            matrix.container == ''
+          }}
+        shell: bash
+        run: |
+          sudo apt-get install -y patchelf
+          find candidate -type f -executable -print0 | while IFS= read -r -d '' f; do
+            if file "$f" | grep -q ELF; then
+              echo "=== $f ==="
+              echo "Before:"
+              readelf -d "$f" | grep -E 'RPATH|RUNPATH' || echo "(none)"
+              # or: patchelf --print-rpath "$f"
+              patchelf --remove-rpath "$f" || true
+              echo "After:"
+              readelf -d "$f" | grep -E 'RPATH|RUNPATH' || echo "(none)"
+            fi
+          done
 
       - name: Strip symbols from binaries
         if: ${{ matrix.configuration != 'debug' && matrix.toolchain != 'msbuild' }}
