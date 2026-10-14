@@ -2744,7 +2744,7 @@ BC_POP_WARNING()
     {
         auto file = false;
         load_command_variables(argc, argv);
-        load_environment_variables(environment_prefix);
+        ////load_environment_variables(environment_prefix);
 
         // Don't load config file if help is specified.
         if (!get_option(help_variable))
