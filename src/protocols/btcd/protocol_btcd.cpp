@@ -312,10 +312,10 @@ bool protocol_btcd::handle_rescan(const code& ec,
         return true;
     }
 
-    const auto top = query.get_top_confirmed();
-    const auto confirmed = query.to_confirmed(top);
+    size_t top{};
+    const auto confirmed = query.to_top_confirmed();
     const auto header = query.get_header(confirmed);
-    if (!header)
+    if (!header || !query.get_height(top, confirmed))
     {
         send_error(error::btcd::internal_error);
         return true;

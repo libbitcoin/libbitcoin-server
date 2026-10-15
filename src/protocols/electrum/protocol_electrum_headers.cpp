@@ -371,12 +371,10 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         return;
     }
 
+    size_t top{};
     const auto& query = archive();
-    const auto top = query.get_top_confirmed();
-    const auto link = query.to_confirmed(top);
-
-    // This is unlikely but possible due to a race condition during reorg.
-    if (link.is_terminal())
+    const auto link = query.to_top_confirmed();
+    if (!query.get_height(top, link))
     {
         send_code(error::electrum::daemon_error);
         return;

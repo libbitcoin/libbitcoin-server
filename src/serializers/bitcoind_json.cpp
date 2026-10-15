@@ -295,15 +295,15 @@ bool chain_info(network::rpc::object_t& out,
     const node::query& query, const system::settings& settings,
     bool pruned, bool current) NOEXCEPT
 {
-    const auto blocks = query.get_top_confirmed();
+    size_t blocks{};
     const auto headers = query.get_top_candidate();
-    const auto link = query.to_confirmed(blocks);
+    const auto link = query.to_top_confirmed();
     const auto header = query.get_header(link);
 
     uint256_t work{};
     database::context context{};
-    if (!header || !query.get_branch_work(work, link) ||
-        !query.get_context(context, link))
+    if (!header || !query.get_height(blocks, link) ||
+        !query.get_branch_work(work, link) || !query.get_context(context, link))
         return false;
 
     const auto bits = header->bits();
