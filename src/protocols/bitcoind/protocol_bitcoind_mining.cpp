@@ -163,11 +163,11 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     if (stopped(ec))
         return false;
 
+    size_t height{};
     const auto& query = archive();
-    const auto height = query.get_top_confirmed();
-    const auto link = query.to_confirmed(height);
+    const auto link = query.to_top_confirmed();
     const auto top = query.get_header(link);
-    if (!top)
+    if (!top || !query.get_height(height, link))
     {
         send_error(error::bitcoind::internal_error);
         return true;

@@ -457,7 +457,7 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
         return false;
 
     const auto& query = archive();
-    auto link = query.to_confirmed(query.get_top_confirmed());
+    auto link = query.to_top_confirmed();
 
     // The block defaults to the confirmed top, and must be on the chain.
     if (!blockhash.empty())
@@ -575,11 +575,11 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
         return true;
     }
 
-    const auto top = query.get_top_confirmed();
-    const auto header_link = query.to_confirmed(top);
+    size_t top{};
+    const auto header_link = query.to_top_confirmed();
     const auto output = query.get_output(output_link);
     const auto tx_link = query.to_output_tx(output_link);
-    if (!output || tx_link.is_terminal() || header_link.is_terminal())
+    if (!output || tx_link.is_terminal() || !query.get_height(top, header_link))
     {
         send_error(error::bitcoind::internal_error);
         return true;
@@ -844,10 +844,16 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
     code ec{};
     size_t txouts{};
     database::unspent_coins coins{};
+    size_t top{};
     const auto& query = archive();
-    const auto top = query.get_top_confirmed();
-    const auto link = query.to_confirmed(top);
+    const auto link = query.to_top_confirmed();
     const auto bip30 = query.envelope().forks.bip30;
+
+    if (!query.get_height(top, link))
+    {
+        POST(fail, error::bitcoind::internal_error, gate);
+        return;
+    }
 
     if (query.address_enabled())
     {
@@ -1103,11 +1109,16 @@ bool protocol_bitcoind_blockchain::handle_get_chain_states(const code& ec,
     if (stopped(ec))
         return false;
 
+    size_t candidate{};
     const auto& query = archive();
-    const auto candidate = query.get_top_candidate();
+    const auto candidate_link = query.to_top_candidate();
+    if (!query.get_height(candidate, candidate_link))
+    {
+        send_error(error::bitcoind::internal_error);
+        return true;
+    }
 
-    auto link = query.to_confirmed(query.get_top_confirmed());
-    auto entry = chain_states_entry(query, link, 1.0, true);
+    auto entry = chain_states_entry(query, query.to_top_confirmed(), 1.0, true);
     if (entry.empty())
     {
         send_error(error::bitcoind::internal_error);
@@ -1122,9 +1133,7 @@ bool protocol_bitcoind_blockchain::handle_get_chain_states(const code& ec,
         size_t fork{};
         const auto span = query.get_validated_fork(fork);
         const auto validated = progress(fork + span.size(), candidate);
-
-        link = query.to_candidate(candidate);
-        entry = chain_states_entry(query, link, validated, false);
+        entry = chain_states_entry(query, candidate_link, validated, false);
         if (entry.empty())
         {
             send_error(error::bitcoind::internal_error);
@@ -1151,9 +1160,14 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tips(const code& ec,
 
     // Two indexes only: confirmed (active) and candidate (strongest headers);
     // weak/reorged branches live in the organizer tree and are not exposed.
+    size_t confirmed{};
     const auto& query = archive();
-    const auto confirmed = query.get_top_confirmed();
-    const auto confirmed_link = query.to_confirmed(confirmed);
+    const auto confirmed_link = query.to_top_confirmed();
+    if (!query.get_height(confirmed, confirmed_link))
+    {
+        send_error(error::bitcoind::internal_error);
+        return true;
+    }
 
     array_t tips
     {
@@ -1167,7 +1181,14 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tips(const code& ec,
     };
 
     // The candidate is a distinct top only where it forks above confirmed.
-    const auto candidate = query.get_top_candidate();
+    size_t candidate{};
+    const auto candidate_link = query.to_top_candidate();
+    if (!query.get_height(candidate, candidate_link))
+    {
+        send_error(error::bitcoind::internal_error);
+        return true;
+    }
+
     const auto branchlen = floored_subtract(candidate, query.get_fork());
     if (!is_zero(branchlen))
     {
@@ -1175,7 +1196,6 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tips(const code& ec,
         // the branch makes it headers-only, otherwise valid-headers; candidate
         // is the strongest valid chain so is never invalid or valid-fork.
         database::header_links branch{};
-        const auto candidate_link = query.to_candidate(candidate);
         if (query.get_ancestry(branch, candidate_link, branchlen))
         {
             const auto present = std::all_of(branch.cbegin(), branch.cend(),
@@ -1206,7 +1226,7 @@ bool protocol_bitcoind_blockchain::handle_get_deployment_info(const code& ec,
         return false;
 
     const auto& query = archive();
-    auto link = query.to_confirmed(query.get_top_confirmed());
+    auto link = query.to_top_confirmed();
 
     // The block defaults to the confirmed top.
     if (!blockhash.empty())
@@ -1364,8 +1384,7 @@ bool protocol_bitcoind_blockchain::handle_get_difficulty(const code& ec,
         return false;
 
     const auto& query = archive();
-    const auto top = query.get_top_confirmed();
-    const auto header = query.get_header(query.to_confirmed(top));
+    const auto header = query.get_header(query.to_top_confirmed());
     if (!header)
     {
         send_error(error::bitcoind::internal_error);
@@ -1959,11 +1978,18 @@ bool protocol_bitcoind_blockchain::wait_done(
 
 void protocol_bitcoind_blockchain::send_top() NOEXCEPT
 {
+    size_t top{};
     const auto& query = archive();
-    const auto top = query.get_top_confirmed();
+    const auto link = query.to_top_confirmed();
+    if (!query.get_height(top, link))
+    {
+        send_error(error::bitcoind::internal_error);
+        return;
+    }
+
     send_result(object_t
     {
-        { "hash", encode_hash(query.get_header_key(query.to_confirmed(top))) },
+        { "hash", encode_hash(query.get_header_key(link)) },
         { "height", top }
     });
 }

@@ -212,8 +212,7 @@ bool protocol_btcd::handle_get_difficulty(const code& ec,
         return false;
 
     const auto& query = archive();
-    const auto top = query.get_top_confirmed();
-    const auto header = query.get_header(query.to_confirmed(top));
+    const auto header = query.get_header(query.to_top_confirmed());
     if (!header)
     {
         send_error(error::btcd::internal_error);
@@ -270,10 +269,11 @@ bool protocol_btcd::handle_get_info(const code& ec,
     if (stopped(ec))
         return false;
 
+    size_t top{};
     const auto& query = archive();
-    const auto top = query.get_top_confirmed();
-    const auto header = query.get_header(query.to_confirmed(top));
-    if (!header)
+    const auto link = query.to_top_confirmed();
+    const auto header = query.get_header(link);
+    if (!header || !query.get_height(top, link))
     {
         send_error(error::btcd::internal_error);
         return true;

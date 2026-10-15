@@ -539,7 +539,7 @@ bool protocol_native::handle_get_block_subscribe(const code& ec,
 
     // Return top block hash upon block subscription.
     const auto& query = archive();
-    const auto link = query.to_confirmed(query.get_top_confirmed());
+    const auto link = query.to_top_confirmed();
     if (const auto hash = query.get_header_key(link); hash != null_hash)
     {
         switch (media)

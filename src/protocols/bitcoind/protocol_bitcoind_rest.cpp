@@ -692,11 +692,11 @@ bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
     if (stopped(ec))
         return false;
 
+    size_t blocks{};
     const auto& query = archive();
-    const auto blocks = query.get_top_confirmed();
-    const auto link = query.to_confirmed(blocks);
+    const auto link = query.to_top_confirmed();
     const auto header = query.get_header(link);
-    if (!header)
+    if (!header || !query.get_height(blocks, link))
     {
         send_not_found();
         return true;
@@ -764,8 +764,15 @@ bool protocol_bitcoind_rest::handle_get_utxos(const code& ec,
         utxos.push_back({ possible_narrow_cast<uint32_t>(height), output });
     }
 
-    const auto top = query.get_top_confirmed();
-    const auto top_hash = query.get_header_key(query.to_confirmed(top));
+    size_t top{};
+    const auto top_link = query.to_top_confirmed();
+    if (!query.get_height(top, top_link))
+    {
+        send_internal_server_error(database::error::integrity);
+        return true;
+    }
+
+    const auto top_hash = query.get_header_key(top_link);
 
     // The bip64 bitmap flags each outpoint hit, lsb first within each byte.
     data_chunk bitmap(ceilinged_divide(hits.size(), 8u), 0x00);
@@ -846,7 +853,7 @@ bool protocol_bitcoind_rest::handle_get_deployment_info(const code& ec,
         return false;
 
     const auto& query = archive();
-    auto link = query.to_confirmed(query.get_top_confirmed());
+    auto link = query.to_top_confirmed();
 
     // bitcoind reports an unknown block as a bad request here.
     if (hash.has_value())
