@@ -166,16 +166,31 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
     constexpr auto witness = true;
     const auto& query = archive();
     const auto link = query.to_header(hash);
+    if (level == block_verbosity::hex)
+    {
+        size_t size{};
+        if (!query.get_block_size(size, link, witness))
+        {
+            send_error(error::bitcoind::invalid_address_or_key, blockhash);
+            return true;
+        }
+
+        std::string out(two * size, '\0');
+        if (!query.get_wire_block<write::base16::fast>(out, link, witness,
+            database_settings().turbo))
+        {
+            send_error(error::bitcoind::misc_error);
+            return true;
+        }
+
+        send_text(std::move(out));
+        return true;
+    }
+
     const auto block = query.get_block(link, witness);
     if (!block)
     {
         send_error(error::bitcoind::invalid_address_or_key, blockhash);
-        return true;
-    }
-
-    if (level == block_verbosity::hex)
-    {
-        send_text(to_text(*block, block->serialized_size(witness), witness));
         return true;
     }
 

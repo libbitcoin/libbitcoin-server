@@ -103,9 +103,7 @@ bool protocol_esplora::handle_get_block(const code& ec, interface::block,
         }
 
         data_chunk out(size);
-        stream::out::fast sink{ out };
-        write::bytes::fast writer{ sink };
-        if (!query.get_wire_block(writer, link, true))
+        if (!query.get_wire_block(out, link, true, database_settings().turbo))
         {
             send_internal_server_error(database::error::integrity);
             return true;

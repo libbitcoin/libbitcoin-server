@@ -166,25 +166,54 @@ bool protocol_bitcoind_rest::handle_get_block(const code& ec,
 
     constexpr auto witness = true;
     const auto& query = archive();
-    const auto block = query.get_block(query.to_header(*hash), witness);
-    if (!block)
+    const auto link = query.to_header(*hash);
+    const auto turbo = database_settings().turbo;
+    size_t size{};
+    if (!query.get_block_size(size, link, witness))
     {
         send_not_found();
         return true;
     }
 
-    const auto size = block->serialized_size(witness);
     switch (media)
     {
         case data:
-            send_data(to_data(*block, size, witness));
+        {
+            data_chunk out(size);
+            if (!query.get_wire_block(out, link, witness, turbo))
+            {
+                send_internal_server_error(database::error::integrity);
+                return true;
+            }
+
+            send_data(std::move(out));
             return true;
+        }
         case text:
-            send_text(to_text(*block, size, witness));
+        {
+            std::string out(two * size, '\0');
+            if (!query.get_wire_block<write::base16::fast>(out, link,
+                witness, turbo))
+            {
+                send_internal_server_error(database::error::integrity);
+                return true;
+            }
+
+            send_text(std::move(out));
             return true;
+        }
         case json:
+        {
+            const auto block = query.get_block(link, witness);
+            if (!block)
+            {
+                send_not_found();
+                return true;
+            }
+
             send_json(value_from(bitcoind_verbose(*block)), two * size);
             return true;
+        }
     }
 
     send_not_found();
