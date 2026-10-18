@@ -149,8 +149,8 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     constexpr auto witness = true;
     auto& query = archive();
     const auto link = query.to_tx(hash);
-    const auto tx = query.get_transaction(link, witness);
-    if (!tx)
+    size_t size{};
+    if (!query.get_tx_size(size, link, witness))
     {
         send_error(error::bitcoind::invalid_address_or_key, txid);
         return true;
@@ -175,7 +175,21 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
 
     if (level == verbosity::hexadecimal)
     {
-        send_text(to_text(*tx, tx->serialized_size(witness), witness));
+        if (!send_hex(two * size, [&](const data_slab& out) NOEXCEPT
+        {
+            stream::out::fast sink{ out };
+            write::base16::fast writer{ sink };
+            return query.get_wire_tx(writer, link, witness) && writer;
+        }))
+            send_error(error::bitcoind::internal_error);
+
+        return true;
+    }
+
+    const auto tx = query.get_transaction(link, witness);
+    if (!tx)
+    {
+        send_error(error::bitcoind::invalid_address_or_key, txid);
         return true;
     }
 

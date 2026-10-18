@@ -79,6 +79,12 @@ request_cptr protocol_http::reset_request() NOEXCEPT
     return system::to_shared<request>();
 }
 
+const request_cptr& protocol_http::get_request() const NOEXCEPT
+{
+    ////BC_ASSERT(stranded());
+    return request_;
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 

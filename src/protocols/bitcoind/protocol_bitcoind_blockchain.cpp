@@ -175,15 +175,14 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
             return true;
         }
 
-        std::string out(two * size, '\0');
-        if (!query.get_wire_block<write::base16::fast>(out, link, witness,
-            database_settings().turbo))
+        const auto turbo = database_settings().turbo;
+        if (!send_hex(two * size, [&](const data_slab& out) NOEXCEPT
         {
+            return query.get_wire_block<write::base16::fast>(out, link,
+                witness, turbo);
+        }))
             send_error(error::bitcoind::misc_error);
-            return true;
-        }
 
-        send_text(std::move(out));
         return true;
     }
 
@@ -344,16 +343,24 @@ bool protocol_bitcoind_blockchain::handle_get_block_header(const code& ec,
 
     const auto& query = archive();
     const auto link = query.to_header(hash);
+    if (!verbose)
+    {
+        constexpr auto size = two * chain::header::serialized_size();
+        if (!send_hex(size, [&](const data_slab& out) NOEXCEPT
+        {
+            stream::out::fast sink{ out };
+            write::base16::fast writer{ sink };
+            return query.get_wire_header(writer, link) && writer;
+        }))
+            send_error(error::bitcoind::invalid_address_or_key, blockhash);
+
+        return true;
+    }
+
     const auto header = query.get_header(link);
     if (!header)
     {
         send_error(error::bitcoind::invalid_address_or_key, blockhash);
-        return true;
-    }
-
-    if (!verbose)
-    {
-        send_text(to_text(*header, chain::header::serialized_size()));
         return true;
     }
 
@@ -1047,9 +1054,19 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_proof(const code& ec,
     build_partial_merkle(merkle.flags, merkle.hashes, keys, match);
 
     const auto version = merkle_block::version_maximum;
-    data_chunk out(merkle.size(version));
-    merkle.serialize(version, out);
-    send_text(encode_base16(out));
+    if (!send_hex(two * merkle.size(version), [&](const data_slab& out) NOEXCEPT
+    {
+        data_chunk data(merkle.size(version));
+        if (!merkle.serialize(version, data))
+            return false;
+
+        stream::out::fast sink{ out };
+        write::base16::fast writer{ sink };
+        writer.write_bytes(data);
+        return !!writer;
+    }))
+        send_error(error::bitcoind::internal_error);
+
     return true;
 }
 

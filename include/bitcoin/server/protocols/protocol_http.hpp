@@ -56,6 +56,9 @@ protected:
     /// Obtain cached request and clear cache (requires strand).
     network::http::request_cptr reset_request() NOEXCEPT;
 
+    /// Obtain cached request without clearing cache (requires strand).
+    const network::http::request_cptr& get_request() const NOEXCEPT;
+
 private:
     // This is protected by strand.
     network::http::request_cptr request_{};
