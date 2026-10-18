@@ -113,8 +113,11 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__unknown_target__not_found)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__block_hex__hashes_to_block9)
 {
-    const auto hex = rest_text("/rest/block/" + block9 + ".hex");
+    const auto text = rest_text("/rest/block/" + block9 + ".hex");
+    const auto hex = text.substr(zero, sub1(text.size()));
     data_chunk wire{};
+
+    BOOST_REQUIRE(text.ends_with('\n'));
     BOOST_REQUIRE(decode_base16(wire, hex));
     BOOST_REQUIRE_EQUAL(block_hash_hex(wire), block9);
 }
@@ -213,8 +216,11 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__headers_json__no_query__default_count_five)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__headers_hex__one_header__eighty_bytes)
 {
-    const auto hex = rest_text("/rest/headers/1/" + block9 + ".hex");
+    const auto text = rest_text("/rest/headers/1/" + block9 + ".hex");
+    const auto hex = text.substr(zero, sub1(text.size()));
     data_chunk wire{};
+
+    BOOST_REQUIRE(text.ends_with('\n'));
     BOOST_REQUIRE(decode_base16(wire, hex));
     BOOST_REQUIRE_EQUAL(wire.size(), 80u);
     BOOST_REQUIRE_EQUAL(encode_base16(wire), header9);
@@ -257,7 +263,7 @@ static const auto unknown_hash = encode_hash(null_hash);
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__tx_hex__coinbase__expected)
 {
-    BOOST_REQUIRE_EQUAL(rest_text("/rest/tx/" + txid1 + ".hex"), encode_base16(coinbase1.to_data(true)));
+    BOOST_REQUIRE_EQUAL(rest_text("/rest/tx/" + txid1 + ".hex"), encode_base16(coinbase1.to_data(true)) + "\n");
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__tx_bin__coinbase__expected)
@@ -280,7 +286,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__block_notxdetails_bin__block9__expected)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__block_notxdetails_hex__block9__expected)
 {
-    BOOST_REQUIRE_EQUAL(rest_text("/rest/block/notxdetails/" + block9 + ".hex"), encode_base16(test::block9_data));
+    BOOST_REQUIRE_EQUAL(rest_text("/rest/block/notxdetails/" + block9 + ".hex"), encode_base16(test::block9_data) + "\n");
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__block_notxdetails_unknown__not_found)
@@ -298,7 +304,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__blockhashbyheight_bin__height_five__block5)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockhashbyheight_hex__height_five__block5)
 {
-    BOOST_REQUIRE_EQUAL(rest_text("/rest/blockhashbyheight/5.hex"), encode_base16(test::block5_hash));
+    BOOST_REQUIRE_EQUAL(rest_text("/rest/blockhashbyheight/5.hex"), encode_base16(test::block5_hash) + "\n");
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockhashbyheight_above_top__not_found)
@@ -335,7 +341,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__headers_invalid_query_count__bad_request)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockpart_hex__block9_header)
 {
-    BOOST_REQUIRE_EQUAL(rest_text("/rest/blockpart/" + block9 + ".hex?offset=0&size=80"), header9);
+    BOOST_REQUIRE_EQUAL(rest_text("/rest/blockpart/" + block9 + ".hex?offset=0&size=80"), header9 + "\n");
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockpart_json__bad_request)
@@ -353,7 +359,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__blockpart_unknown__not_found)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts_hex__block9__undo_framing)
 {
-    BOOST_REQUIRE_EQUAL(rest_text("/rest/spenttxouts/" + block9 + ".hex"), "0100");
+    BOOST_REQUIRE_EQUAL(rest_text("/rest/spenttxouts/" + block9 + ".hex"), "0100\n");
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts_unknown__not_found)
@@ -368,14 +374,17 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__blockfilter_hex__genesis__expected)
 {
     const auto filter = rest_data("/rest/blockfilter/basic/" + block0 + ".bin");
     BOOST_REQUIRE(!filter.empty());
-    BOOST_REQUIRE_EQUAL(rest_text("/rest/blockfilter/basic/" + block0 + ".hex"), encode_base16(filter));
+    BOOST_REQUIRE_EQUAL(rest_text("/rest/blockfilter/basic/" + block0 + ".hex"), encode_base16(filter) + "\n");
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_rest__blockfilter_json__genesis__expected)
+BOOST_AUTO_TEST_CASE(bitcoind_rest__blockfilter_bin__genesis__type_hash_filter)
 {
-    const auto filter = rest_data("/rest/blockfilter/basic/" + block0 + ".bin");
+    const auto framed = rest_data("/rest/blockfilter/basic/" + block0 + ".bin");
     const auto result = rest_json("/rest/blockfilter/basic/" + block0 + ".json");
-    BOOST_REQUIRE_EQUAL(as_text(result.at("filter")), encode_base16(filter));
+    data_chunk filter{};
+
+    BOOST_REQUIRE(decode_base16(filter, as_text(result.at("filter"))));
+    BOOST_REQUIRE_EQUAL(framed, build_chunk({ data_chunk{ 0x00 }, test::block0_hash, data_chunk{ possible_narrow_cast<uint8_t>(filter.size()) }, filter }));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockfilter_unknown__not_found)
@@ -388,20 +397,26 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__blockfilter_unknown__not_found)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockfilterheaders_bin__genesis__chains_from_filter)
 {
-    const auto filter = rest_data("/rest/blockfilter/basic/" + block0 + ".bin");
-    const auto expected = bitcoin_hash(splice(bitcoin_hash(filter), null_hash));
-    BOOST_REQUIRE_EQUAL(rest_data("/rest/blockfilterheaders/basic/1/" + block0 + ".bin"), to_chunk(expected));
+    const auto result = rest_json("/rest/blockfilter/basic/" + block0 + ".json");
+    data_chunk filter{};
+
+    BOOST_REQUIRE(decode_base16(filter, as_text(result.at("filter"))));
+    BOOST_REQUIRE_EQUAL(rest_data("/rest/blockfilterheaders/basic/1/" + block0 + ".bin"), to_chunk(bitcoin_hash(splice(bitcoin_hash(filter), null_hash))));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockfilterheaders_hex__genesis__expected)
 {
     const auto head = rest_data("/rest/blockfilterheaders/basic/1/" + block0 + ".bin");
-    BOOST_REQUIRE_EQUAL(rest_text("/rest/blockfilterheaders/basic/1/" + block0 + ".hex"), encode_base16(head));
+    BOOST_REQUIRE_EQUAL(rest_text("/rest/blockfilterheaders/basic/1/" + block0 + ".hex"), encode_base16(head) + "\n");
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockfilterheaders_json__genesis__expected)
 {
-    const auto filter = rest_data("/rest/blockfilter/basic/" + block0 + ".bin");
+    const auto filters = rest_json("/rest/blockfilter/basic/" + block0 + ".json");
+    data_chunk filter{};
+
+    BOOST_REQUIRE(decode_base16(filter, as_text(filters.at("filter"))));
+
     const auto expected = bitcoin_hash(splice(bitcoin_hash(filter), null_hash));
     const auto result = rest_json("/rest/blockfilterheaders/basic/1/" + block0 + ".json");
     BOOST_REQUIRE(result.is_array());
@@ -424,7 +439,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__blockfilterheaders_missing_filter_head__inte
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__getutxos_hex__miss__bip64_framing)
 {
-    const auto expected = "09000000" + encode_base16(test::block9_hash) + "01" "00" "00";
+    const auto expected = "09000000" + encode_base16(test::block9_hash) + "01" "00" "00" "\n";
     BOOST_REQUIRE_EQUAL(rest_text("/rest/getutxos/" + unknown_hash + "-0.hex"), expected);
 }
 
@@ -474,7 +489,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts_hex__block13__undo_framing)
     BOOST_REQUIRE(query_.set(test::mock_block13, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block13.hash()), true));
 
-    const auto expected = "030001" + encode_base16(spent3.to_data()) + "01" + encode_base16(spent13.to_data());
+    const auto expected = "030001" + encode_base16(spent3.to_data()) + "01" + encode_base16(spent13.to_data()) + "\n";
     BOOST_REQUIRE_EQUAL(rest_text("/rest/spenttxouts/" + block13 + ".hex"), expected);
 }
 

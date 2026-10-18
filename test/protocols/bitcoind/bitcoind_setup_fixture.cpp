@@ -224,10 +224,7 @@ std::string bitcoind_setup_fixture::rest_text(std::string_view target)
 {
     const auto response = client_.get(target);
     BOOST_CHECK_EQUAL(response.result(), http::status::ok);
-
-    auto body = response.body();
-    system::trim_right(body);
-    return body;
+    return response.body();
 }
 
 // The rest chunk body is not a json-rpc transport, so it reads the stream.
