@@ -156,8 +156,7 @@ parser::parser(system::chain::selection context,
     configured.database.confirmed.buckets = 950'001;
     configured.database.confirmed.rate = 1;
 
-    configured.database.strong.expected = 1'359'871'695;
-    configured.database.strong.size = 149'585'887;
+    configured.database.strong.buckets = 1'359'871'695;
     configured.database.strong.rate = 1;
     configured.database.scan.buckets = 950'001;
     configured.database.scan.size = 0;
@@ -236,10 +235,6 @@ void parser::derive_buckets() NOEXCEPT
     if (!is_configured("table.outs.buckets"))
         database.outs.buckets = table::outs::derive_buckets(
             database.outs.expected, address_contested, address_target);
-
-    if (!is_configured("table.strong.buckets"))
-        database.strong.buckets = table::strong::derive_buckets(
-            database.strong.expected, contested, target);
 
     if (!is_configured("table.pool.buckets"))
         database.pool.buckets = table::pool::derive_buckets(
@@ -2408,22 +2403,12 @@ options_metadata parser::load_settings() THROWS
     (
         "table.strong.buckets",
         setting<uint32_t>(&configured.database.strong.buckets),
-        "The number of buckets in the strong table head, dynamic default."
-    )
-    (
-        "table.strong.expected",
-        setting<uint64_t>(&configured.database.strong.expected),
-        "The expected element count of the strong table, defaults to {}."
-    )
-    (
-        "table.strong.size",
-        setting<uint64_t>(&configured.database.strong.size),
-        "The minimum allocation of the strong table body, defaults to {}."
+        "The number of buckets provisioned in the strong table head, defaults to {}."
     )
     (
         "table.strong.rate",
         setting<uint16_t>(&configured.database.strong.rate),
-        "The percentage expansion of the strong table body, defaults to {}."
+        "The percentage expansion of the strong table head, defaults to {}."
     )
 
     /* table.scan */

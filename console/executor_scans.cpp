@@ -148,7 +148,6 @@ void executor::scan_buckets() const
     scan_buckets("tx", store_.tx, query_.tx_records());
     scan_buckets("ins", store_.ins, query_.ins_records());
     scan_buckets("outs", store_.outs, query_.outs_records());
-    scan_buckets("strong", store_.strong, query_.strong_records());
     scan_buckets("duplicate", store_.duplicate, query_.duplicate_records());
     scan_buckets("pool", store_.pool, query_.pool_records());
     scan_buckets("wtxid", store_.wtxid, query_.wtxid_records());
@@ -375,15 +374,6 @@ void executor::scan_collisions()
         {
             return query_.get_tx_key(possible_narrow_cast<
                 tx_link::integer>(index));
-        });
-
-    scan_collisions<table::strong>("strong",
-        query_.strong_records(), query_.strong_buckets(),
-        store_.strong.filter_k(), distributions, filters,
-        [&](size_t index)
-        {
-            return store_.strong.get_key(possible_narrow_cast<
-                table::strong::link::integer>(index));
         });
 
     scan_collisions<table::ins>("ins", query_.ins_records(),

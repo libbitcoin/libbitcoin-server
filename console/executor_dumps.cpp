@@ -191,7 +191,6 @@ void executor::dump_records() const
         query_.silent0_prefix_records(),
         query_.silent1_prefix_records(),
         query_.duplicate_records(),
-        query_.strong_records(),
         query_.scan_records(),
         query_.scan_prefix_records(),
         query_.pool_records(),
@@ -231,7 +230,6 @@ void executor::dump_load_factors() const
     const auto header = load(query_.header_records(), query_.header_buckets());
     const auto tx     = load(query_.tx_records(), query_.tx_buckets());
     const auto ins    = load(query_.ins_records(), query_.ins_buckets());
-    const auto strong = load(query_.strong_records(), query_.strong_buckets());
     const auto pool   = load(query_.pool_records(), query_.pool_buckets());
     const auto wtxid  = load(query_.wtxid_records(), query_.wtxid_buckets());
 
@@ -239,12 +237,12 @@ void executor::dump_load_factors() const
     {
         const auto outs = load(query_.outs_records(), query_.outs_buckets());
         logger(std::format(BS_INFORMATION_LOAD_FACTORS_OUTS,
-            header, tx, ins, outs, strong, pool, wtxid));
+            header, tx, ins, outs, pool, wtxid));
         return;
     }
 
     logger(std::format(BS_INFORMATION_LOAD_FACTORS,
-        header, tx, ins, strong, pool, wtxid));
+        header, tx, ins, pool, wtxid));
 }
 
 void executor::dump_progress() const
