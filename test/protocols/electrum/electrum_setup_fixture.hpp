@@ -107,6 +107,21 @@ struct electrum_ten_block_setup_fixture
     }
 };
 
+struct electrum_estimate_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_estimate_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, true, [](configuration& config)
+        {
+            config.node.fee_estimate_horizon = 8;
+        })
+    {
+    }
+};
+
 /// The sparrow service, which reuses this harness (same transports, same
 /// handshake, same electrum interface).
 struct sparrow_ten_block_setup_fixture

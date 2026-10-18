@@ -19,7 +19,7 @@
 #include "../../test.hpp"
 #include "electrum_setup_fixture.hpp"
 
-BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
+BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_estimate_setup_fixture)
 
 using namespace system;
 static const code wrong_version{ server::error::electrum::bad_request };
