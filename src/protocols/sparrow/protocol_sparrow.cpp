@@ -433,11 +433,11 @@ void protocol_sparrow::silent_notify(const object_t& subscription,
     if (stopped())
         return;
 
-    send_notification("blockchain.silentpayments.subscribe", object_t
+    send_notification("blockchain.silentpayments.subscribe", array_t
     {
-        { "subscription", subscription },
-        { "progress", progress },
-        { "history", history }
+        subscription,
+        progress,
+        history
     });
 }
 

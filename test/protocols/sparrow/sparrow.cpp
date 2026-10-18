@@ -206,11 +206,12 @@ BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__indexed__resu
     REQUIRE_NO_THROW_TRUE(notification.at("method").is_string());
     BOOST_REQUIRE_EQUAL(notification.at("method").as_string(), "blockchain.silentpayments.subscribe");
 
-    const auto& params = notification.at("params").as_object();
-    BOOST_REQUIRE_EQUAL(params.at("progress").to_number<double>(), 1.0);
-    BOOST_REQUIRE_EQUAL(params.at("subscription").as_object().at("address").as_string(), result.at("address").as_string());
+    const auto& params = notification.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params.size(), 3u);
+    BOOST_REQUIRE_EQUAL(params.at(0).as_object().at("address").as_string(), result.at("address").as_string());
+    BOOST_REQUIRE_EQUAL(params.at(1).to_number<double>(), 1.0);
 
-    const auto& history = params.at("history").as_array();
+    const auto& history = params.at(2).as_array();
     BOOST_REQUIRE_EQUAL(history.size(), 1u);
 
     const auto& entry = history.at(0).as_object();
@@ -262,9 +263,9 @@ BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__mapped_height
     BOOST_REQUIRE_EQUAL(response.at("result").as_object().at("start_height").to_number<uint64_t>(), 9u);
 
     const auto notification = receive();
-    const auto& params = notification.at("params").as_object();
-    BOOST_REQUIRE_EQUAL(params.at("progress").to_number<double>(), 1.0);
-    BOOST_REQUIRE_EQUAL(params.at("history").as_array().size(), 0u);
+    const auto& params = notification.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params.at(1).to_number<double>(), 1.0);
+    BOOST_REQUIRE_EQUAL(params.at(2).as_array().size(), 0u);
 }
 
 BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__height_start_below_row__scans_row)
@@ -275,8 +276,8 @@ BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__height_start_
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
 
     const auto notification = receive();
-    const auto& params = notification.at("params").as_object();
-    BOOST_REQUIRE_EQUAL(params.at("history").as_array().size(), 1u);
+    const auto& params = notification.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params.at(2).as_array().size(), 1u);
 }
 
 BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__time_start__scans_from_mtp_floor)
@@ -287,8 +288,8 @@ BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__time_start__s
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
 
     const auto notification = receive();
-    const auto& params = notification.at("params").as_object();
-    BOOST_REQUIRE_EQUAL(params.at("history").as_array().size(), 0u);
+    const auto& params = notification.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params.at(2).as_array().size(), 0u);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
