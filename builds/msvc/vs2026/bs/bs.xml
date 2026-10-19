@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProjectSchemaDefinitions xmlns="clr-namespace:Microsoft.Build.Framework.XamlTypes;assembly=Microsoft.Build.Framework">
+  <Rule Name="bs-uiextension" PageTemplate="tool" DisplayName="Bitcoin Server Options" SwitchPrefix="/" Order="1">
+    <Rule.Categories>
+      <Category Name="embedded" DisplayName="embedded" />
+    </Rule.Categories>
+    <Rule.DataSource>
+      <DataSource Persistence="ProjectFile" ItemType="" />
+    </Rule.DataSource>
+    <EnumProperty Name="Option-embedded" DisplayName="Enable Embedded Pages" Description="Requires a configured path to serve web pages if not enabled." Category="embedded">
+      <EnumValue Name="false" DisplayName="No" />
+      <EnumValue Name="true" DisplayName="Yes" />
+    </EnumProperty>
+  </Rule>
+</ProjectSchemaDefinitions>
