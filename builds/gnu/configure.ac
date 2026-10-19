@@ -164,6 +164,15 @@ AC_ARG_WITH([console],
 AC_MSG_RESULT([$with_console])
 AM_CONDITIONAL([WITH_CONSOLE], [test "x${with_console}" != "xno"])
 
+AC_MSG_CHECKING([--with-embedded option])
+AC_ARG_WITH([embedded],
+    AS_HELP_STRING([--with-embedded],
+        [Compile web pages into the console application. @<:@default=yes@:>@]),
+    [with_embedded=$withval],
+    [with_embedded=yes])
+AC_MSG_RESULT([$with_embedded])
+AM_CONDITIONAL([WITH_EMBEDDED], [test "x${with_embedded}" != "xno"])
+
 # Set flags.
 #==============================================================================
 AX_CHECK_COMPILE_FLAG([-Wall],
@@ -279,6 +288,12 @@ AS_IF([test "x${enable_isystem}" != "xno"],
   [ AC_SUBST([boost_BUILD_CPPFLAGS], [${boost_CPPFLAGS}]) ])
 
 AC_MSG_NOTICE([boost_BUILD_CPPFLAGS : ${boost_BUILD_CPPFLAGS}])
+
+# Set preprocessor defines.
+#==============================================================================
+AS_IF([test "x${with_embedded}" != "xno"], [
+        AC_DEFINE([WITH_EMBEDDED])
+    ])
 
 AC_CONFIG_FILES([
     Makefile
