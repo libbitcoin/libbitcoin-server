@@ -177,9 +177,6 @@ public:
 
         /// Default page for default URL (recommended).
         std::string default_{ "index.html" };
-
-        /// !path.empty() && http_server::enabled() [hidden, not virtual]
-        virtual bool enabled() const NOEXCEPT;
     };
 
     /// Address encoding, implied by coin and network (not by forks).

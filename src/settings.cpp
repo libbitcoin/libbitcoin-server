@@ -183,11 +183,6 @@ settings::html_server::html_server(const std::string_view& logging_name,
 {
 }
 
-bool settings::html_server::enabled() const NOEXCEPT
-{
-    return (!path.empty() || pages.enabled()) && http_server::enabled();
-}
-
 } // namespace server
 
 // ----------------------------------------------------------------------------

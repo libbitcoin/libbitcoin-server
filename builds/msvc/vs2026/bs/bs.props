@@ -7,12 +7,19 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
 
+  <!-- User Interface -->
+
+  <ItemGroup Label="BuildOptionsExtension">
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)$(ProjectName).xml" />
+  </ItemGroup>
+
   <!-- Configuration -->
 
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(RepoRoot)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnablePREfast>false</EnablePREfast>
+      <PreprocessorDefinitions Condition="'$(Option-embedded)' == 'true'">WITH_EMBEDDED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(RepoRoot)build\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -58,7 +65,17 @@
     <Linkage-libbitcoin-server>static</Linkage-libbitcoin-server>
   </PropertyGroup>
 
+  <!-- Options -->
+
+  <PropertyGroup>
+    <Option-embedded Condition="'$(Option-embedded)' == ''">true</Option-embedded>
+  </PropertyGroup>
+
   <!-- Messages -->
+
+  <Target Name="OptionInfo" BeforeTargets="PrepareForBuild">
+    <Message Text="Option-embedded   : $(Option-embedded)" Importance="high"/>
+  </Target>
 
   <Target Name="LinkageInfo" BeforeTargets="PrepareForBuild">
     <Message Text="Linkage-secp256k1 : $(Linkage-secp256k1)" Importance="high"/>

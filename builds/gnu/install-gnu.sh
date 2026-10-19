@@ -40,6 +40,8 @@
 #                                 Default: --enable-cuda
 # --<with/without>-ssl          Use embedded ssl library.
 #                                 Default: --with-ssl
+# --<with/without>-embedded     Compile web pages into the console application.
+#                               --with-embedded
 # --build-boost                 Build Boost libraries
 # --build-secp256k1             Build libsecp256k1 libraries
 # --build-src-dir=<path>        Location for sources.
@@ -1183,6 +1185,8 @@ help()
     msg "                                Default: --enable-cuda"
     msg "--<with/without>-ssl          Use embedded ssl library."
     msg "                                Default: --with-ssl"
+    msg "--<with/without>-embedded     Compile web pages into the console application."
+    msg "                              --with-embedded"
     msg "--build-boost                 Build Boost libraries"
     msg "--build-secp256k1             Build libsecp256k1 libraries"
     msg "--build-src-dir=<path>        Location for sources."

@@ -81,6 +81,7 @@ endif()
 #------------------------------------------------------------------------------
 option( with-tests "Compile with unit tests." ON )
 option( with-console "Compile with console application." ON )
+option( with-embedded "Compile web pages into the console application." ON )
 
 #------------------------------------------------------------------------------
 # Dependencies.
@@ -338,6 +339,11 @@ if ( with-console )
       $<$<COMPILE_LANGUAGE:CXX>:-Wno-long-long>
       $<$<CXX_COMPILER_ID:GNU>:-fno-var-tracking-assignments>
       $<$<COMPILE_LANGUAGE:CXX>:-fstack-protector-all>
+  )
+
+  target_compile_definitions( bitcoin-server
+    PRIVATE
+      $<$<BOOL:${with-embedded}>:WITH_EMBEDDED>
   )
 
   file( GLOB_RECURSE bitcoin_server_HEADERS CONFIGURE_DEPENDS

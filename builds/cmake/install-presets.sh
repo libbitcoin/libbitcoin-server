@@ -40,6 +40,8 @@
 #                                Default: ON
 # -Dwith-ssl=<ON/OFF>          Use embedded ssl library.
 #                                Default: ON
+# -Dwith-embedded=<ON/OFF>     Compile web pages into the console application.
+#                              ON
 # --build-boost                Build Boost libraries
 # --build-secp256k1            Build libsecp256k1 libraries
 # --build-preset=<preset>      Specifies preset configuration to build.
@@ -1200,6 +1202,8 @@ help()
     msg "                               Default: ON"
     msg "-Dwith-ssl=<ON/OFF>          Use embedded ssl library."
     msg "                               Default: ON"
+    msg "-Dwith-embedded=<ON/OFF>     Compile web pages into the console application."
+    msg "                             ON"
     msg "--build-boost                Build Boost libraries"
     msg "--build-secp256k1            Build libsecp256k1 libraries"
     msg "--build-preset=<preset>      Specifies preset configuration to build."
