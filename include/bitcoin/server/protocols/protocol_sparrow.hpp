@@ -53,9 +53,7 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
-    using tx_link_t = system::scan::batch::tx_link_t;
     using silent_payment = system::wallet::silent_payment;
-    using matches = std::map<tx_link_t, system::ec_compressed>;
 
     // Confirmed matches below start (height or time) or above stop are cut.
     struct silent_cut final
@@ -129,10 +127,6 @@ private:
 
     void scan_silent(silent_subscription& subscription, size_t last,
         bool initial) NOEXCEPT;
-    array_t confirm_silent(const silent_subscription& subscription,
-        const matches& found) const NOEXCEPT;
-    bool is_cut(const silent_cut& cut, const tx_link_t& link,
-        size_t height) const NOEXCEPT;
 
     /// Utility.
     /// -----------------------------------------------------------------------

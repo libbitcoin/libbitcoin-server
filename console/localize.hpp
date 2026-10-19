@@ -180,7 +180,6 @@
     "   silent0_prefix:{}\n" \
     "   silent1_prefix:{}\n" \
     "   duplicate     :{}\n" \
-    "   strong        :{}\n" \
     "   scan          :{}\n" \
     "   scan_prefix   :{}\n" \
     "   pool          :{}\n" \
@@ -210,7 +209,6 @@
     "   header        :{}\n" \
     "   tx            :{}\n" \
     "   ins           :{}\n" \
-    "   strong        :{}\n" \
     "   pool          :{}\n" \
     "   wtxid         :{}"
 #define BS_INFORMATION_LOAD_FACTORS_OUTS \
@@ -219,7 +217,6 @@
     "   tx            :{}\n" \
     "   ins           :{}\n" \
     "   outs          :{}\n" \
-    "   strong        :{}\n" \
     "   pool          :{}\n" \
     "   wtxid         :{}"
 #define BS_INFORMATION_PROGRESS_START \

@@ -121,9 +121,7 @@ bool protocol_native::handle_get_block(const code& ec, interface::block,
         case data:
         {
             data_chunk out(size);
-            stream::out::fast sink{ out };
-            write::bytes::fast writer{ sink };
-            if (!query.get_wire_block(writer, link, witness))
+            if (!query.get_wire_block(out, link, witness, turbo_))
             {
                 send_internal_server_error(database::error::integrity);
                 return true;
@@ -135,9 +133,8 @@ bool protocol_native::handle_get_block(const code& ec, interface::block,
         case text:
         {
             std::string out(two * size, '\0');
-            stream::out::fast sink{ out };
-            write::base16::fast writer{ sink };
-            if (!query.get_wire_block(writer, link, witness))
+            if (!query.get_wire_block<write::base16::fast>(out, link,
+                witness, turbo_))
             {
                 send_internal_server_error(database::error::integrity);
                 return true;

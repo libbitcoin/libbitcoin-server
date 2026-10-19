@@ -235,7 +235,84 @@ void protocol_bitcoind::send_error(const code& ec,
 void protocol_bitcoind::send_text(std::string&& hexidecimal) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    send_result(hexidecimal);
+    send_result(std::move(hexidecimal));
+}
+
+// The hex is written into its place in the response text, which is sent as
+// is. Responses framed by the model receive the hex as a string result.
+bool protocol_bitcoind::send_hex(size_t size,
+    const hex_writer& writer) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    size_t offset{};
+    auto text = text_response(size, offset);
+    if (text.empty())
+    {
+        std::string out(size, '\0');
+        if (!writer(out))
+            return false;
+
+        send_text(std::move(out));
+        return true;
+    }
+
+    const auto begin = pointer_cast<uint8_t>(std::next(text.data(), offset));
+    if (!writer({ begin, std::next(begin, size) }))
+        return false;
+
+    send_text_response(std::move(text));
+    return true;
+}
+
+// private
+// Batch parts, notifications, ws frames and tcp messages are framed by model.
+std::string protocol_bitcoind::text_response(size_t size,
+    size_t& offset) const NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    const auto& request = get_request();
+    if (websocket() || downgraded() || !request ||
+        ((version_ == version::v2) && !id_.has_value()) ||
+        !request->body().contains<rpc::request>())
+        return {};
+
+    const auto& body = request->body().get<rpc::request>();
+    if (body.batch || body.changed)
+        return {};
+
+    // The result is the final member, serialized here as an empty string.
+    static const std::string tail{ "\"}" };
+    const auto envelope = serialize(value_from(response_t
+    {
+        .jsonrpc = version_,
+        .id = id_,
+        .result = std::string{}
+    }));
+
+    if (!envelope.ends_with("\"\"}"))
+        return {};
+
+    offset = envelope.size() - tail.size();
+    std::string text(offset + size + tail.size(), '\0');
+    std::copy_n(envelope.begin(), offset, text.begin());
+    std::copy(tail.begin(), tail.end(), std::next(text.begin(), offset + size));
+    return text;
+}
+
+void protocol_bitcoind::send_text_response(std::string&& text) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    using namespace http;
+    static const auto json = from_media_type(media_type::application_json);
+
+    const auto request = reset_rpc_request();
+    http::response message{ status::ok, request->version() };
+    add_common_headers(message, *request);
+    add_access_control_headers(message, *request);
+    message.set(field::content_type, json);
+    message.body() = std::move(text);
+    message.prepare_payload();
+    SEND(std::move(message), handle_complete, _1, error::success);
 }
 
 void protocol_bitcoind::send_result(value_option&& result) NOEXCEPT

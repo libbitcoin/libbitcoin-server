@@ -230,14 +230,9 @@ void protocol_sparrow::do_silent_subscribe(const std::string& address,
         }
     }
 
-    // The scan starts at the floor of the cut, a time cut resolved by mtp.
     auto& sub = it->second;
     const auto& query = archive();
-    auto height = sub.cut.start;
-    if (sub.cut.time && !query.get_mtp_height(height, sub.cut.start))
-        height = max_size_t;
-
-    sub.cursor = query.get_scan_floor(height).value;
+    sub.cursor = query.get_silent_floor(sub.cut.start, sub.cut.time);
     subscribed_silent_.store(true, relaxed);
     POST(complete_silent_subscribe, error::success, sub.subscription, gate);
 
@@ -336,24 +331,18 @@ void protocol_sparrow::scan_silent(silent_subscription& subscription,
 {
     BC_ASSERT(notifying());
 
-    std::mutex mutex{};
-    matches found{};
-    auto& query = archive();
-    const auto& keys = subscription.scanner.keys();
-    if (!query.scan_silent(stopping_, keys, subscription.cursor, last,
-        [&](const code&, tx_link_t link, const ec_compressed& tweak) NOEXCEPT
-        {
-            std::unique_lock lock{ mutex };
-            found.emplace(link, tweak);
-        }))
+    database::silent_matches matches{};
+    const auto& cut = subscription.cut;
+    if (!archive().get_silent_matches(matches, stopping_,
+        subscription.scanner.keys(), subscription.cursor, last, cut.start,
+        cut.stop, cut.time))
         return;
 
     subscription.cursor = last;
-    auto history = confirm_silent(subscription, found);
-    if (!initial && history.empty())
+    if (!initial && matches.empty())
         return;
 
-    const auto count = history.size();
+    const auto count = matches.size();
     const auto pages = std::max(one, ceilinged_divide(count, page_size));
     for (size_t page{}; page < pages; ++page)
     {
@@ -364,66 +353,20 @@ void protocol_sparrow::scan_silent(silent_subscription& subscription,
 
         array_t part{};
         part.reserve(end - first);
-        std::move(std::next(history.begin(), first),
-            std::next(history.begin(), end), std::back_inserter(part));
+        for (auto match = first; match < end; ++match)
+        {
+            const auto& [height, hash, tweak] = matches.at(match);
+            part.emplace_back(object_t
+            {
+                { "height", height },
+                { "tx_hash", encode_hash(hash) },
+                { "tweak_key", encode_base16(tweak) }
+            });
+        }
 
         POST(silent_notify, subscription.subscription, progress,
             std::move(part));
     }
-}
-
-// Confirmation is strong association, otherwise height is zero (unconfirmed).
-// A tx archived only on a stale branch reports as unconfirmed, and one also
-// archived there before the store began pooling may report twice (benign).
-array_t protocol_sparrow::confirm_silent(
-    const silent_subscription& subscription,
-    const matches& found) const NOEXCEPT
-{
-    BC_ASSERT(notifying());
-
-    const auto& query = archive();
-    std::vector<std::tuple<size_t, hash_digest, ec_compressed>> rows{};
-    for (const auto& [link, tweak]: found)
-    {
-        size_t height{};
-        if (!query.get_tx_height(height, link))
-            rows.emplace_back(zero, query.get_tx_key(link), tweak);
-        else if (!is_cut(subscription.cut, link, height))
-            rows.emplace_back(height, query.get_tx_key(link), tweak);
-    }
-
-    // Confirmed by height, then unconfirmed (zero) last.
-    std::sort(rows.begin(), rows.end(),
-        [](const auto& left, const auto& right) NOEXCEPT
-        {
-            return sub1(std::get<0>(left)) < sub1(std::get<0>(right));
-        });
-
-    array_t history{};
-    history.reserve(rows.size());
-    for (const auto& [height, hash, tweak]: rows)
-    {
-        history.emplace_back(object_t
-        {
-            { "height", height },
-            { "tx_hash", encode_hash(hash) },
-            { "tweak_key", encode_base16(tweak) }
-        });
-    }
-
-    return history;
-}
-
-bool protocol_sparrow::is_cut(const silent_cut& cut, const tx_link_t& link,
-    size_t height) const NOEXCEPT
-{
-    if (!cut.time)
-        return height < cut.start || height > cut.stop;
-
-    database::context ctx{};
-    const auto& query = archive();
-    return !query.get_context(ctx, query.find_strong(link)) ||
-        ctx.mtp < cut.start || ctx.mtp > cut.stop;
 }
 
 void protocol_sparrow::silent_notify(const object_t& subscription,
@@ -433,11 +376,11 @@ void protocol_sparrow::silent_notify(const object_t& subscription,
     if (stopped())
         return;
 
-    send_notification("blockchain.silentpayments.subscribe", object_t
+    send_notification("blockchain.silentpayments.subscribe", array_t
     {
-        { "subscription", subscription },
-        { "progress", progress },
-        { "history", history }
+        subscription,
+        progress,
+        history
     });
 }
 

@@ -41,6 +41,17 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
+// bitcoind serializes a block filter as its type, block hash and filter.
+template <typename Writer>
+static void write_filter(Writer& writer, const hash_digest& hash,
+    const data_chunk& filter) NOEXCEPT
+{
+    writer.write_byte(zero);
+    writer.write_bytes(hash);
+    writer.write_variable(filter.size());
+    writer.write_bytes(filter);
+}
+
 // Start.
 // ----------------------------------------------------------------------------
 
@@ -166,25 +177,56 @@ bool protocol_bitcoind_rest::handle_get_block(const code& ec,
 
     constexpr auto witness = true;
     const auto& query = archive();
-    const auto block = query.get_block(query.to_header(*hash), witness);
-    if (!block)
+    const auto link = query.to_header(*hash);
+    const auto turbo = database_settings().turbo;
+    size_t size{};
+    if (!query.get_block_size(size, link, witness))
     {
         send_not_found();
         return true;
     }
 
-    const auto size = block->serialized_size(witness);
     switch (media)
     {
         case data:
-            send_data(to_data(*block, size, witness));
+        {
+            data_chunk out(size);
+            if (!query.get_wire_block(out, link, witness, turbo))
+            {
+                send_internal_server_error(database::error::integrity);
+                return true;
+            }
+
+            send_data(std::move(out));
             return true;
+        }
         case text:
-            send_text(to_text(*block, size, witness));
+        {
+            std::string out{};
+            out.reserve(add1(two * size));
+            out.resize(two * size);
+            if (!query.get_wire_block<write::base16::fast>(out, link,
+                witness, turbo))
+            {
+                send_internal_server_error(database::error::integrity);
+                return true;
+            }
+
+            send_text(std::move(out));
             return true;
+        }
         case json:
+        {
+            const auto block = query.get_block(link, witness);
+            if (!block)
+            {
+                send_not_found();
+                return true;
+            }
+
             send_json(value_from(bitcoind_verbose(*block)), two * size);
             return true;
+        }
     }
 
     send_not_found();
@@ -366,7 +408,9 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
         }
         case text:
         {
-            std::string out(links.size() * two * header_size, '\0');
+            std::string out{};
+            out.reserve(add1(links.size() * two * header_size));
+            out.resize(links.size() * two * header_size);
             stream::out::fast sink{ out };
             write::base16::fast writer{ sink };
             for (const auto& link: links)
@@ -577,14 +621,31 @@ bool protocol_bitcoind_rest::handle_get_block_filter(const code& ec,
         return true;
     }
 
+    const auto size = add1(hash_size) + variable_size(filter.size()) +
+        filter.size();
+
     switch (media)
     {
         case data:
-            send_data(std::move(filter));
+        {
+            data_chunk out(size);
+            stream::out::fast sink{ out };
+            write::bytes::fast writer{ sink };
+            write_filter(writer, *hash, filter);
+            send_data(std::move(out));
             return true;
+        }
         case text:
-            send_text(encode_base16(filter));
+        {
+            std::string out{};
+            out.reserve(add1(two * size));
+            out.resize(two * size);
+            stream::out::fast sink{ out };
+            write::base16::fast writer{ sink };
+            write_filter(writer, *hash, filter);
+            send_text(std::move(out));
             return true;
+        }
         case json:
             send_json(object
             {
@@ -907,6 +968,7 @@ void protocol_bitcoind_rest::send_text(std::string&& text) NOEXCEPT
     add_common_headers(message, *request);
     add_access_control_headers(message, *request);
     message.set(field::content_type, plain);
+    text.push_back('\n');
     message.body() = std::move(text);
     message.prepare_payload();
     SEND(std::move(message), handle_complete, _1, error::success);
