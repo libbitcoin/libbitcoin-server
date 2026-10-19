@@ -135,11 +135,13 @@ protected:
         rpc_interface::wait_for_new_block, double timeout,
         const std::string& current_tip) NOEXCEPT;
     bool handle_get_mempool_ancestors(const code& ec,
-        rpc_interface::get_mempool_ancestors) NOEXCEPT;
+        rpc_interface::get_mempool_ancestors, const std::string& txid,
+        bool verbose) NOEXCEPT;
     bool handle_get_mempool_cluster(const code& ec,
         rpc_interface::get_mempool_cluster) NOEXCEPT;
     bool handle_get_mempool_descendants(const code& ec,
-        rpc_interface::get_mempool_descendants) NOEXCEPT;
+        rpc_interface::get_mempool_descendants, const std::string& txid,
+        bool verbose) NOEXCEPT;
     bool handle_get_mempool_entry(const code& ec,
         rpc_interface::get_mempool_entry, const std::string& txid) NOEXCEPT;
     bool handle_get_mempool_info(const code& ec,
@@ -148,7 +150,9 @@ protected:
         rpc_interface::get_raw_mempool, bool verbose,
         bool mempool_sequence) NOEXCEPT;
     bool handle_get_tx_spending_prevout(const code& ec,
-        rpc_interface::get_tx_spending_prevout) NOEXCEPT;
+        rpc_interface::get_tx_spending_prevout,
+        const network::rpc::array_t& outputs,
+        const std::optional<network::rpc::object_t>& options) NOEXCEPT;
     bool handle_import_mempool(const code& ec,
         rpc_interface::import_mempool) NOEXCEPT;
 
@@ -190,10 +194,20 @@ private:
         const gate_t::ptr& gate) NOEXCEPT;
     void do_get_mempool_info(double minimum, double relay, double increment,
         const gate_t::ptr& gate) NOEXCEPT;
+    database::tx_link to_mempool_tx(
+        const system::hash_digest& hash) const NOEXCEPT;
     bool mempool_entry(network::rpc::object_t& out,
         const database::tx_link& link) const NOEXCEPT;
+    bool mempool_txs(network::rpc::value_t& out,
+        const database::tx_links& links, bool verbose) const NOEXCEPT;
+    bool get_mempool_relatives(const std::string& txid, bool verbose,
+        bool ancestors) NOEXCEPT;
+    void do_get_mempool_relatives(const system::hash_digest& hash,
+        bool verbose, bool ancestors, const gate_t::ptr& gate) NOEXCEPT;
     void do_get_raw_mempool(bool verbose, bool sequence,
         const gate_t::ptr& gate) NOEXCEPT;
+    void do_get_tx_spending_prevout(const system::chain::points& prevouts,
+        bool mempool_only, bool return_tx, const gate_t::ptr& gate) NOEXCEPT;
 
     // Wait machinery.
     void arm_wait(waiter&& waiting, double timeout) NOEXCEPT;

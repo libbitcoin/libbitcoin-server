@@ -60,13 +60,13 @@ struct bitcoind_blockchain_methods
         method<"waitforblock", string_t, nullopt<0.0>>{ "blockhash", "timeout" },
         method<"waitforblockheight", number_t, nullopt<0.0>>{ "height", "timeout" },
         method<"waitfornewblock", nullopt<0.0>, nullopt<""_t>>{ "timeout", "current_tip" },
-        method<"getmempoolancestors", string_t, nullopt<false>>{ unimplemented, "txid", "verbose" },
+        method<"getmempoolancestors", string_t, nullopt<false>>{ "txid", "verbose" },
         method<"getmempoolcluster", string_t>{ unimplemented, "txid" },
-        method<"getmempooldescendants", string_t, nullopt<false>>{ unimplemented, "txid", "verbose" },
+        method<"getmempooldescendants", string_t, nullopt<false>>{ "txid", "verbose" },
         method<"getmempoolentry", string_t>{ "txid" },
         method<"getmempoolinfo">{},
         method<"getrawmempool", nullopt<false>, nullopt<false>>{ "verbose", "mempool_sequence" },
-        method<"gettxspendingprevout", array_t, nullable<object_t>>{ unimplemented, "outputs", "options" },
+        method<"gettxspendingprevout", array_t, nullable<object_t>>{ "outputs", "options" },
         method<"importmempool", string_t, nullable<object_t>>{ unimplemented, "filepath", "options" }
     };
 

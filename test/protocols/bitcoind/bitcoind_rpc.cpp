@@ -157,10 +157,7 @@ const std::vector<method_params> scope_methods
 
 const std::vector<method_code> pending_methods
 {
-    { "getmempoolancestors", R"([""])", -33 },
     { "getmempoolcluster", R"([""])", -33 },
-    { "getmempooldescendants", R"([""])", -33 },
-    { "gettxspendingprevout", R"([[]])", -33 },
     { "importmempool", R"([""])", -33 },
     { "abortprivatebroadcast", R"([""])", -32601 },
     { "getprivatebroadcastinfo", "[]", -32601 },
@@ -4043,6 +4040,169 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__broadcast_mempool_sequence__tx
     BOOST_REQUIRE_EQUAL(txids.size(), 1u);
     BOOST_REQUIRE_EQUAL(as_text(txids.front()), encode_hash(test::tx1c.hash(false)));
     BOOST_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 1);
+}
+
+// Spends the tx1c output, leaving a fee.
+static const chain::transaction tx1c_child
+{
+    0x01,
+    chain::inputs
+    {
+        chain::input
+        {
+            chain::point{ test::tx1c.hash(false), 0x00 },
+            chain::script{ { { chain::opcode::push_positive_1 } } },
+            chain::witness{},
+            max_uint32
+        }
+    },
+    chain::outputs
+    {
+        chain::output
+        {
+            0x50,
+            chain::script{ { { chain::opcode::push_positive_3 } } }
+        }
+    },
+    0x00
+};
+
+static std::string send_param(const chain::transaction& tx) NOEXCEPT
+{
+    return "[\"" + encode_base16(tx.to_data(true)) + "\"]";
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolancestors__broadcast_child__parent)
+{
+    const auto parent = rpc("sendrawtransaction", send_param(test::tx1c));
+    const auto child = rpc("sendrawtransaction", send_param(tx1c_child));
+    BOOST_REQUIRE_MESSAGE(parent.is_object() && parent.as_object().contains("result"), serialize(parent));
+    BOOST_REQUIRE_MESSAGE(child.is_object() && child.as_object().contains("result"), serialize(child));
+
+    const auto response = rpc("getmempoolancestors", "[\"" + encode_hash(tx1c_child.hash(false)) + "\"]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& txids = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(txids.size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(txids.front()), encode_hash(test::tx1c.hash(false)));
+
+    const auto none = rpc("getmempoolancestors", "[\"" + encode_hash(test::tx1c.hash(false)) + "\"]");
+    BOOST_REQUIRE(none.at("result").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolancestors__broadcast_child_verbose__parent_entry)
+{
+    const auto parent = rpc("sendrawtransaction", send_param(test::tx1c));
+    const auto child = rpc("sendrawtransaction", send_param(tx1c_child));
+    BOOST_REQUIRE_MESSAGE(parent.is_object() && parent.as_object().contains("result"), serialize(parent));
+    BOOST_REQUIRE_MESSAGE(child.is_object() && child.as_object().contains("result"), serialize(child));
+
+    const auto response = rpc("getmempoolancestors", "[\"" + encode_hash(tx1c_child.hash(false)) + "\", true]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& entries = response.at("result").as_object();
+    BOOST_REQUIRE_EQUAL(entries.size(), 1u);
+
+    const auto& entry = entries.at(encode_hash(test::tx1c.hash(false)));
+    BOOST_REQUIRE_EQUAL(entry.at("vsize").as_int64(), to_signed(test::tx1c.virtual_size()));
+    BOOST_REQUIRE_EQUAL(entry.at("descendantcount").as_int64(), 2);
+    BOOST_REQUIRE_EQUAL(entry.at("spentby").as_array().size(), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempooldescendants__broadcast_parent__child)
+{
+    const auto parent = rpc("sendrawtransaction", send_param(test::tx1c));
+    const auto child = rpc("sendrawtransaction", send_param(tx1c_child));
+    BOOST_REQUIRE_MESSAGE(parent.is_object() && parent.as_object().contains("result"), serialize(parent));
+    BOOST_REQUIRE_MESSAGE(child.is_object() && child.as_object().contains("result"), serialize(child));
+
+    const auto response = rpc("getmempooldescendants", "[\"" + encode_hash(test::tx1c.hash(false)) + "\"]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& txids = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(txids.size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(txids.front()), encode_hash(tx1c_child.hash(false)));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempooldescendants__not_pooled__invalid_address_or_key)
+{
+    const auto response = rpc("getmempooldescendants", "[\"" + encode_hash(test::tx1c.hash(false)) + "\"]");
+    BOOST_REQUIRE(has_code(response, -5));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolancestors__invalid_txid__invalid_parameter)
+{
+    const auto response = rpc("getmempoolancestors", "[\"bogus\"]");
+    BOOST_REQUIRE(has_code(response, -8));
+}
+
+static std::string prevout_param(const hash_digest& hash, uint32_t index, const std::string& tail) NOEXCEPT
+{
+    return "[[{\"txid\":\"" + encode_hash(hash) + "\",\"vout\":" + std::to_string(index) + "}]" + tail + "]";
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__unspent__echoed)
+{
+    const auto funder = test::block1c.transactions_ptr()->front()->hash(false);
+    const auto response = rpc("gettxspendingprevout", prevout_param(funder, 0, ""));
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& results = response.at("result").as_array();
+    BOOST_REQUIRE_EQUAL(results.size(), 1u);
+
+    const auto& result = results.front().as_object();
+    BOOST_REQUIRE_EQUAL(result.size(), 2u);
+    BOOST_REQUIRE_EQUAL(as_text(result.at("txid")), encode_hash(funder));
+    BOOST_REQUIRE_EQUAL(result.at("vout").as_int64(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__broadcast_spender__spending_tx)
+{
+    const auto sent = rpc("sendrawtransaction", send_param(test::tx1c));
+    BOOST_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto funder = test::block1c.transactions_ptr()->front()->hash(false);
+    const auto response = rpc("gettxspendingprevout", prevout_param(funder, 0, ", {\"return_spending_tx\":true}"));
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& result = response.at("result").as_array().front().as_object();
+    BOOST_REQUIRE_EQUAL(as_text(result.at("spendingtxid")), encode_hash(test::tx1c.hash(false)));
+    BOOST_REQUIRE_EQUAL(as_text(result.at("spendingtx")), encode_base16(test::tx1c.to_data(true)));
+    BOOST_REQUIRE(!result.contains("blockhash"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__confirmed_spender__blockhash)
+{
+    const auto funder = test::block1c.transactions_ptr()->front()->hash(false);
+    const auto response = rpc("gettxspendingprevout", prevout_param(one_hash, 0x18, ""));
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& result = response.at("result").as_array().front().as_object();
+    BOOST_REQUIRE_EQUAL(as_text(result.at("spendingtxid")), encode_hash(funder));
+    BOOST_REQUIRE_EQUAL(as_text(result.at("blockhash")), encode_hash(test::block1c.hash()));
+    BOOST_REQUIRE(!result.contains("spendingtx"));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__confirmed_spender_mempool_only__echoed)
+{
+    const auto response = rpc("gettxspendingprevout", prevout_param(one_hash, 0x18, ", {\"mempool_only\":true}"));
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BOOST_REQUIRE_EQUAL(response.at("result").as_array().front().as_object().size(), 2u);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__empty__invalid_parameter)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxspendingprevout", "[[]]"), -8));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__unknown_option__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxspendingprevout", prevout_param(one_hash, 0, ", {\"bogus\":true}")), -3));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__missing_vout__type_error)
+{
+    BOOST_REQUIRE(has_code(rpc("gettxspendingprevout", "[[{\"txid\":\"" + encode_hash(one_hash) + "\"}]]"), -3));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -87,9 +87,12 @@ static_assert(bitcoind_served("createmultisig"));
 static_assert(bitcoind_served("getdeploymentinfo"));
 static_assert(bitcoind_served("getchaintips"));
 static_assert(bitcoind_served("getdifficulty"));
+static_assert(bitcoind_served("getmempoolancestors"));
+static_assert(bitcoind_served("getmempooldescendants"));
 static_assert(bitcoind_served("getmempoolentry"));
 static_assert(bitcoind_served("getmempoolinfo"));
 static_assert(bitcoind_served("getrawmempool"));
+static_assert(bitcoind_served("gettxspendingprevout"));
 static_assert(bitcoind_served("verifymessage"));
 static_assert(bitcoind_served("getindexinfo"));
 
@@ -123,7 +126,8 @@ static_assert(bitcoind_blockchain_methods::names ==
     "gettxoutproof verifytxoutproof getchainstates getchaintips "
     "getdeploymentinfo getdescriptoractivity getdifficulty preciousblock "
     "scanblocks waitforblock waitforblockheight waitfornewblock "
-    "getmempoolentry getmempoolinfo getrawmempool");
+    "getmempoolancestors getmempooldescendants getmempoolentry "
+    "getmempoolinfo getrawmempool gettxspendingprevout");
 static_assert(bitcoind_control_methods::names ==
     "help getmemoryinfo getopenrpcinfo getrpcinfo logging uptime "
     "rpc.discover");
