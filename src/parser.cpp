@@ -82,6 +82,10 @@ parser::parser(system::chain::selection context,
     // Raw block publications drop beyond the bound, eight blocks deep.
     configured.server.bitcoind_zmq.maximum_backlog = 32 * network::megabyte;
 
+    // Subscribers send nothing after subscribing, so publishers do not expire.
+    configured.server.bitcoind_zmq.inactivity_minutes = 0;
+    configured.server.bitcoind_zmq.expiration_minutes = 0;
+
     // A submitted block is base16 encoded within a json envelope.
     configured.server.bitcoind.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
     configured.server.btcd.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
@@ -2023,16 +2027,6 @@ options_metadata parser::load_settings() THROWS
         "bitcoind_zmq.connect_timeout_seconds",
         setting<uint32_t>(&configured.server.bitcoind_zmq.connect_timeout_seconds),
         "The time limit for connection establishment, defaults to {} (network controls)."
-    )
-    (
-        "bitcoind_zmq.inactivity_minutes",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.inactivity_minutes),
-        "The idle timeout, defaults to {}."
-    )
-    (
-        "bitcoind_zmq.expiration_minutes",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.expiration_minutes),
-        "The maximum connection duration, defaults to {}."
     )
     (
         "bitcoind_zmq.minimum_buffer",
