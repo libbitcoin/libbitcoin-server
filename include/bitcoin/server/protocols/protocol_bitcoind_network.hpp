@@ -98,9 +98,9 @@ private:
 
     /// Diagnostic capture completion (bounced to the channel strand).
     void handle_captured(const code& ec,
-        const network::diagnostics::sink::ptr& captured) NOEXCEPT;
+        const network::diagnostics::rows_ptr& captured) NOEXCEPT;
     void do_send_peer_info(
-        const network::diagnostics::sink::ptr& captured) NOEXCEPT;
+        const network::diagnostics::rows_ptr& captured) NOEXCEPT;
 
     /// Channel stop completion (bounced to the channel strand).
     void handle_stopped(const code& ec,
@@ -110,9 +110,9 @@ private:
 
     /// Manual capture completion (bounced to the channel strand).
     void handle_captured_manual(const code& ec,
-        const network::diagnostics::sink::ptr& captured) NOEXCEPT;
+        const network::diagnostics::rows_ptr& captured) NOEXCEPT;
     void do_send_added_node_info(
-        const network::diagnostics::sink::ptr& captured) NOEXCEPT;
+        const network::diagnostics::rows_ptr& captured) NOEXCEPT;
 
     /// Peer byte totals completion (invoked on the channel strand).
     void do_send_net_totals(const code& ec, uint64_t sent,
