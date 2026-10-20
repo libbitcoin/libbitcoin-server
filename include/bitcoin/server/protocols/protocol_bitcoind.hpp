@@ -104,6 +104,8 @@ protected:
     void set_rpc_request(const network::rpc::request_t& message) NOEXCEPT;
 
     void capture_totals(totals_handler&& handler) NOEXCEPT;
+    network::diagnostics::collector to_collector(
+        const network::diagnostics::rows_ptr& captured) NOEXCEPT;
     boost::json::value script_public_key(
         const system::chain::script& script) const NOEXCEPT;
 
@@ -111,17 +113,23 @@ protected:
     static network::net::channel_notifier to_once() NOEXCEPT;
 
 private:
+    // Diagnostic row capture.
+    void handle_row(network::diagnostics::row&& value,
+        const network::diagnostics::rows_ptr& captured) NOEXCEPT;
+    void do_add_row(const network::diagnostics::row& value,
+        const network::diagnostics::rows_ptr& captured) NOEXCEPT;
+
     // Totals capture.
     void handle_captured_totals(const code& ec,
-        const network::diagnostics::sink::ptr& captured,
+        const network::diagnostics::rows_ptr& captured,
         const totals_handler& handler) NOEXCEPT;
     void handle_fetch_totals(const code& ec,
         const network::net::totals& totals,
-        const network::diagnostics::sink::ptr& captured,
+        const network::diagnostics::rows_ptr& captured,
         const totals_handler& handler) NOEXCEPT;
     void do_invoke_totals(const code& ec,
         const network::net::totals& totals,
-        const network::diagnostics::sink::ptr& captured,
+        const network::diagnostics::rows_ptr& captured,
         const totals_handler& handler) NOEXCEPT;
 
     // Senders.

@@ -340,18 +340,18 @@ bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
 
     node_address_ = node.value_or(std::string{});
 
-    const auto captured = to_shared<diagnostics::sink>();
+    const auto captured = to_shared<diagnostics::rows>();
     const auto complete = emplace_shared<diagnostics::race>(
         BIND(handle_captured_manual, _1, captured));
 
-    BROADCAST(diagnostics, to_shared<diagnostics>(complete, captured,
-        diagnostics::target::manual));
+    BROADCAST(diagnostics, to_shared<diagnostics>(complete,
+        to_collector(captured), diagnostics::target::manual));
 
     return true;
 }
 
 void protocol_bitcoind_network::handle_captured_manual(const code&,
-    const network::diagnostics::sink::ptr& captured) NOEXCEPT
+    const network::diagnostics::rows_ptr& captured) NOEXCEPT
 {
     if (stopped())
         return;
@@ -360,12 +360,12 @@ void protocol_bitcoind_network::handle_captured_manual(const code&,
 }
 
 void protocol_bitcoind_network::do_send_added_node_info(
-    const network::diagnostics::sink::ptr& captured) NOEXCEPT
+    const network::diagnostics::rows_ptr& captured) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     array_t out{};
-    for (const auto& row: captured->captured())
+    for (const auto& row: *captured)
     {
         const auto node = row.endpoint.to_string();
         if (!node_address_.empty() && node_address_ != node)
@@ -667,18 +667,18 @@ bool protocol_bitcoind_network::handle_get_peer_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    const auto captured = to_shared<diagnostics::sink>();
+    const auto captured = to_shared<diagnostics::rows>();
     const auto complete = emplace_shared<diagnostics::race>(
         BIND(handle_captured, _1, captured));
 
-    BROADCAST(diagnostics, to_shared<diagnostics>(complete, captured,
-        diagnostics::target::all));
+    BROADCAST(diagnostics, to_shared<diagnostics>(complete,
+        to_collector(captured), diagnostics::target::all));
 
     return true;
 }
 
 void protocol_bitcoind_network::handle_captured(const code&,
-    const diagnostics::sink::ptr& captured) NOEXCEPT
+    const diagnostics::rows_ptr& captured) NOEXCEPT
 {
     if (stopped())
         return;
@@ -687,12 +687,12 @@ void protocol_bitcoind_network::handle_captured(const code&,
 }
 
 void protocol_bitcoind_network::do_send_peer_info(
-    const diagnostics::sink::ptr& captured) NOEXCEPT
+    const diagnostics::rows_ptr& captured) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     array_t out{};
-    for (const auto& row: captured->captured())
+    for (const auto& row: *captured)
     {
         // A proxied connection is unresolved, so reports its intended target.
         const auto peer = row.address ? network::config::endpoint{ row.address } :

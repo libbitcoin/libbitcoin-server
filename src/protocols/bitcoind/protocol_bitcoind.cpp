@@ -423,6 +423,31 @@ boost::json::value protocol_bitcoind::script_public_key(
     return to_script_public_key(script, p2kh_, p2sh_, witness_, flags_);
 }
 
+// Diagnostic row capture.
+// ----------------------------------------------------------------------------
+
+diagnostics::collector protocol_bitcoind::to_collector(
+    const diagnostics::rows_ptr& captured) NOEXCEPT
+{
+    return BIND(handle_row, _1, captured);
+}
+
+void protocol_bitcoind::handle_row(diagnostics::row&& value,
+    const diagnostics::rows_ptr& captured) NOEXCEPT
+{
+    POST(do_add_row, std::move(value), captured);
+}
+
+void protocol_bitcoind::do_add_row(const diagnostics::row& value,
+    const diagnostics::rows_ptr& captured) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+    captured->push_back(value);
+    BC_POP_WARNING()
+}
+
 // Totals capture.
 // ----------------------------------------------------------------------------
 
@@ -436,16 +461,16 @@ network::net::channel_notifier protocol_bitcoind::to_once() NOEXCEPT
 
 void protocol_bitcoind::capture_totals(totals_handler&& handler) NOEXCEPT
 {
-    const auto captured = to_shared<diagnostics::sink>();
+    const auto captured = to_shared<diagnostics::rows>();
     const auto complete = emplace_shared<diagnostics::race>(
         BIND(handle_captured_totals, _1, captured, std::move(handler)));
 
-    BROADCAST(diagnostics, to_shared<diagnostics>(complete, captured,
-        diagnostics::target::all));
+    BROADCAST(diagnostics, to_shared<diagnostics>(complete,
+        to_collector(captured), diagnostics::target::all));
 }
 
 void protocol_bitcoind::handle_captured_totals(const code&,
-    const diagnostics::sink::ptr& captured,
+    const diagnostics::rows_ptr& captured,
     const totals_handler& handler) NOEXCEPT
 {
     if (stopped())
@@ -455,7 +480,7 @@ void protocol_bitcoind::handle_captured_totals(const code&,
 }
 
 void protocol_bitcoind::handle_fetch_totals(const code& ec,
-    const net::totals& totals, const diagnostics::sink::ptr& captured,
+    const net::totals& totals, const diagnostics::rows_ptr& captured,
     const totals_handler& handler) NOEXCEPT
 {
     if (stopped())
@@ -467,7 +492,7 @@ void protocol_bitcoind::handle_fetch_totals(const code& ec,
 // An active channel is counted by its captured row, a closed channel by the
 // accumulated totals, which are read with the active identifiers.
 void protocol_bitcoind::do_invoke_totals(const code& ec,
-    const net::totals& totals, const diagnostics::sink::ptr& captured,
+    const net::totals& totals, const diagnostics::rows_ptr& captured,
     const totals_handler& handler) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -481,7 +506,7 @@ void protocol_bitcoind::do_invoke_totals(const code& ec,
     auto sent = totals.sent;
     auto received = totals.received;
 
-    for (const auto& row: captured->captured())
+    for (const auto& row: *captured)
     {
         if (contains(totals.actives, row.identifier))
         {
