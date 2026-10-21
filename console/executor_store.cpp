@@ -131,14 +131,7 @@ code executor::open_store_coded(bool details)
         return ec;
     }
 
-    // TODO: compare configured fork flags to genesis archive.
-    ////if (!query_.consistent_forks())
-    ////{
-    ////    const code ec{ database::error::inconsistent_forks };
-    ////    logger(format(BS_DATABASE_START_FAIL) % ec.message());
-    ////    return ec;
-    ////}
-
+    apply_envelope();
     logger(BS_DATABASE_STARTED);
     return error::success;
 }
@@ -222,6 +215,7 @@ bool executor::restore_store(bool details)
     if (!query_.is_initialized() && !initialize_store(details))
         return false;
 
+    apply_envelope();
     const auto span = duration_cast<seconds>(logger::now() - start);
     logger(std::format(BS_RESTORE_COMPLETE, span.count()));
     return true;
@@ -326,6 +320,19 @@ bool executor::prompt_milestone_store() const
     }
 
     return false;
+}
+
+void executor::apply_envelope()
+{
+    auto& configured = metadata_.configured;
+    const auto applied = store_.get_envelope().apply(
+        configured.bitcoin,
+        configured.database,
+        configured.node.limited_blocks,
+        configured.node.silent_start_height);
+        
+    for (const auto& name: applied)
+        logger(std::format(BS_DATABASE_ENVELOPE_OVERRIDE, name));
 }
 
 } // namespace server
