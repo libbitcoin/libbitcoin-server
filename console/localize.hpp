@@ -366,6 +366,8 @@
     "Database schema failed to read with error '{}'."
 #define BS_DATABASE_SCHEMA_MISMATCH \
     "Database schema {} does not match compiled schema {}."
+#define BS_DATABASE_ENVELOPE_OVERRIDE \
+    "Database envelope [{}] overrides configuration."
 #define BS_DATABASE_STOPPING \
     "Please wait while database is stopping..."
 #define BS_DATABASE_STOP_FAIL \

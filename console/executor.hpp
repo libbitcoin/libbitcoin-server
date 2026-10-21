@@ -94,6 +94,7 @@ private:
     bool hot_backup_store(bool details=false);
     bool cold_backup_store(bool details=false);
     bool prompt_milestone_store() const;
+    void apply_envelope();
 
     // Long-running queries (scans).
     void scan_flags() const;
