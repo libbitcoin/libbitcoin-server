@@ -41,6 +41,11 @@ BCS_API fee_histogram to_fee_histogram(database::fee_rates rates,
 BCS_API fee_histogram to_compact_fee_histogram(
     const database::fee_rates& rates, size_t bin) NOEXCEPT;
 
+/// Existing Esplora pool fields: count, vsize, total_fee (satoshis), and
+/// fee_histogram (sat/vB, vbytes). No transaction history is accumulated.
+BCS_API bool get_pool_snapshot(system::json::value& out,
+    const node::query& query) NOEXCEPT;
+
 /// The confirmable txs as a bitcoind mempool.dat (version 1).
 BCS_API bool serialize_mempool(system::data_chunk& out,
     const node::query& query) NOEXCEPT;

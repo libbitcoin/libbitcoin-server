@@ -63,6 +63,23 @@ BOOST_AUTO_TEST_CASE(parsers__admin_target__invalid_target__invalid_target)
     BOOST_REQUIRE_EQUAL(admin_target(out, "/v3/invalid"), server::error::invalid_target);
 }
 
+// txpool
+
+BOOST_AUTO_TEST_CASE(parsers__admin_target__txpool__expected)
+{
+    request_t request{};
+    BOOST_REQUIRE(!admin_target(request, "/v1/txpool?format=json"));
+    BOOST_REQUIRE_EQUAL(request.method, "txpool");
+    const auto& params = std::get<object_t>(request.params.value());
+    BOOST_REQUIRE_EQUAL(std::get<uint8_t>(params.at("version").value()), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__admin_target__txpool_extra_segment__extra_segment)
+{
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(admin_target(out, "/v1/txpool/extra"), server::error::extra_segment);
+}
+
 // log/subscribe
 
 BOOST_AUTO_TEST_CASE(parsers__admin_target__log_subscribe_valid__expected)

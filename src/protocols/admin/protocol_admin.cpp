@@ -55,6 +55,7 @@ void protocol_admin::start() NOEXCEPT
     // Subscription methods.
     SUBSCRIBE_ADMIN(handle_get_log_subscribe, _1, _2, _3, _4);
     SUBSCRIBE_ADMIN(handle_get_event_subscribe, _1, _2, _3, _4);
+    SUBSCRIBE_ADMIN(handle_get_txpool, _1, _2, _3);
     protocol_html::start();
 }
 
@@ -202,6 +203,52 @@ bool protocol_admin::handle_get_event_subscribe(const code& ec,
 
     send_json({ { "previous", previous } }, 42);
     return true;
+}
+
+// Pool snapshots use the same query and serialization as Esplora. The query
+// runs off the protocol strand, with at most one outstanding per connection.
+bool protocol_admin::handle_get_txpool(const code& ec,
+    interface::txpool, uint8_t /*version*/) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (stopped(ec))
+        return false;
+
+    if (!txpool_pending_)
+    {
+        txpool_pending_ = true;
+        PARALLEL(do_get_txpool, gate());
+    }
+    return true;
+}
+
+void protocol_admin::do_get_txpool(const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+    system::json::value snapshot{};
+    const auto ec = get_pool_snapshot(snapshot, archive()) ?
+        code{} : database::error::integrity;
+    POST(complete_get_txpool, ec, std::move(snapshot), gate);
+}
+
+void protocol_admin::complete_get_txpool(const code& ec,
+    system::json::value& snapshot, const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    txpool_pending_ = false;
+    if (stopped())
+        return;
+
+    if (ec)
+    {
+        send_internal_server_error(ec);
+        return;
+    }
+
+    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+    const auto size = (snapshot.at("fee_histogram").as_array().size() + one) * 64;
+    send_json({ { "txpool", std::move(snapshot) } }, size + 32);
+    BC_POP_WARNING()
 }
 
 // Event handlers.

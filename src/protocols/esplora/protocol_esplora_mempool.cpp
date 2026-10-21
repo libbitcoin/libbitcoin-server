@@ -40,8 +40,7 @@ constexpr std::array<size_t, 28> targets
     21, 22, 23, 24, 25, 144, 504, 1008
 };
 
-// The vsize of a fee histogram bin, and the count of recent txs (electrs).
-constexpr size_t histogram_bin = 50'000;
+// The count of recent txs (electrs).
 constexpr size_t recent_count = 10;
 
 bool protocol_esplora::handle_get_mempool(const code& ec, interface::mempool,
@@ -116,31 +115,15 @@ void protocol_esplora::do_get_mempool(const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
-    database::fee_rates rates{};
-    if (!archive().get_confirmable_fees(rates))
+    value out{};
+    if (!get_pool_snapshot(out, archive()))
     {
         POST(complete_get_mempool, database::error::integrity,
             value{}, zero, gate);
         return;
     }
 
-    size_t vsize{};
-    uint64_t fee{};
-    for (const auto& rate: rates)
-    {
-        vsize = ceilinged_add(vsize, rate.bytes);
-        fee = ceilinged_add(fee, rate.fee);
-    }
-
-    const auto bins = to_fee_histogram(rates, histogram_bin);
-    const auto size = add1(bins.size()) * 64;
-    value out = object
-    {
-        { "count", rates.size() },
-        { "vsize", vsize },
-        { "total_fee", fee },
-        { "fee_histogram", value_from(bins) }
-    };
+    const auto size = add1(out.at("fee_histogram").as_array().size()) * 64;
 
     POST(complete_get_mempool, code{}, std::move(out), size, gate);
 }
