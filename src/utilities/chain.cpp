@@ -80,5 +80,36 @@ fee_histogram to_fee_histogram(database::fee_rates rates, size_t bin) NOEXCEPT
     return out;
 }
 
+BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+
+bool get_pool_snapshot(boost::json::value& out,
+    const node::query& query) NOEXCEPT
+{
+    database::fee_rates rates{};
+    if (!query.get_confirmable_fees(rates))
+        return false;
+
+    size_t vsize{};
+    uint64_t fee{};
+    for (const auto& rate: rates)
+    {
+        vsize = ceilinged_add(vsize, rate.bytes);
+        fee = ceilinged_add(fee, rate.fee);
+    }
+
+    // Preserve Esplora's 50,000-vbyte histogram bins and units.
+    const auto bins = to_fee_histogram(rates, 50'000);
+    out = boost::json::object
+    {
+        { "count", rates.size() },
+        { "vsize", vsize },
+        { "total_fee", fee },
+        { "fee_histogram", boost::json::value_from(bins) }
+    };
+    return true;
+}
+
+BC_POP_WARNING()
+
 } // namespace server
 } // namespace libbitcoin

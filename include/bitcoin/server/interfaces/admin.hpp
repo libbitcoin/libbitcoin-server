@@ -31,7 +31,8 @@ struct admin_methods
     static constexpr std::tuple methods
     {
         method<"log_subscribe", uint8_t, optional<0_u64>>{ "version", "filter" },
-        method<"event_subscribe", uint8_t, optional<0_u64>>{ "version", "filter" }
+        method<"event_subscribe", uint8_t, optional<0_u64>>{ "version", "filter" },
+        method<"txpool", uint8_t>{ "version" }
     };
 
     template <typename... Args>
@@ -44,6 +45,7 @@ struct admin_methods
 
     using log_subscribe = at<0>;
     using event_subscribe = at<1>;
+    using txpool = at<2>;
 };
 
 /// ?format=data|text|json (via query string).
@@ -57,6 +59,10 @@ struct admin_methods
 
 /// /v1/log/subscribe?filter=[mask] {stream}
 /// /v1/event/subscribe?filter=[mask] {stream}
+/// /v1/txpool {snapshot}
+/// Returns { "txpool": { count, vsize, total_fee, fee_histogram } }.
+/// Pool fields and units match Esplora's transaction pool endpoint. Available
+/// over HTTP (json) and websocket; clients may request a fresh snapshot.
 
 } // namespace interface
 } // namespace server

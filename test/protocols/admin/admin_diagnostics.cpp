@@ -23,6 +23,35 @@ using namespace network::http;
 
 BOOST_FIXTURE_TEST_SUITE(admin_tests, admin_ten_block_setup_fixture)
 
+// Pool snapshots share Esplora's fields and units, including an empty pool.
+BOOST_AUTO_TEST_CASE(admin__txpool__http__empty)
+{
+    const auto response = get_json("/v1/txpool?format=json");
+    const auto& pool = response.at("txpool").as_object();
+    BOOST_REQUIRE_EQUAL(pool.at("count").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(pool.at("vsize").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(pool.at("total_fee").as_int64(), 0);
+    BOOST_REQUIRE(pool.at("fee_histogram").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(admin__txpool__websocket__repeatable)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    const auto first = ws_get_json("/v1/txpool");
+    const auto second = ws_get_json("/v1/txpool");
+    BOOST_REQUIRE(first == second);
+    BOOST_REQUIRE_EQUAL(first.at("txpool").at("count").as_int64(), 0);
+
+    // Snapshot requests do not replace the log/event subscriptions.
+    const auto ack = ws_get_json("/v1/event/subscribe?filter=2048");
+    BOOST_REQUIRE_EQUAL(ack.at("previous").as_int64(), 0);
+    ws_get_json("/v1/txpool");
+    fire(11, 42);
+    const auto event = ws_receive_json();
+    BOOST_REQUIRE_EQUAL(event.at("event").as_int64(), 11);
+    BOOST_REQUIRE_EQUAL(event.at("value").as_int64(), 42);
+}
+
 // log subscribe (http)
 // ----------------------------------------------------------------------------
 
