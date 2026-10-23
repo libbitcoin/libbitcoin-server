@@ -40,9 +40,6 @@ namespace server {
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 
-// TODO: register a systemd unit (linux) and launchd plist (osx), and notify
-// TODO: readiness/stopping via sd_notify, in place of the manager below.
-
 bool executor::service_{ false };
 std::atomic_bool executor::exited_{ false };
 std::atomic_bool executor::starting_{ true };
