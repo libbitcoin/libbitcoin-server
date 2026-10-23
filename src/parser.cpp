@@ -2205,16 +2205,16 @@ options_metadata parser::load_settings() THROWS
         setting<bool>(&configured.node.use_gpu),
         "Use the GPU where available, defaults to {}."
     )
-    (
-        "node.cpu_batch_verify",
-        setting<bool>(&configured.node.cpu_batch_verify),
-        "Batch signature verification on the CPU when the GPU is not used, defaults to {}."
-    )
-    (
-        "node.cpu_batch_silent",
-        setting<bool>(&configured.node.cpu_batch_silent),
-        "Batch silent payment indexing on the CPU when the GPU is not used, defaults to {}."
-    )
+    ////(
+    ////    "node.cpu_batch_verify",
+    ////    setting<bool>(&configured.node.cpu_batch_verify),
+    ////    "Batch signature verification on the CPU when the GPU is not used, defaults to {}."
+    ////)
+    ////(
+    ////    "node.cpu_batch_silent",
+    ////    setting<bool>(&configured.node.cpu_batch_silent),
+    ////    "Batch silent payment indexing on the CPU when the GPU is not used, defaults to {}."
+    ////)
     (
         "node.batch_verify",
         setting<uint64_t>(&configured.node.batch_verify),
