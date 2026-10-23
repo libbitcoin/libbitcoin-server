@@ -1141,6 +1141,11 @@ options_metadata parser::load_settings() THROWS
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
+        "admin.credential",
+        secret<network::config::credentials>(&configured.server.admin.credentials),
+        "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
+    )
+    (
         "admin.connections",
         setting<uint16_t>(&configured.server.admin.connections),
         "The required maximum number of connections, defaults to {}."
@@ -1246,6 +1251,11 @@ options_metadata parser::load_settings() THROWS
         "native.key_pass",
         secret<std::string>(&configured.server.native.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "native.credential",
+        secret<network::config::credentials>(&configured.server.native.credentials),
+        "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
     )
     (
         "native.connections",
@@ -1621,6 +1631,11 @@ options_metadata parser::load_settings() THROWS
         "IP address to secure bind, multiple allowed, defaults to {} (disabled)."
     )
     (
+        "electrum.cert_auth",
+        setting<config::path>(&configured.server.electrum.cert_auth),
+        "The certificate authority directory (*.PEM), enables client authentication."
+    )
+    (
         "electrum.cert_path",
         setting<config::path>(&configured.server.electrum.cert_path),
         "The path to the server certificate file (.PEM), defaults to {}."
@@ -1629,6 +1644,16 @@ options_metadata parser::load_settings() THROWS
         "electrum.key_path",
         setting<config::path>(&configured.server.electrum.key_path),
         "The path to the server private key file (.PEM), defaults to {}."
+    )
+    (
+        "electrum.key_pass",
+        secret<std::string>(&configured.server.electrum.key_pass),
+        "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "electrum.credential",
+        secret<network::config::credentials>(&configured.server.electrum.credentials),
+        "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
     )
     (
         "electrum.connections",
@@ -1758,6 +1783,11 @@ options_metadata parser::load_settings() THROWS
         "IP address to secure bind, multiple allowed, defaults to {} (disabled)."
     )
     (
+        "sparrow.cert_auth",
+        setting<config::path>(&configured.server.sparrow.cert_auth),
+        "The certificate authority directory (*.PEM), enables client authentication."
+    )
+    (
         "sparrow.cert_path",
         setting<config::path>(&configured.server.sparrow.cert_path),
         "The path to the server certificate file (.PEM), defaults to {}."
@@ -1766,6 +1796,16 @@ options_metadata parser::load_settings() THROWS
         "sparrow.key_path",
         setting<config::path>(&configured.server.sparrow.key_path),
         "The path to the server private key file (.PEM), defaults to {}."
+    )
+    (
+        "sparrow.key_pass",
+        secret<std::string>(&configured.server.sparrow.key_pass),
+        "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "sparrow.credential",
+        secret<network::config::credentials>(&configured.server.sparrow.credentials),
+        "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
     )
     (
         "sparrow.connections",
@@ -1912,6 +1952,11 @@ options_metadata parser::load_settings() THROWS
         "esplora.key_pass",
         secret<std::string>(&configured.server.esplora.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "esplora.credential",
+        secret<network::config::credentials>(&configured.server.esplora.credentials),
+        "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
     )
     (
         "esplora.connections",
