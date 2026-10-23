@@ -71,6 +71,74 @@ bool protocol_bitcoind_transaction::has_unspent_output(
         });
 }
 
+// The fee is unknown if a prevout is neither archived nor in the package.
+static bool get_fee(uint64_t& fee, const chain::transaction& tx,
+    const chain::transaction_cptrs& package, const node::query& query) NOEXCEPT
+{
+    uint64_t in{};
+    for (const auto& input: *tx.inputs_ptr())
+    {
+        uint64_t value{};
+        const auto& prevout = input->point();
+        const auto parent = std::find_if(package.begin(), package.end(),
+            [&](const auto& candidate) NOEXCEPT
+            {
+                return candidate->hash(false) == prevout.hash();
+            });
+
+        if (parent != package.end())
+        {
+            const auto& outs = *(*parent)->outputs_ptr();
+            if (prevout.index() >= outs.size())
+                return false;
+
+            value = outs.at(prevout.index())->value();
+        }
+        else if (!query.get_value(value, query.to_output(prevout)))
+        {
+            return false;
+        }
+
+        in = ceilinged_add(in, value);
+    }
+
+    fee = floored_subtract(in, tx.value());
+    return true;
+}
+
+// Compared in satoshis per virtual kilobyte, zero disables.
+static bool exceeds_fee_rate(const chain::transaction& tx,
+    const chain::transaction_cptrs& package, double maxfeerate,
+    const node::query& query) NOEXCEPT
+{
+    uint64_t fee{};
+    if (is_zero(maxfeerate) || !get_fee(fee, tx, package, query))
+        return false;
+
+    const auto rate = to_rounded_integer<uint64_t>(maxfeerate *
+        chain::satoshi_per_bitcoin);
+    const auto size = possible_wide_cast<uint64_t>(tx.virtual_size());
+    return ceilinged_multiply(fee, 1'000_u64) > ceilinged_multiply(rate, size);
+}
+
+static bool exceeds_burn(const chain::transaction& tx,
+    double maxburnamount) NOEXCEPT
+{
+    const auto limit = to_rounded_integer<uint64_t>(maxburnamount *
+        chain::satoshi_per_bitcoin);
+
+    const auto& outs = *tx.outputs_ptr();
+    return std::any_of(outs.begin(), outs.end(), [=](const auto& out) NOEXCEPT
+    {
+        return out->script().is_unspendable() && out->value() > limit;
+    });
+}
+
+static constexpr auto burn_exceeded =
+    "Unspendable output exceeds maximum configured by user (maxburnamount)";
+static constexpr auto fee_exceeded =
+    "Fee exceeds maximum configured by user (e.g. -maxtxfee, maxfeerate)";
+
 // Start.
 // ----------------------------------------------------------------------------
 
@@ -266,6 +334,12 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
         return true;
     }
 
+    if (exceeds_burn(*tx, maxburnamount))
+    {
+        send_error_message(error::bitcoind::verify_error, burn_exceeded);
+        return true;
+    }
+
     // A confirmed tx with any unspent output is reported without validating.
     const auto& query = archive();
     const auto link = query.to_tx(tx->hash(false));
@@ -273,6 +347,12 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
         has_unspent_output(link))
     {
         send_rejected(node::error::duplicate_transaction, *tx);
+        return true;
+    }
+
+    if (exceeds_fee_rate(*tx, {}, maxfeerate, query))
+    {
+        send_error_message(error::bitcoind::verify_error, fee_exceeded);
         return true;
     }
 
@@ -943,8 +1023,25 @@ bool protocol_bitcoind_transaction::handle_submit_package(const code& ec,
         txs.push_back(tx);
     }
 
-    constexpr auto test = false;
+    const auto& query = archive();
     const auto txs_ptr = to_shared<chain::transaction_cptrs>(std::move(txs));
+    for (size_t index{}; index < txs_ptr->size(); ++index)
+    {
+        const auto& tx = *txs_ptr->at(index);
+        if (exceeds_burn(tx, maxburnamount))
+        {
+            send_error_message(error::bitcoind::verify_error, burn_exceeded);
+            return true;
+        }
+
+        if (exceeds_fee_rate(tx, *txs_ptr, maxfeerate, query))
+        {
+            complete_package(error::max_fee_exceeded, index, txs_ptr, gate());
+            return true;
+        }
+    }
+
+    constexpr auto test = false;
     submit(txs_ptr, test, BIND(handle_package, _1, _2, txs_ptr, gate()));
     return true;
 }
