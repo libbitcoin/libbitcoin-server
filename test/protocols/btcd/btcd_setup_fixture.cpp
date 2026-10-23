@@ -74,7 +74,7 @@ static std::string body_of(int id, std::string_view method,
     return body.str();
 }
 
-boost::json::value btcd_setup_fixture::rpc(std::string_view method,
+system::json::value btcd_setup_fixture::rpc(std::string_view method,
     std::string_view params)
 {
     return client_.frame(body_of(request_id_++, method, params), true);
@@ -88,7 +88,7 @@ int64_t btcd_setup_fixture::rpc_error(std::string_view method,
         return rpc(method, params).at("error").as_object().at("code")
             .as_int64();
     }
-    catch (const boost::system::system_error&)
+    catch (const system::json::exception&)
     {
         return -1;
     }
@@ -105,13 +105,13 @@ bool btcd_setup_fixture::authenticate(const std::string& username,
     {
         return response.at("error").is_null();
     }
-    catch (const boost::system::system_error&)
+    catch (const system::json::exception&)
     {
         return false;
     }
 }
 
-boost::json::value btcd_setup_fixture::receive_notification(bool checked)
+system::json::value btcd_setup_fixture::receive_notification(bool checked)
 {
     return client_.read_frame(checked);
 }
@@ -119,20 +119,20 @@ boost::json::value btcd_setup_fixture::receive_notification(bool checked)
 // Raw json on the plain socket, which the server detects and downgrades to a
 // newline-delimited json-rpc stream. Mutually exclusive with http_rpc, as the
 // detection is latched on the first read of the connection.
-boost::json::value btcd_setup_fixture::tcp_rpc(std::string_view method,
+system::json::value btcd_setup_fixture::tcp_rpc(std::string_view method,
     std::string_view params)
 {
     return other_.send(body_of(http_request_id_++, method, params) + "\n");
 }
 
-boost::json::value btcd_setup_fixture::http_rpc(std::string_view method,
+system::json::value btcd_setup_fixture::http_rpc(std::string_view method,
     std::string_view params, bool checked)
 {
     return other_.post(body_of(http_request_id_++, method, params), "/",
         checked);
 }
 
-boost::json::value btcd_setup_fixture::http_rpc(std::string_view method,
+system::json::value btcd_setup_fixture::http_rpc(std::string_view method,
     std::string_view params, const std::string& username,
     const std::string& password)
 {

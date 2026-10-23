@@ -21,7 +21,7 @@
 
 using namespace system;
 
-static std::string as_text(const boost::json::value& value) NOEXCEPT
+static std::string as_text(const system::json::value& value) NOEXCEPT
 {
     return { value.as_string().c_str() };
 }
@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_SUITE(bitcoind_header_to_bitcoind_tests)
 BOOST_AUTO_TEST_CASE(bitcoind_json__header_to_bitcoind__block1_header__maps_fields)
 {
     const auto& header = test::block1.header();
-    const auto out = boost::json::value_from(bitcoind(header)).as_object();
+    const auto out = system::json::value_from(bitcoind(header)).as_object();
 
     BOOST_REQUIRE_EQUAL(as_text(out.at("hash")), encode_hash(header.hash()));
     BOOST_REQUIRE_EQUAL(out.at("version").to_number<int64_t>(), header.version());
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__middle__height_confirm
     const auto header = query_.get_header(link);
     BOOST_REQUIRE(header);
 
-    boost::json::object out{};
+    system::json::object out{};
     inject_block_context(out, query_, settings, link, *header);
 
     BOOST_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 5u);
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__genesis__no_previous)
     const auto header = query_.get_header(link);
     BOOST_REQUIRE(header);
 
-    boost::json::object out{};
+    system::json::object out{};
     inject_block_context(out, query_, settings, link, *header);
 
     BOOST_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 0u);
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__top__no_next)
     const auto header = query_.get_header(link);
     BOOST_REQUIRE(header);
 
-    boost::json::object out{};
+    system::json::object out{};
     inject_block_context(out, query_, settings, link, *header);
 
     BOOST_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 9u);
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_tx_context__confirmed_coinbase__block
     const auto txid = test::block1.transactions_ptr()->front()->hash(false);
     const auto link = query_.to_tx(txid);
 
-    boost::json::object out{};
+    system::json::object out{};
     inject_tx_context(out, query_, link);
 
     BOOST_REQUIRE(out.at("in_active_chain").as_bool());
@@ -185,7 +185,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_tx_context__unknown__zero_confirmatio
 {
     const auto link = query_.to_tx(null_hash);
 
-    boost::json::object out{};
+    system::json::object out{};
     inject_tx_context(out, query_, link);
 
     BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 0);
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_tx_context__unknown__zero_confirmatio
 BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__unknown__unchanged)
 {
     const system::settings settings{ chain::selection::mainnet };
-    boost::json::object out{};
+    system::json::object out{};
     inject_block_context(out, query_, settings, database::header_link{}, test::block1.header());
     BOOST_REQUIRE(out.empty());
 }

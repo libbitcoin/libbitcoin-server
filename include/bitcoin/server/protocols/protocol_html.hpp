@@ -59,7 +59,7 @@ protected:
         const network::http::request& request) NOEXCEPT;
 
     /// Senders.
-    virtual void send_json(boost::json::value&& model, size_t size_hint,
+    virtual void send_json(system::json::value&& model, size_t size_hint,
         const network::http::request& request={}) NOEXCEPT;
     virtual void send_text(std::string&& hexidecimal,
         const network::http::request& request={}) NOEXCEPT;
@@ -78,7 +78,7 @@ protected:
         const network::http::request& request={}) NOEXCEPT;
 
     /// Notifiers (websocket).
-    virtual void notify_json(boost::json::value&& model, size_t size_hint,
+    virtual void notify_json(system::json::value&& model, size_t size_hint,
         const network::http::request& request={}) NOEXCEPT;
     virtual void notify_text(std::string&& hexidecimal,
         const network::http::request& request={}) NOEXCEPT;

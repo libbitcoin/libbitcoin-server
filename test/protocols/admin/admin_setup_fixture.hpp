@@ -40,16 +40,16 @@ struct admin_setup_fixture
 
     std::string get_text(std::string_view target);
     system::data_chunk get_data(std::string_view target);
-    boost::json::value get_json(std::string_view target);
+    system::json::value get_json(std::string_view target);
 
     network::boost_code ws_upgrade();
     void ws_send(std::string_view message);
     system::data_chunk ws_receive();
     std::string ws_receive_text();
-    boost::json::value ws_receive_json();
+    system::json::value ws_receive_json();
     bool ws_dropped(std::string_view message);
     std::string ws_get_text(std::string_view message);
-    boost::json::value ws_get_json(std::string_view message);
+    system::json::value ws_get_json(std::string_view message);
     system::data_chunk ws_get_data(std::string_view message);
 
     // Fire logger message/event (admin stream sources).

@@ -44,7 +44,7 @@ struct btcd_setup_fixture
     // JSON-RPC 1.0 over websocket. params must be a json array (json-rpc-v1
     // does not support 'null' or omitted params, use "[]" for no arguments).
     // Returns the parsed json-rpc response object (result/error).
-    boost::json::value rpc(std::string_view method,
+    system::json::value rpc(std::string_view method,
         std::string_view params = "[]");
 
     // As rpc(), returning the response's error code (-1 if not an error).
@@ -60,20 +60,20 @@ struct btcd_setup_fixture
     // the ws one rpc() uses).
     // JSON-RPC 2.0 over raw tcp (no http), which downgrades the connection.
     // Returns the parsed json-rpc response object, or {"dropped":true}.
-    boost::json::value tcp_rpc(std::string_view method,
+    system::json::value tcp_rpc(std::string_view method,
         std::string_view params="[]");
 
-    boost::json::value http_rpc(std::string_view method,
+    system::json::value http_rpc(std::string_view method,
         std::string_view params = "[]", bool checked=true);
 
     // As http_rpc(), with basic authorization.
-    boost::json::value http_rpc(std::string_view method,
+    system::json::value http_rpc(std::string_view method,
         std::string_view params, const std::string& username,
         const std::string& password);
 
     // Read one further (unprompted) server push, e.g. a blockconnected
     // notification. Returns the parsed json-rpc notification object.
-    boost::json::value receive_notification(bool checked=true);
+    system::json::value receive_notification(bool checked=true);
 
 private:
     // The ws connection, plus the plain one used by http_rpc or tcp_rpc.

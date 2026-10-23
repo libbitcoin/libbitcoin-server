@@ -36,7 +36,7 @@ using namespace network;
 using namespace network::rpc;
 using namespace network::messages;
 using namespace std::placeholders;
-using namespace boost::json;
+using namespace system::json;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
@@ -87,14 +87,14 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     // bitcoind omits the hex of the decoded script.
     auto model = script_public_key(script);
     auto& result = model.as_object();
-    result.erase("hex");
+    result.stable_erase("hex");
 
     // An undecodable script is rendered, not rejected.
     if (!script.is_valid() || script.is_underflow())
     {
         const auto body = "raw(" + encode_base16(data) + ")";
         result["desc"] = body + "#" + descriptor_checksum(body);
-        result.erase("address");
+        result.stable_erase("address");
         send_result(std::move(model));
         return true;
     }

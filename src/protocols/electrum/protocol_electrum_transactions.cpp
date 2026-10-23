@@ -276,7 +276,7 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
         return;
     }
 
-    boost::json::value value{};
+    system::json::value value{};
     if (!verbose)
     {
         const auto tx = query.get_wire_tx(link, true);

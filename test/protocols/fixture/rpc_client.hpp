@@ -46,15 +46,15 @@ public:
 
     /// Raw tcp, newline delimited (the server detects and downgrades).
     /// Returns {"dropped":true} on transport error, which checked asserts.
-    boost::json::value send(const std::string& text, bool checked=false);
-    boost::json::value receive(bool checked=false);
+    system::json::value send(const std::string& text, bool checked=false);
+    system::json::value receive(bool checked=false);
 
     /// http POST of a json body to target, and the request builders.
-    boost::json::value post(const std::string& body,
+    system::json::value post(const std::string& body,
         const std::string& target="/", bool checked=false);
     status post_status(const std::string& body,
         const std::string& target="/");
-    boost::json::value post_authorized(const std::string& body,
+    system::json::value post_authorized(const std::string& body,
         const std::string& username, const std::string& password);
     status post_status_authorized(const std::string& body,
         const std::string& username, const std::string& password);
@@ -76,8 +76,8 @@ public:
     bool upgraded() const;
 
     /// Framed json over the upgraded websocket.
-    boost::json::value frame(const std::string& text, bool checked=false);
-    boost::json::value read_frame(bool checked=false);
+    system::json::value frame(const std::string& text, bool checked=false);
+    system::json::value read_frame(bool checked=false);
     void write_frame(std::string_view text);
 
     /// The underlying stream (for a transport this does not cover).
@@ -87,7 +87,7 @@ private:
     using tcp_stream = boost::beast::tcp_stream;
     using websocket_stream = boost::beast::websocket::stream<tcp_stream&>;
 
-    static boost::json::value dropped();
+    static system::json::value dropped();
 
     tcp_stream socket_;
     std::optional<websocket_stream> websocket_{};

@@ -34,7 +34,7 @@ using namespace network;
 using namespace network::rpc;
 using namespace network::messages;
 using namespace std::placeholders;
-using namespace boost::json;
+using namespace system::json;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
@@ -417,7 +417,7 @@ http::request_cptr protocol_bitcoind::reset_rpc_request() NOEXCEPT
 // Utility (redundant with protocol_electrum).
 // ----------------------------------------------------------------------------
 
-boost::json::value protocol_bitcoind::script_public_key(
+system::json::value protocol_bitcoind::script_public_key(
     const chain::script& script) const NOEXCEPT
 {
     return to_script_public_key(script, p2kh_, p2sh_, witness_, flags_);

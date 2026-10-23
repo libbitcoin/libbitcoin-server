@@ -176,7 +176,7 @@ constexpr auto data = media_type::application_octet_stream;
 constexpr auto json = media_type::application_json;
 constexpr auto text = media_type::text_plain;
 
-void protocol_html::send_json(boost::json::value&& model, size_t size_hint,
+void protocol_html::send_json(system::json::value&& model, size_t size_hint,
     const request& request) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -274,7 +274,7 @@ void protocol_html::send_empty(const request& request) NOEXCEPT
 // Notifiers (websocket).
 // ----------------------------------------------------------------------------
 
-void protocol_html::notify_json(boost::json::value&& model, size_t size_hint,
+void protocol_html::notify_json(system::json::value&& model, size_t size_hint,
     const request& request) NOEXCEPT
 {
     BC_ASSERT(stranded() && websocket());

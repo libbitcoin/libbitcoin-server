@@ -154,7 +154,7 @@ BOOST_FIXTURE_TEST_SUITE(esplora_broadcast_tests, esplora_broadcast_setup_fixtur
 BOOST_AUTO_TEST_CASE(esplora__broadcast_package__broadcast__success)
 {
     const auto package = "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]";
-    const auto response = boost::json::parse(post_text("/txs/package", package));
+    const auto response = system::json::parse(post_text("/txs/package", package));
     BOOST_REQUIRE(response.is_object());
 
     const auto& result = response.as_object();

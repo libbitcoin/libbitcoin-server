@@ -37,7 +37,7 @@ using namespace network;
 using namespace network::rpc;
 using namespace network::messages;
 using namespace std::placeholders;
-using namespace boost::json;
+using namespace system::json;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)

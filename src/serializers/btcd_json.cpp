@@ -31,12 +31,12 @@ using namespace system;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-boost::json::object search_transaction(const node::query& query,
+system::json::object search_transaction(const node::query& query,
     const database::tx_link& link, const chain::transaction& tx,
     const std::set<std::string>& filter, bool prevouts, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT
 {
-    auto model = boost::json::value_from(bitcoind(tx, flags)).as_object();
+    auto model = system::json::value_from(bitcoind(tx, flags)).as_object();
     inject_tx_context(model, query, link);
     inject_tx_scripts(model, tx, p2kh, p2sh, witness);
 
@@ -47,7 +47,7 @@ boost::json::object search_transaction(const node::query& query,
     if (populated)
     {
         size_t index{};
-        boost::json::array kept{};
+        system::json::array kept{};
         auto& inputs = model.at("vin").as_array();
         for (const auto& in: *tx.inputs_ptr())
         {
@@ -61,14 +61,14 @@ boost::json::object search_transaction(const node::query& query,
             auto item = std::move(inputs.at(index++));
             if (prevouts)
             {
-                boost::json::array addresses{};
+                system::json::array addresses{};
                 if (!ad.empty())
                     addresses.emplace_back(std::move(ad));
 
                 const auto value = in->prevout->value() / 
                     to_floating(chain::satoshi_per_bitcoin);
 
-                item.as_object()["prevOut"] = boost::json::object
+                item.as_object()["prevOut"] = system::json::object
                 {
                     { "addresses", std::move(addresses) },
                     { "value", value }
@@ -84,7 +84,7 @@ boost::json::object search_transaction(const node::query& query,
     if (!filter.empty())
     {
         size_t index{};
-        boost::json::array kept{};
+        system::json::array kept{};
         auto& outputs = model.at("vout").as_array();
         for (const auto& out: *tx.outputs_ptr())
         {

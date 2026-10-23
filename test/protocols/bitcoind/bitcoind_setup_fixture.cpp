@@ -102,19 +102,19 @@ static std::string body_of(std::string_view method, std::string_view params)
     return body.str();
 }
 
-boost::json::value bitcoind_setup_fixture::rpc(std::string_view method,
+system::json::value bitcoind_setup_fixture::rpc(std::string_view method,
     std::string_view params)
 {
     return client_.post(body_of(method, params), "/", true);
 }
 
-boost::json::value bitcoind_setup_fixture::tcp_rpc(std::string_view method,
+system::json::value bitcoind_setup_fixture::tcp_rpc(std::string_view method,
     std::string_view params)
 {
     return client_.send(body_of(method, params) + "\n");
 }
 
-boost::json::value bitcoind_setup_fixture::rpc_body(std::string_view body)
+system::json::value bitcoind_setup_fixture::rpc_body(std::string_view body)
 {
     return client_.post(std::string{ body });
 }
@@ -144,13 +144,13 @@ network::boost_code bitcoind_setup_fixture::ws_upgrade(
     return client_.upgrade(username, password);
 }
 
-boost::json::value bitcoind_setup_fixture::ws_rpc(std::string_view method,
+system::json::value bitcoind_setup_fixture::ws_rpc(std::string_view method,
     std::string_view params)
 {
     return client_.frame(body_of(method, params), true);
 }
 
-boost::json::value bitcoind_setup_fixture::ws_rpc_dropped(
+system::json::value bitcoind_setup_fixture::ws_rpc_dropped(
     std::string_view method, std::string_view params)
 {
     return client_.frame(body_of(method, params));
@@ -161,7 +161,7 @@ void bitcoind_setup_fixture::ws_notify(std::string_view body)
     client_.write_frame(body);
 }
 
-boost::json::value bitcoind_setup_fixture::ws_read()
+system::json::value bitcoind_setup_fixture::ws_read()
 {
     return client_.read_frame(true);
 }
@@ -213,7 +213,7 @@ bitcoind_setup_fixture::options_status(std::string_view target)
     return client_.options_status(target);
 }
 
-boost::json::value bitcoind_setup_fixture::rest_json(std::string_view target)
+system::json::value bitcoind_setup_fixture::rest_json(std::string_view target)
 {
     const auto response = client_.get(target);
     BOOST_CHECK_EQUAL(response.result(), http::status::ok);

@@ -113,7 +113,7 @@ bool setup_unassociated_store(query_t& query) NOEXCEPT;
 bool setup_dangling_store(query_t& query) NOEXCEPT;
 
 // TODO: move.
-boost::json::value parse_json(std::string_view value) NOEXCEPT;
+system::json::value parse_json(std::string_view value) NOEXCEPT;
 
 } // namespace test
 

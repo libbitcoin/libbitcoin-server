@@ -21,7 +21,7 @@
 
 using namespace system;
 
-static std::string as_text(const boost::json::value& value) NOEXCEPT
+static std::string as_text(const system::json::value& value) NOEXCEPT
 {
     return { value.as_string().c_str() };
 }

@@ -36,7 +36,7 @@ using namespace network;
 using namespace network::rpc;
 using namespace network::messages;
 using namespace std::placeholders;
-using namespace boost::json;
+using namespace system::json;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
@@ -633,7 +633,7 @@ bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
         inject_tx_scripts(tx.as_object(), unsigned_tx, p2kh_, p2sh_, witness_);
 
         // bitcoind omits the hex of the decoded psbt transaction.
-        tx.as_object().erase("hex");
+        tx.as_object().stable_erase("hex");
         result.emplace("tx", std::move(tx));
     }
 
@@ -879,14 +879,14 @@ void protocol_bitcoind_transaction::complete_package(const code& ec,
     if (stopped())
         return;
 
-    boost::json::object result{};
+    system::json::object result{};
     if (!package_result(result, archive(), ec, index, *txs))
     {
         send_error(error::bitcoind::internal_error);
         return;
     }
 
-    send_result(boost::json::value{ std::move(result) });
+    send_result(system::json::value{ std::move(result) });
 }
 
 bool protocol_bitcoind_transaction::handle_combine_raw_transaction(

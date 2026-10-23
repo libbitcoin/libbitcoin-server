@@ -28,7 +28,7 @@ namespace server {
 #define CLASS protocol_esplora
 
 using namespace system;
-using namespace boost::json;
+using namespace system::json;
 using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)

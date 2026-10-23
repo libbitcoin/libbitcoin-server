@@ -628,7 +628,7 @@ void protocol_btcd::do_search_raw_transactions(const hashes& keys,
             continue;
         }
 
-        found.emplace_back(boost::json::value{ btcd::search_transaction(
+        found.emplace_back(system::json::value{ btcd::search_transaction(
             query, link, *tx, filter, prevouts, p2kh_, p2sh_, witness_,
             flags_) });
     }
@@ -866,7 +866,7 @@ void protocol_btcd::do_transaction(node::transaction_t link_value) NOEXCEPT
 
     POST_BTCD(notify_transaction, true, emplace_shared<array_t>(array_t
     {
-        boost::json::value{ model }
+        system::json::value{ model }
     }));
 }
 

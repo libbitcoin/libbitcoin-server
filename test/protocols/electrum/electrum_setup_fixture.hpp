@@ -46,14 +46,14 @@ struct electrum_setup_fixture
     ~electrum_setup_fixture();
 
     // json-rpc over the raw tcp stream (downgrades the connection).
-    boost::json::value receive();
+    system::json::value receive();
     int64_t get_error(const std::string& request);
-    boost::json::value get(const std::string& request);
+    system::json::value get(const std::string& request);
     bool handshake(electrum::version version,
         const std::string& name="test", network::rpc::code_t id={});
 
     // json-rpc over http POST to "/" (the connection remains http).
-    boost::json::value post(const std::string& request);
+    system::json::value post(const std::string& request);
     bool post_handshake(electrum::version version,
         const std::string& name="test", network::rpc::code_t id={});
 
@@ -61,7 +61,7 @@ struct electrum_setup_fixture
     rpc_client::status post_status(const std::string& request);
 
     // As post(), with basic authorization.
-    boost::json::value post_authorized(const std::string& request,
+    system::json::value post_authorized(const std::string& request,
         const std::string& username, const std::string& password);
 
     // As post_authorized(), returning only the http status.
@@ -76,16 +76,16 @@ struct electrum_setup_fixture
         const std::string& password);
 
     // json-rpc over the upgraded websocket connection.
-    boost::json::value ws_get(const std::string& request);
+    system::json::value ws_get(const std::string& request);
     bool ws_handshake(electrum::version version,
         const std::string& name="test", network::rpc::code_t id={});
 
     // Read one unsolicited frame (notification) from the websocket.
-    boost::json::value ws_receive();
+    system::json::value ws_receive();
 
 private:
     // Verify the server.version response of any transport.
-    bool verify(const boost::json::value& response, electrum::version version,
+    bool verify(const system::json::value& response, electrum::version version,
         network::rpc::code_t id) const;
 
     // The settings of the configured service (electrum or sparrow).

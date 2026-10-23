@@ -40,7 +40,7 @@ struct esplora_setup_fixture
         boost::beast::http::field name, std::string_view value);
     std::string get_text(std::string_view target);
     system::data_chunk get_data(std::string_view target);
-    boost::json::value get_json(std::string_view target);
+    system::json::value get_json(std::string_view target);
     status post_status(std::string_view target, std::string_view body);
     status post_status(std::string_view target, std::string_view body,
         boost::beast::http::field name, std::string_view value);
@@ -50,7 +50,7 @@ struct esplora_setup_fixture
     system::data_chunk ws_receive();
     bool ws_dropped(std::string_view message);
     std::string ws_get_text(std::string_view message);
-    boost::json::value ws_get_json(std::string_view message);
+    system::json::value ws_get_json(std::string_view message);
 
 protected:
     server::configuration config_;

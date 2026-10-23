@@ -42,7 +42,7 @@ bool protocol_native::handle_get_configuration(const code& ec,
         return true;
     }
 
-    send_json(boost::json::object
+    send_json(system::json::object
     {
         { "address", archive().address_enabled() },
         { "filter", archive().filter_enabled() },

@@ -216,7 +216,7 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
         return true;
     }
 
-    boost::json::object object
+    system::json::object object
     {
         { "hash", encode_hash(query.get_header_key(link)) },
         { "height", context.height },
@@ -235,7 +235,7 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
 
         const auto bypass = query.is_bypass(link);
 
-        object["state"] = boost::json::object
+        object["state"] = system::json::object
         {
             { "size", nominal },
             { "weight", chain::weighted_size(nominal, maximal) },
@@ -249,7 +249,7 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
 
     // TODO: move to system serializer.
     // All modern configurable forks.
-    object["forks"] = boost::json::object
+    object["forks"] = system::json::object
     {
         { "bip30",  context.is_enabled(chain::flags::bip30_rule) },
         { "bip34",  context.is_enabled(chain::flags::bip34_rule) },
@@ -320,7 +320,7 @@ bool protocol_native::handle_get_block_details(const code& ec,
         settings.subsidy_interval_blocks, settings.initial_subsidy(), bip42);
 
     // sigops is not cached, so removed for now.
-    boost::json::object object
+    system::json::object object
     {
         { "hash", encode_hash(key) },
         { "height", context.height },
@@ -369,7 +369,7 @@ bool protocol_native::handle_get_block_txs(const code& ec,
             }
             case json:
             {
-                boost::json::array out(hashes.size());
+                system::json::array out(hashes.size());
                 std::ranges::transform(hashes, out.begin(),
                     [](const auto& hash) { return encode_hash(hash); });
                 send_json(out, two * size);

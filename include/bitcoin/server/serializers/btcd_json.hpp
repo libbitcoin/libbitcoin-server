@@ -28,7 +28,7 @@ namespace btcd {
 
 /// The verbose searchrawtransactions element: the bitcoind transaction model
 /// with btcd's prevOut extension and address filtering.
-BCS_API boost::json::object search_transaction(const node::query& query,
+BCS_API system::json::object search_transaction(const node::query& query,
     const database::tx_link& link, const system::chain::transaction& tx,
     const std::set<std::string>& filter, bool prevouts, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT;

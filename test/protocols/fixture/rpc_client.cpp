@@ -66,9 +66,9 @@ void rpc_client::close()
     socket_.socket().close(ignore);
 }
 
-boost::json::value rpc_client::dropped()
+system::json::value rpc_client::dropped()
 {
-    return boost::json::parse(R"({"dropped":true})");
+    return system::json::parse(R"({"dropped":true})");
 }
 
 boost::beast::tcp_stream& rpc_client::stream()
@@ -81,7 +81,7 @@ boost::beast::tcp_stream& rpc_client::stream()
 
 // A write failure is never expected, so it is checked on every transport.
 // Checked governs the read, as a dropped channel is a tested outcome.
-boost::json::value rpc_client::send(const std::string& text, bool checked)
+system::json::value rpc_client::send(const std::string& text, bool checked)
 {
     error_code ec{};
     net::write(socket_, net::buffer(text), ec);
@@ -93,7 +93,7 @@ boost::json::value rpc_client::send(const std::string& text, bool checked)
     return receive(checked);
 }
 
-boost::json::value rpc_client::receive(bool checked)
+system::json::value rpc_client::receive(bool checked)
 {
     error_code ec{};
     const auto size = net::read_until(socket_,
@@ -113,12 +113,12 @@ boost::json::value rpc_client::receive(bool checked)
 
     try
     {
-        return boost::json::parse(line);
+        return system::json::parse(line);
     }
-    catch (const boost::system::system_error&)
+    catch (const system::json::exception&)
     {
         // Carry the text, as a bare {} reports nothing to a failed test.
-        return boost::json::value{ { "unparsed", line } };
+        return system::json::value{ { "unparsed", line } };
     }
 }
 
@@ -167,7 +167,7 @@ http::response<http::string_body> rpc_client::get(std::string_view target)
     return response;
 }
 
-boost::json::value rpc_client::post(const std::string& body,
+system::json::value rpc_client::post(const std::string& body,
     const std::string& target, bool checked)
 {
     error_code ec{};
@@ -222,7 +222,7 @@ rpc_client::status rpc_client::post_status(const std::string& body,
     return response.result();
 }
 
-boost::json::value rpc_client::post_authorized(const std::string& body,
+system::json::value rpc_client::post_authorized(const std::string& body,
     const std::string& username, const std::string& password)
 {
     auto out = create_post("/", body);
@@ -315,7 +315,7 @@ void rpc_client::write_frame(std::string_view text)
     BOOST_CHECK_MESSAGE(!ec, ec.message());
 }
 
-boost::json::value rpc_client::read_frame(bool checked)
+system::json::value rpc_client::read_frame(bool checked)
 {
     error_code ec{};
     BOOST_CHECK(websocket_.has_value());
@@ -333,7 +333,7 @@ boost::json::value rpc_client::read_frame(bool checked)
     return test::parse_json(buffers_to_string(buffer.data()));
 }
 
-boost::json::value rpc_client::frame(const std::string& text, bool checked)
+system::json::value rpc_client::frame(const std::string& text, bool checked)
 {
     error_code ec{};
     BOOST_CHECK(websocket_.has_value());

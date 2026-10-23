@@ -27,7 +27,7 @@ namespace server {
 #define CLASS protocol_esplora
 
 using namespace system;
-using namespace boost::json;
+using namespace system::json;
 using namespace database;
 using namespace std::placeholders;
 

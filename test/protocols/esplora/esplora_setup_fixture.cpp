@@ -195,7 +195,7 @@ system::data_chunk esplora_setup_fixture::get_data(std::string_view target)
 // The network json body does not support reading a document consisting
 // of only a top-level primitive, because it supports streaming and non-
 // streaming. So instead just use a string buffer and parse explicitly.
-boost::json::value esplora_setup_fixture::get_json(std::string_view target)
+system::json::value esplora_setup_fixture::get_json(std::string_view target)
 {
     http::write(socket_, create_request(target));
 
@@ -315,7 +315,7 @@ std::string esplora_setup_fixture::ws_get_text(std::string_view message)
     return to_string(ws_receive());
 }
 
-boost::json::value esplora_setup_fixture::ws_get_json(std::string_view message)
+system::json::value esplora_setup_fixture::ws_get_json(std::string_view message)
 {
     return test::parse_json(ws_get_text(message));
 }
