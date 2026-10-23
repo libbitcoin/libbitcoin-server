@@ -353,7 +353,10 @@ options_metadata parser::load_options() THROWS
         value<bool>(&configured.information)->
             default_value(false)->zero_tokens(),
         "Scan and display store information."
-    )
+    );
+
+#if defined(WITH_BUILTIN_TESTS)
+    description.add_options()
     // Ad-hoc Testing.
     (
         alias(get_variable, 'g').c_str(),
@@ -367,6 +370,7 @@ options_metadata parser::load_options() THROWS
             default_value(system::null_hash),
         "Run built-in write test and display."
     );
+#endif
 
     return description;
 }

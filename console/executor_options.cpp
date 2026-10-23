@@ -37,7 +37,9 @@ enum menu : uint8_t
     hold,
     info,
     menu_,
+#if defined(WITH_BUILTIN_TESTS)
     test,
+#endif
     work,
     zeroize
 };
@@ -54,7 +56,9 @@ const std::unordered_map<std::string, uint8_t> executor::options_
     { "h", menu::hold },
     { "i", menu::info },
     { "m", menu::menu_ },
+#if defined(WITH_BUILTIN_TESTS)
     { "t", menu::test },
+#endif
     { "w", menu::work },
     { "z", menu::zeroize }
 };
@@ -68,7 +72,9 @@ const std::unordered_map<uint8_t, std::string> executor::options_menu_
     { menu::hold,    "[h]old network communication" },
     { menu::info,    "[i]nfo about store" },
     { menu::menu_,   "[m]enu of options and toggles" },
+#if defined(WITH_BUILTIN_TESTS)
     { menu::test,    "[t]est built-in case" },
+#endif
     { menu::work,    "[w]ork distribution" },
     { menu::zeroize, "[z]eroize disk full error" }
 };
@@ -192,11 +198,13 @@ void executor::do_menu() const
         logger(std::format("Option: {}", option.second));
 }
 
+#if defined(WITH_BUILTIN_TESTS)
 // [t]est
 void executor::do_test() const
 {
     read_test(system::null_hash);
 }
+#endif
 
 // [w]ork
 void executor::do_report_work()
@@ -316,11 +324,13 @@ void executor::subscribe_capture()
                         do_menu();
                         return true;
                     }
+#if defined(WITH_BUILTIN_TESTS)
                     case menu::test:
                     {
                         do_test();
                         return true;
                     }
+#endif
                     case menu::work:
                     {
                         do_report_work();
