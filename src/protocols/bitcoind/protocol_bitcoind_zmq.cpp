@@ -44,6 +44,8 @@ void protocol_bitcoind_zmq::start() NOEXCEPT
 
     // Chaser subscription is asynchronous, events may be missed.
     subscribe_chase(BIND(handle_chase, _1, _2));
+    SUBSCRIBE_BROADCAST(wire_tx, handle_wire_tx, _1, _2, _3);
+    SUBSCRIBE_BROADCAST(wire_block, handle_wire_block, _1, _2, _3);
 
     SUBSCRIBE_CHANNEL(void, handle_subscribe, _1, _2, _3);
     network::protocol_rpc<channel_bitcoind_zmq>::start();
@@ -54,6 +56,16 @@ void protocol_bitcoind_zmq::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     unsubscribe_chase();
+
+    if (subscribed_raw_tx_.exchange(false, relaxed))
+    {
+        demand_wire_tx(false);
+        demand_wire_block(false);
+    }
+
+    if (subscribed_raw_block_.exchange(false, relaxed))
+        demand_wire_block(false);
+
     network::protocol_rpc<channel_bitcoind_zmq>::stopping(ec);
 }
 
@@ -84,10 +96,62 @@ bool protocol_bitcoind_zmq::handle_subscribe(const code& ec,
 
     const std::string text{ prefix->begin(), prefix->end() };
     set_subscription(subscribed_hash_block_, topic::hash_block, text, cancel);
-    set_subscription(subscribed_raw_block_, topic::raw_block, text, cancel);
     set_subscription(subscribed_hash_tx_, topic::hash_tx, text, cancel);
-    set_subscription(subscribed_raw_tx_, topic::raw_tx, text, cancel);
     set_subscription(subscribed_sequence_, topic::sequence, text, cancel);
+
+    if (set_subscription(subscribed_raw_block_, topic::raw_block, text, cancel))
+        demand_wire_block(!cancel);
+
+    // Block txs are published from the block broadcast.
+    if (set_subscription(subscribed_raw_tx_, topic::raw_tx, text, cancel))
+    {
+        demand_wire_tx(!cancel);
+        demand_wire_block(!cancel);
+    }
+
+    return true;
+}
+
+bool protocol_bitcoind_zmq::handle_wire_tx(const code& ec,
+    const wire_tx::cptr& message, uint64_t) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped(ec))
+        return false;
+
+    if (subscribed_raw_tx_.load(relaxed))
+    {
+        const rpc::streamable::cptr tx{ message };
+        publish(topic::raw_tx, raw_txs_++, rpc::any_t{ tx });
+    }
+
+    return true;
+}
+
+bool protocol_bitcoind_zmq::handle_wire_block(const code& ec,
+    const wire_block::cptr& message, uint64_t) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped(ec))
+        return false;
+
+    if (subscribed_raw_tx_.load(relaxed))
+    {
+        for (const auto& item: message->transactions())
+        {
+            const rpc::streamable::cptr tx{ item };
+            publish(topic::raw_tx, raw_txs_++, rpc::any_t{ tx });
+        }
+    }
+
+    if (message->organized() && subscribed_raw_block_.load(relaxed))
+    {
+        const rpc::streamable::cptr block{ message };
+        publish(topic::raw_block, raw_blocks_++, rpc::any_t{ block });
+    }
+
     return true;
 }
 
@@ -105,7 +169,7 @@ bool protocol_bitcoind_zmq::handle_chase(const code&,
     {
         case node::chase::organized:
         {
-            if (blocks() || transactions())
+            if ((blocks() || transactions()) && is_current_chain(true))
             {
                 POST(do_organized,
                     node::to_payload<node::chase::organized>(value).link);
@@ -125,7 +189,7 @@ bool protocol_bitcoind_zmq::handle_chase(const code&,
         }
         case node::chase::reorganized:
         {
-            if (blocks() || transactions())
+            if ((blocks() || transactions()) && is_current_chain(true))
             {
                 POST(do_reorganized,
                     node::to_payload<node::chase::reorganized>(value).link);
@@ -164,10 +228,6 @@ void protocol_bitcoind_zmq::do_organized(node::header_t link) NOEXCEPT
     if (subscribed_hash_block_.load(relaxed))
         publish(topic::hash_block, hash_blocks_++,
             reverse(to_chunk(hash)));
-
-    if (subscribed_raw_block_.load(relaxed))
-        publish(topic::raw_block, raw_blocks_++,
-            query.get_wire_block(link, true));
 
     if (subscribed_sequence_.load(relaxed))
         publish(topic::sequence, sequences_++,
@@ -224,9 +284,6 @@ void protocol_bitcoind_zmq::publish(node::transaction_t link,
     if (subscribed_hash_tx_.load(relaxed))
         publish(topic::hash_tx, hash_txs_++, reverse(to_chunk(hash)));
 
-    if (subscribed_raw_tx_.load(relaxed))
-        publish(topic::raw_tx, raw_txs_++, query.get_wire_tx(link, true));
-
     if (sequenced && subscribed_sequence_.load(relaxed))
         publish(topic::sequence, sequences_++,
             sequence_body(label::transaction_accepted, std::move(hash),
@@ -236,11 +293,17 @@ void protocol_bitcoind_zmq::publish(node::transaction_t link,
 void protocol_bitcoind_zmq::publish(const std::string_view& topic,
     uint32_t sequence, data_chunk&& body) NOEXCEPT
 {
+    publish(topic, sequence, rpc::any_t{ to_shared(std::move(body)) });
+}
+
+void protocol_bitcoind_zmq::publish(const std::string_view& topic,
+    uint32_t sequence, rpc::any_t&& body) NOEXCEPT
+{
     BC_ASSERT(stranded());
 
     send_notification(rpc::string_t{ topic }, rpc::array_t
         {
-            rpc::any_t{ to_shared(std::move(body)) },
+            std::move(body),
             rpc::value_t{ sequence }
         });
 }
@@ -252,14 +315,12 @@ void protocol_bitcoind_zmq::publish(const std::string_view& topic,
 bool protocol_bitcoind_zmq::blocks() const NOEXCEPT
 {
     return subscribed_hash_block_.load(relaxed) ||
-        subscribed_raw_block_.load(relaxed) ||
         subscribed_sequence_.load(relaxed);
 }
 
 bool protocol_bitcoind_zmq::transactions() const NOEXCEPT
 {
-    return subscribed_hash_tx_.load(relaxed) ||
-        subscribed_raw_tx_.load(relaxed);
+    return subscribed_hash_tx_.load(relaxed);
 }
 
 bool protocol_bitcoind_zmq::sequences() const NOEXCEPT
@@ -268,12 +329,12 @@ bool protocol_bitcoind_zmq::sequences() const NOEXCEPT
 }
 
 // static
-void protocol_bitcoind_zmq::set_subscription(std::atomic_bool& subscribed,
+bool protocol_bitcoind_zmq::set_subscription(std::atomic_bool& subscribed,
     const std::string_view& topic, const std::string& prefix,
     bool cancel) NOEXCEPT
 {
-    if (topic.starts_with(prefix))
-        subscribed.store(!cancel, relaxed);
+    return topic.starts_with(prefix) &&
+        subscribed.exchange(!cancel, relaxed) == cancel;
 }
 
 // static

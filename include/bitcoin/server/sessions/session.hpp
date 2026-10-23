@@ -64,6 +64,10 @@ public:
     /// Get the closed channel byte totals with the active identifiers.
     void fetch_totals(network::net::totals_handler&& handler) const NOEXCEPT;
 
+    /// Count a channel demand for wire tx|block broadcasts (or uncount).
+    void demand_wire_tx(bool demand) const NOEXCEPT;
+    void demand_wire_block(bool demand) const NOEXCEPT;
+
 private:
     // These are thread safe.
     const configuration& config_;

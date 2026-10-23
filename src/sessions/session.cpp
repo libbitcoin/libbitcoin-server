@@ -41,5 +41,15 @@ void session::fetch_totals(
     node_.fetch_totals(std::move(handler));
 }
 
+void session::demand_wire_tx(bool demand) const NOEXCEPT
+{
+    node_.demand_wire_tx(demand);
+}
+
+void session::demand_wire_block(bool demand) const NOEXCEPT
+{
+    node_.demand_wire_block(demand);
+}
+
 } // namespace server
 } // namespace libbitcoin
