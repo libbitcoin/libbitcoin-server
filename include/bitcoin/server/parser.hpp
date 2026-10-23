@@ -80,6 +80,9 @@ public:
 protected:
     /// Derive each unconfigured hashmap bucket count from its expected count.
     virtual void derive_buckets() NOEXCEPT;
+
+    /// Set the default port of each service binding without a port.
+    virtual void derive_ports() NOEXCEPT;
 };
 
 } // namespace server
