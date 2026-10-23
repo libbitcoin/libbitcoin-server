@@ -145,6 +145,13 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
         return;
     }
 
+    // The credential may be restricted to a subset of interface methods.
+    if (!permitted(model.method))
+    {
+        send_forbidden(*get);
+        return;
+    }
+
     // Required parameters may be query string sourced (e.g. blockpart).
     if (const auto fault = rest_dispatcher_.notify(model))
     {

@@ -148,6 +148,13 @@ bool protocol_esplora::try_dispatch_object(const http::request& request) NOEXCEP
         return true;
     }
 
+    // The credential may be restricted to a subset of interface methods.
+    if (!permitted(model.method))
+    {
+        send_forbidden(request);
+        return true;
+    }
+
     if (const auto ec = dispatcher_.notify(model))
         send_internal_server_error(ec, request);
 
@@ -201,6 +208,13 @@ void protocol_esplora::handle_receive_post(const code& ec,
 
     set_body(model, post->body().get<http::string_value>());
 
+    // The credential may be restricted to a subset of interface methods.
+    if (!permitted(model.method))
+    {
+        send_forbidden(*post);
+        return;
+    }
+
     if (const auto code = dispatcher_.notify(model))
         send_internal_server_error(code, *post);
 }
@@ -241,6 +255,13 @@ void protocol_esplora::dispatch_websocket(const http::request& request) NOEXCEPT
         }
 
         set_body(model, frame.substr(add1(split)));
+    }
+
+    // The credential may be restricted to a subset of interface methods.
+    if (!permitted(model.method))
+    {
+        stop(network::error::unauthorized);
+        return;
     }
 
     if (dispatcher_.notify(model))

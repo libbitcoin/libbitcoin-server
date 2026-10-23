@@ -101,6 +101,13 @@ bool protocol_admin::try_dispatch_object(const http::request& request) NOEXCEPT
     if (media == media_type::text_html)
         return false;
 
+    // The credential may be restricted to a subset of interface methods.
+    if (!permitted(model.method))
+    {
+        send_forbidden(request);
+        return true;
+    }
+
     if (const auto ec = dispatcher_.notify(model))
         send_internal_server_error(ec, request);
 
@@ -143,6 +150,13 @@ void protocol_admin::dispatch_websocket(const http::request& request) NOEXCEPT
     if (strip_media(model) != media_type::application_json)
     {
         stop(network::error::not_acceptable);
+        return;
+    }
+
+    // The credential may be restricted to a subset of interface methods.
+    if (!permitted(model.method))
+    {
+        stop(network::error::unauthorized);
         return;
     }
 
