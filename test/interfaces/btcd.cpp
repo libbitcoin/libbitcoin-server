@@ -50,14 +50,11 @@ constexpr bool btcd_unserved(const std::string_view& name) NOEXCEPT
 // btcd_methods::implemented
 // -----------------------------------------------------------------------------
 
-// These are dispatchable but answer not_implemented (see protocol_btcd).
-// No mempool in v4, so unconfirmed-tx notification has no substitute.
 static_assert(btcd_served("notifynewtransactions"));
 static_assert(btcd_served("stopnotifynewtransactions"));
 
-// notifyreceived/notifyspent are served at confirmed-only fidelity (no
-// mempool in v4), reusing loadtxfilter's cursor-based matching -- see
-// protocol_btcd_filter.cpp.
+// notifyreceived/notifyspent are served at confirmed-only fidelity, reusing
+// loadtxfilter's cursor-based matching (see protocol_btcd_filter.cpp).
 static_assert(btcd_served("notifyreceived"));
 static_assert(btcd_served("stopnotifyreceived"));
 static_assert(btcd_served("notifyspent"));
