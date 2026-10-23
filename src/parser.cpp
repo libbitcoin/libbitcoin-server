@@ -1067,7 +1067,7 @@ options_metadata parser::load_settings() THROWS
     (
         "wallet.hd_public_prefix",
         setting<uint32_t>(&configured.server.wallet.hd_public_prefix),
-        "The extended public key prefix, defaults to {} (use '71979618' for testnet)."
+        "The extended public key prefix, defaults to {} (use '70617039' for testnet)."
     )
 
     /* [admin] */
