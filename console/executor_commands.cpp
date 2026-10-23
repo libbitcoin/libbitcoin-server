@@ -167,6 +167,7 @@ bool executor::do_collisions()
     return close_store();
 }
 
+#if defined(WITH_BUILTIN_TESTS)
 // --[g]et
 bool executor::do_get(const system::hash_digest& hash)
 {
@@ -190,6 +191,7 @@ bool executor::do_put(const system::hash_digest& hash)
     write_test(hash);
     return close_store();
 }
+#endif
 
 // Command line dispatch.
 // ----------------------------------------------------------------------------
@@ -238,11 +240,13 @@ bool executor::dispatch()
     if (config.version)
         return do_version();
 
+#if defined(WITH_BUILTIN_TESTS)
     if (config.get != system::null_hash)
         return do_get(config.get);
 
     if (config.put != system::null_hash)
         return do_put(config.put);
+#endif
 
     return do_run();
 }

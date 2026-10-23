@@ -121,8 +121,10 @@ private:
     bool do_information();
     bool do_buckets();
     bool do_collisions();
+#if defined(WITH_BUILTIN_TESTS)
     bool do_get(const system::hash_digest& hash);
     bool do_put(const system::hash_digest& hash);
+#endif
 
     // Runtime options.
     void do_hot_backup();
@@ -132,14 +134,18 @@ private:
     void do_report_work();
     void do_reload_store();
     void do_menu() const;
+#if defined(WITH_BUILTIN_TESTS)
     void do_test() const;
+#endif
     void do_info() const;
     void do_report_condition() const;
     void subscribe_capture();
 
+#if defined(WITH_BUILTIN_TESTS)
     // Built in tests.
     void read_test(const system::hash_digest& hash) const;
     void write_test(const system::hash_digest& hash);
+#endif
 
     // Logging.
     database::file::stream::out::rotator create_log_sink() const;

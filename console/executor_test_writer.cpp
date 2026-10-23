@@ -19,6 +19,8 @@
 #include "executor.hpp"
 #include "localize.hpp"
 
+#if defined(WITH_BUILTIN_TESTS)
+
 namespace libbitcoin {
 namespace server {
 
@@ -220,3 +222,5 @@ void executor::write_test(const system::hash_digest& hash)
 
 } // namespace server
 } // namespace libbitcoin
+
+#endif // WITH_BUILTIN_TESTS
