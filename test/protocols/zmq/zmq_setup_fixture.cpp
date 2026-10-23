@@ -65,6 +65,7 @@ zmq_setup_fixture::zmq_setup_fixture(const initializer& setup,
     zmq.connections = 1;
     zmq.inactivity_minutes = 1;
     node_settings.delay_inbound = false;
+    node_settings.currency_window_minutes = 0;
     network_settings.inbound.connections = 0;
     network_settings.outbound.connections = 0;
 
@@ -114,4 +115,24 @@ BC_POP_WARNING()
 void zmq_setup_fixture::notify(node::event_value value)
 {
     server_.notify(error::success, value);
+}
+
+void zmq_setup_fixture::broadcast(const network::wire_tx::cptr& message)
+{
+    server_.broadcast<network::wire_tx>(message, {});
+}
+
+void zmq_setup_fixture::broadcast(const network::wire_block::cptr& message)
+{
+    server_.broadcast<network::wire_block>(message, {});
+}
+
+bool zmq_setup_fixture::wire_tx_demanded() const
+{
+    return server_.wire_tx_demanded();
+}
+
+bool zmq_setup_fixture::wire_block_demanded() const
+{
+    return server_.wire_block_demanded();
 }

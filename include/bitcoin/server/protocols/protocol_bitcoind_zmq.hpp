@@ -80,6 +80,12 @@ protected:
     bool handle_subscribe(const code& ec, const system::chunk_cptr& prefix,
         bool cancel) NOEXCEPT;
 
+    /// Broadcast handlers (stranded).
+    bool handle_wire_tx(const code& ec,
+        const network::wire_tx::cptr& message, uint64_t sender) NOEXCEPT;
+    bool handle_wire_block(const code& ec,
+        const network::wire_block::cptr& message, uint64_t sender) NOEXCEPT;
+
     /// Notifications (stranded).
     void do_organized(node::header_t link) NOEXCEPT;
     void do_reorganized(node::header_t link) NOEXCEPT;
@@ -89,13 +95,15 @@ protected:
     void publish(node::transaction_t link, bool sequenced) NOEXCEPT;
     void publish(const std::string_view& topic, uint32_t sequence,
         system::data_chunk&& body) NOEXCEPT;
+    void publish(const std::string_view& topic, uint32_t sequence,
+        network::rpc::any_t&& body) NOEXCEPT;
 
 private:
     bool blocks() const NOEXCEPT;
     bool transactions() const NOEXCEPT;
     bool sequences() const NOEXCEPT;
 
-    static void set_subscription(std::atomic_bool& subscribed,
+    static bool set_subscription(std::atomic_bool& subscribed,
         const std::string_view& topic, const std::string& prefix,
         bool cancel) NOEXCEPT;
     static system::data_chunk sequence_body(label value,

@@ -38,6 +38,10 @@ struct zmq_setup_fixture
 
     // 0_32 vs {} for xcode variant issue.
     void notify(node::event_value value);
+    void broadcast(const network::wire_tx::cptr& message);
+    void broadcast(const network::wire_block::cptr& message);
+    bool wire_tx_demanded() const;
+    bool wire_block_demanded() const;
 
 protected:
     configuration config_;

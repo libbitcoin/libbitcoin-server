@@ -27,6 +27,16 @@ using peer_socket = boost::asio::ip::tcp::socket;
 // Test infrastructure (synchronous ZMTP subscriber peer).
 // ----------------------------------------------------------------------------
 
+static network::wire_tx::view::cptr to_tx(const data_chunk& data)
+{
+    return emplace_shared<const network::wire_tx::view>(data_chunk{ data }, false, true);
+}
+
+static network::wire_block::view::cptr to_block(const data_chunk& data)
+{
+    return emplace_shared<const network::wire_block::view>(data_chunk{ data }, true);
+}
+
 // Build a command frame with the given name and trailing content.
 static data_chunk command(const std::string& name, const data_chunk& content)
 {
@@ -369,23 +379,134 @@ BOOST_AUTO_TEST_CASE(zmq__hashblock__organized__reversed_hash_and_sequence)
     BOOST_REQUIRE_EQUAL(second.at(2), base16_chunk("01000000"));
 }
 
-BOOST_AUTO_TEST_CASE(zmq__rawtx__organized__block_transaction_only_subscribed_topic)
+BOOST_AUTO_TEST_CASE(zmq__rawtx__wire_tx__wire_transaction_and_sequence)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "rawtx");
     peer_ping_pong(socket_);
 
-    const auto link = query_.to_confirmed(1);
-    const auto block = query_.get_block(link, true);
-    BOOST_REQUIRE(block);
-    const auto expected = block->transactions_ptr()->front()->to_data(true);
+    const auto expected = test::block1.transactions_ptr()->front()->to_data(true);
+    broadcast(emplace_shared<const network::wire_tx>(to_tx(expected)));
+    const auto first = peer_read_message(socket_);
+    BOOST_REQUIRE_EQUAL(first.size(), 3u);
+    BOOST_REQUIRE_EQUAL(first.at(0), to_chunk("rawtx"));
+    BOOST_REQUIRE_EQUAL(first.at(1), expected);
+    BOOST_REQUIRE_EQUAL(first.at(2), base16_chunk("00000000"));
 
-    // hashblock/rawblock/sequence precede rawtx but are not subscribed.
-    notify(node::chases::organized{ link });
-    const auto message = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(message.size(), 3u);
-    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("rawtx"));
-    BOOST_REQUIRE_EQUAL(message.at(1), expected);
+    broadcast(emplace_shared<const network::wire_tx>(to_tx(expected)));
+    const auto second = peer_read_message(socket_);
+    BOOST_REQUIRE_EQUAL(second.size(), 3u);
+    BOOST_REQUIRE_EQUAL(second.at(2), base16_chunk("01000000"));
+}
+
+BOOST_AUTO_TEST_CASE(zmq__rawblock__wire_block__wire_block_and_sequence)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "rawblock");
+    peer_ping_pong(socket_);
+
+    const auto expected = test::block1.to_data(true);
+    broadcast(emplace_shared<const network::wire_block>(to_block(expected), true));
+    const auto first = peer_read_message(socket_);
+    BOOST_REQUIRE_EQUAL(first.size(), 3u);
+    BOOST_REQUIRE_EQUAL(first.at(0), to_chunk("rawblock"));
+    BOOST_REQUIRE_EQUAL(first.at(1), expected);
+    BOOST_REQUIRE_EQUAL(first.at(2), base16_chunk("00000000"));
+
+    broadcast(emplace_shared<const network::wire_block>(to_block(expected), true));
+    const auto second = peer_read_message(socket_);
+    BOOST_REQUIRE_EQUAL(second.size(), 3u);
+    BOOST_REQUIRE_EQUAL(second.at(2), base16_chunk("01000000"));
+}
+
+BOOST_AUTO_TEST_CASE(zmq__rawtx__wire_block_then_wire_tx__block_transactions_then_transaction)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "rawtx");
+    peer_ping_pong(socket_);
+
+    const auto expected = test::block1.transactions_ptr()->front()->to_data(true);
+    broadcast(emplace_shared<const network::wire_block>(to_block(test::block1.to_data(true)), true));
+    broadcast(emplace_shared<const network::wire_tx>(to_tx(expected)));
+    const auto first = peer_read_message(socket_);
+    BOOST_REQUIRE_EQUAL(first.size(), 3u);
+    BOOST_REQUIRE_EQUAL(first.at(0), to_chunk("rawtx"));
+    BOOST_REQUIRE_EQUAL(first.at(1), expected);
+    BOOST_REQUIRE_EQUAL(first.at(2), base16_chunk("00000000"));
+
+    const auto second = peer_read_message(socket_);
+    BOOST_REQUIRE_EQUAL(second.size(), 3u);
+    BOOST_REQUIRE_EQUAL(second.at(0), to_chunk("rawtx"));
+    BOOST_REQUIRE_EQUAL(second.at(2), base16_chunk("01000000"));
+}
+
+BOOST_AUTO_TEST_CASE(zmq__rawblock__reorganized_wire_block__not_published)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "raw");
+    peer_ping_pong(socket_);
+
+    const auto expected = test::block1.to_data(true);
+    broadcast(emplace_shared<const network::wire_block>(to_block(expected), false));
+    broadcast(emplace_shared<const network::wire_block>(to_block(expected), true));
+    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawtx"));
+    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawtx"));
+    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawblock"));
+}
+
+BOOST_AUTO_TEST_CASE(zmq__subscribe__rawtx__wire_tx_and_block_demanded)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "rawtx");
+    peer_ping_pong(socket_);
+    BOOST_REQUIRE(wire_tx_demanded());
+    BOOST_REQUIRE(wire_block_demanded());
+}
+
+BOOST_AUTO_TEST_CASE(zmq__subscribe__rawblock__wire_block_demanded)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "rawblock");
+    peer_ping_pong(socket_);
+    BOOST_REQUIRE(!wire_tx_demanded());
+    BOOST_REQUIRE(wire_block_demanded());
+}
+
+BOOST_AUTO_TEST_CASE(zmq__subscribe__raw_prefix__wire_demanded)
+{
+    BOOST_REQUIRE(!wire_tx_demanded());
+    BOOST_REQUIRE(!wire_block_demanded());
+
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "raw");
+    peer_ping_pong(socket_);
+    BOOST_REQUIRE(wire_tx_demanded());
+    BOOST_REQUIRE(wire_block_demanded());
+
+    peer_cancel(socket_, "raw");
+    peer_ping_pong(socket_);
+    BOOST_REQUIRE(!wire_tx_demanded());
+    BOOST_REQUIRE(!wire_block_demanded());
+}
+
+BOOST_AUTO_TEST_CASE(zmq__subscribe__hash_prefix__wire_undemanded)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "hash");
+    peer_ping_pong(socket_);
+    BOOST_REQUIRE(!wire_tx_demanded());
+    BOOST_REQUIRE(!wire_block_demanded());
+}
+
+BOOST_AUTO_TEST_CASE(zmq__subscribe__overlapping_prefixes_cancel_one__wire_tx_undemanded)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "raw");
+    peer_subscribe(socket_, "rawtx");
+    peer_cancel(socket_, "rawtx");
+    peer_ping_pong(socket_);
+    BOOST_REQUIRE(!wire_tx_demanded());
+    BOOST_REQUIRE(wire_block_demanded());
 }
 
 BOOST_AUTO_TEST_CASE(zmq__sequence__organized__reversed_hash_and_connected_label)
@@ -415,29 +536,12 @@ BOOST_AUTO_TEST_CASE(zmq__subscribe__empty_prefix__all_topics_published)
 
     // The empty prefix matches every topic, published in this order.
     notify(node::chases::organized{ query_.to_confirmed(1) });
+    broadcast(emplace_shared<const network::wire_block>(to_block(test::block1.to_data(true)), true));
     BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("hashtx"));
-    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawtx"));
     BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("hashblock"));
-    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawblock"));
     BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("sequence"));
-}
-
-BOOST_AUTO_TEST_CASE(zmq__rawtx__reorganized__block_transaction_published)
-{
-    peer_handshake(socket_);
-    peer_subscribe(socket_, "rawtx");
-    peer_ping_pong(socket_);
-
-    const auto link = query_.to_confirmed(1);
-    const auto block = query_.get_block(link, true);
-    BOOST_REQUIRE(block);
-    const auto expected = block->transactions_ptr()->front()->to_data(true);
-
-    notify(node::chases::reorganized{ link });
-    const auto message = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(message.size(), 3u);
-    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("rawtx"));
-    BOOST_REQUIRE_EQUAL(message.at(1), expected);
+    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawtx"));
+    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawblock"));
 }
 
 BOOST_AUTO_TEST_CASE(zmq__sequence__reorganized__reversed_hash_and_disconnected_label)
@@ -502,20 +606,6 @@ BOOST_AUTO_TEST_CASE(zmq__hashtx__transaction__reversed_hash_and_sequence)
     BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("hashtx"));
     BOOST_REQUIRE_EQUAL(message.at(1), to_chunk(reverse_copy(hash)));
     BOOST_REQUIRE_EQUAL(message.at(2), base16_chunk("00000000"));
-}
-
-BOOST_AUTO_TEST_CASE(zmq__rawtx__transaction__wire_transaction)
-{
-    peer_handshake(socket_);
-    peer_subscribe(socket_, "rawtx");
-    peer_ping_pong(socket_);
-
-    const auto& tx = *test::block1.transactions_ptr()->front();
-    notify(node::chases::transaction{ query_.to_tx(tx.hash(false)).value });
-    const auto message = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(message.size(), 3u);
-    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("rawtx"));
-    BOOST_REQUIRE_EQUAL(message.at(1), tx.to_data(true));
 }
 
 BOOST_AUTO_TEST_CASE(zmq__sequence__transaction__reversed_hash_and_accepted_label)

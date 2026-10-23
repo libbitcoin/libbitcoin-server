@@ -85,6 +85,17 @@ public:
         session_->fetch_totals(std::move(handler));
     }
 
+    /// Count a channel demand for wire tx|block broadcasts (or uncount).
+    inline void demand_wire_tx(bool demand) const NOEXCEPT
+    {
+        session_->demand_wire_tx(demand);
+    }
+
+    inline void demand_wire_block(bool demand) const NOEXCEPT
+    {
+        session_->demand_wire_block(demand);
+    }
+
 private:
     // These are thread safe.
     const configuration& config_;
