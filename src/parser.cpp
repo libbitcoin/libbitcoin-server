@@ -1887,6 +1887,7 @@ options_metadata parser::load_settings() THROWS
         setting<bool>(&configured.server.esplora.allow_opaque_origin),
         "Allow requests from opaque origin (see CORS), defaults to {}."
     )
+#if defined(WITH_STRATUM)
     /* [stratum_v1] */
     (
         "stratum_v1.bind",
@@ -2001,6 +2002,7 @@ options_metadata parser::load_settings() THROWS
         "The maximum allowed request size, defaults to {}."
     )
 
+#endif
     /* [bitcoind_zmq] */
     (
         "bitcoind_zmq.bind",
