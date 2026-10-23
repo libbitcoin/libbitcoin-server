@@ -2065,7 +2065,6 @@ bool protocol_bitcoind_blockchain::handle_get_tx_spending_prevout(const code& ec
     return true;
 }
 
-// Each tx is submitted individually, in file order, and failures are skipped.
 bool protocol_bitcoind_blockchain::handle_import_mempool(const code& ec,
     rpc_interface::import_mempool, const std::string& filepath,
     const std::optional<object_t>& options) NOEXCEPT
