@@ -79,6 +79,29 @@ BCS_API void inject_activity(network::rpc::array_t& out,
     const std::unordered_set<std::string>& watch, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT;
 
+/// The submitpackage result of a submitted package, with the failing tx at
+/// index. False if the store is inconsistent, the caller sends the error.
+BCS_API bool package_result(boost::json::object& out,
+    const node::query& query, const code& ec, size_t index,
+    const system::chain::transaction_cptrs& txs) NOEXCEPT;
+
+/// The getmempoolentry result of a pooled and confirmable tx.
+BCS_API bool mempool_entry(boost::json::object& out,
+    const node::query& query, const database::tx_link& link) NOEXCEPT;
+
+/// The txids of the txs, or their entries keyed by txid (verbose).
+BCS_API bool mempool_txs(boost::json::value& out, const node::query& query,
+    const database::tx_links& links, bool verbose) NOEXCEPT;
+
+/// The getrawmempool result, with a constant mempool sequence.
+BCS_API bool raw_mempool(boost::json::value& out, const node::query& query,
+    bool verbose, bool sequence) NOEXCEPT;
+
+/// The getmempoolinfo result, with usage and maximum as store sizes.
+BCS_API bool mempool_info(boost::json::object& out,
+    const node::query& query, const std::filesystem::path& store,
+    double minimum, double relay, double increment) NOEXCEPT;
+
 /// The bitcoind chain name, resolved from the genesis block.
 BCS_API std::string chain_name(const node::query& query) NOEXCEPT;
 

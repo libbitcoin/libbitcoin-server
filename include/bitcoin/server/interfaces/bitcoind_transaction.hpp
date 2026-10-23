@@ -47,7 +47,7 @@ struct bitcoind_transaction_methods
         method<"utxoupdatepsbt", string_t, nullopt<empty::array>>{ "psbt", "descriptors" },
         method<"abortprivatebroadcast", string_t>{ unimplemented, "id" },
         method<"getprivatebroadcastinfo">{ unimplemented },
-        method<"submitpackage", array_t, nullopt<0.1>, nullopt<0.0>>{ unimplemented, "package", "maxfeerate", "maxburnamount" },
+        method<"submitpackage", array_t, nullopt<0.1>, nullopt<0.0>>{ "package", "maxfeerate", "maxburnamount" },
         method<"combinerawtransaction", array_t>{ "txs" },
         method<"signrawtransactionwithkey", string_t, array_t, nullable<array_t>, nullable<string_t>>{ unimplemented, "hexstring", "privkeys", "prevtxs", "sighashtype" }
     };

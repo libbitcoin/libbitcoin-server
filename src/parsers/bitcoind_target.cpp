@@ -319,9 +319,11 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
         if (segment == segments.size())
             return error::missing_target;
 
-        // The mempool is empty, so the checkmempool option is ignored.
         if (segments[segment] == "checkmempool")
+        {
+            params["mempool"] = true;
             ++segment;
+        }
 
         if (segment == segments.size())
             return error::missing_target;
@@ -357,6 +359,31 @@ code bitcoind_target(request_t& out, const std::string_view& path) NOEXCEPT
         method = "get_utxos";
         params["media"] = media;
         params["outpoints"] = std::move(outpoints);
+        return error::success;
+    }
+
+    // /rest/mempool/info.json and /rest/mempool/contents.json
+    if (target == "mempool")
+    {
+        if (segment == segments.size())
+            return error::missing_target;
+
+        std::string name{};
+        uint8_t media{};
+        if (!split_leaf(name, media, segments[segment++]) ||
+            media != to_value(media_type::application_json))
+            return error::invalid_target;
+
+        if (name == "info")
+        {
+            method = "mempool_information";
+            return error::success;
+        }
+
+        if (name != "contents")
+            return error::invalid_target;
+
+        method = "mempool";
         return error::success;
     }
 

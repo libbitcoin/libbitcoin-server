@@ -154,7 +154,8 @@ protected:
         const network::rpc::array_t& outputs,
         const std::optional<network::rpc::object_t>& options) NOEXCEPT;
     bool handle_import_mempool(const code& ec,
-        rpc_interface::import_mempool) NOEXCEPT;
+        rpc_interface::import_mempool, const std::string& filepath,
+        const std::optional<network::rpc::object_t>& options) NOEXCEPT;
 
     /// Chase events (block wait long polling).
     bool handle_chase(const code& ec, node::event_value value) NOEXCEPT;
@@ -196,10 +197,6 @@ private:
         const gate_t::ptr& gate) NOEXCEPT;
     database::tx_link to_mempool_tx(
         const system::hash_digest& hash) const NOEXCEPT;
-    bool mempool_entry(network::rpc::object_t& out,
-        const database::tx_link& link) const NOEXCEPT;
-    bool mempool_txs(network::rpc::value_t& out,
-        const database::tx_links& links, bool verbose) const NOEXCEPT;
     bool get_mempool_relatives(const std::string& txid, bool verbose,
         bool ancestors) NOEXCEPT;
     void do_get_mempool_relatives(const system::hash_digest& hash,
@@ -208,6 +205,15 @@ private:
         const gate_t::ptr& gate) NOEXCEPT;
     void do_get_tx_spending_prevout(const system::chain::points& prevouts,
         bool mempool_only, bool return_tx, const gate_t::ptr& gate) NOEXCEPT;
+
+    void do_save_mempool(const gate_t::ptr& gate) NOEXCEPT;
+    void do_import_mempool(const std::string& filepath,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void next_import(const system::chain::transactions_cptr& txs,
+        size_t index, const gate_t::ptr& gate) NOEXCEPT;
+    void handle_import(const code& ec, size_t,
+        const system::chain::transactions_cptr& txs, size_t index,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     // Wait machinery.
     void arm_wait(waiter&& waiting, double timeout) NOEXCEPT;

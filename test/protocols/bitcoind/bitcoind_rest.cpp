@@ -453,6 +453,50 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__getutxos_bin__hit__bip64_framing)
     BOOST_REQUIRE_EQUAL(rest_data("/rest/getutxos/" + txid1 + "-0.bin"), expected);
 }
 
+// mempool
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__mempool_info__empty__zero_size)
+{
+    const auto result = rest_json("/rest/mempool/info.json");
+    BOOST_REQUIRE(result.at("loaded").as_bool());
+    BOOST_REQUIRE_EQUAL(result.at("size").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(result.at("bytes").as_int64(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__default__empty_object)
+{
+    const auto result = rest_json("/rest/mempool/contents.json");
+    BOOST_REQUIRE(result.is_object());
+    BOOST_REQUIRE(result.as_object().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__not_verbose__empty_array)
+{
+    const auto result = rest_json("/rest/mempool/contents.json?verbose=false");
+    BOOST_REQUIRE(result.is_array());
+    BOOST_REQUIRE(result.as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__verbose_sequence__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/mempool/contents.json?verbose=true&mempool_sequence=true"), status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__invalid_boolean__bad_request)
+{
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/mempool/contents.json?verbose=1"), status::bad_request);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__binary__not_found)
+{
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/mempool/contents.bin"), status::not_found);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__mempool__unknown__not_found)
+{
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/mempool/bogus.json"), status::not_found);
+}
+
 BOOST_AUTO_TEST_CASE(bitcoind_rest__getutxos_over_limit__bad_request)
 {
     const auto item = unknown_hash + "-0/";
@@ -611,6 +655,83 @@ BOOST_FIXTURE_TEST_SUITE(bitcoind_rest_witness_tests, bitcoind_witness_setup_fix
 BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts__missing_prevouts__internal_server_error)
 {
     BOOST_REQUIRE_EQUAL(rest_status("/rest/spenttxouts/" + encode_hash(test::block2a.hash()) + ".bin"), status::internal_server_error);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// broadcast mempool
+// ----------------------------------------------------------------------------
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_rest_broadcast_tests, bitcoind_broadcast_setup_fixture)
+
+static std::string broadcast_param() NOEXCEPT
+{
+    return "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]";
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__broadcast__txid)
+{
+    const auto sent = rpc("sendrawtransaction", broadcast_param());
+    BOOST_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto result = rest_json("/rest/mempool/contents.json?verbose=false");
+    BOOST_REQUIRE_EQUAL(result.as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(result.as_array().front()), encode_hash(test::tx1c.hash(false)));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__broadcast_verbose__entry)
+{
+    const auto sent = rpc("sendrawtransaction", broadcast_param());
+    BOOST_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto result = rest_json("/rest/mempool/contents.json");
+    const auto& entry = result.as_object().at(encode_hash(test::tx1c.hash(false)));
+    BOOST_REQUIRE_EQUAL(entry.at("vsize").as_int64(), to_signed(test::tx1c.virtual_size()));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__broadcast_sequence__txids_with_sequence)
+{
+    const auto sent = rpc("sendrawtransaction", broadcast_param());
+    BOOST_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto result = rest_json("/rest/mempool/contents.json?verbose=false&mempool_sequence=true");
+    BOOST_REQUIRE_EQUAL(result.at("txids").as_array().size(), 1u);
+    BOOST_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__mempool_info__broadcast__one)
+{
+    const auto sent = rpc("sendrawtransaction", broadcast_param());
+    BOOST_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto result = rest_json("/rest/mempool/info.json");
+    BOOST_REQUIRE_EQUAL(result.at("size").as_int64(), 1);
+    BOOST_REQUIRE_EQUAL(result.at("bytes").as_int64(), to_signed(test::tx1c.virtual_size()));
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__getutxos__broadcast_output__checkmempool_hit)
+{
+    const auto sent = rpc("sendrawtransaction", broadcast_param());
+    BOOST_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto txid = encode_hash(test::tx1c.hash(false));
+    const auto checked = rest_json("/rest/getutxos/checkmempool/" + txid + "-0.json");
+    const auto unchecked = rest_json("/rest/getutxos/" + txid + "-0.json");
+    BOOST_REQUIRE_EQUAL(as_text(checked.at("bitmap")), "1");
+    BOOST_REQUIRE_EQUAL(checked.at("utxos").as_array().front().at("height").as_int64(), 0x7fffffff);
+    BOOST_REQUIRE_EQUAL(as_text(unchecked.at("bitmap")), "0");
+}
+
+BOOST_AUTO_TEST_CASE(bitcoind_rest__getutxos__broadcast_spent__checkmempool_miss)
+{
+    const auto sent = rpc("sendrawtransaction", broadcast_param());
+    BOOST_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto funder = encode_hash(test::block1c.transactions_ptr()->front()->hash(false));
+    const auto checked = rest_json("/rest/getutxos/checkmempool/" + funder + "-0.json");
+    const auto unchecked = rest_json("/rest/getutxos/" + funder + "-0.json");
+    BOOST_REQUIRE_EQUAL(as_text(checked.at("bitmap")), "0");
+    BOOST_REQUIRE_EQUAL(as_text(unchecked.at("bitmap")), "1");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

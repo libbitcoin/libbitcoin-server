@@ -128,7 +128,8 @@ protected:
     bool handle_broadcast(const code& ec, interface::broadcast,
         uint8_t media, const std::string& transaction) NOEXCEPT;
     bool handle_broadcast_package(const code& ec,
-        interface::broadcast_package) NOEXCEPT;
+        interface::broadcast_package, uint8_t media,
+        const network::rpc::array_t& transactions) NOEXCEPT;
 
     bool handle_get_block(const code& ec, interface::block,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
@@ -161,16 +162,6 @@ protected:
         uint8_t media) NOEXCEPT;
 
 private:
-    /// The confirmed funding and spending totals of an address.
-    struct address_stats
-    {
-        size_t funded_count{};
-        uint64_t funded_sum{};
-        size_t spent_count{};
-        uint64_t spent_sum{};
-        size_t tx_count{};
-    };
-
     using media_type = network::http::media_type;
     static constexpr uint8_t text = to_value(media_type::text_plain);
     static constexpr uint8_t json = to_value(media_type::application_json);
@@ -184,6 +175,10 @@ private:
         const system::chain::transaction::cptr& tx) NOEXCEPT;
     void complete_submit_tx(const code& ec,
         const system::chain::transaction::cptr& tx) NOEXCEPT;
+    void handle_submit_package(const code& ec, size_t index,
+        const system::chain::transactions_cptr& txs) NOEXCEPT;
+    void complete_submit_package(const code& ec, size_t index,
+        const system::chain::transactions_cptr& txs) NOEXCEPT;
 
     bool to_key(system::hash_digest& out,
         const std::optional<system::hash_cptr>& hash,
@@ -191,7 +186,8 @@ private:
     bool get_address_txs(uint8_t media,
         const std::optional<system::hash_cptr>& hash,
         const std::optional<std::string>& address,
-        const std::optional<system::hash_cptr>& last_seen) NOEXCEPT;
+        const std::optional<system::hash_cptr>& last_seen, bool mempool,
+        bool chain) NOEXCEPT;
 
     // Serializers.
     // ------------------------------------------------------------------------
@@ -216,29 +212,33 @@ private:
     void do_get_address(const system::hash_digest& key,
         const std::optional<std::string>& address,
         const gate_t::ptr& gate) NOEXCEPT;
-    void complete_get_address(const code& ec, const address_stats& stats,
+    void complete_get_address(const code& ec,
+        const database::address_totals& chain, size_t chain_txs,
+        const database::address_totals& mempool, size_t mempool_txs,
         const system::hash_digest& key,
         const std::optional<std::string>& address,
         const gate_t::ptr& gate) NOEXCEPT;
 
     void do_get_address_txs(const system::hash_digest& key,
-        const std::optional<system::hash_cptr>& last_seen,
-        const gate_t::ptr& gate) NOEXCEPT;
+        const std::optional<system::hash_cptr>& last_seen, bool mempool,
+        bool chain, const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_address_txs(const code& ec,
-        const database::histories& history,
+        const database::histories& unconfirmed,
+        const database::histories& confirmed,
         const std::optional<system::hash_cptr>& last_seen,
         const gate_t::ptr& gate) NOEXCEPT;
 
     void do_get_address_utxo(const system::hash_digest& key,
         const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_address_utxo(const code& ec,
+        const database::unspent_outputs& unspent,
+        const gate_t::ptr& gate) NOEXCEPT;
+
     void do_get_mempool(const gate_t::ptr& gate) NOEXCEPT;
     void do_get_mempool_txids(const gate_t::ptr& gate) NOEXCEPT;
     void do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_mempool(const code& ec, boost::json::value& out,
         size_t size, const gate_t::ptr& gate) NOEXCEPT;
-    void complete_get_address_utxo(const code& ec,
-        const database::unspent_outputs& unspent,
-        const gate_t::ptr& gate) NOEXCEPT;
 
     void next_estimate(size_t index) NOEXCEPT;
     void handle_estimate(const code& ec, uint64_t fee, size_t index) NOEXCEPT;

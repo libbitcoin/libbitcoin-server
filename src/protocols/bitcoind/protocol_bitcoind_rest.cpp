@@ -72,7 +72,9 @@ void protocol_bitcoind_rest::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_block_filter_headers, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_BITCOIND(handle_get_chain_information, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_tx, _1, _2, _3, _4);
-    SUBSCRIBE_BITCOIND(handle_get_utxos, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_utxos, _1, _2, _3, _4, _5);
+    SUBSCRIBE_BITCOIND(handle_get_mempool, _1, _2, _3, _4);
+    SUBSCRIBE_BITCOIND(handle_get_mempool_information, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_deployment_info, _1, _2, _3);
     SUBSCRIBE_CHANNEL(get, handle_receive_get, _1, _2);
     network::protocol::start();
@@ -778,16 +780,20 @@ bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
     return true;
 }
 
-// bitcoind's bip64 form: dummy version, height, output (all confirmed only).
+// bitcoind's bip64 form: dummy version, height, output.
 bool protocol_bitcoind_rest::handle_get_utxos(const code& ec,
-    rest_interface::get_utxos, uint8_t media,
-    const array_t& outpoints) NOEXCEPT
+    rest_interface::get_utxos, uint8_t media, const array_t& outpoints,
+    bool mempool) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
     // bitcoind's bip64 outpoint limit.
     constexpr size_t maximum_outpoints = 15;
+
+    // bitcoind's height of a pooled output.
+    constexpr size_t mempool_height = 0x7fffffff;
+
     if (outpoints.empty() || outpoints.size() > maximum_outpoints)
     {
         send_bad_request();
@@ -806,17 +812,21 @@ bool protocol_bitcoind_rest::handle_get_utxos(const code& ec,
         const auto index = std::get<uint32_t>(fields.at("index").value());
 
         const auto output_link = query.to_output(*hash, index);
-        const auto hit = !output_link.is_terminal() &&
-            query.is_confirmed_output(output_link) &&
-            !query.is_confirmed_spent(output_link);
+        const auto tx = query.to_output_tx(output_link);
+        const auto confirmed = !output_link.is_terminal() &&
+            query.is_confirmed_output(output_link);
+        const auto pooled = mempool && !confirmed && !tx.is_terminal() &&
+            query.is_pooled(tx) && query.is_confirmable_tx(tx);
+        const auto spent = query.is_confirmed_spent(output_link) ||
+            (mempool && query.is_confirmable_spent(output_link));
+        const auto hit = (confirmed || pooled) && !spent;
         hits.push_back(hit);
         if (!hit)
             continue;
 
-        size_t height{};
+        size_t height{ mempool_height };
         const auto output = query.get_output(output_link);
-        if (!output ||
-            !query.get_tx_height(height, query.to_output_tx(output_link)))
+        if (!output || (confirmed && !query.get_tx_height(height, tx)))
         {
             send_internal_server_error(database::error::integrity);
             return true;
@@ -903,6 +913,55 @@ bool protocol_bitcoind_rest::handle_get_utxos(const code& ec,
     }
 
     send_not_found();
+    return true;
+}
+
+bool protocol_bitcoind_rest::handle_get_mempool(const code& ec,
+    rest_interface::mempool, bool verbose, bool mempool_sequence) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (verbose && mempool_sequence)
+    {
+        send_bad_request();
+        return true;
+    }
+
+    boost::json::value out{};
+    if (!raw_mempool(out, archive(), verbose, mempool_sequence))
+    {
+        send_internal_server_error(database::error::integrity);
+        return true;
+    }
+
+    send_json(std::move(out), 1024);
+    return true;
+}
+
+// The minimum is that sent to peers (feefilter), while the relay minimum is
+// the configured rate.
+bool protocol_bitcoind_rest::handle_get_mempool_information(const code& ec,
+    rest_interface::mempool_information) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const auto& settings = node_settings();
+    const auto minimum = to_floating(minimum_fee_rate()) /
+        chain::satoshi_per_bitcoin;
+    const auto relay = to_floating(settings.minimum_fee_rate_()) /
+        chain::satoshi_per_bitcoin;
+
+    object out{};
+    if (!mempool_info(out, archive(), database_settings().path, minimum,
+        relay, settings.minimum_bump_rate))
+    {
+        send_internal_server_error(database::error::integrity);
+        return true;
+    }
+
+    send_json(std::move(out), 512);
     return true;
 }
 

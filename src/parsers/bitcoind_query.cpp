@@ -67,6 +67,18 @@ bool bitcoind_query(rpc::request_t& out, const std::string& target) NOEXCEPT
         }
     }
 
+    // Boolean parameters, either "true" or "false".
+    for (const auto& name: { "verbose", "mempool_sequence" })
+    {
+        if (const auto it = query.find(name); it != query.cend())
+        {
+            if (it->second != "true" && it->second != "false")
+                return false;
+
+            params[name] = (it->second == "true");
+        }
+    }
+
     return true;
 }
 

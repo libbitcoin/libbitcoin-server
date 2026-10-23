@@ -25,10 +25,15 @@ namespace server {
 
 #define CLASS protocol_electrum
 
+using namespace system;
 using namespace network::rpc;
 using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+
+// The vsize of a fee histogram bin, and the count of recent txs (electrumx).
+constexpr size_t histogram_bin = 30'000;
+constexpr size_t recent_count = 10;
 
 void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
     rpc_interface::mempool_get_fee_histogram) NOEXCEPT
@@ -42,9 +47,7 @@ void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
         return;
     }
 
-    // TODO: could be simulated with block fees.
-    send_result(array_t{});
-    ////send_code(error::not_implemented);
+    PARALLEL(do_get_fee_histogram, gate());
 }
 
 void protocol_electrum::handle_mempool_recent(const code& ec,
@@ -59,8 +62,7 @@ void protocol_electrum::handle_mempool_recent(const code& ec,
         return;
     }
 
-    // There is no tx pool.
-    send_result(array_t{});
+    PARALLEL(do_mempool_recent, gate());
 }
 
 void protocol_electrum::handle_mempool_get_info(const code& ec,
@@ -84,6 +86,85 @@ void protocol_electrum::handle_mempool_get_info(const code& ec,
         { "minrelaytxfee", settings.minimum_fee_rate },
         { "incrementalrelayfee", settings.minimum_bump_rate }
     });
+}
+
+// Completion handlers.
+// ----------------------------------------------------------------------------
+
+void protocol_electrum::do_get_fee_histogram(const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    database::fee_rates rates{};
+    if (!archive().get_confirmable_fees(rates))
+    {
+        POST(complete_mempool, database::error::integrity, value_t{}, gate);
+        return;
+    }
+
+    const auto bins = to_compact_fee_histogram(rates, histogram_bin);
+    array_t histogram{};
+    histogram.reserve(bins.size());
+    for (const auto& [rate, size]: bins)
+        histogram.emplace_back(array_t{ rate, size });
+
+    POST(complete_mempool, code{}, value_t{ std::move(histogram) }, gate);
+}
+
+// The pool is ordered by entry, so the most recent are at its end.
+void protocol_electrum::do_mempool_recent(const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    database::tx_links links{};
+    const auto& query = archive();
+    if (const auto ec = query.get_confirmable_txs(links))
+    {
+        POST(complete_mempool, ec, value_t{}, gate);
+        return;
+    }
+
+    array_t recent{};
+    const auto count = std::min(recent_count, links.size());
+    const auto end = std::next(links.crbegin(), count);
+    for (auto link = links.crbegin(); link != end; ++link)
+    {
+        size_t vsize{};
+        uint64_t fee{};
+        if (!query.get_tx_fee(fee, *link) ||
+            !query.get_tx_virtual_size(vsize, *link))
+        {
+            POST(complete_mempool, database::error::integrity, value_t{},
+                gate);
+            return;
+        }
+
+        recent.emplace_back(object_t
+        {
+            { "txid", encode_hash(query.get_tx_key(*link)) },
+            { "fee", fee },
+            { "vsize", vsize }
+        });
+    }
+
+    POST(complete_mempool, code{}, value_t{ std::move(recent) }, gate);
+}
+
+void protocol_electrum::complete_mempool(const code& ec, value_t& result,
+    const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (stopped())
+        return;
+
+    if (ec)
+    {
+        using namespace error::electrum;
+        send_code(translate(ec, daemon_error));
+        return;
+    }
+
+    send_result(std::move(result));
 }
 
 BC_POP_WARNING()

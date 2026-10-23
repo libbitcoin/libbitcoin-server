@@ -373,14 +373,54 @@ BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifyblocks__subscribed__null_result)
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__notifynewtransactions__default__not_implemented)
+BOOST_AUTO_TEST_CASE(btcd_rpc__notifynewtransactions__default__null_result)
 {
-    BOOST_REQUIRE_EQUAL(rpc_error("notifynewtransactions", "[false]"), unimplemented.value());
+    const auto response = rpc("notifynewtransactions", "[false]");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
-BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifynewtransactions__default__not_implemented)
+BOOST_AUTO_TEST_CASE(btcd_rpc__stopnotifynewtransactions__subscribed__null_result)
 {
-    BOOST_REQUIRE_EQUAL(rpc_error("stopnotifynewtransactions"), unimplemented.value());
+    const auto subscribed = rpc("notifynewtransactions", "[false]");
+    REQUIRE_NO_THROW_TRUE(subscribed.at("result").is_null());
+
+    const auto response = rpc("stopnotifynewtransactions");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__txaccepted__transaction__delivered)
+{
+    rpc("notifynewtransactions", "[false]");
+
+    const auto& tx = *test::block1.transactions_ptr()->front();
+    const node::transaction_t link{ query_.to_tx(tx.hash(false)).value };
+    notify(node::chases::transaction{ link });
+
+    const auto accepted = receive_notification();
+    BOOST_REQUIRE_EQUAL(as_text(accepted.at("method")), "txaccepted");
+
+    const auto& params = accepted.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params.size(), 2u);
+    BOOST_REQUIRE_EQUAL(as_text(params[0]), encode_hash(tx.hash(false)));
+    BOOST_REQUIRE_EQUAL(params[1].as_double(), 50.0);
+}
+
+BOOST_AUTO_TEST_CASE(btcd_rpc__txacceptedverbose__transaction__delivered)
+{
+    rpc("notifynewtransactions", "[true]");
+
+    const auto& tx = *test::block1.transactions_ptr()->front();
+    const node::transaction_t link{ query_.to_tx(tx.hash(false)).value };
+    notify(node::chases::transaction{ link });
+
+    const auto accepted = receive_notification();
+    BOOST_REQUIRE_EQUAL(as_text(accepted.at("method")), "txacceptedverbose");
+
+    const auto& params = accepted.at("params").as_array();
+    BOOST_REQUIRE_EQUAL(params.size(), 1u);
+    BOOST_REQUIRE_EQUAL(as_text(params[0].at("txid")), encode_hash(tx.hash(false)));
 }
 
 // filters

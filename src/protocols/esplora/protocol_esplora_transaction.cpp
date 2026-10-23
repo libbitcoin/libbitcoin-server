@@ -19,6 +19,7 @@
 #include <bitcoin/server/protocols/protocol_esplora.hpp>
 
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/serializers/serializers.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
 
 namespace libbitcoin {
@@ -478,13 +479,74 @@ void protocol_esplora::complete_submit_tx(const code& ec,
 }
 
 bool protocol_esplora::handle_broadcast_package(const code& ec,
-    interface::broadcast_package) NOEXCEPT
+    interface::broadcast_package, uint8_t media,
+    const network::rpc::array_t& transactions) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
-    send_not_implemented();
+    if (media != json)
+    {
+        send_not_acceptable();
+        return true;
+    }
+
+    if (transactions.empty() || transactions.size() > maximum_package)
+    {
+        send_rejected(error::invalid_argument);
+        return true;
+    }
+
+    chain::transaction_cptrs txs{};
+    txs.reserve(transactions.size());
+    for (const auto& item: transactions)
+    {
+        const auto hex = std::get_if<network::rpc::string_t>(&item.value());
+        if (is_null(hex))
+        {
+            send_rejected(error::invalid_argument);
+            return true;
+        }
+
+        read::base16::copy hexer{ *hex };
+        const auto tx = to_shared<chain::transaction>(hexer, true);
+        if (!tx->is_valid() || !hexer.is_exhausted())
+        {
+            send_rejected(error::invalid_argument);
+            return true;
+        }
+
+        txs.push_back(tx);
+    }
+
+    constexpr auto test = false;
+    const auto package = to_shared<chain::transaction_cptrs>(std::move(txs));
+    submit(package, test, BIND(handle_submit_package, _1, _2, package));
     return true;
+}
+
+void protocol_esplora::handle_submit_package(const code& ec, size_t index,
+    const chain::transactions_cptr& txs) NOEXCEPT
+{
+    POST(complete_submit_package, ec, index, txs);
+}
+
+void protocol_esplora::complete_submit_package(const code& ec, size_t index,
+    const chain::transactions_cptr& txs) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    object out{};
+    if (!package_result(out, archive(), ec, index, *txs))
+    {
+        send_internal_server_error(database::error::integrity);
+        return;
+    }
+
+    send_json(std::move(out), add1(txs->size()) * 512);
 }
 
 // The spending status of one output, false if the output does not exist.
@@ -493,7 +555,10 @@ bool protocol_esplora::to_outspend(object& out,
 {
     const auto& query = archive();
     const chain::point prevout{ hash, index };
-    const auto spender = query.find_confirmed_spender(prevout);
+    auto spender = query.find_confirmed_spender(prevout);
+    if (spender.is_terminal())
+        spender = query.find_confirmable_spender(prevout);
+
     if (spender.is_terminal())
     {
         out = { { "spent", false } };

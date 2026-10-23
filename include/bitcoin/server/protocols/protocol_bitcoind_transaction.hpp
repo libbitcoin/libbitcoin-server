@@ -108,12 +108,18 @@ protected:
     void complete_submit_tx(const code& ec,
         const system::chain::transaction::cptr& tx) NOEXCEPT;
 
+    void handle_package(const code& ec, size_t index,
+        const system::chain::transactions_cptr& txs) NOEXCEPT;
+    void complete_package(const code& ec, size_t index,
+        const system::chain::transactions_cptr& txs) NOEXCEPT;
+
     bool handle_abort_private_broadcast(const code& ec,
         rpc_interface::abort_private_broadcast) NOEXCEPT;
     bool handle_get_private_broadcast_info(const code& ec,
         rpc_interface::get_private_broadcast_info) NOEXCEPT;
     bool handle_submit_package(const code& ec,
-        rpc_interface::submit_package) NOEXCEPT;
+        rpc_interface::submit_package, const network::rpc::array_t& package,
+        double maxfeerate, double maxburnamount) NOEXCEPT;
     bool handle_combine_raw_transaction(const code& ec,
         rpc_interface::combine_raw_transaction,
         const network::rpc::array_t& txs) NOEXCEPT;

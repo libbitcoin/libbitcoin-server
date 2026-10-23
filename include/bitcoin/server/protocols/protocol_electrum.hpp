@@ -285,6 +285,11 @@ protected:
     void handle_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
     void complete_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
 
+    void do_get_fee_histogram(const gate_t::ptr& gate) NOEXCEPT;
+    void do_mempool_recent(const gate_t::ptr& gate) NOEXCEPT;
+    void complete_mempool(const code& ec, network::rpc::value_t& result,
+        const gate_t::ptr& gate) NOEXCEPT;
+
     /// Notification event handlers.
     /// -----------------------------------------------------------------------
 

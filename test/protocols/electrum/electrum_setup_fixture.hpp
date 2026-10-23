@@ -297,8 +297,7 @@ struct electrum_dangling_setup_fixture
     }
 };
 
-// A faulted store (once block 10 is confirmed): a block 10 tx is archived
-// again, outside of the block.
+// A block 10 tx archived again, outside of the block.
 struct electrum_duplicate_setup_fixture
   : electrum_setup_fixture
 {

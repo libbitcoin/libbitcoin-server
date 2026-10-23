@@ -40,6 +40,9 @@ public:
     /// Connections are dropped until the confirmed chain is current.
     static constexpr bool delayed{ true };
 
+    /// The maximum number of txs in a submitted package (bitcoind).
+    static constexpr size_t maximum_package{ 25 };
+
     inline protocol(const auto& session,
         const network::channel::ptr& channel) NOEXCEPT
       : node::protocol(session, channel),

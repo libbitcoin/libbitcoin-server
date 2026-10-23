@@ -80,7 +80,12 @@ protected:
     bool handle_get_chain_information(const code& ec,
         rest_interface::chain_information) NOEXCEPT;
     bool handle_get_utxos(const code& ec, rest_interface::get_utxos,
-        uint8_t media, const network::rpc::array_t& outpoints) NOEXCEPT;
+        uint8_t media, const network::rpc::array_t& outpoints,
+        bool mempool) NOEXCEPT;
+    bool handle_get_mempool(const code& ec, rest_interface::mempool,
+        bool verbose, bool mempool_sequence) NOEXCEPT;
+    bool handle_get_mempool_information(const code& ec,
+        rest_interface::mempool_information) NOEXCEPT;
     bool handle_get_deployment_info(const code& ec,
         rest_interface::deployment_info,
         const std::optional<system::hash_cptr>& hash) NOEXCEPT;

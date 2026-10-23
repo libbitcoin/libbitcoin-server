@@ -42,7 +42,7 @@ struct bitcoind_blockchain_methods
         method<"gettxout", string_t, number_t, nullopt<true>>{ "txid", "n", "include_mempool" },
         method<"gettxoutsetinfo", nullopt<"hash_serialized_3"_t>, nullopt<empty::value>, nullopt<true>>{ "hash_type", "hash_or_height", "use_index" },
         method<"pruneblockchain", number_t>{ unimplemented, "height" },
-        method<"savemempool">{ unimplemented },
+        method<"savemempool">{},
         method<"scantxoutset", string_t, nullopt<empty::array>>{ "action", "scanobjects" },
         method<"verifychain", nullopt<3.0>, nullopt<6.0>>{ "checklevel", "nblocks" },
         method<"dumptxoutset", string_t, nullopt<""_t>, nullable<value_t>>{ unimplemented, "path", "type", "options" },
@@ -67,7 +67,7 @@ struct bitcoind_blockchain_methods
         method<"getmempoolinfo">{},
         method<"getrawmempool", nullopt<false>, nullopt<false>>{ "verbose", "mempool_sequence" },
         method<"gettxspendingprevout", array_t, nullable<object_t>>{ "outputs", "options" },
-        method<"importmempool", string_t, nullable<object_t>>{ unimplemented, "filepath", "options" }
+        method<"importmempool", string_t, nullable<object_t>>{ "filepath", "options" }
     };
 
     template <typename... Args>

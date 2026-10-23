@@ -33,8 +33,9 @@ using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-// The number of confirmed transactions returned by an address txs request.
+// The numbers of confirmed and unconfirmed txs of an address txs request.
 constexpr size_t address_page = 25;
+constexpr size_t mempool_page = 50;
 
 // The address index is keyed by the hash of the output script.
 bool protocol_esplora::to_key(hash_digest& out,
@@ -100,40 +101,28 @@ void protocol_esplora::do_get_address(const hash_digest& key,
     BC_ASSERT(!stranded());
 
     const auto& query = archive();
-    outpoints funded{}, unspent{};
-    histories history{};
+    const auto limit = options().maximum_history;
+    address_totals chain{}, mempool{};
+    histories confirmed{}, unconfirmed{};
     height_link cursor{};
 
-    auto ec = query.get_address_outpoints(stopping_, funded, key, true);
+    auto ec = query.get_address_totals(stopping_, chain, mempool, key);
     if (!ec)
-        ec = query.get_confirmed_unspent_outpoints(stopping_, unspent, key, true);
+        ec = query.get_confirmed_history(stopping_, cursor, confirmed, key,
+            limit, true);
     if (!ec)
-        ec = query.get_confirmed_history(stopping_, cursor, history, key,
-            options().maximum_history, true);
+        ec = query.get_unconfirmed_history(stopping_, unconfirmed, key,
+            limit, true);
 
-    address_stats stats{};
-    if (!ec)
-    {
-        stats.funded_count = funded.size();
-        stats.spent_count = floored_subtract(funded.size(), unspent.size());
-        stats.tx_count = history.size();
-
-        for (const auto& point: funded)
-            stats.funded_sum = ceilinged_add(stats.funded_sum, point.value());
-
-        uint64_t unspent_sum{};
-        for (const auto& point: unspent)
-            unspent_sum = ceilinged_add(unspent_sum, point.value());
-
-        stats.spent_sum = floored_subtract(stats.funded_sum, unspent_sum);
-    }
-
-    POST(complete_get_address, ec, stats, key, address, gate);
+    POST(complete_get_address, ec, chain, confirmed.size(), mempool,
+        unconfirmed.size(), key, address, gate);
 }
 
 void protocol_esplora::complete_get_address(const code& ec,
-    const address_stats& stats, const hash_digest& key,
-    const std::optional<std::string>& address, const gate_t::ptr&) NOEXCEPT
+    const address_totals& chain, size_t chain_txs,
+    const address_totals& mempool, size_t mempool_txs,
+    const hash_digest& key, const std::optional<std::string>& address,
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -152,24 +141,20 @@ void protocol_esplora::complete_get_address(const code& ec,
     else
         out["scripthash"] = encode_base16(key);
 
-    out["chain_stats"] = object
+    const auto to_stats = [](const address_totals& totals, size_t txs) NOEXCEPT
     {
-        { "funded_txo_count", stats.funded_count },
-        { "funded_txo_sum", stats.funded_sum },
-        { "spent_txo_count", stats.spent_count },
-        { "spent_txo_sum", stats.spent_sum },
-        { "tx_count", stats.tx_count }
+        return object
+        {
+            { "funded_txo_count", totals.funded_count },
+            { "funded_txo_sum", totals.funded_value },
+            { "spent_txo_count", totals.spent_count },
+            { "spent_txo_sum", totals.spent_value },
+            { "tx_count", txs }
+        };
     };
 
-    // There is no tx pool.
-    out["mempool_stats"] = object
-    {
-        { "funded_txo_count", 0 },
-        { "funded_txo_sum", 0 },
-        { "spent_txo_count", 0 },
-        { "spent_txo_sum", 0 },
-        { "tx_count", 0 }
-    };
+    out["chain_stats"] = to_stats(chain, chain_txs);
+    out["mempool_stats"] = to_stats(mempool, mempool_txs);
 
     send_json(std::move(out), 512);
 }
@@ -184,8 +169,7 @@ bool protocol_esplora::handle_get_address_txs(const code& ec,
     if (stopped(ec))
         return false;
 
-    // There is no tx pool, so this is the first confirmed page.
-    return get_address_txs(media, hash, address, {});
+    return get_address_txs(media, hash, address, {}, true, true);
 }
 
 bool protocol_esplora::handle_get_address_txs_chain(const code& ec,
@@ -196,7 +180,7 @@ bool protocol_esplora::handle_get_address_txs_chain(const code& ec,
     if (stopped(ec))
         return false;
 
-    return get_address_txs(media, hash, address, last_seen);
+    return get_address_txs(media, hash, address, last_seen, false, true);
 }
 
 bool protocol_esplora::handle_get_address_txs_mempool(const code& ec,
@@ -206,29 +190,15 @@ bool protocol_esplora::handle_get_address_txs_mempool(const code& ec,
     if (stopped(ec))
         return false;
 
-    if (media != json)
-    {
-        send_not_acceptable();
-        return true;
-    }
-
-    hash_digest key{};
-    if (!to_key(key, hash, address))
-    {
-        send_bad_request();
-        return true;
-    }
-
-    // There is no tx pool.
-    send_json(array{}, 42);
-    return true;
+    return get_address_txs(media, hash, address, {}, true, false);
 }
 
 // common
 bool protocol_esplora::get_address_txs(uint8_t media,
     const std::optional<hash_cptr>& hash,
     const std::optional<std::string>& address,
-    const std::optional<hash_cptr>& last_seen) NOEXCEPT
+    const std::optional<hash_cptr>& last_seen, bool mempool,
+    bool chain) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -251,27 +221,36 @@ bool protocol_esplora::get_address_txs(uint8_t media,
         return true;
     }
 
-    PARALLEL(do_get_address_txs, key, last_seen, gate());
+    PARALLEL(do_get_address_txs, key, last_seen, mempool, chain, gate());
     return true;
 }
 
 void protocol_esplora::do_get_address_txs(const hash_digest& key,
-    const std::optional<hash_cptr>& last_seen,
+    const std::optional<hash_cptr>& last_seen, bool mempool, bool chain,
     const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
-    histories history{};
+    const auto& query = archive();
+    const auto limit = options().maximum_history;
+    histories confirmed{}, unconfirmed{};
     height_link cursor{};
-    const auto ec = archive().get_confirmed_history(stopping_, cursor,
-        history, key, options().maximum_history, true);
+    code ec{};
 
-    POST(complete_get_address_txs, ec, std::move(history), last_seen, gate);
+    if (mempool)
+        ec = query.get_unconfirmed_history(stopping_, unconfirmed, key,
+            limit, true);
+    if (!ec && chain)
+        ec = query.get_confirmed_history(stopping_, cursor, confirmed, key,
+            limit, true);
+
+    POST(complete_get_address_txs, ec, std::move(unconfirmed),
+        std::move(confirmed), last_seen, gate);
 }
 
 void protocol_esplora::complete_get_address_txs(const code& ec,
-    const histories& history, const std::optional<hash_cptr>& last_seen,
-    const gate_t::ptr&) NOEXCEPT
+    const histories& unconfirmed, const histories& confirmed,
+    const std::optional<hash_cptr>& last_seen, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -285,16 +264,16 @@ void protocol_esplora::complete_get_address_txs(const code& ec,
     }
 
     // The interface sorts newest first, the index sorts oldest first.
-    auto first = history.rbegin();
+    auto first = confirmed.crbegin();
     if (last_seen.has_value())
     {
-        const auto seen = std::find_if(first, history.rend(),
+        const auto seen = std::find_if(first, confirmed.crend(),
             [&](const auto& item) NOEXCEPT
             {
                 return item.tx.hash() == *last_seen.value();
             });
 
-        if (seen == history.rend())
+        if (seen == confirmed.crend())
         {
             send_not_found();
             return;
@@ -304,21 +283,41 @@ void protocol_esplora::complete_get_address_txs(const code& ec,
     }
 
     const auto& query = archive();
-    array out{};
-    for (auto item = first; item != history.rend() &&
-        out.size() < address_page; ++item)
+    const auto append = [&](array& out, const history& item) NOEXCEPT
     {
         object tx{};
-        if (!to_tx(tx, query.to_tx(item->tx.hash())))
+        if (!to_tx(tx, query.to_tx(item.tx.hash())))
+            return false;
+
+        out.emplace_back(std::move(tx));
+        return true;
+    };
+
+    array out{};
+    const auto pooled = std::min(mempool_page, unconfirmed.size());
+    const auto pooled_end = std::next(unconfirmed.crbegin(), pooled);
+    for (auto item = unconfirmed.crbegin(); item != pooled_end; ++item)
+    {
+        if (!append(out, *item))
         {
             send_internal_server_error(database::error::integrity);
             return;
         }
-
-        out.emplace_back(std::move(tx));
     }
 
-    send_json(std::move(out), address_page * 1024);
+    const auto remaining = std::distance(first, confirmed.crend());
+    const auto paged = std::min(address_page, to_unsigned(remaining));
+    const auto paged_end = std::next(first, paged);
+    for (auto item = first; item != paged_end; ++item)
+    {
+        if (!append(out, *item))
+        {
+            send_internal_server_error(database::error::integrity);
+            return;
+        }
+    }
+
+    send_json(std::move(out), (mempool_page + address_page) * 1024);
 }
 
 // address/utxo
@@ -362,7 +361,7 @@ void protocol_esplora::do_get_address_utxo(const hash_digest& key,
     BC_ASSERT(!stranded());
 
     unspent_outputs unspent{};
-    const auto ec = archive().get_confirmed_unspent(stopping_, unspent, key, true);
+    const auto ec = archive().get_unspent(stopping_, unspent, key, true);
     POST(complete_get_address_utxo, ec, std::move(unspent), gate);
 }
 

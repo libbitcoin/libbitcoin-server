@@ -58,8 +58,8 @@ struct btcd_methods
         /// Subscription.
         method<"notifyblocks">{},
         method<"stopnotifyblocks">{},
-        method<"notifynewtransactions", nullopt<false>>{ unimplemented, "verbose" },
-        method<"stopnotifynewtransactions">{ unimplemented },
+        method<"notifynewtransactions", nullopt<false>>{ "verbose" },
+        method<"stopnotifynewtransactions">{},
 
         /// Filters.
         method<"loadtxfilter", boolean_t, value_t, value_t>{ "reload", "addresses", "outpoints" },
