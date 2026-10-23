@@ -95,25 +95,41 @@ parser::parser(system::chain::selection context,
     configured.server.sparrow.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
     configured.server.esplora.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
 
-    ////configured.server.admin.binds.emplace_back(asio::address{}, 8080_u16);
-    ////configured.server.admin.safes.emplace_back(asio::address{}, 8043_u16);
-    ////configured.server.native.binds.emplace_back(asio::address{}, 8180_u16);
-    ////configured.server.native.safes.emplace_back(asio::address{}, 8143_u16);
-    ////configured.server.bitcoind.binds.emplace_back(asio::address{}, 8280_u16);
-    ////configured.server.bitcoind.safes.emplace_back(asio::address{}, 8243_u16);
-    ////configured.server.electrum.binds.emplace_back(asio::address{}, 8380_u16);
-    ////configured.server.electrum.safes.emplace_back(asio::address{}, 8343_u16);
-    ////configured.server.bitcoind_zmq.binds.emplace_back(asio::address{}, 8680_u16);
-    ////configured.server.bitcoind_zmq.safes.emplace_back(asio::address{}, 8643_u16);
-    ////configured.server.btcd.binds.emplace_back(asio::address{}, 8780_u16);
-    ////configured.server.btcd.safes.emplace_back(asio::address{}, 8743_u16);
-    ////configured.server.sparrow.binds.emplace_back(asio::address{}, 8880_u16);
-    ////configured.server.sparrow.safes.emplace_back(asio::address{}, 8843_u16);
-    ////configured.server.esplora.binds.emplace_back(asio::address{}, 8980_u16);
-    ////configured.server.esplora.safes.emplace_back(asio::address{}, 8943_u16);
-    ////configured.server.stratum_v1.binds.emplace_back(asio::address{}, 8480_u16);
-    ////configured.server.stratum_v1.safes.emplace_back(asio::address{}, 8443_u16);
-    ////configured.server.stratum_v2.binds.emplace_back(asio::address{}, 8580_u16);
+    // Service ports are offset by chain.
+    const auto port = [&context](uint16_t base) NOEXCEPT
+    {
+        switch (context)
+        {
+            case chain::selection::testnet3:
+                return possible_narrow_cast<uint16_t>(base + 10000_u32);
+            case chain::selection::regtest:
+                return possible_narrow_cast<uint16_t>(base + 20000_u32);
+            case chain::selection::testnet4:
+                return possible_narrow_cast<uint16_t>(base + 40000_u32);
+            default:
+                return base;
+        }
+    };
+
+    configured.server.admin.bind_port = port(8080);
+    configured.server.admin.safe_port = port(8043);
+    configured.server.native.bind_port = port(8180);
+    configured.server.native.safe_port = port(8143);
+    configured.server.bitcoind.bind_port = port(8280);
+    configured.server.bitcoind.safe_port = port(8243);
+    configured.server.bitcoind_zmq.bind_port = port(8380);
+    configured.server.bitcoind_zmq.safe_port = port(8343);
+    configured.server.btcd.bind_port = port(8480);
+    configured.server.btcd.safe_port = port(8443);
+    configured.server.electrum.bind_port = port(8580);
+    configured.server.electrum.safe_port = port(8543);
+    configured.server.sparrow.bind_port = port(8680);
+    configured.server.sparrow.safe_port = port(8643);
+    configured.server.esplora.bind_port = port(8780);
+    configured.server.esplora.safe_port = port(8743);
+    configured.server.stratum_v1.bind_port = port(8880);
+    configured.server.stratum_v1.safe_port = port(8843);
+    configured.server.stratum_v2.bind_port = port(8980);
 
     // node
 
@@ -254,6 +270,22 @@ void parser::derive_buckets() NOEXCEPT
     if (!is_configured("table.wtxid.buckets"))
         database.wtxid.buckets = table::wtxid::derive_buckets(
             database.wtxid.expected, contested, target);
+}
+
+// Service bindings without a port take the service's default port.
+void parser::derive_ports() NOEXCEPT
+{
+    auto& server = configured.server;
+    server.admin.default_ports();
+    server.native.default_ports();
+    server.bitcoind.default_ports();
+    server.bitcoind_zmq.default_ports();
+    server.btcd.default_ports();
+    server.electrum.default_ports();
+    server.sparrow.default_ports();
+    server.esplora.default_ports();
+    server.stratum_v1.default_ports();
+    server.stratum_v2.default_ports();
 }
 
 // Composes a variable name with its command line shortcut.
@@ -1408,6 +1440,63 @@ options_metadata parser::load_settings() THROWS
         "Allow requests from opaque origin (see CORS), defaults to {}."
     )
 
+    /* [bitcoind_zmq] */
+    (
+        "bitcoind_zmq.bind",
+        setting<network::config::authorities>(&configured.server.bitcoind_zmq.binds),
+        "IP address to bind, multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "bitcoind_zmq.safe",
+        setting<network::config::authorities>(&configured.server.bitcoind_zmq.safes),
+        "IP address to secure (CurveZMQ) bind, multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "bitcoind_zmq.cert",
+        setting<std::vector<config::base85>>(&configured.server.bitcoind_zmq.certs),
+        "The Z85 encoded public key of an authorized client, multiple allowed, defaults to {} (all)."
+    )
+    (
+        "bitcoind_zmq.connections",
+        setting<uint16_t>(&configured.server.bitcoind_zmq.connections),
+        "The required maximum number of connections, defaults to {}."
+    )
+    (
+        "bitcoind_zmq.rate_limit",
+        setting<uint32_t>(&configured.server.bitcoind_zmq.rate_limit),
+        "The send rate limit in bytes per second, defaults to {} (network controls)."
+    )
+    (
+        "bitcoind_zmq.connect_timeout_seconds",
+        setting<uint32_t>(&configured.server.bitcoind_zmq.connect_timeout_seconds),
+        "The time limit for connection establishment, defaults to {} (network controls)."
+    )
+    (
+        "bitcoind_zmq.minimum_buffer",
+        setting<uint32_t>(&configured.server.bitcoind_zmq.minimum_buffer),
+        "The minimum retained read buffer size, defaults to {}."
+    )
+    (
+        "bitcoind_zmq.maximum_backlog",
+        setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_backlog),
+        "The maximum write backlog of a channel, defaults to {}."
+    )
+    (
+        "bitcoind_zmq.maximum_request",
+        setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_request),
+        "The maximum allowed request size, defaults to {}."
+    )
+    (
+        "bitcoind_zmq.maximum_subscriptions",
+        setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_subscriptions),
+        "The maximum topic subscriptions per connection, defaults to {}."
+    )
+    (
+        "bitcoind_zmq.key",
+        secret<config::base85>(&configured.server.bitcoind_zmq.key),
+        "The Z85 encoded CurveZMQ server secret key, defaults to none (unencrypted)."
+    )
+
     /* [btcd] */
     (
         "btcd.bind",
@@ -2010,63 +2099,6 @@ options_metadata parser::load_settings() THROWS
     )
 
 #endif
-    /* [bitcoind_zmq] */
-    (
-        "bitcoind_zmq.bind",
-        setting<network::config::authorities>(&configured.server.bitcoind_zmq.binds),
-        "IP address to bind, multiple allowed, defaults to {} (disabled)."
-    )
-    (
-        "bitcoind_zmq.safe",
-        setting<network::config::authorities>(&configured.server.bitcoind_zmq.safes),
-        "IP address to secure (CurveZMQ) bind, multiple allowed, defaults to {} (disabled)."
-    )
-    (
-        "bitcoind_zmq.cert",
-        setting<std::vector<config::base85>>(&configured.server.bitcoind_zmq.certs),
-        "The Z85 encoded public key of an authorized client, multiple allowed, defaults to {} (all)."
-    )
-    (
-        "bitcoind_zmq.connections",
-        setting<uint16_t>(&configured.server.bitcoind_zmq.connections),
-        "The required maximum number of connections, defaults to {}."
-    )
-    (
-        "bitcoind_zmq.rate_limit",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.rate_limit),
-        "The send rate limit in bytes per second, defaults to {} (network controls)."
-    )
-    (
-        "bitcoind_zmq.connect_timeout_seconds",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.connect_timeout_seconds),
-        "The time limit for connection establishment, defaults to {} (network controls)."
-    )
-    (
-        "bitcoind_zmq.minimum_buffer",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.minimum_buffer),
-        "The minimum retained read buffer size, defaults to {}."
-    )
-    (
-        "bitcoind_zmq.maximum_backlog",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_backlog),
-        "The maximum write backlog of a channel, defaults to {}."
-    )
-    (
-        "bitcoind_zmq.maximum_request",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_request),
-        "The maximum allowed request size, defaults to {}."
-    )
-    (
-        "bitcoind_zmq.maximum_subscriptions",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_subscriptions),
-        "The maximum topic subscriptions per connection, defaults to {}."
-    )
-    (
-        "bitcoind_zmq.key",
-        secret<config::base85>(&configured.server.bitcoind_zmq.key),
-        "The Z85 encoded CurveZMQ server secret key, defaults to none (unencrypted)."
-    )
-
     /* [node] */
     (
         "node.threads",
@@ -2748,6 +2780,7 @@ BC_POP_WARNING()
         // Update bound variables in metadata.settings.
         notify(variables_);
         derive_buckets();
+        derive_ports();
 
         // Clear the config file path if it wasn't used.
         if (!file)
