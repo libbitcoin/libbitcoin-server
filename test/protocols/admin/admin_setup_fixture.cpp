@@ -26,7 +26,8 @@ using namespace boost::beast;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-admin_setup_fixture::admin_setup_fixture(const initializer& setup)
+admin_setup_fixture::admin_setup_fixture(const initializer& setup,
+    const configurator& configure)
   : config_
     {
         system::chain::selection::mainnet,
@@ -59,6 +60,8 @@ admin_setup_fixture::admin_setup_fixture(const initializer& setup)
     node_settings.minimum_fee_rate = 99.0;
     network_settings.inbound.connections = 0;
     network_settings.outbound.connections = 0;
+    if (configure)
+        configure(config_);
 
     // Create and populate the store.
     auto ec = store_.create([](auto, auto) {});
@@ -138,6 +141,22 @@ bool admin_setup_fixture::expect_dropped(std::string_view target)
 http::status admin_setup_fixture::get_status(std::string_view target)
 {
     http::write(socket_, create_request(target));
+
+    flat_buffer buffer{};
+    network::boost_code ec{};
+    http::response<http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    return response.result();
+}
+
+http::status admin_setup_fixture::get_status(std::string_view target,
+    http::field name, std::string_view value)
+{
+    auto request = create_request(target);
+    request.set(name, value);
+    http::write(socket_, request);
 
     flat_buffer buffer{};
     network::boost_code ec{};

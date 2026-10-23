@@ -167,6 +167,24 @@ http::response<http::string_body> rpc_client::get(std::string_view target)
     return response;
 }
 
+http::response<http::string_body> rpc_client::get_authorized(
+    std::string_view target, const std::string& username,
+    const std::string& password)
+{
+    auto out = create_get(target);
+    out.set(http::field::authorization, basic(username, password));
+
+    error_code ec{};
+    http::write(socket_, out, ec);
+
+    flat_buffer buffer{};
+    http::response<http::string_body> response{};
+    http::read(socket_, buffer, response, ec);
+    BOOST_CHECK_MESSAGE(!ec, ec.message());
+
+    return response;
+}
+
 system::json::value rpc_client::post(const std::string& body,
     const std::string& target, bool checked)
 {

@@ -65,6 +65,9 @@ public:
     /// http GET (returns the response for the caller to interpret).
     boost::beast::http::response<boost::beast::http::string_body> get(
         std::string_view target);
+    boost::beast::http::response<boost::beast::http::string_body>
+        get_authorized(std::string_view target, const std::string& username,
+            const std::string& password);
 
     /// http OPTIONS (returns only the http status).
     status options_status(std::string_view target);

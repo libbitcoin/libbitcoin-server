@@ -23,6 +23,8 @@
 #include "../../mocks/blocks.hpp"
 
 #define ADMIN_ENDPOINT "127.0.0.1:65001"
+#define ADMIN_TEST_CREDENTIAL "user:pass:event_subscribe"
+#define ADMIN_TEST_AUTHORIZATION "Basic dXNlcjpwYXNz"
 
 // TODO: admin is http so use boost::beast.
 
@@ -30,13 +32,17 @@ struct admin_setup_fixture
 {
     using status = boost::beast::http::status;
     using initializer = std::function<bool(test::query_t&)>;
+    using configurator = std::function<void(server::configuration&)>;
 
     DELETE_COPY_MOVE(admin_setup_fixture);
-    explicit admin_setup_fixture(const initializer& setup);
+    explicit admin_setup_fixture(const initializer& setup,
+        const configurator& configure={});
     ~admin_setup_fixture();
 
     bool expect_dropped(std::string_view target);
     status get_status(std::string_view target);
+    status get_status(std::string_view target, boost::beast::http::field name,
+        std::string_view value);
 
     std::string get_text(std::string_view target);
     system::data_chunk get_data(std::string_view target);
@@ -83,6 +89,22 @@ struct admin_ten_block_setup_fixture
       : admin_setup_fixture([](test::query_t& query)
         {
             return test::setup_ten_block_store(query);
+        })
+    {
+    }
+};
+
+// Configured with a credential scoped to the event_subscribe method.
+struct admin_scoped_credential_setup_fixture
+  : admin_setup_fixture
+{
+    inline admin_scoped_credential_setup_fixture()
+      : admin_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.server.admin.credentials = { { ADMIN_TEST_CREDENTIAL } };
         })
     {
     }

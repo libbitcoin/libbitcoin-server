@@ -23,6 +23,8 @@
 #include "../../mocks/blocks.hpp"
 
 #define ESPLORA_ENDPOINT "127.0.0.1:65005"
+#define ESPLORA_TEST_CREDENTIAL "user:pass:tip_height"
+#define ESPLORA_TEST_AUTHORIZATION "Basic dXNlcjpwYXNz"
 
 struct esplora_setup_fixture
 {
@@ -207,6 +209,22 @@ struct esplora_misheighted_setup_fixture
         {
             return test::setup_three_block_store(query) &&
                 query.set(test::block3, database::context{ 0, 9, 0 }, {}, false, false);
+        })
+    {
+    }
+};
+
+// Configured with a credential scoped to the tip_height method.
+struct esplora_scoped_credential_setup_fixture
+  : esplora_setup_fixture
+{
+    inline esplora_scoped_credential_setup_fixture()
+      : esplora_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.server.esplora.credentials = { { ESPLORA_TEST_CREDENTIAL } };
         })
     {
     }

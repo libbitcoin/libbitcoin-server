@@ -265,3 +265,22 @@ BOOST_AUTO_TEST_CASE(esplora__block__misheighted__zero_mediantime)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(esplora_scoped_credential_tests, esplora_scoped_credential_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(esplora__tip_height__scoped_credential__ok)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/blocks/tip/height", http::field::authorization, ESPLORA_TEST_AUTHORIZATION), http::status::ok);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__tip_hash__scoped_credential_unlisted_method__forbidden)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/blocks/tip/hash", http::field::authorization, ESPLORA_TEST_AUTHORIZATION), http::status::forbidden);
+}
+
+BOOST_AUTO_TEST_CASE(esplora__tip_height__no_credential__unauthorized)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/blocks/tip/height"), http::status::unauthorized);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

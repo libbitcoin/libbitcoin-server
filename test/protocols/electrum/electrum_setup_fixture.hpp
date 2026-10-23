@@ -312,4 +312,24 @@ struct electrum_duplicate_setup_fixture
     }
 };
 
+/// The sparrow service configured with a credential scoped to a method.
+struct sparrow_scoped_credential_setup_fixture
+  : electrum_setup_fixture
+{
+    inline sparrow_scoped_credential_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, true, [](configuration& config)
+        {
+            config.server.sparrow.credentials =
+            {
+                { ELECTRUM_TEST_USERNAME ":" ELECTRUM_TEST_PASSWORD ":"
+                    ELECTRUM_TEST_SCOPED_METHOD }
+            };
+        }, service::sparrow)
+    {
+    }
+};
+
 #endif

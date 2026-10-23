@@ -208,6 +208,13 @@ bitcoind_setup_fixture::rest_status(std::string_view target)
 }
 
 bitcoind_setup_fixture::status
+bitcoind_setup_fixture::rest_status(std::string_view target,
+    const std::string& username, const std::string& password)
+{
+    return client_.get_authorized(target, username, password).result();
+}
+
+bitcoind_setup_fixture::status
 bitcoind_setup_fixture::options_status(std::string_view target)
 {
     return client_.options_status(target);

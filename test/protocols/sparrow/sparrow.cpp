@@ -317,3 +317,37 @@ BOOST_AUTO_TEST_CASE(electrum__server_features__not_sparrow__no_silent_payments)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(sparrow_transport_tests, sparrow_ten_block_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(sparrow__post__handshake__negotiated)
+{
+    BOOST_REQUIRE(post_handshake(electrum::version::v1_4));
+}
+
+BOOST_AUTO_TEST_CASE(sparrow__ws__handshake__negotiated)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    BOOST_REQUIRE(ws_handshake(electrum::version::v1_4));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(sparrow_scoped_credential_tests, sparrow_scoped_credential_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(sparrow__post__scoped_credential_unlisted_method__forbidden)
+{
+    const auto response = post_authorized(R"({"id":900,"method":"server.version","params":["test","1.4"]})", ELECTRUM_TEST_USERNAME, ELECTRUM_TEST_PASSWORD);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    const auto status = post_status_authorized(R"({"id":901,"method":"server.banner","params":[]})", ELECTRUM_TEST_USERNAME, ELECTRUM_TEST_PASSWORD);
+    BOOST_REQUIRE_EQUAL(status, rpc_client::status::forbidden);
+}
+
+BOOST_AUTO_TEST_CASE(sparrow__tcp__credentials_configured__dropped)
+{
+    const auto response = get(R"({"id":903,"method":"server.version","params":["test","1.4"]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
