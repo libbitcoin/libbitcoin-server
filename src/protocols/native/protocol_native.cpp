@@ -266,7 +266,7 @@ bool protocol_native::handle_chase(const code&,
 // ----------------------------------------------------------------------------
 // private
 
-using namespace boost::json;
+using namespace system::json;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 

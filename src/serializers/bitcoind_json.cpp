@@ -65,7 +65,7 @@ network::rpc::object_t chain_states_entry(
     };
 }
 
-void inject_block_context(boost::json::object& out,
+void inject_block_context(system::json::object& out,
     const node::query& query, const system::settings& settings,
     const database::header_link& link, const chain::header& header) NOEXCEPT
 {
@@ -95,7 +95,7 @@ void inject_block_context(boost::json::object& out,
             query.get_header_key(query.to_confirmed(add1(height))));
 }
 
-void inject_tx_context(boost::json::object& out,
+void inject_tx_context(system::json::object& out,
     const node::query& query, const database::tx_link& link) NOEXCEPT
 {
     size_t height{};
@@ -119,7 +119,7 @@ void inject_tx_context(boost::json::object& out,
 }
 
 // The tx must be populated (populate_with_metadata).
-void inject_tx_prevouts(boost::json::object& out,
+void inject_tx_prevouts(system::json::object& out,
     const node::query& query, const chain::transaction& tx, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT
 {
@@ -133,7 +133,7 @@ void inject_tx_prevouts(boost::json::object& out,
             auto script = to_script_public_key(put.script(), p2kh, p2sh,
                 witness, flags);
 
-            boost::json::object prevout
+            system::json::object prevout
             {
                 { "generated", in->metadata.coinbase },
                 { "height", height },
@@ -149,7 +149,7 @@ void inject_tx_prevouts(boost::json::object& out,
     });
 }
 
-void inject_script_context(boost::json::object& out,
+void inject_script_context(system::json::object& out,
     const chain::script& script, uint8_t p2kh, uint8_t p2sh,
     const std::string& witness) NOEXCEPT
 {
@@ -161,7 +161,7 @@ void inject_script_context(boost::json::object& out,
         out["address"] = address;
 }
 
-void inject_tx_scripts(boost::json::object& out,
+void inject_tx_scripts(system::json::object& out,
     const chain::transaction& tx, uint8_t p2kh, uint8_t p2sh,
     const std::string& witness) NOEXCEPT
 {
@@ -174,7 +174,7 @@ void inject_tx_scripts(boost::json::object& out,
     });
 }
 
-boost::json::value to_script_public_key(const chain::script& script,
+system::json::value to_script_public_key(const chain::script& script,
     uint8_t p2kh, uint8_t p2sh, const std::string& witness,
     uint32_t flags) NOEXCEPT
 {
@@ -349,7 +349,7 @@ bool chain_info(network::rpc::object_t& out,
 }
 
 // The entry height is that of the chain top, below the pooled context height.
-bool mempool_entry(boost::json::object& out, const node::query& query,
+bool mempool_entry(system::json::object& out, const node::query& query,
     const database::tx_link& link) NOEXCEPT
 {
     uint32_t time{};
@@ -365,7 +365,7 @@ bool mempool_entry(boost::json::object& out, const node::query& query,
 
     const auto to_txids = [&query](const database::tx_links& links) NOEXCEPT
     {
-        boost::json::array txids{};
+        system::json::array txids{};
         txids.reserve(links.size());
         for (const auto& fk: links)
             txids.emplace_back(encode_hash(query.get_tx_key(fk)));
@@ -378,7 +378,7 @@ bool mempool_entry(boost::json::object& out, const node::query& query,
         return to_floating(satoshis) / chain::satoshi_per_bitcoin;
     };
 
-    const boost::json::object fees
+    const system::json::object fees
     {
         { "base", to_btc(rate.fee) },
         { "modified", to_btc(rate.fee) },
@@ -386,7 +386,7 @@ bool mempool_entry(boost::json::object& out, const node::query& query,
         { "descendant", to_btc(descendants.fee) }
     };
 
-    out = boost::json::object
+    out = system::json::object
     {
         { "vsize", rate.bytes },
         { "weight", chain::weighted_size(light, heavy) },
@@ -407,15 +407,15 @@ bool mempool_entry(boost::json::object& out, const node::query& query,
     return true;
 }
 
-bool mempool_txs(boost::json::value& out, const node::query& query,
+bool mempool_txs(system::json::value& out, const node::query& query,
     const database::tx_links& links, bool verbose) NOEXCEPT
 {
     if (verbose)
     {
-        boost::json::object entries{};
+        system::json::object entries{};
         for (const auto& link: links)
         {
-            boost::json::object entry{};
+            system::json::object entry{};
             if (!mempool_entry(entry, query, link))
                 return false;
 
@@ -426,7 +426,7 @@ bool mempool_txs(boost::json::value& out, const node::query& query,
         return true;
     }
 
-    boost::json::array txids{};
+    system::json::array txids{};
     txids.reserve(links.size());
     for (const auto& link: links)
         txids.emplace_back(encode_hash(query.get_tx_key(link)));
@@ -436,11 +436,11 @@ bool mempool_txs(boost::json::value& out, const node::query& query,
 }
 
 // There is no mempool sequence (zmq), so it is reported as constant.
-bool raw_mempool(boost::json::value& out, const node::query& query,
+bool raw_mempool(system::json::value& out, const node::query& query,
     bool verbose, bool sequence) NOEXCEPT
 {
     database::tx_links links{};
-    boost::json::value txs{};
+    system::json::value txs{};
     if (query.get_confirmable_txs(links) ||
         !mempool_txs(txs, query, links, verbose))
         return false;
@@ -451,7 +451,7 @@ bool raw_mempool(boost::json::value& out, const node::query& query,
         return true;
     }
 
-    out = boost::json::object
+    out = system::json::object
     {
         { "txids", std::move(txs) },
         { "mempool_sequence", 1 }
@@ -462,7 +462,7 @@ bool raw_mempool(boost::json::value& out, const node::query& query,
 
 // The pool is stored, so usage is the size of its tables, and the maximum is
 // the space available to the store (shared with all tables and the volume).
-bool mempool_info(boost::json::object& out, const node::query& query,
+bool mempool_info(system::json::object& out, const node::query& query,
     const std::filesystem::path& store, double minimum, double relay,
     double increment) NOEXCEPT
 {
@@ -484,7 +484,7 @@ bool mempool_info(boost::json::object& out, const node::query& query,
     const auto usage = ceilinged_add(query.pool_size(), indexes);
     const auto total_fee = to_floating(fee) / chain::satoshi_per_bitcoin;
 
-    out = boost::json::object
+    out = system::json::object
     {
         { "loaded", true },
         { "size", rates.size() },
@@ -502,7 +502,7 @@ bool mempool_info(boost::json::object& out, const node::query& query,
     return true;
 }
 
-bool package_result(boost::json::object& out, const node::query& query,
+bool package_result(system::json::object& out, const node::query& query,
     const code& ec, size_t index,
     const chain::transaction_cptrs& txs) NOEXCEPT
 {
@@ -512,12 +512,12 @@ bool package_result(boost::json::object& out, const node::query& query,
     };
 
     const auto failed = ec && ec != node::error::duplicate_transaction;
-    boost::json::object results{};
+    system::json::object results{};
     for (size_t position{}; position < txs.size(); ++position)
     {
         const auto& tx = *txs.at(position);
         const auto wtxid = encode_hash(tx.hash(true));
-        boost::json::object result{ { "txid", encode_hash(tx.hash(false)) } };
+        system::json::object result{ { "txid", encode_hash(tx.hash(false)) } };
         if (failed)
         {
             result["error"] = position == index ? error::bitcoind::reject(ec) :
@@ -535,21 +535,21 @@ bool package_result(boost::json::object& out, const node::query& query,
         result["vsize_adjusted"] = rate.bytes;
         result["vsize"] = rate.bytes;
         result["vsize_bip141"] = tx.virtual_size();
-        result["fees"] = boost::json::object
+        result["fees"] = system::json::object
         {
             { "base", base },
             { "effective-feerate", feerate },
-            { "effective-includes", boost::json::array{ wtxid } }
+            { "effective-includes", system::json::array{ wtxid } }
         };
 
         results[wtxid] = std::move(result);
     }
 
-    out = boost::json::object
+    out = system::json::object
     {
         { "package_msg", failed ? "transaction failed" : "success" },
         { "tx-results", std::move(results) },
-        { "replaced-transactions", boost::json::array{} }
+        { "replaced-transactions", system::json::array{} }
     };
 
     return true;

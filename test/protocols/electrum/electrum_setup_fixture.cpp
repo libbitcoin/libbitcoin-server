@@ -71,18 +71,18 @@ int64_t electrum_setup_fixture::get_error(const std::string& request)
     {
         return get(request).at("error").as_object().at("code").as_int64();
     }
-    catch (const boost::system::system_error&)
+    catch (const system::json::exception&)
     {
         return -1;
     }
 }
 
-boost::json::value electrum_setup_fixture::get(const std::string& request)
+system::json::value electrum_setup_fixture::get(const std::string& request)
 {
     return client_.send(request);
 }
 
-boost::json::value electrum_setup_fixture::receive()
+system::json::value electrum_setup_fixture::receive()
 {
     return client_.receive();
 }
@@ -96,7 +96,7 @@ electrum_setup_fixture::options() const
         config_.server.electrum;
 }
 
-bool electrum_setup_fixture::verify(const boost::json::value& response,
+bool electrum_setup_fixture::verify(const system::json::value& response,
     electrum::version version, network::rpc::code_t id) const
 {
     try
@@ -140,7 +140,7 @@ bool electrum_setup_fixture::handshake(electrum::version version,
 // http POST.
 // ----------------------------------------------------------------------------
 
-boost::json::value electrum_setup_fixture::post(const std::string& request)
+system::json::value electrum_setup_fixture::post(const std::string& request)
 {
     return client_.post(request);
 }
@@ -156,7 +156,7 @@ rpc_client::status electrum_setup_fixture::post_status(const std::string& reques
     return client_.post_status(request);
 }
 
-boost::json::value electrum_setup_fixture::post_authorized(
+system::json::value electrum_setup_fixture::post_authorized(
     const std::string& request, const std::string& username,
     const std::string& password)
 {
@@ -184,12 +184,12 @@ network::boost_code electrum_setup_fixture::ws_upgrade(
     return client_.upgrade(username, password);
 }
 
-boost::json::value electrum_setup_fixture::ws_receive()
+system::json::value electrum_setup_fixture::ws_receive()
 {
     return client_.read_frame();
 }
 
-boost::json::value electrum_setup_fixture::ws_get(const std::string& request)
+system::json::value electrum_setup_fixture::ws_get(const std::string& request)
 {
     return client_.frame(request);
 }

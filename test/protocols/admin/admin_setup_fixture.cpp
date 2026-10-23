@@ -179,7 +179,7 @@ system::data_chunk admin_setup_fixture::get_data(std::string_view target)
 // The network json body does not support reading a document consisting
 // of only a top-level primitive, because it supports streaming and non-
 // streaming. So instead just use a string buffer and parse explicitly.
-boost::json::value admin_setup_fixture::get_json(std::string_view target)
+system::json::value admin_setup_fixture::get_json(std::string_view target)
 {
     http::write(socket_, create_request(target));
 
@@ -231,7 +231,7 @@ std::string admin_setup_fixture::ws_receive_text()
     return to_string(ws_receive());
 }
 
-boost::json::value admin_setup_fixture::ws_receive_json()
+system::json::value admin_setup_fixture::ws_receive_json()
 {
     return test::parse_json(ws_receive_text());
 }
@@ -260,7 +260,7 @@ std::string admin_setup_fixture::ws_get_text(std::string_view message)
     return to_string(ws_receive());
 }
 
-boost::json::value admin_setup_fixture::ws_get_json(
+system::json::value admin_setup_fixture::ws_get_json(
     std::string_view message)
 {
     return test::parse_json(ws_get_text(message));

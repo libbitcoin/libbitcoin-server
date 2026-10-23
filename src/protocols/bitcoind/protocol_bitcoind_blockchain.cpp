@@ -38,7 +38,7 @@ using namespace network;
 using namespace network::rpc;
 using namespace network::messages;
 using namespace std::placeholders;
-using namespace boost::json;
+using namespace system::json;
 
 // bitcoind getblock verbosity levels (doc/JSON-RPC-interface.md).
 // Unscoped for implicit conversion to the parsed level.
@@ -1676,7 +1676,7 @@ void protocol_bitcoind_blockchain::do_get_mempool_relatives(
     const auto links = ancestors ? query.to_confirmable_ancestors(link) :
         query.to_confirmable_descendants(link);
 
-    boost::json::value result{};
+    system::json::value result{};
     if (!mempool_txs(result, query, links, verbose))
     {
         POST(fail, error::bitcoind::internal_error, gate);
@@ -1714,14 +1714,14 @@ void protocol_bitcoind_blockchain::do_get_mempool_entry(
         return;
     }
 
-    boost::json::object entry{};
+    system::json::object entry{};
     if (!mempool_entry(entry, archive(), link))
     {
         POST(fail, error::bitcoind::internal_error, gate);
         return;
     }
 
-    POST(complete_value, value_t{ boost::json::value{ std::move(entry) } },
+    POST(complete_value, value_t{ system::json::value{ std::move(entry) } },
         gate);
 }
 
@@ -1748,7 +1748,7 @@ void protocol_bitcoind_blockchain::do_get_mempool_info(double minimum,
 {
     BC_ASSERT(!stranded());
 
-    boost::json::object result{};
+    system::json::object result{};
     if (!mempool_info(result, archive(), database_settings().path, minimum,
         relay, increment))
     {
@@ -1756,7 +1756,7 @@ void protocol_bitcoind_blockchain::do_get_mempool_info(double minimum,
         return;
     }
 
-    POST(complete_value, value_t{ boost::json::value{ std::move(result) } },
+    POST(complete_value, value_t{ system::json::value{ std::move(result) } },
         gate);
 }
 
@@ -1780,7 +1780,7 @@ void protocol_bitcoind_blockchain::do_get_raw_mempool(bool verbose,
 {
     BC_ASSERT(!stranded());
 
-    boost::json::value result{};
+    system::json::value result{};
     if (!raw_mempool(result, archive(), verbose, sequence))
     {
         POST(fail, error::bitcoind::internal_error, gate);

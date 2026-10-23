@@ -82,11 +82,11 @@ const block block9{ block9_data, true };
 
 const server::settings::embedded_pages web_pages{};
 
-boost::json::value parse_json(std::string_view value) NOEXCEPT
+system::json::value parse_json(std::string_view value) NOEXCEPT
 {
     try
     {
-        return boost::json::parse(value);
+        return system::json::parse(value);
     }
     catch (...)
     {

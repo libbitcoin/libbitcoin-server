@@ -43,18 +43,18 @@ struct bitcoind_setup_fixture
 
     // JSON-RPC 2.0 over HTTP POST to "/". params is a raw json value (array or
     // object). Returns the parsed json-rpc response object (with result/error).
-    boost::json::value rpc(std::string_view method, std::string_view params="[]");
+    system::json::value rpc(std::string_view method, std::string_view params="[]");
 
     // JSON-RPC over HTTP POST to "/" with a raw body (e.g. a batch). Returns
     // the parsed json response, or {"dropped":true} if the channel dropped.
-    boost::json::value rpc_body(std::string_view body);
+    system::json::value rpc_body(std::string_view body);
 
     // As rpc_body(), returning only the http status.
     status rpc_body_status(std::string_view body);
 
     // JSON-RPC 2.0 over raw tcp (no http), which downgrades the connection.
     // Returns the parsed json-rpc response object, or {"dropped":true}.
-    boost::json::value tcp_rpc(std::string_view method,
+    system::json::value tcp_rpc(std::string_view method,
         std::string_view params="[]");
 
     // As rpc(), with basic authorization, returning only the http status.
@@ -69,18 +69,18 @@ struct bitcoind_setup_fixture
         const std::string& password);
 
     // As rpc(), over the upgraded websocket connection.
-    boost::json::value ws_rpc(std::string_view method,
+    system::json::value ws_rpc(std::string_view method,
         std::string_view params="[]");
 
     // As ws_rpc(), returning {"dropped":true} if the channel dropped.
-    boost::json::value ws_rpc_dropped(std::string_view method,
+    system::json::value ws_rpc_dropped(std::string_view method,
         std::string_view params="[]");
 
     // Write a raw frame over the upgraded websocket without reading.
     void ws_notify(std::string_view body);
 
     // Read the next frame over the upgraded websocket without writing.
-    boost::json::value ws_read();
+    system::json::value ws_read();
 
     // As rpc(), with an origin header, returning only the http status.
     status rpc_origin_status(std::string_view method, std::string_view origin);
@@ -92,7 +92,7 @@ struct bitcoind_setup_fixture
 
     // bitcoind REST over HTTP GET (target under "/rest/...").
     status rest_status(std::string_view target);
-    boost::json::value rest_json(std::string_view target);
+    system::json::value rest_json(std::string_view target);
     std::string rest_text(std::string_view target);
     system::data_chunk rest_data(std::string_view target);
 

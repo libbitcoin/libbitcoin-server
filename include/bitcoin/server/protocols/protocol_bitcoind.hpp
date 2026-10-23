@@ -106,7 +106,7 @@ protected:
     void capture_totals(totals_handler&& handler) NOEXCEPT;
     network::diagnostics::collector to_collector(
         const network::diagnostics::rows_ptr& captured) NOEXCEPT;
-    boost::json::value script_public_key(
+    system::json::value script_public_key(
         const system::chain::script& script) const NOEXCEPT;
 
     /// Retains a connected channel, and does not reconnect upon stop.

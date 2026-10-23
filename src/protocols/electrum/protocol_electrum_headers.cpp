@@ -380,7 +380,7 @@ void protocol_electrum::handle_blockchain_headers_subscribe(const code& ec,
         return;
     }
 
-    boost::json::value value{};
+    system::json::value value{};
     if (raw)
     {
         const auto header = query.get_wire_header(link);

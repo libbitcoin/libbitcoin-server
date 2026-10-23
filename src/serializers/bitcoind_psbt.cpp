@@ -26,7 +26,7 @@ namespace server {
 
 using namespace system;
 using namespace network::rpc;
-using namespace boost::json;
+using namespace system::json;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 

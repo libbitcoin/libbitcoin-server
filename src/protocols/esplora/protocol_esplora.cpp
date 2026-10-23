@@ -25,7 +25,7 @@ namespace libbitcoin {
 namespace server {
 
 using namespace system;
-using namespace boost::json;
+using namespace system::json;
 using namespace network;
 using namespace network::http;
 using namespace std::placeholders;
@@ -268,7 +268,7 @@ void protocol_esplora::set_body(rpc::request_t& model,
     // A malformed package body is presented as an empty package.
     network::rpc::array_t transactions{};
     boost::system::error_code ec{};
-    const auto parsed = boost::json::parse(body, ec);
+    const auto parsed = system::json::parse(body, ec);
     if (!ec && parsed.is_array())
     {
         for (const auto& item: parsed.as_array())

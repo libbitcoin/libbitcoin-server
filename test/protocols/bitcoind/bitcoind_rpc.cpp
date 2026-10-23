@@ -39,14 +39,14 @@ std::string hash_param(const hash_digest& hash,
     return "[\"" + encode_hash(hash) + "\", " + tail + "]";
 }
 
-bool has_error(const boost::json::value& response) NOEXCEPT
+bool has_error(const system::json::value& response) NOEXCEPT
 {
     return response.is_object() && response.as_object().contains("error") &&
         !response.at("error").is_null();
 }
 
 // Codes are the bitcoind wire values, not our enumeration.
-bool has_code(const boost::json::value& response, int64_t code) NOEXCEPT
+bool has_code(const system::json::value& response, int64_t code) NOEXCEPT
 {
     return has_error(response) &&
         response.at("error").at("code").as_int64() == code;
@@ -69,7 +69,7 @@ const std::vector<method_code> rejected_methods
     { "signmessagewithprivkey", R"(["",""])", -32601 }
 };
 
-std::string as_text(const boost::json::value& value) NOEXCEPT
+std::string as_text(const system::json::value& value) NOEXCEPT
 {
     return { value.as_string().c_str() };
 }
@@ -1317,7 +1317,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__decodescript__undecodable__nonstandard)
     const auto response = rpc("decodescript", "[\"01\"]");
     const auto& result = response.at("result");
     BOOST_REQUIRE_EQUAL(result.at("type").as_string(), "nonstandard");
-    BOOST_REQUIRE_EQUAL(result.at("desc").as_string().subview(0, 8), "raw(01)#");
+    BOOST_REQUIRE_EQUAL(result.at("desc").as_string().substr(0, 8), "raw(01)#");
     BOOST_REQUIRE(!result.as_object().contains("p2sh"));
     BOOST_REQUIRE(!result.as_object().contains("segwit"));
 }
@@ -4283,8 +4283,8 @@ static std::string write_file(const std::string& name, const data_chunk& data) N
 
 static std::string import_param(const std::string& path) NOEXCEPT
 {
-    boost::json::array params{ boost::json::string{ path } };
-    return boost::json::serialize(params);
+    system::json::array params{ system::json::string{ path } };
+    return system::json::serialize(params);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__savemempool__broadcast__written)

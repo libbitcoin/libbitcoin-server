@@ -93,7 +93,7 @@ protected:
     /// REST raw-http response senders (not json-rpc enveloped).
     void send_data(system::data_chunk&& bytes) NOEXCEPT;
     void send_text(std::string&& text) NOEXCEPT;
-    void send_json(boost::json::value&& model, size_t size_hint) NOEXCEPT;
+    void send_json(system::json::value&& model, size_t size_hint) NOEXCEPT;
 
 private:
     template <class Derived, typename Method, typename... Args>

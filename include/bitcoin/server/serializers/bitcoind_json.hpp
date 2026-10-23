@@ -34,33 +34,33 @@ BCS_API network::rpc::object_t chain_states_entry(const node::query& query,
     bool validated) NOEXCEPT;
 
 /// Block confirmation context (height, confirmations, siblings).
-BCS_API void inject_block_context(boost::json::object& out,
+BCS_API void inject_block_context(system::json::object& out,
     const node::query& query, const system::settings& settings,
     const database::header_link& link,
     const system::chain::header& header) NOEXCEPT;
 
 /// Transaction confirmation context (blockhash, confirmations, time).
-BCS_API void inject_tx_context(boost::json::object& out,
+BCS_API void inject_tx_context(system::json::object& out,
     const node::query& query, const database::tx_link& link) NOEXCEPT;
 
 /// Per-input prevout context (requires populate_with_metadata).
-BCS_API void inject_tx_prevouts(boost::json::object& out,
+BCS_API void inject_tx_prevouts(system::json::object& out,
     const node::query& query, const system::chain::transaction& tx,
     uint8_t p2kh, uint8_t p2sh, const std::string& witness,
     uint32_t flags) NOEXCEPT;
 
 /// The network context (desc, address) of a scriptPubKey object.
-BCS_API void inject_script_context(boost::json::object& out,
+BCS_API void inject_script_context(system::json::object& out,
     const system::chain::script& script, uint8_t p2kh, uint8_t p2sh,
     const std::string& witness) NOEXCEPT;
 
 /// The network context of each vout scriptPubKey object.
-BCS_API void inject_tx_scripts(boost::json::object& out,
+BCS_API void inject_tx_scripts(system::json::object& out,
     const system::chain::transaction& tx, uint8_t p2kh, uint8_t p2sh,
     const std::string& witness) NOEXCEPT;
 
 /// The bitcoind scriptPubKey object (asm, hex, type, desc, address).
-BCS_API boost::json::value to_script_public_key(
+BCS_API system::json::value to_script_public_key(
     const system::chain::script& script, uint8_t p2kh, uint8_t p2sh,
     const std::string& witness, uint32_t flags) NOEXCEPT;
 
@@ -81,24 +81,24 @@ BCS_API void inject_activity(network::rpc::array_t& out,
 
 /// The submitpackage result of a submitted package, with the failing tx at
 /// index. False if the store is inconsistent, the caller sends the error.
-BCS_API bool package_result(boost::json::object& out,
+BCS_API bool package_result(system::json::object& out,
     const node::query& query, const code& ec, size_t index,
     const system::chain::transaction_cptrs& txs) NOEXCEPT;
 
 /// The getmempoolentry result of a pooled and confirmable tx.
-BCS_API bool mempool_entry(boost::json::object& out,
+BCS_API bool mempool_entry(system::json::object& out,
     const node::query& query, const database::tx_link& link) NOEXCEPT;
 
 /// The txids of the txs, or their entries keyed by txid (verbose).
-BCS_API bool mempool_txs(boost::json::value& out, const node::query& query,
+BCS_API bool mempool_txs(system::json::value& out, const node::query& query,
     const database::tx_links& links, bool verbose) NOEXCEPT;
 
 /// The getrawmempool result, with a constant mempool sequence.
-BCS_API bool raw_mempool(boost::json::value& out, const node::query& query,
+BCS_API bool raw_mempool(system::json::value& out, const node::query& query,
     bool verbose, bool sequence) NOEXCEPT;
 
 /// The getmempoolinfo result, with usage and maximum as store sizes.
-BCS_API bool mempool_info(boost::json::object& out,
+BCS_API bool mempool_info(system::json::object& out,
     const node::query& query, const std::filesystem::path& store,
     double minimum, double relay, double increment) NOEXCEPT;
 

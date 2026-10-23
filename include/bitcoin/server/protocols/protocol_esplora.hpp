@@ -81,7 +81,7 @@ protected:
         const network::http::request& request) NOEXCEPT override;
 
     /// Senders.
-    virtual void send_json(boost::json::value&& model, size_t size_hint,
+    virtual void send_json(system::json::value&& model, size_t size_hint,
         const network::http::request& request={}) NOEXCEPT;
     virtual void send_text(std::string&& text,
         const network::http::request& request={}) NOEXCEPT;
@@ -194,16 +194,16 @@ private:
 
     static std::string to_script_type(
         const system::chain::script& script) NOEXCEPT;
-    boost::json::object to_output(
+    system::json::object to_output(
         const system::chain::output& output) NOEXCEPT;
-    boost::json::object to_input(const system::chain::input& input,
+    system::json::object to_input(const system::chain::input& input,
         bool coinbase) NOEXCEPT;
-    boost::json::object to_status(const database::tx_link& link) NOEXCEPT;
-    bool to_tx(boost::json::object& out,
+    system::json::object to_status(const database::tx_link& link) NOEXCEPT;
+    bool to_tx(system::json::object& out,
         const database::tx_link& link) NOEXCEPT;
-    bool to_outspend(boost::json::object& out,
+    bool to_outspend(system::json::object& out,
         const system::hash_digest& hash, uint32_t index) NOEXCEPT;
-    bool to_block(boost::json::object& out,
+    bool to_block(system::json::object& out,
         const database::header_link& link) NOEXCEPT;
 
     // Completion handlers (for asynchronous query).
@@ -237,7 +237,7 @@ private:
     void do_get_mempool(const gate_t::ptr& gate) NOEXCEPT;
     void do_get_mempool_txids(const gate_t::ptr& gate) NOEXCEPT;
     void do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT;
-    void complete_get_mempool(const code& ec, boost::json::value& out,
+    void complete_get_mempool(const code& ec, system::json::value& out,
         size_t size, const gate_t::ptr& gate) NOEXCEPT;
 
     void next_estimate(size_t index) NOEXCEPT;
@@ -253,7 +253,7 @@ private:
     const std::string witness_;
 
     // These are protected by strand.
-    boost::json::object estimates_{};
+    system::json::object estimates_{};
     dispatcher dispatcher_{};
 };
 

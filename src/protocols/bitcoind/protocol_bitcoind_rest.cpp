@@ -35,7 +35,7 @@ using namespace system;
 using namespace network;
 using namespace network::rpc;
 using namespace std::placeholders;
-using namespace boost::json;
+using namespace system::json;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
@@ -928,7 +928,7 @@ bool protocol_bitcoind_rest::handle_get_mempool(const code& ec,
         return true;
     }
 
-    boost::json::value out{};
+    system::json::value out{};
     if (!raw_mempool(out, archive(), verbose, mempool_sequence))
     {
         send_internal_server_error(database::error::integrity);

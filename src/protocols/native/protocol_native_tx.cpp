@@ -138,7 +138,7 @@ bool protocol_native::handle_get_tx_details(const code& ec,
     }
 
     // sigops and wtxid are not cached, so removed for now.
-    boost::json::object object
+    system::json::object object
     {
         { "segregated", maximal != nominal },
         { "coinbase", coinbase },
@@ -162,7 +162,7 @@ bool protocol_native::handle_get_tx_details(const code& ec,
             return true;
         }
 
-        object["confirmed"] = boost::json::object
+        object["confirmed"] = system::json::object
         {
             { "height", context.height },
             { "position", position }
