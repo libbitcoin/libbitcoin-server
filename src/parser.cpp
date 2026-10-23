@@ -95,18 +95,25 @@ parser::parser(system::chain::selection context,
     configured.server.sparrow.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
     configured.server.esplora.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
 
-    ////configured.server.admin.binds.emplace_back(asio::address{}, 8080_u16);
-    ////configured.server.admin.safes.emplace_back(asio::address{}, 8043_u16);
-    ////configured.server.native.binds.emplace_back(asio::address{}, 8180_u16);
-    ////configured.server.native.safes.emplace_back(asio::address{}, 8143_u16);
-    ////configured.server.bitcoind.binds.emplace_back(asio::address{}, 8280_u16);
-    ////configured.server.bitcoind.safes.emplace_back(asio::address{}, 8243_u16);
-    ////configured.server.electrum.binds.emplace_back(asio::address{}, 8380_u16);
-    ////configured.server.electrum.safes.emplace_back(asio::address{}, 8343_u16);
+    configured.server.admin.binds.emplace_back(asio::address{}, 8080_u16);
+    configured.server.admin.safes.emplace_back(asio::address{}, 8043_u16);
+    configured.server.native.binds.emplace_back(asio::address{}, 8180_u16);
+    configured.server.native.safes.emplace_back(asio::address{}, 8143_u16);
+    configured.server.bitcoind.binds.emplace_back(asio::address{}, 8280_u16);
+    configured.server.bitcoind.safes.emplace_back(asio::address{}, 8243_u16);
+    configured.server.electrum.binds.emplace_back(asio::address{}, 8380_u16);
+    configured.server.electrum.safes.emplace_back(asio::address{}, 8343_u16);
+    configured.server.bitcoind_zmq.binds.emplace_back(asio::address{}, 8680_u16);
+    configured.server.bitcoind_zmq.safes.emplace_back(asio::address{}, 8643_u16);
+    configured.server.btcd.binds.emplace_back(asio::address{}, 8780_u16);
+    configured.server.btcd.safes.emplace_back(asio::address{}, 8743_u16);
+    configured.server.sparrow.binds.emplace_back(asio::address{}, 8880_u16);
+    configured.server.sparrow.safes.emplace_back(asio::address{}, 8843_u16);
+    configured.server.esplora.binds.emplace_back(asio::address{}, 8980_u16);
+    configured.server.esplora.safes.emplace_back(asio::address{}, 8943_u16);
     ////configured.server.stratum_v1.binds.emplace_back(asio::address{}, 8480_u16);
     ////configured.server.stratum_v1.safes.emplace_back(asio::address{}, 8443_u16);
     ////configured.server.stratum_v2.binds.emplace_back(asio::address{}, 8580_u16);
-    ////configured.server.bitcoind_zmq.binds.emplace_back(asio::address{}, 8680_u16);
 
     // node
 
