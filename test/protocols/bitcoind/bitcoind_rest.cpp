@@ -740,17 +740,17 @@ BOOST_FIXTURE_TEST_SUITE(bitcoind_rest_credential_tests, bitcoind_rest_credentia
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__chaininfo__rest_credential__ok)
 {
-    BOOST_REQUIRE_EQUAL(rest_status("/rest/chaininfo.json", BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD), http::status::ok);
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/chaininfo.json", BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD), status::ok);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__getblockcount__rest_credential__forbidden)
 {
-    BOOST_REQUIRE_EQUAL(rpc_status("getblockcount", BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD), http::status::forbidden);
+    BOOST_REQUIRE_EQUAL(rpc_status("getblockcount", BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD), status::forbidden);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__chaininfo__no_credential__unauthorized)
 {
-    BOOST_REQUIRE_EQUAL(rest_status("/rest/chaininfo.json"), http::status::unauthorized);
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/chaininfo.json"), status::unauthorized);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -759,7 +759,7 @@ BOOST_FIXTURE_TEST_SUITE(bitcoind_rest_scoped_credential_tests, bitcoind_scoped_
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__chaininfo__rpc_scoped_credential__forbidden)
 {
-    BOOST_REQUIRE_EQUAL(rest_status("/rest/chaininfo.json", BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD), http::status::forbidden);
+    BOOST_REQUIRE_EQUAL(rest_status("/rest/chaininfo.json", BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD), status::forbidden);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
