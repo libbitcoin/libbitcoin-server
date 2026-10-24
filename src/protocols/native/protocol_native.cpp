@@ -141,6 +141,13 @@ bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
     if (media == media_type::text_html)
         return false;
 
+    // The credential may be restricted to a subset of interface methods.
+    if (!permitted(model.method))
+    {
+        send_forbidden(request);
+        return true;
+    }
+
     if (dispatcher_.notify(model))
         send_bad_request(request);
 
@@ -186,6 +193,13 @@ void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
     if (get_media(model) == media_type::text_html)
     {
         stop(network::error::not_acceptable);
+        return;
+    }
+
+    // The credential may be restricted to a subset of interface methods.
+    if (!permitted(model.method))
+    {
+        stop(network::error::unauthorized);
         return;
     }
 

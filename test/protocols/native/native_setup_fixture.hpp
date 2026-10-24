@@ -23,6 +23,8 @@
 #include "../../mocks/blocks.hpp"
 
 #define NATIVE_ENDPOINT "127.0.0.1:65000"
+#define NATIVE_TEST_CREDENTIAL "user:pass:top"
+#define NATIVE_TEST_AUTHORIZATION "Basic dXNlcjpwYXNz"
 
 // TODO: native is http so use boost::beast.
 
@@ -279,6 +281,22 @@ protected:
     test::query_t query_;
     network::logger log_;
     server::server_node server_;
+};
+
+// Configured with a credential scoped to the top method.
+struct native_scoped_credential_setup_fixture
+  : native_setup_fixture
+{
+    inline native_scoped_credential_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.server.native.credentials = { { NATIVE_TEST_CREDENTIAL } };
+        })
+    {
+    }
 };
 
 #endif

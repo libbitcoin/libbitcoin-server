@@ -28,6 +28,7 @@
 #define BITCOIND_TEST_USERNAME "user"
 #define BITCOIND_TEST_PASSWORD "pass"
 #define BITCOIND_TEST_SCOPED_METHOD "getblockcount"
+#define BITCOIND_TEST_REST_METHOD "chain_information"
 
 struct bitcoind_setup_fixture
   : rpc_setup_fixture
@@ -92,6 +93,8 @@ struct bitcoind_setup_fixture
 
     // bitcoind REST over HTTP GET (target under "/rest/...").
     status rest_status(std::string_view target);
+    status rest_status(std::string_view target, const std::string& username,
+        const std::string& password);
     system::json::value rest_json(std::string_view target);
     std::string rest_text(std::string_view target);
     system::data_chunk rest_data(std::string_view target);
@@ -503,6 +506,27 @@ struct bitcoind_zmq_bound_setup_fixture
         }, [](configuration& config)
         {
             config.server.bitcoind_zmq.binds = { { "127.0.0.1:28332" } };
+        })
+    {
+    }
+};
+
+// Configured with a credential scoped to a single rest method -- for tests
+// that verify rest and rpc method names are permitted separately.
+struct bitcoind_rest_credential_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_rest_credential_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.server.bitcoind.credentials =
+            {
+                { BITCOIND_TEST_USERNAME ":" BITCOIND_TEST_PASSWORD ":"
+                    BITCOIND_TEST_REST_METHOD }
+            };
         })
     {
     }

@@ -760,3 +760,22 @@ BOOST_AUTO_TEST_CASE(native__block_details__missing_prevouts__internal_server_er
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(native_scoped_credential_tests, native_scoped_credential_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(native__top__scoped_credential__ok)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::authorization, NATIVE_TEST_AUTHORIZATION), http::status::ok);
+}
+
+BOOST_AUTO_TEST_CASE(native__block_header__scoped_credential_unlisted_method__forbidden)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/v1/block/height/0/header?format=json", http::field::authorization, NATIVE_TEST_AUTHORIZATION), http::status::forbidden);
+}
+
+BOOST_AUTO_TEST_CASE(native__top__no_credential__unauthorized)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/v1/top?format=json"), http::status::unauthorized);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

@@ -18,6 +18,9 @@
  */
 #include "test.hpp"
 
+#include <filesystem>
+#include <fstream>
+
 BOOST_AUTO_TEST_SUITE(settings_tests)
 
 using namespace bc::network;
@@ -408,6 +411,205 @@ BOOST_AUTO_TEST_CASE(server__settings__initialize__default__no_failure)
     server::settings instance{ selection::none, undefined, undefined };
     BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
     BOOST_REQUIRE(instance.failure.empty());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// [tls]
+
+struct tls_setup_fixture
+  : test::directory_setup_fixture
+{
+    tls_setup_fixture()
+    {
+        std::filesystem::create_directories(clients);
+        write_identity(certificate, private_key);
+        write_identity(clients / "client.pem", directory / "client.key");
+    }
+
+    static void write_text(const std::filesystem::path& path, const std::string& text)
+    {
+        std::ofstream file(path, std::ios::binary);
+        file.write(text.data(), system::possible_narrow_sign_cast<std::streamsize>(text.size()));
+    }
+
+    static void write_identity(const std::filesystem::path& certificate_path, const std::filesystem::path& key_path)
+    {
+        const auto key = system::base16_array("c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721");
+        system::x509::subject subject{};
+        subject.common_name = "localhost";
+        subject.dns_names = { "localhost" };
+        subject.not_before = 1735689600;
+        subject.not_after = 2524608000;
+
+        system::data_chunk der{};
+        system::x509::build_self_signed(der, key, subject);
+        write_text(certificate_path, system::x509::encode_certificate(der));
+        write_text(key_path, system::x509::encode_private_key(key));
+    }
+
+    void secure(network::settings::tls_server& service) const
+    {
+        service.safes.emplace_back("127.0.0.1:443");
+        service.cert_path = certificate;
+        service.key_path = private_key;
+    }
+
+    const std::filesystem::path directory{ TEST_DIRECTORY };
+    const std::filesystem::path certificate{ directory / "server.pem" };
+    const std::filesystem::path private_key{ directory / "server.key" };
+    const std::filesystem::path clients{ directory / "clients" };
+};
+
+BOOST_FIXTURE_TEST_SUITE(settings_tls_tests, tls_setup_fixture)
+
+using namespace bc::system::chain;
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__admin_safes_with_certificate__secure)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    secure(instance.admin);
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.admin.secure());
+    BOOST_REQUIRE(!instance.admin.authenticate());
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__admin_certificate_authority__authenticate)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    secure(instance.admin);
+    instance.admin.cert_auth = clients;
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.admin.secure());
+    BOOST_REQUIRE(instance.admin.authenticate());
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__native_safes_with_certificate__secure)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    secure(instance.native);
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.native.secure());
+    BOOST_REQUIRE(!instance.native.authenticate());
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__native_certificate_authority__authenticate)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    secure(instance.native);
+    instance.native.cert_auth = clients;
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.native.secure());
+    BOOST_REQUIRE(instance.native.authenticate());
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__bitcoind_safes_with_certificate__secure)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    secure(instance.bitcoind);
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.bitcoind.secure());
+    BOOST_REQUIRE(!instance.bitcoind.authenticate());
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__bitcoind_certificate_authority__authenticate)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    secure(instance.bitcoind);
+    instance.bitcoind.cert_auth = clients;
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.bitcoind.secure());
+    BOOST_REQUIRE(instance.bitcoind.authenticate());
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__btcd_safes_with_certificate__secure)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    secure(instance.btcd);
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.btcd.secure());
+    BOOST_REQUIRE(!instance.btcd.authenticate());
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__btcd_certificate_authority__authenticate)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    secure(instance.btcd);
+    instance.btcd.cert_auth = clients;
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.btcd.secure());
+    BOOST_REQUIRE(instance.btcd.authenticate());
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__electrum_safes_with_certificate__secure)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    secure(instance.electrum);
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.electrum.secure());
+    BOOST_REQUIRE(!instance.electrum.authenticate());
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__electrum_certificate_authority__authenticate)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    secure(instance.electrum);
+    instance.electrum.cert_auth = clients;
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.electrum.secure());
+    BOOST_REQUIRE(instance.electrum.authenticate());
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__sparrow_safes_with_certificate__secure)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    secure(instance.sparrow);
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.sparrow.secure());
+    BOOST_REQUIRE(!instance.sparrow.authenticate());
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__sparrow_certificate_authority__authenticate)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    secure(instance.sparrow);
+    instance.sparrow.cert_auth = clients;
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.sparrow.secure());
+    BOOST_REQUIRE(instance.sparrow.authenticate());
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__esplora_safes_with_certificate__secure)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    secure(instance.esplora);
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.esplora.secure());
+    BOOST_REQUIRE(!instance.esplora.authenticate());
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize__esplora_certificate_authority__authenticate)
+{
+    const auto undefined = server::settings::embedded_pages{};
+    server::settings instance{ selection::none, undefined, undefined };
+    secure(instance.esplora);
+    instance.esplora.cert_auth = clients;
+    BOOST_REQUIRE_EQUAL(instance.initialize(), network::error::success);
+    BOOST_REQUIRE(instance.esplora.secure());
+    BOOST_REQUIRE(instance.esplora.authenticate());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

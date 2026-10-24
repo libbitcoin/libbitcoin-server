@@ -4409,3 +4409,12 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__ac
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(bitcoind_credentialed_tcp_tests, bitcoind_credentialed_setup_fixture)
+
+BOOST_AUTO_TEST_CASE(bitcoind_rpc__getblockcount__downgraded_credentials_configured__dropped)
+{
+    REQUIRE_NO_THROW_TRUE(tcp_rpc("getblockcount").at("dropped").as_bool());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
