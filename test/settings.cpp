@@ -325,6 +325,18 @@ BOOST_AUTO_TEST_CASE(wallet__defaults__testnet__expected)
     BOOST_REQUIRE_EQUAL(instance.hd_public_prefix, prefix::hd::test::btc.pub);
 }
 
+BOOST_AUTO_TEST_CASE(wallet__defaults__signet__testnet_expected)
+{
+    const server::settings::wallet_settings instance{ selection::signet };
+    BOOST_REQUIRE_EQUAL(instance.p2kh_prefix, prefix::p2kh::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.p2sh_prefix, prefix::p2sh::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.wif_prefix, prefix::wif::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.witness_prefix, prefix::p2w::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.silent_prefix, prefix::sp::test::btc);
+    BOOST_REQUIRE_EQUAL(instance.hd_private_prefix, prefix::hd::test::btc.prv);
+    BOOST_REQUIRE_EQUAL(instance.hd_public_prefix, prefix::hd::test::btc.pub);
+}
+
 BOOST_AUTO_TEST_CASE(wallet__defaults__regtest__testnet_versions_with_regtest_witness)
 {
     const server::settings::wallet_settings instance{ selection::regtest };

@@ -104,6 +104,8 @@ parser::parser(system::chain::selection context,
                 return possible_narrow_cast<uint16_t>(base + 10000_u32);
             case chain::selection::regtest:
                 return possible_narrow_cast<uint16_t>(base + 20000_u32);
+            case chain::selection::signet:
+                return possible_narrow_cast<uint16_t>(base + 30000_u32);
             case chain::selection::testnet4:
                 return possible_narrow_cast<uint16_t>(base + 40000_u32);
             default:
@@ -539,6 +541,11 @@ options_metadata parser::load_settings() THROWS
         "Assume block_storm_patch activation if enabled, defaults to {} (testnet4)."
     )
     (
+        "forks.signet",
+        setting<bool>(&configured.bitcoin.forks.signet),
+        "Require signet block solutions, defaults to {} (signet)."
+    )
+    (
         "forks.ltc_time_warp_patch",
         setting<bool>(&configured.bitcoin.forks.ltc_time_warp_patch),
         "Fix time warp bug, defaults to {} (litecoin)."
@@ -594,6 +601,11 @@ options_metadata parser::load_settings() THROWS
         "bitcoin.genesis_block",
         setting<config::block>(&configured.bitcoin.genesis_block),
         "The hexadecimal encoding of the genesis block, defaults to mainnet."
+    )
+    (
+        "bitcoin.signet_challenge",
+        setting<config::script>(&configured.bitcoin.signet_challenge),
+        "The signet block challenge script, defaults to none (signet)."
     )
     (
         "bitcoin.checkpoint",

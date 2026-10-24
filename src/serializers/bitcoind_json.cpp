@@ -269,17 +269,13 @@ std::string chain_name(const node::query& query) NOEXCEPT
 {
     const auto genesis = query.get_header_key(query.to_confirmed(zero));
 
-    // TODO: create signet chain selector.
-    // See libbitcoin-system#1908.
     using selection = chain::selection;
-    constexpr auto signet = base16_hash(
-        "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6");
     static const std::vector<std::pair<hash_digest, std::string>> networks
     {
         { system::settings{ selection::mainnet }.genesis_block.hash(), "main" },
         { system::settings{ selection::testnet3 }.genesis_block.hash(), "test" },
         { system::settings{ selection::regtest }.genesis_block.hash(), "regtest" },
-        { signet, "signet" }
+        { system::settings{ selection::signet }.genesis_block.hash(), "signet" }
     };
 
     for (const auto& [hash, name]: networks)
