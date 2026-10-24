@@ -128,6 +128,7 @@ static const context& to_wallet_context(
     {
         case system::chain::selection::testnet3:
         case system::chain::selection::testnet4:
+        case system::chain::selection::signet:
             return ctx::btc::test;
         case system::chain::selection::regtest:
             return ctx::btc::regtest;
