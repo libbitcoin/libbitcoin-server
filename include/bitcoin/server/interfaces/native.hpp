@@ -177,7 +177,7 @@ struct native_methods
 
 /// /v1/address/[output-script-hash] {all}
 /// /v1/address/[output-script-hash]/unconfirmed {all unconfirmed}
-/// /v1/address/[output-script-hash]/confirmed {all unconfirmed}
+/// /v1/address/[output-script-hash]/confirmed {all confirmed}
 /// /v1/address/[output-script-hash]/balance {all confirmed}
 
 } // namespace interface
