@@ -207,6 +207,22 @@ void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
         stop(network::error::bad_request);
 }
 
+// Senders.
+// ----------------------------------------------------------------------------
+
+void protocol_native::send_not_found(const http::request& request) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (websocket())
+    {
+        send_empty(request);
+        return;
+    }
+
+    protocol_html::send_not_found(request);
+}
+
 // Event handlers.
 // ----------------------------------------------------------------------------
 

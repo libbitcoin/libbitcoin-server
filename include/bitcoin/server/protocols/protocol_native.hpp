@@ -67,6 +67,10 @@ protected:
     void dispatch_websocket(
         const network::http::request& request) NOEXCEPT override;
 
+    /// Senders.
+    void send_not_found(
+        const network::http::request& request={}) NOEXCEPT override;
+
 
     /// Event handlers.
     /// -----------------------------------------------------------------------
