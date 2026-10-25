@@ -41,7 +41,7 @@ class protocol_rpc
 public:
     using rpc_dispatcher = network::rpc::dispatcher<Interface>;
 
-    /// Subscribe to the post and websocket transports of the interface.
+    /// Subscribe to all http methods, the interface is served by post and ws.
     void start() NOEXCEPT override
     {
         BC_ASSERT(stranded());
@@ -51,12 +51,26 @@ public:
         using self = protocol_rpc<Interface>;
         using post = network::http::method::post;
         using unknown = network::http::method::unknown;
+        using get = network::http::method::get;
+        using head = network::http::method::head;
+        using put = network::http::method::put;
+        using delete_ = network::http::method::delete_;
+        using trace = network::http::method::trace;
+        using options = network::http::method::options;
+        using connect = network::http::method::connect;
         using namespace std::placeholders;
 
         // Publish served method names (e.g. for help).
         register_methods(names);
         subscribe_channel<self, post>(&self::handle_receive_post, _1, _2);
         subscribe_channel<self, unknown>(&self::handle_receive_unknown, _1, _2);
+        subscribe_channel<self, get>(&self::handle_receive_get, _1, _2);
+        subscribe_channel<self, head>(&self::handle_receive_head, _1, _2);
+        subscribe_channel<self, put>(&self::handle_receive_put, _1, _2);
+        subscribe_channel<self, delete_>(&self::handle_receive_delete, _1, _2);
+        subscribe_channel<self, trace>(&self::handle_receive_trace, _1, _2);
+        subscribe_channel<self, options>(&self::handle_receive_options, _1, _2);
+        subscribe_channel<self, connect>(&self::handle_receive_connect, _1, _2);
         network::protocol::start();
     }
 
@@ -136,6 +150,49 @@ protected:
             stop(code);
     }
 
+    /// Json-rpc is served over post (and ws/tcp), other methods are not.
+    void handle_receive_get(const code& ec,
+        const network::http::method::get::cptr& get) NOEXCEPT override
+    {
+        method_not_allowed(ec, *get);
+    }
+
+    void handle_receive_head(const code& ec,
+        const network::http::method::head::cptr& head) NOEXCEPT override
+    {
+        method_not_allowed(ec, *head);
+    }
+
+    void handle_receive_put(const code& ec,
+        const network::http::method::put::cptr& put) NOEXCEPT override
+    {
+        method_not_allowed(ec, *put);
+    }
+
+    void handle_receive_delete(const code& ec,
+        const network::http::method::delete_::cptr& delete_) NOEXCEPT override
+    {
+        method_not_allowed(ec, *delete_);
+    }
+
+    void handle_receive_trace(const code& ec,
+        const network::http::method::trace::cptr& trace) NOEXCEPT override
+    {
+        method_not_allowed(ec, *trace);
+    }
+
+    void handle_receive_options(const code& ec,
+        const network::http::method::options::cptr& options) NOEXCEPT override
+    {
+        method_not_allowed(ec, *options);
+    }
+
+    void handle_receive_connect(const code& ec,
+        const network::http::method::connect::cptr& connect) NOEXCEPT override
+    {
+        method_not_allowed(ec, *connect);
+    }
+
     /// The websocket (and downgrade) transport of the interface.
     void dispatch_websocket(
         const network::http::request& request) NOEXCEPT override
@@ -184,11 +241,43 @@ protected:
             stop(code);
     }
 
+    /// Dispatch a message received before this protocol was attached.
+    void dispatch_message(const network::rpc::request_t& message) NOEXCEPT
+    {
+        BC_ASSERT(stranded());
+        if (!rpc_dispatcher::contains(message.method))
+        {
+            handle_unclaimed(message);
+            return;
+        }
+
+        if (!permitted(message.method))
+        {
+            stop(network::error::unauthorized);
+            return;
+        }
+
+        if (const auto code = rpc_dispatcher_.notify(message))
+            stop(code);
+    }
+
     /// Invoked for a request not defined by the interface, which the protocol
     /// attached last overrides to respond (all others defer by default).
     virtual void handle_unclaimed(
         const network::rpc::request_t&) NOEXCEPT
     {
+    }
+
+    /// Respond once (closing) to a method other than post, unless claimed.
+    void method_not_allowed(const code& ec,
+        const network::http::request& request) NOEXCEPT
+    {
+        BC_ASSERT(stranded());
+        if (stopped(ec) || claimed())
+            return;
+
+        set_claimed();
+        send_method_not_allowed(request);
     }
 
     /// Handler wiring (dispatcher subscription).

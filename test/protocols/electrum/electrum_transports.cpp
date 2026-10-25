@@ -90,6 +90,24 @@ BOOST_AUTO_TEST_CASE(electrum__post__missing_arguments__dropped)
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
+// Only POST is allowed, other http methods are answered (and closed).
+BOOST_AUTO_TEST_CASE(electrum__get__handshake_pending__method_not_allowed)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/"), rpc_client::status::method_not_allowed);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__get__after_handshake__method_not_allowed)
+{
+    BOOST_REQUIRE(post_handshake(electrum::version::v1_4));
+    BOOST_REQUIRE_EQUAL(get_status("/"), rpc_client::status::method_not_allowed);
+}
+
+BOOST_AUTO_TEST_CASE(electrum__options__after_handshake__method_not_allowed)
+{
+    BOOST_REQUIRE(post_handshake(electrum::version::v1_4));
+    BOOST_REQUIRE_EQUAL(options_status("/"), rpc_client::status::method_not_allowed);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // scoped credential

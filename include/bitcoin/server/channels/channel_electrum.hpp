@@ -81,6 +81,19 @@ public:
         return restricted_;
     }
 
+    /// A non-version opener is answered once the service is attached.
+    inline void set_opener(const network::rpc::request_t& message) NOEXCEPT
+    {
+        opener_.emplace(message);
+    }
+
+    inline std::optional<network::rpc::request_t> take_opener() NOEXCEPT
+    {
+        auto opener = std::move(opener_);
+        opener_.reset();
+        return opener;
+    }
+
     /// A server.version has been negotiated (not the opener default).
     inline void set_negotiated() NOEXCEPT
     {
@@ -125,6 +138,7 @@ private:
     // These are protected by strand.
     server::electrum::version version_{ server::electrum::version::v0_0 };
     std::string name_{};
+    std::optional<network::rpc::request_t> opener_{};
     bool restricted_{};
     bool negotiated_{};
 };

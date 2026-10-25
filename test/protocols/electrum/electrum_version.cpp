@@ -20,6 +20,7 @@
 #include "electrum_setup_fixture.hpp"
 
 static const code invalid_argument{ error::electrum::bad_request };
+static const code method_not_found{ error::electrum::method_not_found };
 
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
@@ -224,7 +225,10 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__repeat_from_1_4__rejected)
 BOOST_AUTO_TEST_CASE(electrum__server_version__non_version_opener__negotiated)
 {
     const auto opener = R"({"id":1,"method":"server.banner","params":[]})" "\n";
-    const auto response = get(opener + std::string(R"({"id":2,"method":"server.version","params":["foobar","1.4"]})" "\n"));
+    const auto first = get(opener + std::string(R"({"id":2,"method":"server.version","params":["foobar","1.4"]})" "\n"));
+    BOOST_REQUIRE_EQUAL(first.at("id").as_int64(), 1);
+
+    const auto response = receive();
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.4");
@@ -233,7 +237,10 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__non_version_opener__negotiated)
 BOOST_AUTO_TEST_CASE(electrum__server_version__non_version_opener__restricted)
 {
     const auto opener = R"({"id":1,"method":"server.banner","params":[]})" "\n";
-    const auto response = get(opener + std::string(R"({"id":2,"method":"server.version","params":["foobar",["1.0","1.7"]]})" "\n"));
+    const auto first = get(opener + std::string(R"({"id":2,"method":"server.version","params":["foobar",["1.0","1.7"]]})" "\n"));
+    BOOST_REQUIRE_EQUAL(first.at("id").as_int64(), 1);
+
+    const auto response = receive();
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.4.2");
 }
@@ -241,17 +248,40 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__non_version_opener__restricted)
 BOOST_AUTO_TEST_CASE(electrum__server_version__non_version_opener_exact_future__dropped)
 {
     const auto opener = R"({"id":1,"method":"server.banner","params":[]})" "\n";
-    const auto response = get(opener + std::string(R"({"id":2,"method":"server.version","params":["foobar","1.7"]})" "\n"));
+    const auto first = get(opener + std::string(R"({"id":2,"method":"server.version","params":["foobar","1.7"]})" "\n"));
+    BOOST_REQUIRE_EQUAL(first.at("id").as_int64(), 1);
+
+    const auto response = receive();
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_version__non_version_opener_no_version__served_at_minimum)
 {
     const auto opener = R"({"id":1,"method":"server.banner","params":[]})" "\n";
-    const auto response = get(opener + std::string(R"({"id":2,"method":"server.banner","params":[]})" "\n"));
+    const auto first = get(opener + std::string(R"({"id":2,"method":"server.banner","params":[]})" "\n"));
+    BOOST_REQUIRE_EQUAL(first.at("id").as_int64(), 1);
+
+    const auto response = receive();
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+}
+
+// The opener itself is answered (json-rpc requires a response to a request).
+BOOST_AUTO_TEST_CASE(electrum__server_version__non_version_opener__answered)
+{
+    const auto response = get(R"({"id":1,"method":"server.banner","params":[]})" "\n");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 1);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_version__non_version_opener_unknown__method_not_found)
+{
+    const auto response = get(R"({"id":1,"method":"server.bogus","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 1);
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), method_not_found.value());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_version__inconsistent_repeat_below_1_4__dropped)
@@ -434,7 +464,10 @@ static const std::string legacy_opener{ R"({"id":1,"method":"server.banner","par
 
 BOOST_AUTO_TEST_CASE(electrum__server_banner__below_v1_0__invalid_argument)
 {
-    const auto response = get(legacy_opener + R"({"id":2,"method":"server.banner","params":[]})" "\n");
+    const auto first = get(legacy_opener + R"({"id":2,"method":"server.banner","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(first.at("id").as_int64(), 1);
+
+    const auto response = receive();
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
@@ -442,7 +475,10 @@ BOOST_AUTO_TEST_CASE(electrum__server_banner__below_v1_0__invalid_argument)
 
 BOOST_AUTO_TEST_CASE(electrum__server_donation_address__below_v1_0__invalid_argument)
 {
-    const auto response = get(legacy_opener + R"({"id":2,"method":"server.donation_address","params":[]})" "\n");
+    const auto first = get(legacy_opener + R"({"id":2,"method":"server.donation_address","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(first.at("id").as_int64(), 1);
+
+    const auto response = receive();
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
@@ -450,7 +486,10 @@ BOOST_AUTO_TEST_CASE(electrum__server_donation_address__below_v1_0__invalid_argu
 
 BOOST_AUTO_TEST_CASE(electrum__server_features__below_v1_0__invalid_argument)
 {
-    const auto response = get(legacy_opener + R"({"id":2,"method":"server.features","params":[]})" "\n");
+    const auto first = get(legacy_opener + R"({"id":2,"method":"server.features","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(first.at("id").as_int64(), 1);
+
+    const auto response = receive();
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
@@ -458,7 +497,10 @@ BOOST_AUTO_TEST_CASE(electrum__server_features__below_v1_0__invalid_argument)
 
 BOOST_AUTO_TEST_CASE(electrum__server_peers_subscribe__below_v1_0__invalid_argument)
 {
-    const auto response = get(legacy_opener + R"({"id":2,"method":"server.peers.subscribe","params":[]})" "\n");
+    const auto first = get(legacy_opener + R"({"id":2,"method":"server.peers.subscribe","params":[]})" "\n");
+    BOOST_REQUIRE_EQUAL(first.at("id").as_int64(), 1);
+
+    const auto response = receive();
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
@@ -466,7 +508,10 @@ BOOST_AUTO_TEST_CASE(electrum__server_peers_subscribe__below_v1_0__invalid_argum
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__below_v1_0__invalid_argument)
 {
-    const auto response = get(legacy_opener + R"({"id":2,"method":"blockchain.estimatefee","params":[1]})" "\n");
+    const auto first = get(legacy_opener + R"({"id":2,"method":"blockchain.estimatefee","params":[1]})" "\n");
+    BOOST_REQUIRE_EQUAL(first.at("id").as_int64(), 1);
+
+    const auto response = receive();
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
@@ -474,7 +519,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__below_v1_0__invalid_argu
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__below_v1_0__invalid_argument)
 {
-    const auto response = get(legacy_opener + R"({"id":2,"method":"blockchain.transaction.broadcast","params":["00"]})" "\n");
+    const auto first = get(legacy_opener + R"({"id":2,"method":"blockchain.transaction.broadcast","params":["00"]})" "\n");
+    BOOST_REQUIRE_EQUAL(first.at("id").as_int64(), 1);
+
+    const auto response = receive();
     BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());

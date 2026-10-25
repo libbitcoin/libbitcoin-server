@@ -81,14 +81,16 @@ void protocol_electrum_version::finished(const code& ec,
 
 // A non-version opener is a pre-1.6 client. The handshake passes at the
 // minimum version, restricted until (unless) a server.version arrives.
+// The opener is answered by the service once attached (see protocol_electrum).
 void protocol_electrum_version::handle_unclaimed(
-    const request_t&) NOEXCEPT
+    const request_t& message) NOEXCEPT
 {
     BC_ASSERT(stranded());
     if (!handler_)
         return;
 
     pause();
+    channel_->set_opener(message);
     channel_->set_restricted();
     channel_->set_version(electrum::version_floor(options().protocol_minimum));
     finished(error::success, error::success);
