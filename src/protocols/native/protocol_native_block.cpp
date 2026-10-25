@@ -42,10 +42,10 @@ bool protocol_native::handle_get_top(const code& ec, interface::top,
     switch (media)
     {
         case data:
-            send_chunk(to_little_endian_size(height));
+            send_chunk(to_bin(height));
             return true;
         case text:
-            send_text(encode_base16(to_little_endian_size(height)));
+            send_text(encode_base16(to_bin(height)));
             return true;
         case json:
             send_json(height, two * sizeof(height));
@@ -83,10 +83,10 @@ void protocol_native::do_top(node::header_t link, media_type media) NOEXCEPT
     switch (to_value(media))
     {
         case data:
-            notify_chunk(to_little_endian_size(height));
+            notify_chunk(to_bin(height));
             return;
         case text:
-            notify_text(encode_base16(to_little_endian_size(height)));
+            notify_text(encode_base16(to_bin(height)));
             return;
         case json:
             notify_json(height, two * sizeof(height));

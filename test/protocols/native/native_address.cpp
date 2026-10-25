@@ -110,6 +110,16 @@ BOOST_AUTO_TEST_CASE(native__address_balance__unfunded__zero)
     BOOST_REQUIRE_EQUAL(response.as_int64(), 0);
 }
 
+BOOST_AUTO_TEST_CASE(native__address_balance__unfunded_data__zero_byte)
+{
+    BOOST_REQUIRE_EQUAL(get_data("/v1/address/" + unfunded + "/balance?format=data"), base16_chunk("00"));
+}
+
+BOOST_AUTO_TEST_CASE(native__address_balance__unfunded_text__zero_byte)
+{
+    BOOST_REQUIRE_EQUAL(get_text("/v1/address/" + unfunded + "/balance?format=text"), "00");
+}
+
 // address/subscribe
 // ----------------------------------------------------------------------------
 

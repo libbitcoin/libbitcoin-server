@@ -204,6 +204,7 @@ private:
     // ------------------------------------------------------------------------
     // private/static
 
+    inline static system::data_chunk to_bin(uint64_t value) NOEXCEPT;
     template <typename Object, typename ...Args>
     inline static system::data_chunk to_bin(const Object& object, size_t size,
         Args&&... args) NOEXCEPT;

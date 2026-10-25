@@ -223,10 +223,10 @@ void protocol_native::complete_get_address_balance(const code& ec,
     switch (media)
     {
         case data:
-            send_chunk(to_little_endian_size(balance));
+            send_chunk(to_bin(balance));
             return;
         case text:
-            send_text(encode_base16(to_little_endian_size(balance)));
+            send_text(encode_base16(to_bin(balance)));
             return;
         case json:
             send_json(balance, two * sizeof(balance));

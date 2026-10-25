@@ -24,6 +24,12 @@
 namespace libbitcoin {
 namespace server {
 
+inline system::data_chunk protocol_native::to_bin(uint64_t value) NOEXCEPT
+{
+    using namespace system;
+    return is_zero(value) ? data_chunk(one) : to_little_endian_size(value);
+}
+
 template <typename Object, typename ...Args>
 inline system::data_chunk protocol_native::to_bin(const Object& object,
     size_t size, Args&&... args) NOEXCEPT
