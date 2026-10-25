@@ -205,37 +205,45 @@ bool protocol_admin::handle_get_event_subscribe(const code& ec,
     return true;
 }
 
-// Pool snapshots use the same query and serialization as Esplora. The query
-// runs off the protocol strand, with at most one outstanding per connection.
 bool protocol_admin::handle_get_txpool(const code& ec,
     interface::txpool, uint8_t /*version*/) NOEXCEPT
 {
     BC_ASSERT(stranded());
+
     if (stopped(ec))
         return false;
 
-    if (!txpool_pending_)
-    {
-        txpool_pending_ = true;
-        PARALLEL(do_get_txpool, gate());
-    }
+    PARALLEL(do_get_txpool, gate());
     return true;
 }
+
+// Completion handlers.
+// ----------------------------------------------------------------------------
 
 void protocol_admin::do_get_txpool(const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
-    system::json::value snapshot{};
-    const auto ec = get_pool_snapshot(snapshot, archive()) ?
-        code{} : database::error::integrity;
-    POST(complete_get_txpool, ec, std::move(snapshot), gate);
+
+    system::json::value out{};
+    if (!get_pool_snapshot(out, archive()))
+    {
+        POST(complete_get_txpool, database::error::integrity,
+            system::json::value{}, zero, gate);
+        return;
+    }
+
+    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+    const auto size = add1(out.at("fee_histogram").as_array().size()) * 64;
+    BC_POP_WARNING()
+
+    POST(complete_get_txpool, code{}, std::move(out), size, gate);
 }
 
 void protocol_admin::complete_get_txpool(const code& ec,
-    system::json::value& snapshot, const gate_t::ptr&) NOEXCEPT
+    system::json::value& out, size_t size, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    txpool_pending_ = false;
+
     if (stopped())
         return;
 
@@ -245,10 +253,7 @@ void protocol_admin::complete_get_txpool(const code& ec,
         return;
     }
 
-    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-    const auto size = (snapshot.at("fee_histogram").as_array().size() + one) * 64;
-    send_json({ { "txpool", std::move(snapshot) } }, size + 32);
-    BC_POP_WARNING()
+    send_json({ { "txpool", std::move(out) } }, size + 32);
 }
 
 // Event handlers.

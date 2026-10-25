@@ -128,6 +128,9 @@ fee_histogram to_compact_fee_histogram(const database::fee_rates& rates,
     return out;
 }
 
+// The vsize of a fee histogram bin (electrs).
+constexpr size_t histogram_bin = 50'000;
+
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 bool get_pool_snapshot(json::value& out,
@@ -145,8 +148,7 @@ bool get_pool_snapshot(json::value& out,
         fee = ceilinged_add(fee, rate.fee);
     }
 
-    // Preserve Esplora's 50,000-vbyte histogram bins and units.
-    const auto bins = to_fee_histogram(rates, 50'000);
+    const auto bins = to_fee_histogram(rates, histogram_bin);
     out = json::object
     {
         { "count", rates.size() },
@@ -154,6 +156,7 @@ bool get_pool_snapshot(json::value& out,
         { "total_fee", fee },
         { "fee_histogram", json::value_from(bins) }
     };
+
     return true;
 }
 

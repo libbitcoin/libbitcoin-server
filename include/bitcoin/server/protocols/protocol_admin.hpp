@@ -88,12 +88,14 @@ protected:
     void do_event(uint8_t event_, uint64_t zulu, uint64_t value) NOEXCEPT;
     void do_log(uint8_t level, uint64_t zulu,
         const std::string& message) NOEXCEPT;
-    void do_get_txpool(const gate_t::ptr& gate) NOEXCEPT;
-    void complete_get_txpool(const code& ec, system::json::value& snapshot,
-        const gate_t::ptr& gate) NOEXCEPT;
 
 private:
     using filter_t = std::atomic<uint64_t>;
+
+    // Completion handlers.
+    void do_get_txpool(const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_txpool(const code& ec, system::json::value& out,
+        size_t size, const gate_t::ptr& gate) NOEXCEPT;
 
     // Utils.
     static uint64_t to_zulu(const network::logger::time& point) NOEXCEPT;
@@ -108,7 +110,6 @@ private:
 
     // This is protected by strand.
     dispatcher dispatcher_{};
-    bool txpool_pending_{};
 };
 
 } // namespace server

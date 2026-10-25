@@ -60,9 +60,6 @@ struct admin_methods
 /// /v1/log/subscribe?filter=[mask] {stream}
 /// /v1/event/subscribe?filter=[mask] {stream}
 /// /v1/txpool {snapshot}
-/// Returns { "txpool": { count, vsize, total_fee, fee_histogram } }.
-/// Pool fields and units match Esplora's transaction pool endpoint. Available
-/// over HTTP (json) and websocket; clients may request a fresh snapshot.
 
 } // namespace interface
 } // namespace server

@@ -23,33 +23,57 @@ using namespace network::http;
 
 BOOST_FIXTURE_TEST_SUITE(admin_tests, admin_ten_block_setup_fixture)
 
-// Pool snapshots share Esplora's fields and units, including an empty pool.
-BOOST_AUTO_TEST_CASE(admin__txpool__http__empty)
+// txpool (http)
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(admin__txpool__json__empty)
 {
     const auto response = get_json("/v1/txpool?format=json");
-    const auto& pool = response.at("txpool").as_object();
+    REQUIRE_NO_THROW_TRUE(response.at("txpool").is_object());
+
+    const auto& pool = response.at("txpool");
+    REQUIRE_NO_THROW_TRUE(pool.at("count").is_int64());
+    REQUIRE_NO_THROW_TRUE(pool.at("vsize").is_int64());
+    REQUIRE_NO_THROW_TRUE(pool.at("total_fee").is_int64());
+    REQUIRE_NO_THROW_TRUE(pool.at("fee_histogram").is_array());
     BOOST_REQUIRE_EQUAL(pool.at("count").as_int64(), 0);
     BOOST_REQUIRE_EQUAL(pool.at("vsize").as_int64(), 0);
     BOOST_REQUIRE_EQUAL(pool.at("total_fee").as_int64(), 0);
     BOOST_REQUIRE(pool.at("fee_histogram").as_array().empty());
 }
 
-BOOST_AUTO_TEST_CASE(admin__txpool__websocket__repeatable)
+// txpool (websockets)
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(admin__ws_txpool__repeat__equal)
 {
     BOOST_REQUIRE(!ws_upgrade());
+
     const auto first = ws_get_json("/v1/txpool");
     const auto second = ws_get_json("/v1/txpool");
-    BOOST_REQUIRE(first == second);
+    REQUIRE_NO_THROW_TRUE(first.at("txpool").at("count").is_int64());
     BOOST_REQUIRE_EQUAL(first.at("txpool").at("count").as_int64(), 0);
+    BOOST_REQUIRE(first == second);
+}
 
-    // Snapshot requests do not replace the log/event subscriptions.
-    const auto ack = ws_get_json("/v1/event/subscribe?filter=2048");
+BOOST_AUTO_TEST_CASE(admin__ws_txpool__event_subscribed__notified)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto ack = ws_get_json("/v1/event/subscribe?filter=8");
+    REQUIRE_NO_THROW_TRUE(ack.at("previous").is_int64());
     BOOST_REQUIRE_EQUAL(ack.at("previous").as_int64(), 0);
-    ws_get_json("/v1/txpool");
-    fire(11, 42);
-    const auto event = ws_receive_json();
-    BOOST_REQUIRE_EQUAL(event.at("event").as_int64(), 11);
-    BOOST_REQUIRE_EQUAL(event.at("value").as_int64(), 42);
+
+    const auto pool = ws_get_json("/v1/txpool");
+    REQUIRE_NO_THROW_TRUE(pool.at("txpool").is_object());
+
+    fire(node::events::block_archived, 42);
+
+    const auto frame = ws_receive_json();
+    REQUIRE_NO_THROW_TRUE(frame.at("event").is_int64());
+    REQUIRE_NO_THROW_TRUE(frame.at("value").is_int64());
+    BOOST_REQUIRE_EQUAL(frame.at("event").as_int64(), node::events::block_archived);
+    BOOST_REQUIRE_EQUAL(frame.at("value").as_int64(), 42);
 }
 
 // log subscribe (http)
