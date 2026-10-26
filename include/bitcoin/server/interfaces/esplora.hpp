@@ -121,8 +121,8 @@ struct esplora_methods
 
 /// ---------------------------------------------------------------------------
 
+/// Each /address/[address] route is also /scripthash/[output-script-hash].
 /// /address/[address] {1}
-/// /scripthash/[output-script-hash] {1}
 /// /address/[address]/txs {25 confirmed and 50 unconfirmed}
 /// /address/[address]/txs/chain {25 confirmed}
 /// /address/[address]/txs/chain/[last-seen-txhash] {25 confirmed}
