@@ -70,8 +70,7 @@ bool admin_query(rpc::request_t& out, const std::string& target,
     auto query = uri.decode_query();
     auto& params = std::get<rpc::object_t>(out.params.value());
 
-    // Filter is required by admin methods but not html (page) requests.
-    // Omission for dispatched (non-html) requests is rejected by dispatch.
+    // An omitted filter defaults to zero in dispatch.
     if (const auto filter = query.find(token::filter); filter != query.cend())
     {
         uint64_t value{};
@@ -91,7 +90,7 @@ bool admin_query(rpc::request_t& out, const std::string& target,
     else if (!format.empty())
         return false;
 
-    // Priotize: json, html (ignores accept priorities).
+    // Prioritize: json, html (ignores accept priorities).
     else if (contains(accepts, json))
         set_media(params, json);
     else if (contains(accepts, html))
