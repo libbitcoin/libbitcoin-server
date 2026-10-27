@@ -1135,7 +1135,7 @@ options_metadata parser::load_settings() THROWS
     (
         "admin.cert_auth",
         setting<config::path>(&configured.server.admin.cert_auth),
-        "The certificate authority directory (*.PEM), enables client authentication."
+        "The trusted client certificate directory (*.PEM), enables client authentication."
     )
     (
         "admin.cert_path",
@@ -1247,7 +1247,7 @@ options_metadata parser::load_settings() THROWS
     (
         "native.cert_auth",
         setting<config::path>(&configured.server.native.cert_auth),
-        "The certificate authority directory (*.PEM), enables client authentication."
+        "The trusted client certificate directory (*.PEM), enables client authentication."
     )
     (
         "native.cert_path",
@@ -1364,7 +1364,7 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoind.cert_auth",
         setting<config::path>(&configured.server.bitcoind.cert_auth),
-        "The certificate authority directory (*.PEM), enables client authentication."
+        "The trusted client certificate directory (*.PEM), enables client authentication."
     )
     (
         "bitcoind.cert_path",
@@ -1533,7 +1533,7 @@ options_metadata parser::load_settings() THROWS
     (
         "btcd.cert_auth",
         setting<config::path>(&configured.server.btcd.cert_auth),
-        "The certificate authority directory (*.PEM), enables client authentication."
+        "The trusted client certificate directory (*.PEM), enables client authentication."
     )
     (
         "btcd.cert_path",
@@ -1645,7 +1645,7 @@ options_metadata parser::load_settings() THROWS
     (
         "electrum.cert_auth",
         setting<config::path>(&configured.server.electrum.cert_auth),
-        "The certificate authority directory (*.PEM), enables client authentication."
+        "The trusted client certificate directory (*.PEM), enables client authentication."
     )
     (
         "electrum.cert_path",
@@ -1797,7 +1797,7 @@ options_metadata parser::load_settings() THROWS
     (
         "sparrow.cert_auth",
         setting<config::path>(&configured.server.sparrow.cert_auth),
-        "The certificate authority directory (*.PEM), enables client authentication."
+        "The trusted client certificate directory (*.PEM), enables client authentication."
     )
     (
         "sparrow.cert_path",
@@ -1948,7 +1948,7 @@ options_metadata parser::load_settings() THROWS
     (
         "esplora.cert_auth",
         setting<config::path>(&configured.server.esplora.cert_auth),
-        "The certificate authority directory (*.PEM), enables client authentication."
+        "The trusted client certificate directory (*.PEM), enables client authentication."
     )
     (
         "esplora.cert_path",
