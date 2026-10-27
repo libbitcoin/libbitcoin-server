@@ -37,6 +37,19 @@ using fee_histogram = std::vector<std::pair<double, size_t>>;
 BCS_API fee_histogram to_fee_histogram(database::fee_rates rates,
     size_t bin) NOEXCEPT;
 
+/// Count, total vsize, total fee and fee histogram of a set of fee rates.
+struct fee_summary
+{
+    size_t count{};
+    size_t vsize{};
+    uint64_t fee{};
+    fee_histogram histogram{};
+};
+
+/// Totals of the rates and their histogram (see to_fee_histogram).
+BCS_API fee_summary to_fee_summary(database::fee_rates rates,
+    size_t bin) NOEXCEPT;
+
 /// Fee histogram with bins growing by a tenth, partial omitted (electrumx).
 BCS_API fee_histogram to_compact_fee_histogram(
     const database::fee_rates& rates, size_t bin) NOEXCEPT;

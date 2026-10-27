@@ -1510,4 +1510,32 @@ BOOST_AUTO_TEST_CASE(parsers__native_target__block_details_hash_extra_segment__e
     BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
 
+// fees
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__fees_valid__expected)
+{
+    const std::string path = "/v42/fees";
+
+    request_t request{};
+    BOOST_REQUIRE(!native_target(request, path));
+    BOOST_REQUIRE_EQUAL(request.method, "fees");
+    BOOST_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BOOST_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BOOST_REQUIRE_EQUAL(object.size(), 1u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BOOST_REQUIRE_EQUAL(version, 42u);
+}
+
+BOOST_AUTO_TEST_CASE(parsers__native_target__fees_extra_segment__extra_segment)
+{
+    const std::string path = "/v3/fees/extra";
+    request_t out{};
+    BOOST_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

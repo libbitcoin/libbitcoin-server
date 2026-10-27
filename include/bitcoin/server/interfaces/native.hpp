@@ -67,7 +67,9 @@ struct native_methods
         method<"address_confirmed", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
         method<"address_unconfirmed", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
         method<"address_balance", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
-        method<"address_subscribe", uint8_t, uint8_t, system::hash_cptr, optional<true>, optional<false>>{ "version", "media", "hash", "turbo", "stop" }
+        method<"address_subscribe", uint8_t, uint8_t, system::hash_cptr, optional<true>, optional<false>>{ "version", "media", "hash", "turbo", "stop" },
+
+        method<"fees", uint8_t, uint8_t>{ "version", "media" }
     };
 
     template <typename... Args>
@@ -116,6 +118,8 @@ struct native_methods
     using address_unconfirmed = at<29>;
     using address_balance = at<30>;
     using address_subscribe = at<31>;
+
+    using fees = at<32>;
 };
 
 /// ?format=data|text|json (via query string).
@@ -179,6 +183,10 @@ struct native_methods
 /// /v1/address/[output-script-hash]/unconfirmed {all unconfirmed}
 /// /v1/address/[output-script-hash]/confirmed {all confirmed}
 /// /v1/address/[output-script-hash]/balance {all confirmed}
+
+/// ---------------------------------------------------------------------------
+
+/// /v1/fees {1}
 
 } // namespace interface
 } // namespace server

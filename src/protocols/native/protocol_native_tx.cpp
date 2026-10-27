@@ -29,6 +29,9 @@ using namespace std::placeholders;
 
 #define CLASS protocol_native
 
+// The vsize of a fee histogram bin (electrs).
+constexpr size_t histogram_bin = 50'000;
+
 BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
@@ -204,6 +207,63 @@ void protocol_native::do_transaction(node::transaction_t link,
             notify_json(value_from(encode_hash(hash)), two * hash_size);
             return;
     }
+}
+
+bool protocol_native::handle_get_fees(const code& ec, interface::fees,
+    uint8_t, uint8_t media) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    if (media != json)
+    {
+        send_not_acceptable();
+        return true;
+    }
+
+    PARALLEL(do_get_fees, gate());
+    return true;
+}
+
+void protocol_native::do_get_fees(const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    database::fee_rates rates{};
+    if (!archive().get_confirmable_fees(rates))
+    {
+        POST(complete_get_fees, database::error::integrity, fee_summary{},
+            gate);
+        return;
+    }
+
+    const auto summary = to_fee_summary(std::move(rates), histogram_bin);
+    POST(complete_get_fees, code{}, summary, gate);
+}
+
+void protocol_native::complete_get_fees(const code& ec,
+    const fee_summary& summary, const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    if (ec)
+    {
+        send_internal_server_error(ec);
+        return;
+    }
+
+    system::json::object object
+    {
+        { "count", summary.count },
+        { "virtual", summary.vsize },
+        { "fee", summary.fee },
+        { "histogram", system::json::value_from(summary.histogram) }
+    };
+
+    send_json(std::move(object), add1(summary.histogram.size()) * 64);
 }
 
 BC_POP_WARNING()

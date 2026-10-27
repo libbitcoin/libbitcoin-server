@@ -25,6 +25,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/protocols/protocol_html.hpp>
+#include <bitcoin/server/utilities/utilities.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -182,6 +183,9 @@ protected:
         interface::address_subscribe, uint8_t version, uint8_t media,
         const system::hash_cptr& hash, bool turbo, bool stop) NOEXCEPT;
 
+    bool handle_get_fees(const code& ec, interface::fees,
+        uint8_t version, uint8_t media) NOEXCEPT;
+
 protected:
     using media_type = network::http::media_type;
 
@@ -244,6 +248,10 @@ private:
         const system::hash_cptr& hash, const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_address_balance(const code& ec, uint8_t media,
         const uint64_t balance, const gate_t::ptr& gate) NOEXCEPT;
+
+    void do_get_fees(const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_fees(const code& ec, const fee_summary& summary,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     // Utilities.
     // ------------------------------------------------------------------------

@@ -81,6 +81,19 @@ fee_histogram to_fee_histogram(database::fee_rates rates, size_t bin) NOEXCEPT
     return out;
 }
 
+fee_summary to_fee_summary(database::fee_rates rates, size_t bin) NOEXCEPT
+{
+    fee_summary out{ .count = rates.size() };
+    for (const auto& rate: rates)
+    {
+        out.vsize = ceilinged_add(out.vsize, rate.bytes);
+        out.fee = ceilinged_add(out.fee, rate.fee);
+    }
+
+    out.histogram = to_fee_histogram(std::move(rates), bin);
+    return out;
+}
+
 fee_histogram to_compact_fee_histogram(const database::fee_rates& rates,
     size_t bin) NOEXCEPT
 {

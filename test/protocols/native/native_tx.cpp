@@ -168,6 +168,41 @@ BOOST_AUTO_TEST_CASE(native__ws_tx_subscribe__stop__empty)
     BOOST_REQUIRE(ws_get_text("/v1/tx/subscribe?stop=true").empty());
 }
 
+// fees
+// ----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(native__fees__json__empty)
+{
+    const auto response = get_json("/v1/fees?format=json");
+    BOOST_REQUIRE(response.is_object());
+
+    const auto& object = response.as_object();
+    BOOST_REQUIRE_EQUAL(object.size(), 4u);
+    BOOST_REQUIRE_EQUAL(object.at("count").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(object.at("virtual").as_int64(), 0);
+    BOOST_REQUIRE_EQUAL(object.at("fee").as_int64(), 0);
+    BOOST_REQUIRE(object.at("histogram").as_array().empty());
+}
+
+BOOST_AUTO_TEST_CASE(native__fees__text__not_acceptable)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/v1/fees?format=text"), http::status::not_acceptable);
+}
+
+BOOST_AUTO_TEST_CASE(native__fees__data__not_acceptable)
+{
+    BOOST_REQUIRE_EQUAL(get_status("/v1/fees?format=data"), http::status::not_acceptable);
+}
+
+BOOST_AUTO_TEST_CASE(native__ws_fees__default__json)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_get_json("/v1/fees");
+    BOOST_REQUIRE(response.is_object());
+    BOOST_REQUIRE_EQUAL(response.as_object().at("count").as_int64(), 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE(native_address_tests, native_address_setup_fixture)
