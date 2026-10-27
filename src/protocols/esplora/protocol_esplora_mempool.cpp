@@ -124,22 +124,14 @@ void protocol_esplora::do_get_mempool(const gate_t::ptr& gate) NOEXCEPT
         return;
     }
 
-    size_t vsize{};
-    uint64_t fee{};
-    for (const auto& rate: rates)
-    {
-        vsize = ceilinged_add(vsize, rate.bytes);
-        fee = ceilinged_add(fee, rate.fee);
-    }
-
-    const auto bins = to_fee_histogram(rates, histogram_bin);
-    const auto size = add1(bins.size()) * 64;
+    const auto summary = to_fee_summary(std::move(rates), histogram_bin);
+    const auto size = add1(summary.histogram.size()) * 64;
     value out = object
     {
-        { "count", rates.size() },
-        { "vsize", vsize },
-        { "total_fee", fee },
-        { "fee_histogram", value_from(bins) }
+        { "count", summary.count },
+        { "vsize", summary.vsize },
+        { "total_fee", summary.fee },
+        { "fee_histogram", value_from(summary.histogram) }
     };
 
     POST(complete_get_mempool, code{}, std::move(out), size, gate);

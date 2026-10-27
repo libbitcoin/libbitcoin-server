@@ -126,6 +126,22 @@ BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__stop__empty)
     BOOST_REQUIRE(response.empty());
 }
 
+BOOST_AUTO_TEST_CASE(native__ws_block__not_found_json__empty)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_get_text("/v1/block/height/10/header");
+    BOOST_REQUIRE(response.empty());
+}
+
+BOOST_AUTO_TEST_CASE(native__ws_block__not_found_text__empty)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_get_text("/v1/block/height/10?format=text");
+    BOOST_REQUIRE(response.empty());
+}
+
 BOOST_AUTO_TEST_CASE(native__ws_top_subscribe__repeat__idempotent)
 {
     BOOST_REQUIRE(!ws_upgrade());

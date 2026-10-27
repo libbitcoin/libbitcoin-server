@@ -216,3 +216,34 @@ BOOST_AUTO_TEST_CASE(esplora__mempool_recent__broadcast__expected)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+// to_fee_summary
+
+BOOST_AUTO_TEST_SUITE(esplora_summary_tests)
+
+BOOST_AUTO_TEST_CASE(esplora__to_fee_summary__empty__zeros)
+{
+    const auto summary = to_fee_summary({}, 100);
+    BOOST_REQUIRE_EQUAL(summary.count, 0u);
+    BOOST_REQUIRE_EQUAL(summary.vsize, 0u);
+    BOOST_REQUIRE_EQUAL(summary.fee, 0u);
+    BOOST_REQUIRE(summary.histogram.empty());
+}
+
+BOOST_AUTO_TEST_CASE(esplora__to_fee_summary__rates__totals_and_histogram)
+{
+    const database::fee_rates rates
+    {
+        { 60, 600 },
+        { 300, 600 },
+        { 50, 50 }
+    };
+
+    const auto summary = to_fee_summary(rates, 100);
+    BOOST_REQUIRE_EQUAL(summary.count, 3u);
+    BOOST_REQUIRE_EQUAL(summary.vsize, 410u);
+    BOOST_REQUIRE_EQUAL(summary.fee, 1250u);
+    BOOST_REQUIRE(summary.histogram == to_fee_histogram(rates, 100));
+}
+
+BOOST_AUTO_TEST_SUITE_END()

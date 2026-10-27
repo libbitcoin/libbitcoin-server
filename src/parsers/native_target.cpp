@@ -347,6 +347,10 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
             }
         }
     }
+    else if (target == "fees")
+    {
+        method = "fees";
+    }
     else
     {
         return error::invalid_target;
