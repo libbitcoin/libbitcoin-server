@@ -168,14 +168,16 @@ BOOST_AUTO_TEST_CASE(admin__ws_log_subscribe__html__error_eof)
     BOOST_REQUIRE(ws_dropped("/v1/log/subscribe?filter=1&format=html"));
 }
 
-BOOST_AUTO_TEST_CASE(admin__ws_dispatch__invalid_target__ignored)
+BOOST_AUTO_TEST_CASE(admin__ws_dispatch__invalid_target__error_eof)
 {
     BOOST_REQUIRE(!ws_upgrade());
-    ws_send("/v1/bogus");
+    BOOST_REQUIRE(ws_dropped("/v1/bogus"));
+}
 
-    const auto ack = ws_get_json("/v1/log/subscribe?filter=1024");
-    REQUIRE_NO_THROW_TRUE(ack.at("previous").is_int64());
-    BOOST_REQUIRE_EQUAL(ack.at("previous").as_int64(), 0);
+BOOST_AUTO_TEST_CASE(admin__ws_dispatch__missing_subcomponent__error_eof)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+    BOOST_REQUIRE(ws_dropped("/v1/log"));
 }
 
 // streams (websockets)
