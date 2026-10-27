@@ -117,10 +117,6 @@ void protocol_electrum::start() NOEXCEPT
 
     start_ping();
     protocol_rpc<interface::electrum>::start();
-
-    // A non-version opener is served at the version of its handshake.
-    if (const auto opener = channel_->take_opener())
-        dispatch_message(*opener);
 }
 
 // Events unsubscription is asynchronous, race is ok.

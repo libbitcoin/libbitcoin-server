@@ -48,30 +48,9 @@ public:
         if (started())
             return;
 
-        using self = protocol_rpc<Interface>;
-        using post = network::http::method::post;
-        using unknown = network::http::method::unknown;
-        using get = network::http::method::get;
-        using head = network::http::method::head;
-        using put = network::http::method::put;
-        using delete_ = network::http::method::delete_;
-        using trace = network::http::method::trace;
-        using options = network::http::method::options;
-        using connect = network::http::method::connect;
-        using namespace std::placeholders;
-
         // Publish served method names (e.g. for help).
         register_methods(names);
-        subscribe_channel<self, post>(&self::handle_receive_post, _1, _2);
-        subscribe_channel<self, unknown>(&self::handle_receive_unknown, _1, _2);
-        subscribe_channel<self, get>(&self::handle_receive_get, _1, _2);
-        subscribe_channel<self, head>(&self::handle_receive_head, _1, _2);
-        subscribe_channel<self, put>(&self::handle_receive_put, _1, _2);
-        subscribe_channel<self, delete_>(&self::handle_receive_delete, _1, _2);
-        subscribe_channel<self, trace>(&self::handle_receive_trace, _1, _2);
-        subscribe_channel<self, options>(&self::handle_receive_options, _1, _2);
-        subscribe_channel<self, connect>(&self::handle_receive_connect, _1, _2);
-        network::protocol::start();
+        network::protocol_http::start();
     }
 
     void stopping(const code& ec) NOEXCEPT override
@@ -181,10 +160,31 @@ protected:
         method_not_allowed(ec, *trace);
     }
 
+    /// Cors preflight, with the host and origin policy of post.
     void handle_receive_options(const code& ec,
         const network::http::method::options::cptr& options) NOEXCEPT override
     {
-        method_not_allowed(ec, *options);
+        BC_ASSERT(stranded());
+        if (stopped(ec) || claimed())
+            return;
+
+        set_claimed();
+
+        // Enforce http host header (if any hosts are configured).
+        if (!is_allowed_host(*options, options->version()))
+        {
+            send_bad_host(*options);
+            return;
+        }
+
+        // Enforce http origin policy (if any origins are configured).
+        if (!is_allowed_origin(*options, options->version()))
+        {
+            send_forbidden(*options);
+            return;
+        }
+
+        send_ok(*options);
     }
 
     void handle_receive_connect(const code& ec,
@@ -231,26 +231,6 @@ protected:
         set_claimed();
 
         // The credential may be restricted to a subset of interface methods.
-        if (!permitted(message.method))
-        {
-            stop(network::error::unauthorized);
-            return;
-        }
-
-        if (const auto code = rpc_dispatcher_.notify(message))
-            stop(code);
-    }
-
-    /// Dispatch a message received before this protocol was attached.
-    void dispatch_message(const network::rpc::request_t& message) NOEXCEPT
-    {
-        BC_ASSERT(stranded());
-        if (!rpc_dispatcher::contains(message.method))
-        {
-            handle_unclaimed(message);
-            return;
-        }
-
         if (!permitted(message.method))
         {
             stop(network::error::unauthorized);

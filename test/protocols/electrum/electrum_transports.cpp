@@ -90,7 +90,14 @@ BOOST_AUTO_TEST_CASE(electrum__post__missing_arguments__dropped)
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-// Only POST is allowed, other http methods are answered (and closed).
+BOOST_AUTO_TEST_CASE(electrum__post__non_version_opener__answered)
+{
+    const auto response = post(R"({"id":706,"method":"server.banner","params":[]})");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 706);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+}
+
 BOOST_AUTO_TEST_CASE(electrum__get__handshake_pending__method_not_allowed)
 {
     BOOST_REQUIRE_EQUAL(get_status("/"), rpc_client::status::method_not_allowed);
@@ -102,10 +109,10 @@ BOOST_AUTO_TEST_CASE(electrum__get__after_handshake__method_not_allowed)
     BOOST_REQUIRE_EQUAL(get_status("/"), rpc_client::status::method_not_allowed);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__options__after_handshake__method_not_allowed)
+BOOST_AUTO_TEST_CASE(electrum__options__after_handshake__ok)
 {
     BOOST_REQUIRE(post_handshake(electrum::version::v1_4));
-    BOOST_REQUIRE_EQUAL(options_status("/"), rpc_client::status::method_not_allowed);
+    BOOST_REQUIRE_EQUAL(options_status("/"), rpc_client::status::ok);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -159,6 +166,16 @@ BOOST_AUTO_TEST_CASE(electrum__ws__handshake__negotiated)
 {
     BOOST_REQUIRE(!ws_upgrade());
     BOOST_REQUIRE(ws_handshake(electrum::version::v1_4));
+}
+
+BOOST_AUTO_TEST_CASE(electrum__ws__non_version_opener__answered)
+{
+    BOOST_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_get(R"({"id":803,"method":"server.banner","params":[]})");
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 803);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__ws__numblocks_subscribe__returns_9)

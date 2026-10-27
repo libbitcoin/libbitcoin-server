@@ -21,6 +21,7 @@
 
 static const code invalid_argument{ error::electrum::bad_request };
 static const code method_not_found{ error::electrum::method_not_found };
+static const std::string bogus_scripthash{ "9c2c84a6cf9809e08af19557e28d38257e6fee6981269760637a5f9dfb000b05" };
 
 BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
@@ -267,7 +268,6 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__non_version_opener_no_version__se
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 }
 
-// The opener itself is answered (json-rpc requires a response to a request).
 BOOST_AUTO_TEST_CASE(electrum__server_version__non_version_opener__answered)
 {
     const auto response = get(R"({"id":1,"method":"server.banner","params":[]})" "\n");
@@ -421,6 +421,19 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__restricted_minimum_range__configu
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
     BOOST_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.2");
+}
+
+BOOST_AUTO_TEST_CASE(electrum__server_version__non_version_opener_async__answered_in_order)
+{
+    constexpr auto opener = R"({{"id":1,"method":"blockchain.scripthash.get_history","params":["{}"]}})" "\n";
+    const auto first = get(std::format(opener, bogus_scripthash) + std::string(R"({"id":2,"method":"server.banner","params":[]})" "\n"));
+    BOOST_REQUIRE_MESSAGE(first.is_object() && first.as_object().contains("result"), serialize(first));
+    BOOST_REQUIRE_EQUAL(first.at("id").as_int64(), 1);
+    REQUIRE_NO_THROW_TRUE(first.at("result").is_array());
+
+    const auto response = receive();
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 2);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 }
 
 BOOST_AUTO_TEST_CASE(electrum__server_version__above_configured_maximum__invalid_argument)

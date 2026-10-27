@@ -81,17 +81,25 @@ public:
         return restricted_;
     }
 
-    /// A non-version opener is answered once the service is attached.
-    inline void set_opener(const network::rpc::request_t& message) NOEXCEPT
+    /// Retain the request in dispatch as a non-version opener, dispatched
+    /// again (under its own gate) when the channel resumes the reader.
+    inline void set_opener() NOEXCEPT
     {
-        opener_.emplace(message);
+        opener_ = current_;
     }
 
-    inline std::optional<network::rpc::request_t> take_opener() NOEXCEPT
+    /// Overridden to dispatch a retained opener before reading on.
+    inline void receive() NOEXCEPT override
     {
-        auto opener = std::move(opener_);
-        opener_.reset();
-        return opener;
+        BC_ASSERT(stranded());
+
+        if (opener_ && !stopped())
+        {
+            dispatch(std::exchange(opener_, {}));
+            return;
+        }
+
+        channel_rpc::receive();
     }
 
     /// A server.version has been negotiated (not the opener default).
@@ -128,7 +136,9 @@ protected:
             electrum_request(body.get<network::rpc::request>().message,
                 version_, options_.protocol_minimum, options_.protocol_maximum);
 
+        current_ = request;
         channel_rpc::dispatch(request);
+        current_.reset();
     }
 
 private:
@@ -138,7 +148,8 @@ private:
     // These are protected by strand.
     server::electrum::version version_{ server::electrum::version::v0_0 };
     std::string name_{};
-    std::optional<network::rpc::request_t> opener_{};
+    network::http::request_ptr current_{};
+    network::http::request_ptr opener_{};
     bool restricted_{};
     bool negotiated_{};
 };
