@@ -155,8 +155,8 @@ bool protocol_esplora::try_dispatch_object(const http::request& request) NOEXCEP
         return true;
     }
 
-    if (const auto ec = dispatcher_.notify(model))
-        send_internal_server_error(ec, request);
+    if (dispatcher_.notify(model))
+        send_bad_request(request);
 
     return true;
 }
@@ -215,8 +215,8 @@ void protocol_esplora::handle_receive_post(const code& ec,
         return;
     }
 
-    if (const auto code = dispatcher_.notify(model))
-        send_internal_server_error(code, *post);
+    if (dispatcher_.notify(model))
+        send_bad_request(*post);
 }
 
 void protocol_esplora::dispatch_websocket(const http::request& request) NOEXCEPT
@@ -265,7 +265,7 @@ void protocol_esplora::dispatch_websocket(const http::request& request) NOEXCEPT
     }
 
     if (dispatcher_.notify(model))
-        stop(network::error::internal_server_error);
+        stop(network::error::bad_request);
 }
 
 bool protocol_esplora::takes_body(const std::string& method) NOEXCEPT
