@@ -158,7 +158,7 @@ jobs:
             cxx: "clang++"
             image: macos-latest
             deployment_target: "13.3"
-            flags: "-march=armv8.2-a+crypto+sha3 -mtune=generic"
+            flags: "-mcpu=apple-m1"
 
           - basename: "bs-macos-x64"
             configuration: release
