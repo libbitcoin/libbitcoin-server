@@ -28,6 +28,12 @@ doc_DATA = \
     NEWS \
     README
 
+# files => ${bashcompletiondir}
+#------------------------------------------------------------------------------
+bashcompletiondir = ${datadir}/bash-completion/completions
+dist_bashcompletion_DATA = \
+    ${srcdir}/../../data/bs
+
 # Libraries.
 #==============================================================================
 # Target library 'src/libbitcoin-server.la'

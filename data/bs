@@ -4,8 +4,28 @@
 _bs()
 {
     local current="${COMP_WORDS[COMP_CWORD]}"
-    local options=" --config --help --initchain --settings --version -c -h -i -s -v"
 
-    COMPREPLY=( `compgen -W "$options" -- $current` )
+    local options="
+        --accept -a
+        --backup -b
+        --buckets -k
+        --collisions -l
+        --config -c
+        --daemon -d
+        --flags -f
+        --hardware -w
+        --help -h
+        --information -i
+        --newstore -n
+        --restore -r
+        --settings -s
+        --user -u
+        --version -v
+    "
+
+    # Only options are completed; other words fall back to the default.
+    if [[ "$current" == -* ]]; then
+        COMPREPLY=( `compgen -W "$options" -- "$current"` )
+    fi
 }
-complete -F _bs bs
+complete -o default -F _bs bs
