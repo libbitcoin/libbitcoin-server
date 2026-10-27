@@ -316,7 +316,7 @@ public:
     /// RESTful block explorer (http/s, stateless html/websocket)
     server::settings::native_server native;
 
-    /// bitcoind compat interface (http/s, stateless json-rpc-v2)
+    /// bitcoind compat interface (http/s, stateless json-rpc v1/v2)
     bitcoind_server bitcoind{ "bitcoind" };
 
     /// btcd compat interface (http/s + websocket, json-rpc-v2 [no positional])

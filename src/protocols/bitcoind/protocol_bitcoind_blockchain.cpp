@@ -1267,7 +1267,7 @@ bool protocol_bitcoind_blockchain::handle_get_chain_states(const code& ec,
 
     send_result(object_t
     {
-        // bitcoind OB1 error ("headers" wants height).
+        // bitcoind "headers" is a height, not a count.
         { "headers", to64(candidate) },
         { "chainstates", states }
     });

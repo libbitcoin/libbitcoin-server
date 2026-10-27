@@ -231,7 +231,7 @@ void protocol_bitcoind_mining::do_mining_info(const code& ec,
     const auto span = to_floating(power2<uint64_t>(32u));
     const auto period = bitcoin.block_spacing_seconds;
 
-    // bitcoind OB1 error ("blocks" wants height).
+    // bitcoind "blocks" is a height, not a count.
     send_result(object_t
     {
         { "blocks", to64(height) },

@@ -58,7 +58,7 @@ network::rpc::object_t chain_states_entry(
     const auto bits = header->bits();
     return object_t
     {
-        // bitcoind OB1 error ("blocks" wants height).
+        // bitcoind "blocks" is a height, not a count.
         { "blocks", to64(height) },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },
         { "bits", encode_base16(to_big_endian(bits)) },
@@ -303,7 +303,7 @@ bool chain_info(network::rpc::object_t& out,
     const auto bits = header->bits();
     out = network::rpc::object_t
     {
-        // bitcoind OB1 error ("blocks" wants height).
+        // bitcoind "blocks" is a height, not a count.
         { "chain", chain_name(settings) },
         { "blocks", to64(blocks) },
         { "headers", to64(headers) },

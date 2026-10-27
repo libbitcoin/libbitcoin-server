@@ -257,7 +257,6 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
         return true;
     }
 
-    // bitcoind's derivation range limit.
     constexpr uint32_t maximum_range = 10'000;
     if (floored_subtract(end, begin) >= maximum_range)
     {

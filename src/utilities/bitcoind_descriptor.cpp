@@ -119,7 +119,6 @@ network::rpc::object_t create_multisig(uint8_t required,
 
     if (type != address_type)
     {
-        // This is ridiculous.
         result.emplace("warnings", array_t{ std::string{ "Unable to make "
             "chosen address type, please ensure no uncompressed public keys "
             "are present." } });
