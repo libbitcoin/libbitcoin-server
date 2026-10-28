@@ -110,7 +110,6 @@ transaction_rejects
     { system::error::transaction_internal_double_spend, "bad-txns-inputs-duplicate" },
     { system::error::transaction_size_limit, "bad-txns-oversize" },
     { system::error::transaction_legacy_sigop_limit, "bad-txns-too-many-sigops" },
-    { system::error::unspent_duplicate, "bad-txns-BIP30" },
     { system::error::missing_previous_output, "bad-txns-inputs-missingorspent" },
     { system::error::coinbase_maturity, "bad-txns-premature-spend-of-coinbase" },
     { system::error::spend_exceeds_value, "bad-txns-in-belowout" },
