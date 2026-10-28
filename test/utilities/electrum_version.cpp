@@ -151,4 +151,22 @@ BOOST_AUTO_TEST_CASE(electrum_request__server_version__single_value__minimum_app
     BOOST_REQUIRE_EQUAL(std::get<string_t>(params.at(1).value()), "1.0");
 }
 
+BOOST_AUTO_TEST_CASE(electrum_request__transaction_get__unset_version__verbose_retained)
+{
+    request_t message{ .method = "blockchain.transaction.get", .params = params_t{ array_t{ value_t{ string_t{ "foobar" } }, value_t{ true } } } };
+    electrum_request(message, electrum::version::v0_0, { 1, 0 }, { 1, 7 });
+    BOOST_REQUIRE(message.params.has_value());
+    BOOST_REQUIRE(std::holds_alternative<array_t>(message.params.value()));
+    BOOST_REQUIRE_EQUAL(std::get<array_t>(message.params.value()).size(), 2u);
+}
+
+BOOST_AUTO_TEST_CASE(electrum_request__transaction_get__version_1_0__height_dropped)
+{
+    request_t message{ .method = "blockchain.transaction.get", .params = params_t{ array_t{ value_t{ string_t{ "foobar" } }, value_t{ true } } } };
+    electrum_request(message, electrum::version::v1_0, { 1, 0 }, { 1, 7 });
+    BOOST_REQUIRE(message.params.has_value());
+    BOOST_REQUIRE(std::holds_alternative<array_t>(message.params.value()));
+    BOOST_REQUIRE_EQUAL(std::get<array_t>(message.params.value()).size(), 1u);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

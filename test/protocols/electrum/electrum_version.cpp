@@ -436,6 +436,17 @@ BOOST_AUTO_TEST_CASE(electrum__server_version__non_version_opener_async__answere
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 }
 
+BOOST_AUTO_TEST_CASE(electrum__server_version__non_version_opener_verbose__expected)
+{
+    const auto& coinbase = *test::genesis.transactions_ptr()->front();
+    const auto tx0_hash = system::encode_hash(coinbase.hash(false));
+    constexpr auto opener = R"({{"id":1,"method":"blockchain.transaction.get","params":["{}",true]}})" "\n";
+    const auto response = get(std::format(opener, tx0_hash));
+    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 1);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+}
+
 BOOST_AUTO_TEST_CASE(electrum__server_version__above_configured_maximum__invalid_argument)
 {
     // Defined and supported (1.6), but above the configured maximum.
