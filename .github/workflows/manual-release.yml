@@ -193,7 +193,7 @@ jobs:
             image: ubuntu-24.04
             flags: "-march=x86-64-v3 -mtune=generic"
 
-          - basename: "bs-linux-x64-avxifma-shani"
+          - basename: "bs-linux-x64-avxifma"
             configuration: release
             link: static
             toolchain: cmake
@@ -203,41 +203,18 @@ jobs:
             linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-24.04
             #flags: "-march=sapphirerapids -mtune=generic"
-            flags: "-march=znver4 -mtune=generic"
+            flags: "-march=x86-64-v3 -mtune=generic"
 
-          - basename: "bs-linux-x64-avx512"
+          - basename: "bs-linux-x64-avx512ifma"
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-avx512=ON -Denable-avx2=ON -Denable-sse41=ON"
+            options: "-Denable-avx512ifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
             cc: "clang-18"
             cxx: "clang++-18"
             linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-24.04
-            flags: "-march=x86-64-v4 -mtune=generic"
-
-          - basename: "bs-linux-x64-avx512-shani"
-            configuration: release
-            link: static
-            toolchain: cmake
-            options: "-Denable-avx512=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
-            cc: "clang-18"
-            cxx: "clang++-18"
-            linkflags: "-static-libstdc++ -static-libgcc"
-            image: ubuntu-24.04
-            flags: "-march=x86-64-v4 -mtune=generic"
-
-          - basename: "bs-linux-x64-avx512-avxifma-shani"
-            configuration: release
-            link: static
-            toolchain: cmake
-            options: "-Denable-avx512=ON -Denable-avxifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
-            cc: "clang-18"
-            cxx: "clang++-18"
-            linkflags: "-static-libstdc++ -static-libgcc"
-            image: ubuntu-24.04
-            #flags: "-march=sapphirerapids -mtune=generic"
-            flags: "-march=znver4 -mtune=generic"
+            flags: "-march=x86-64-v3 -mtune=generic"
 
           - basename: "bs-linux-arm64"
             configuration: release
@@ -295,7 +272,7 @@ jobs:
             container: alpine:3.22.6
             flags: "-march=x86-64-v3 -mtune=generic"
 
-          - basename: "bs-musl-x64-avxifma-shani"
+          - basename: "bs-musl-x64-avxifma"
             configuration: release
             link: static
             toolchain: cmake
@@ -305,45 +282,19 @@ jobs:
             linkflags: "--static -static-libstdc++ -static-libgcc"
             image: ubuntu-24.04
             container: alpine:3.22.6
-            #flags: "-march=sapphirerapids -mtune=generic"
-            flags: "-march=znver4 -mtune=generic"
+            flags: "-march=x86-64-v3 -mtune=generic"
 
-          - basename: "bs-musl-x64-avx512"
+          - basename: "bs-musl-x64-avx512ifma"
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-avx512=ON -Denable-avx2=ON -Denable-sse41=ON"
+            options: "-Denable-avx512ifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
             cc: "gcc"
             cxx: "g++"
             linkflags: "--static -static-libstdc++ -static-libgcc"
             image: ubuntu-24.04
             container: alpine:3.22.6
-            flags: "-march=x86-64-v4 -mtune=generic"
-
-          - basename: "bs-musl-x64-avx512-shani"
-            configuration: release
-            link: static
-            toolchain: cmake
-            options: "-Denable-avx512=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
-            cc: "gcc"
-            cxx: "g++"
-            linkflags: "--static -static-libstdc++ -static-libgcc"
-            image: ubuntu-24.04
-            container: alpine:3.22.6
-            flags: "-march=x86-64-v4 -mtune=generic"
-
-          - basename: "bs-musl-x64-avx512-avxifma-shani"
-            configuration: release
-            link: static
-            toolchain: cmake
-            options: "-Denable-avx512=ON -Denable-avxifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
-            cc: "gcc"
-            cxx: "g++"
-            linkflags: "--static -static-libstdc++ -static-libgcc"
-            image: ubuntu-24.04
-            container: alpine:3.22.6
-            #flags: "-march=sapphirerapids -mtune=generic"
-            flags: "-march=znver4 -mtune=generic"
+            flags: "-march=x86-64-v3 -mtune=generic"
 
 #          - basename: "bs-musl-arm64"
 #            configuration: release
@@ -395,7 +346,7 @@ jobs:
             version: "vs2026"
             image: windows-latest
 
-          - basename: "bs-windows-x64-avxifma-shani"
+          - basename: "bs-windows-x64-avxifma"
             configuration: StaticRelease
             toolchain: msbuild
             options: "--enable-avxifma --enable-shani --enable-avx2 --enable-sse41"
@@ -404,28 +355,10 @@ jobs:
             version: "vs2026"
             image: windows-latest
 
-          - basename: "bs-windows-x64-avx512"
+          - basename: "bs-windows-x64-avx512ifma"
             configuration: StaticRelease
             toolchain: msbuild
-            options: "--enable-avx512 --enable-avx2 --enable-sse41"
-            platform: "x64"
-            toolset: "v145"
-            version: "vs2026"
-            image: windows-latest
-
-          - basename: "bs-windows-x64-avx512-shani"
-            configuration: StaticRelease
-            toolchain: msbuild
-            options: "--enable-avx512 --enable-shani --enable-avx2 --enable-sse41"
-            platform: "x64"
-            toolset: "v145"
-            version: "vs2026"
-            image: windows-latest
-
-          - basename: "bs-windows-x64-avx512-avxifma-shani"
-            configuration: StaticRelease
-            toolchain: msbuild
-            options: "--enable-avx512 --enable-avxifma --enable-shani --enable-avx2 --enable-sse41"
+            options: "--enable-avx512ifma --enable-shani --enable-avx2 --enable-sse41"
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
