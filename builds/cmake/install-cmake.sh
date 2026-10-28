@@ -502,14 +502,12 @@ main()
     libbitcoin_system_FLAGS=()
 
     libbitcoin_system_OPTIONS=(
-        "-Dwith-tests:BOOL=OFF"
-        "-Dwith-examples:BOOL=OFF")
+        "-Dwith-tests:BOOL=OFF")
 
     libbitcoin_database_FLAGS=()
 
     libbitcoin_database_OPTIONS=(
-        "-Dwith-tests:BOOL=OFF"
-        "-Dwith-tools:BOOL=OFF")
+        "-Dwith-tests:BOOL=OFF")
 
     libbitcoin_network_FLAGS=()
 
