@@ -27,75 +27,6 @@ namespace server {
 
 using namespace system;
 
-// The bip380 checksum generator (bch code over GF(32), as bech32).
-static uint64_t poly_mod(uint64_t check, uint64_t value) NOEXCEPT
-{
-    auto out = bit_xor(shift_left(bit_and(check, 0x00000007ffffffff_u64), 5),
-        value);
-
-    if (get_right(check, 35)) out = bit_xor(out, 0xf5dee51989_u64);
-    if (get_right(check, 36)) out = bit_xor(out, 0xa9fdca3312_u64);
-    if (get_right(check, 37)) out = bit_xor(out, 0x1bab10e32d_u64);
-    if (get_right(check, 38)) out = bit_xor(out, 0x3706b1677a_u64);
-    if (get_right(check, 39)) out = bit_xor(out, 0x644d626ffd_u64);
-    return out;
-}
-
-std::string descriptor_checksum(const std::string& descriptor) NOEXCEPT
-{
-    // Grouped so that common case and keypath errors cost a single symbol.
-    static const std::string input_charset
-    {
-        "0123456789()[],'/*abcdefgh@:$%{}"
-        "IJKLMNOPQRSTUVWXYZ&+-.;<=>?!^_|~"
-        "ijklmnopqrstuvwxyzABCDEFGH`#\"\\ "
-    };
-
-    static const std::string checksum_charset
-    {
-        "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
-    };
-
-    uint64_t check = 1;
-    uint64_t group{};
-    size_t grouped{};
-    for (const auto character: descriptor)
-    {
-        const auto position = input_charset.find(character);
-        if (position == std::string::npos)
-            return {};
-
-        // A symbol for the position in the group of each character, and one
-        // for the group numbers of each three characters.
-        check = poly_mod(check, bit_and<uint64_t>(position, 31));
-        group = 3 * group + shift_right(position, 5);
-        if (++grouped == 3)
-        {
-            check = poly_mod(check, group);
-            group = 0;
-            grouped = 0;
-        }
-    }
-
-    if (is_nonzero(grouped))
-        check = poly_mod(check, group);
-
-    // Shift out the checksum, ensuring appended zeroes affect it.
-    for (size_t pad{}; pad < 8; ++pad)
-        check = poly_mod(check, 0);
-
-    std::string out(8, ' ');
-    check = bit_xor<uint64_t>(check, 1);
-    for (size_t index{}; index < 8; ++index)
-    {
-        const auto offset = 5 * (7 - index);
-        const auto at = bit_and<uint64_t>(shift_right(check, offset), 31);
-        out.at(index) = checksum_charset.at(possible_narrow_cast<size_t>(at));
-    }
-
-    return out;
-}
-
 std::string infer_descriptor(const chain::script& script, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness) NOEXCEPT
 {
@@ -123,7 +54,7 @@ std::string infer_descriptor(const chain::script& script, uint8_t p2kh,
             "addr(" + address + ")";
     }
 
-    return body + "#" + descriptor_checksum(body);
+    return body + "#" + wallet::descriptor::to_checksum(body);
 }
 
 network::rpc::object_t create_multisig(uint8_t required,
@@ -183,7 +114,7 @@ network::rpc::object_t create_multisig(uint8_t required,
     {
         { "address", address },
         { "redeemScript", encode_base16(embedded) },
-        { "descriptor", body + "#" + descriptor_checksum(body) }
+        { "descriptor", body + "#" + wallet::descriptor::to_checksum(body) }
     };
 
     if (type != address_type)

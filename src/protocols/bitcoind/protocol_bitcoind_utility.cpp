@@ -93,7 +93,7 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     if (!script.is_valid() || script.is_underflow())
     {
         const auto body = "raw(" + encode_base16(data) + ")";
-        result["desc"] = body + "#" + descriptor_checksum(body);
+        result["desc"] = body + "#" + wallet::descriptor::to_checksum(body);
         result.stable_erase("address");
         send_result(std::move(model));
         return true;
