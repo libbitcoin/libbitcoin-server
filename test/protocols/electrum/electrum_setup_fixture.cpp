@@ -170,6 +170,17 @@ rpc_client::status electrum_setup_fixture::post_status_authorized(
     return client_.post_status_authorized(request, username, password);
 }
 
+rpc_client::status electrum_setup_fixture::get_status(std::string_view target)
+{
+    return client_.get(target).result();
+}
+
+rpc_client::status electrum_setup_fixture::options_status(
+    std::string_view target)
+{
+    return client_.options_status(target);
+}
+
 // websocket.
 // ----------------------------------------------------------------------------
 

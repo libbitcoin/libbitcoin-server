@@ -97,6 +97,10 @@ void electrum_request(request_t& message, electrum::version version,
         return;
     }
 
+    // An opener is normalized when dispatched at its served version.
+    if (version == electrum::version::v0_0)
+        return;
+
     if (message.method == transaction_get::name)
     {
         if (version < electrum::version::v1_1)

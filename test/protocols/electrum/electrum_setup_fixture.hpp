@@ -68,6 +68,12 @@ struct electrum_setup_fixture
     rpc_client::status post_status_authorized(const std::string& request,
         const std::string& username, const std::string& password);
 
+    // http GET to target, returning only the http status.
+    rpc_client::status get_status(std::string_view target);
+
+    // http OPTIONS to target, returning only the http status.
+    rpc_client::status options_status(std::string_view target);
+
     // Upgrade the connection to websocket (no further http requests).
     network::boost_code ws_upgrade();
 
