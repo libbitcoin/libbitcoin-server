@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(native__ws_top__data__expected)
     BOOST_REQUIRE_EQUAL(response, base16_chunk("09"));
 }
 
-BOOST_AUTO_TEST_CASE(native__ws_top__xml__error_eof)
+BOOST_AUTO_TEST_CASE(native__ws_top__xml__closed)
 {
     BOOST_REQUIRE(!ws_upgrade());
     BOOST_REQUIRE(ws_dropped("/v1/top?format=xml"));
@@ -254,19 +254,19 @@ BOOST_AUTO_TEST_CASE(native__dispatch__html__bad_request)
     BOOST_REQUIRE_EQUAL(get_status("/v1/top?format=html"), http::status::bad_request);
 }
 
-BOOST_AUTO_TEST_CASE(native__ws_dispatch__html__error_eof)
+BOOST_AUTO_TEST_CASE(native__ws_dispatch__html__closed)
 {
     BOOST_REQUIRE(!ws_upgrade());
     BOOST_REQUIRE(ws_dropped("/v1/top?format=html"));
 }
 
-BOOST_AUTO_TEST_CASE(native__ws_dispatch__invalid_target__error_eof)
+BOOST_AUTO_TEST_CASE(native__ws_dispatch__invalid_target__closed)
 {
     BOOST_REQUIRE(!ws_upgrade());
     BOOST_REQUIRE(ws_dropped("/v1/bogus"));
 }
 
-BOOST_AUTO_TEST_CASE(native__ws_dispatch__unsupported_parameter__error_eof)
+BOOST_AUTO_TEST_CASE(native__ws_dispatch__unsupported_parameter__closed)
 {
     BOOST_REQUIRE(!ws_upgrade());
     BOOST_REQUIRE(ws_dropped("/v1/top?format=json&witness=false"));
