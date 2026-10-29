@@ -55,8 +55,10 @@ std::string to_address(const chain::script& script, uint8_t p2kh,
 {
     const auto version = script.version_value();
     if (version != to_value(chain::script_version::unversioned))
-        return witness_address{ *script.witness_program(), version,
-            witness }.encoded();
+    {
+        const auto& program = *script.witness_program();
+        return witness_address{ program, version, witness }.encoded();
+    }
 
     const auto pay = payment_address::extract_output(script, p2kh, p2sh);
     return pay ? pay.encoded() : std::string{};

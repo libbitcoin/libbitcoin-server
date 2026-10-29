@@ -92,8 +92,10 @@ network::rpc::object_t scan_result(
             continue;
 
         const auto data = script.to_data(false);
-        needles.emplace(sha256_hash(data), needle{ encode_base16(data),
-            infer_descriptor(script, p2kh, p2sh, witness) });
+        const auto key = sha256_hash(data);
+        auto hex = encode_base16(data);
+        auto desc = infer_descriptor(script, p2kh, p2sh, witness);
+        needles.emplace(key, needle{ std::move(hex), std::move(desc) });
     }
 
     // Report in canonical (txid, index) order.

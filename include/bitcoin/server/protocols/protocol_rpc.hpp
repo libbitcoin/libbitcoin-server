@@ -366,8 +366,10 @@ private:
     // The implemented method names of the interface.
     static constexpr auto name_data =
         network::rpc::method_names<Interface::methods>();
-    static constexpr std::string_view names{ name_data.data(),
-        name_data.size() };
+    static constexpr std::string_view names
+    {
+        name_data.data(), name_data.size()
+    };
 
     // The socket writes the body alone on a full duplex transport (ws frame
     // or downgraded stream), and the full http response otherwise.

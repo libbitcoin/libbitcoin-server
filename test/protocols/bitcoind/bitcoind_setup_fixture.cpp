@@ -236,8 +236,8 @@ bitcoind_setup_fixture::status
 bitcoind_setup_fixture::options_origin_status(std::string_view target,
     std::string_view origin)
 {
-    rpc_client::request request{ http::verb::options, target,
-        network::http::version_1_1 };
+    constexpr auto version = network::http::version_1_1;
+    rpc_client::request request{ http::verb::options, target, version };
     request.set(http::field::host, "localhost");
     request.set(http::field::origin, origin);
     request.keep_alive(true);

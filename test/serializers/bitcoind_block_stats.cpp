@@ -64,8 +64,7 @@ BC_AUTO_TEST_CASE(bitcoind_block_stats__coinbase_only__no_fees)
 
 BC_AUTO_TEST_CASE(bitcoind_block_stats__two_paying__fee_statistics)
 {
-    const auto block = make_block({ make_coinbase(),
-        make_paying(100'000, 90'000), make_paying(50'000, 48'000) });
+    const auto block = make_block({ make_coinbase(), make_paying(100'000, 90'000), make_paying(50'000, 48'000) });
     const auto stats = server::block_stats(block, 2, 40, test_subsidy);
 
     BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("txs").value()), 3u);

@@ -109,8 +109,9 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     if (!chain::script::is_pay_witness_pattern(script.ops()) &&
         !chain::script::is_pay_null_data_pattern(script.ops()))
     {
-        const chain::script wsh{ chain::script::to_pay_witness_pattern(0,
-            sha256_hash(script.to_data(false))) };
+        const auto program = sha256_hash(script.to_data(false));
+        const auto ops = chain::script::to_pay_witness_pattern(0, program);
+        const chain::script wsh{ ops };
 
         auto segwit = script_public_key(wsh);
         const payment_address wrapped{ wsh, p2sh_ };

@@ -978,8 +978,12 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
                 if (is_zero(utxo.height) && is_zero(utxo.position))
                     continue;
 
-                coins.push_back({ false, utxo.out, utxo.height,
-                    is_zero(utxo.position), data });
+                database::unspent_coin coin
+                {
+                    false, utxo.out, utxo.height, is_zero(utxo.position), data
+                };
+
+                coins.push_back(std::move(coin));
             }
         }
     }
