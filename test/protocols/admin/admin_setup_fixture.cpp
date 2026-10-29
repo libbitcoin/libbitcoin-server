@@ -265,7 +265,7 @@ bool admin_setup_fixture::ws_dropped(std::string_view message)
 
     flat_buffer buffer{};
     websocket_.value().read(buffer, ec);
-    return ec == boost::asio::error::eof;
+    return ec == websocket::error::closed;
 }
 
 std::string admin_setup_fixture::ws_get_text(std::string_view message)

@@ -170,10 +170,8 @@ if "!libbitcoin_server_TAG!" == "" (
     )
 
     set "REMAPPED_PARAMS=!REMAPPED_PARAMS! !libbitcoin-system_PARAMS!"
-    set "REMAPPED_PARAMS=!REMAPPED_PARAMS! !libbitcoin-system-examples_PARAMS!"
     set "REMAPPED_PARAMS=!REMAPPED_PARAMS! !libbitcoin-system-test_PARAMS!"
     set "REMAPPED_PARAMS=!REMAPPED_PARAMS! !libbitcoin-database_PARAMS!"
-    set "REMAPPED_PARAMS=!REMAPPED_PARAMS! !libbitcoin-database-tools_PARAMS!"
     set "REMAPPED_PARAMS=!REMAPPED_PARAMS! !libbitcoin-database-test_PARAMS!"
     set "REMAPPED_PARAMS=!REMAPPED_PARAMS! !libbitcoin-network_PARAMS!"
     set "REMAPPED_PARAMS=!REMAPPED_PARAMS! !libbitcoin-network-test_PARAMS!"

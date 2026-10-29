@@ -156,25 +156,25 @@ BOOST_AUTO_TEST_CASE(admin__ws_subscribe__channels__independent)
     BOOST_REQUIRE_EQUAL(ack.at("previous").as_int64(), 2048);
 }
 
-BOOST_AUTO_TEST_CASE(admin__ws_log_subscribe__invalid_filter__error_eof)
+BOOST_AUTO_TEST_CASE(admin__ws_log_subscribe__invalid_filter__closed)
 {
     BOOST_REQUIRE(!ws_upgrade());
     BOOST_REQUIRE(ws_dropped("/v1/log/subscribe?filter=xyz"));
 }
 
-BOOST_AUTO_TEST_CASE(admin__ws_log_subscribe__html__error_eof)
+BOOST_AUTO_TEST_CASE(admin__ws_log_subscribe__html__closed)
 {
     BOOST_REQUIRE(!ws_upgrade());
     BOOST_REQUIRE(ws_dropped("/v1/log/subscribe?filter=1&format=html"));
 }
 
-BOOST_AUTO_TEST_CASE(admin__ws_dispatch__invalid_target__error_eof)
+BOOST_AUTO_TEST_CASE(admin__ws_dispatch__invalid_target__closed)
 {
     BOOST_REQUIRE(!ws_upgrade());
     BOOST_REQUIRE(ws_dropped("/v1/bogus"));
 }
 
-BOOST_AUTO_TEST_CASE(admin__ws_dispatch__missing_subcomponent__error_eof)
+BOOST_AUTO_TEST_CASE(admin__ws_dispatch__missing_subcomponent__closed)
 {
     BOOST_REQUIRE(!ws_upgrade());
     BOOST_REQUIRE(ws_dropped("/v1/log"));

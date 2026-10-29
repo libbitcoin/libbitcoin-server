@@ -69,27 +69,3 @@ namespace std::placeholders
 /// ---------------------------------------------------------------------------
 
 #endif
-
-// define.hpp is the common include for /server.
-// All non-server headers include define.hpp.
-// Server inclusions are chained as follows.
-
-// version        : <generated>
-// /error         : version
-// define         : /error
-
-// Other directory common includes are not internally chained.
-// Each header includes only its required common headers.
-
-// settings       : define
-// configuration  : define settings
-// parser         : define configuration
-// session        : define                   [forward: server_node]
-// /serializers   : define
-// /interfaces    : define
-// /utilities     : define /interfaces
-// /parsers       : define /utilities
-// /channels      : define /parsers settings
-// /protocols     : define /channels         [session.hpp]
-// /sessions      : define /protocols        [forward: server_node]
-// server_node    : define /sessions
