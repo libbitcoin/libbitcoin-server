@@ -462,7 +462,7 @@ bool mempool_info(system::json::object& out, const node::query& query,
     const std::filesystem::path& store, double minimum, double relay,
     double increment) NOEXCEPT
 {
-    size_t space{};
+    uint64_t space{};
     database::fee_rates rates{};
     if (!query.get_confirmable_fees(rates) ||
         !database::file::space(space, store))
