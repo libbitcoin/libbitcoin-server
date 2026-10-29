@@ -84,12 +84,14 @@ std::string descriptor_checksum(const std::string& descriptor) NOEXCEPT
     for (size_t pad{}; pad < 8; ++pad)
         check = poly_mod(check, 0);
 
-    check = bit_xor<uint64_t>(check, 1);
-
     std::string out(8, ' ');
+    check = bit_xor<uint64_t>(check, 1);
     for (size_t index{}; index < 8; ++index)
-        out.at(index) = checksum_charset.at(bit_and<uint64_t>(
-            shift_right(check, 5 * (7 - index)), 31));
+    {
+        const auto offset = 5 * (7 - index);
+        const auto at = bit_and<uint64_t>(shift_right(check, offset), 31);
+        out.at(index) = checksum_charset.at(possible_narrow_cast<size_t>(at));
+    }
 
     return out;
 }
