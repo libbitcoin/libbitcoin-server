@@ -86,7 +86,7 @@ bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup,
                 configure(config);
         }, true, start)
 {
-    client_.connect(config_.server.bitcoind.binds.back().to_endpoint());
+    client_.connect(network::config::to_asio(config_.server.bitcoind.binds.back().to_endpoint()));
 }
 
 bitcoind_setup_fixture::~bitcoind_setup_fixture()

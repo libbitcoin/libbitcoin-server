@@ -84,7 +84,7 @@ admin_setup_fixture::admin_setup_fixture(const initializer& setup,
     // Block until server is running.
     ec = running.get_future().get();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    socket_.connect(admin.binds.back().to_endpoint());
+    socket_.connect(network::config::to_asio(admin.binds.back().to_endpoint()));
 }
 
 admin_setup_fixture::~admin_setup_fixture()

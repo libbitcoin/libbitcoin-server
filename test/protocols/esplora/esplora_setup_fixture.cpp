@@ -95,7 +95,7 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup,
     // Block until server is running.
     ec = running.get_future().get();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    socket_.connect(esplora.binds.back().to_endpoint());
+    socket_.connect(network::config::to_asio(esplora.binds.back().to_endpoint()));
 }
 
 esplora_setup_fixture::~esplora_setup_fixture()

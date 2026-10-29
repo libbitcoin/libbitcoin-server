@@ -99,7 +99,7 @@ zmq_setup_fixture::zmq_setup_fixture(const initializer& setup,
     ec = running.get_future().get();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
     const auto& bound = key.empty() ? zmq.binds : zmq.safes;
-    socket_.connect(bound.back().to_endpoint());
+    socket_.connect(network::config::to_asio(bound.back().to_endpoint()));
 }
 
 zmq_setup_fixture::~zmq_setup_fixture()

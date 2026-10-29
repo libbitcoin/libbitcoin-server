@@ -48,7 +48,7 @@ btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
                 configure(config);
         }, address_index)
 {
-    const auto endpoint = config_.server.btcd.binds.back().to_endpoint();
+    const auto endpoint = network::config::to_asio(config_.server.btcd.binds.back().to_endpoint());
     client_.connect(endpoint);
     const auto ec = client_.upgrade();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());

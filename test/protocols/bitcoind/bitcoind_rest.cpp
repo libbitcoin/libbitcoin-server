@@ -613,7 +613,7 @@ struct bitcoind_origin_setup_fixture
     {
         using namespace boost::beast;
         rpc_client client{ io_ };
-        client.connect(config_.server.bitcoind.binds.back().to_endpoint());
+        client.connect(network::config::to_asio(config_.server.bitcoind.binds.back().to_endpoint()));
 
         auto request = rpc_client::create_get(target);
         request.set(http::field::origin, origin);

@@ -55,7 +55,7 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
         }, address_index, true),
     which_{ which }
 {
-    client_.connect(options().binds.back().to_endpoint());
+    client_.connect(network::config::to_asio(options().binds.back().to_endpoint()));
 }
 
 electrum_setup_fixture::~electrum_setup_fixture()

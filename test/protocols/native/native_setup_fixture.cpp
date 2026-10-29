@@ -130,7 +130,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
     // Block until server is running.
     ec = running.get_future().get();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    socket_.connect(native.binds.back().to_endpoint());
+    socket_.connect(network::config::to_asio(native.binds.back().to_endpoint()));
 }
 
 native_setup_fixture::~native_setup_fixture()
