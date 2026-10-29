@@ -183,7 +183,7 @@ void executor::handle_started(const code& ec)
         std::bind(&executor::handle_subscribed, this, _1, _2));
 }
 
-void executor::handle_subscribed(const code& ec, size_t)
+void executor::handle_subscribed(const code& ec, network::net::object_key)
 {
     if (ec)
     {
