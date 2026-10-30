@@ -445,7 +445,7 @@ bool protocol_bitcoind_transaction::handle_analyze_psbt(const code& ec,
         const auto tx = doc.extract();
         const auto vsize = ceilinged_divide(tx.weight(),
             chain::light_weight_factor);
-        result.emplace("estimated_vsize", vsize);
+        result.emplace("estimated_vsize", to64(vsize));
 
         if (const auto fee = doc.fee(); fee.has_value() && !is_zero(vsize))
             result.emplace("estimated_feerate", (fee.value() * 1000u) /

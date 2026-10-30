@@ -41,7 +41,7 @@ static void push_frozen(object_t& out, const std::string& name, bool enabled,
     {
         { "type", std::string{ "buried" } },
         { "active", add1(height) >= activation },
-        { "height", activation }
+        { "height", to64(activation) }
     });
 }
 
@@ -68,7 +68,7 @@ object_t deployment_info(const node::query& query,
     return object_t
     {
         { "hash", encode_hash(query.get_header_key(link)) },
-        { "height", height },
+        { "height", to64(height) },
         { "deployments", std::move(deployments) }
     };
 }

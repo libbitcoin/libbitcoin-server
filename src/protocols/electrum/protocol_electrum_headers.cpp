@@ -48,7 +48,7 @@ void protocol_electrum::handle_blockchain_number_of_blocks_subscribe(
 
     subscribed_height_.store(true, relaxed);
     const auto top_height = archive().get_top_confirmed();
-    send_result(top_height);
+    send_result(to64(top_height));
 }
 
 void protocol_electrum::handle_blockchain_block_get_chunk(const code& ec,
@@ -283,7 +283,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
             else
             {
                 result["max"] = maximum_headers;
-                result["count"] = links.size();
+                result["count"] = to64(links.size());
                 result["headers"] = std::move(headers);
             }
         }
@@ -311,7 +311,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
             else
             {
                 result["max"] = maximum_headers;
-                result["count"] = links.size();
+                result["count"] = to64(links.size());
                 result["hex"] = std::move(headers);
             }
         }

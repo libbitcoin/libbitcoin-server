@@ -319,7 +319,7 @@ object_t protocol_electrum::to_outpoint_status(size_t output_height) NOEXCEPT
 {
     return
     {
-        { "funder_height", to_signed(output_height) }
+        { "funder_height", to64(to_signed(output_height)) }
     };
 }
 
@@ -329,9 +329,9 @@ object_t protocol_electrum::to_outpoint_status(size_t output_height,
 {
     return
     {
-        { "funder_height", to_signed(output_height) },
+        { "funder_height", to64(to_signed(output_height)) },
         { "spender_txhash", encode_hash(history.tx.hash()) },
-        { "spender_height", to_signed(history.tx.height()) }
+        { "spender_height", to64(to_signed(history.tx.height())) }
     };
 }
 

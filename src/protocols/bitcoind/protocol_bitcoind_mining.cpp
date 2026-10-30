@@ -106,7 +106,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     window = std::min(window, target);
     if (is_zero(window))
     {
-        send_result(zero);
+        send_result(to64(zero));
         return true;
     }
 
@@ -136,7 +136,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
 
     if (minimum == maximum)
     {
-        send_result(zero);
+        send_result(to64(zero));
         return true;
     }
 
@@ -187,7 +187,7 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     const header header{ 0, {}, {}, 0, pool.work_required(), 0 };
     object_t next_block
     {
-        { "height", add1(height) },
+        { "height", to64(add1(height)) },
         { "bits", encode_base16(to_big_endian(header.bits())) },
         { "difficulty", header.difficulty() },
         { "target", encode_hash(from_uintx(chain::compact::expand(header.bits()))) }
@@ -201,12 +201,12 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     // bitcoind OB1 error ("blocks" wants height).
     send_result(object_t
     {
-        { "blocks", height },
+        { "blocks", to64(height) },
         { "bits", encode_base16(to_big_endian(top->bits())) },
         { "difficulty", top->difficulty() },
         { "target", encode_hash(from_uintx(chain::compact::expand(top->bits()))) },
         { "networkhashps", top->difficulty() * span / period },
-        { "pooledtx", zero },
+        { "pooledtx", to64(zero) },
         { "blockmintxfee", max_money / satoshi_per_bitcoin },
         { "chain", chain_name(query) },
         { "next", std::move(next_block) },

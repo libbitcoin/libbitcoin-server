@@ -66,7 +66,7 @@ bool block_info(network::rpc::object_t& out, const node::query& query,
         { "unspendable", unspendable / bitcoin },
         { "unspendables", network::rpc::object_t
         {
-            { "genesis_block", zero },
+            { "genesis_block", to64(zero) },
             { "bip30", amounts.bip30 / bitcoin },
             { "scripts", amounts.unspendable / bitcoin },
             { "unclaimed_rewards", unclaimed / bitcoin }
@@ -131,10 +131,10 @@ network::rpc::object_t scan_result(
             { "amount", to_floating(coin.out.value()) /
                 chain::satoshi_per_bitcoin },
             { "coinbase", coin.coinbase },
-            { "height", coin.height },
+            { "height", to64(coin.height) },
             { "blockhash", encode_hash(query.get_header_key(
                 query.to_confirmed(coin.height))) },
-            { "confirmations", add1(floored_subtract(top, coin.height)) }
+            { "confirmations", to64(add1(floored_subtract(top, coin.height))) }
         });
 
         amount += coin.out.value();
@@ -144,7 +144,7 @@ network::rpc::object_t scan_result(
     {
         { "success", true },
         { "txouts", txouts },
-        { "height", top },
+        { "height", to64(top) },
         { "bestblock", encode_hash(query.get_header_key(
             query.to_confirmed(top))) },
         { "unspents", std::move(unspents) },

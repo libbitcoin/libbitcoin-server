@@ -111,7 +111,7 @@ bool protocol_btcd::handle_get_best_block(const code& ec,
     send_result(object_t
     {
         { "hash", encode_hash(query.get_top_confirmed_hash()) },
-        { "height", query.get_top_confirmed() }
+        { "height", to64(query.get_top_confirmed()) }
     });
     return true;
 }
@@ -292,9 +292,9 @@ bool protocol_btcd::handle_get_info(const code& ec,
     {
         { "version", version },
         { "protocolversion", network_settings().protocol_maximum },
-        { "blocks", top },
+        { "blocks", to64(top) },
         { "timeoffset", 0 },
-        { "connections", channel_count() },
+        { "connections", to64(channel_count()) },
         { "proxy", proxy },
         { "difficulty", header->difficulty() },
         { "testnet", chain_name(query) != "main" },

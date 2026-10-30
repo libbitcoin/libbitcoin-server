@@ -338,7 +338,7 @@ bool protocol_bitcoind_utility::handle_get_index_info(const code& ec,
     const object_t status
     {
         { "synced", is_current_chain(true) && query.is_coalesced() },
-        { "best_block_height", query.get_top_confirmed() }
+        { "best_block_height", to64(query.get_top_confirmed()) }
     };
 
     object_t result{};
@@ -422,7 +422,7 @@ void protocol_bitcoind_utility::complete_estimate(const code& ec,
         {
             { "errors", array_t{ std::string{
                 "Insufficient data or no feerate found" } } },
-            { "blocks", target }
+            { "blocks", to64(target) }
         });
         return;
     }
@@ -430,7 +430,7 @@ void protocol_bitcoind_utility::complete_estimate(const code& ec,
     send_result(object_t
     {
         { "feerate", fee / fee_scale },
-        { "blocks", target }
+        { "blocks", to64(target) }
     });
 }
 

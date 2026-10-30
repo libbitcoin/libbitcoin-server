@@ -898,12 +898,12 @@ void protocol_btcd::notify_connected(const header_cptr& header,
         // Elements are moved, as a braced initializer list always copies.
         array_t connected{};
         connected.emplace_back(encode_hash(header->get_hash()));
-        connected.emplace_back(height);
+        connected.emplace_back(to64(height));
         connected.emplace_back(header->timestamp());
         send_notification("blockconnected", std::move(connected));
 
         array_t filtered{};
-        filtered.emplace_back(height);
+        filtered.emplace_back(to64(height));
         filtered.emplace_back(to_text(*header, chain::header::serialized_size()));
         filtered.emplace_back(std::move(*txs));
         send_notification("filteredblockconnected", std::move(filtered));
@@ -926,12 +926,12 @@ void protocol_btcd::notify_disconnected(const header_cptr& header,
 
     array_t disconnected{};
     disconnected.emplace_back(encode_hash(header->get_hash()));
-    disconnected.emplace_back(height);
+    disconnected.emplace_back(to64(height));
     disconnected.emplace_back(header->timestamp());
     send_notification("blockdisconnected", std::move(disconnected));
 
     array_t filtered{};
-    filtered.emplace_back(height);
+    filtered.emplace_back(to64(height));
     filtered.emplace_back(to_text(*header, chain::header::serialized_size()));
     send_notification("filteredblockdisconnected", std::move(filtered));
 }
@@ -1034,9 +1034,9 @@ array_t protocol_btcd::serialize_legacy(const chain::transaction& tx,
         to_text(tx, tx.serialized_size(witness), witness),
         object_t
         {
-            { "height", height },
+            { "height", to64(height) },
             { "hash", encode_hash(header->get_hash()) },
-            { "index", position },
+            { "index", to64(position) },
             { "time", header->timestamp() }
         }
     };

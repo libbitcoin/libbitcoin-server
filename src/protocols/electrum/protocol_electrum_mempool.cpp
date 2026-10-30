@@ -106,7 +106,7 @@ void protocol_electrum::do_get_fee_histogram(const gate_t::ptr& gate) NOEXCEPT
     array_t histogram{};
     histogram.reserve(bins.size());
     for (const auto& [rate, size]: bins)
-        histogram.emplace_back(array_t{ rate, size });
+        histogram.emplace_back(array_t{ rate, to64(size) });
 
     POST(complete_mempool, code{}, value_t{ std::move(histogram) }, gate);
 }
@@ -143,7 +143,7 @@ void protocol_electrum::do_mempool_recent(const gate_t::ptr& gate) NOEXCEPT
         {
             { "txid", encode_hash(query.get_tx_key(*link)) },
             { "fee", fee },
-            { "vsize", vsize }
+            { "vsize", to64(vsize) }
         });
     }
 
