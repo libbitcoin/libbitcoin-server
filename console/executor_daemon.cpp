@@ -21,7 +21,7 @@
 #include <atomic>
 #include <filesystem>
 #include <iostream>
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
     #include <io.h>
     #include <ntsecapi.h>
 #endif
@@ -45,7 +45,7 @@ std::atomic_bool executor::exited_{ false };
 std::atomic_bool executor::starting_{ true };
 
 // Installation results, as reported by the platform service manager.
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
 constexpr uint32_t daemon_success = ERROR_SUCCESS;
 constexpr uint32_t daemon_denied = ERROR_ACCESS_DENIED;
 constexpr uint32_t daemon_exists = ERROR_SERVICE_EXISTS;
@@ -58,7 +58,7 @@ constexpr uint32_t daemon_exists = EEXIST;
 constexpr uint32_t daemon_absent = ENOENT;
 #endif
 
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
 
 // Node drain exceeds the default shutdown window, so preshutdown is required.
 // This has no effect until the service accepts SERVICE_ACCEPT_PRESHUTDOWN.
@@ -321,7 +321,7 @@ uint32_t executor::delete_service() NOEXCEPT
     return result;
 }
 
-#endif // HAVE_MSC
+#endif // HAVE_WINDOWS
 
 // Posix service installation.
 // ----------------------------------------------------------------------------
@@ -564,7 +564,7 @@ void executor::notify_starting()
     if (!starting_.load())
         return;
 
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
     report_status(SERVICE_START_PENDING);
 #elif defined(HAVE_LINUX)
     notify_manager("EXTEND_TIMEOUT_USEC=30000000");
@@ -575,7 +575,7 @@ void executor::notify_running()
 {
     starting_.store(false);
 
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
     report_status(SERVICE_RUNNING);
 #elif defined(HAVE_LINUX)
     notify_manager("READY=1");
@@ -584,7 +584,7 @@ void executor::notify_running()
 
 void executor::notify_stopping()
 {
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
     report_status(SERVICE_STOP_PENDING);
 #elif defined(HAVE_LINUX)
     notify_manager("STOPPING=1\nEXTEND_TIMEOUT_USEC=30000000");
@@ -594,7 +594,7 @@ void executor::notify_stopping()
 // Service dispatch.
 // ----------------------------------------------------------------------------
 
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
 
 bool executor::service(parser& metadata, std::istream& input,
     std::ostream& error)
@@ -635,7 +635,7 @@ bool executor::service(parser&, std::istream&, std::ostream&)
     return false;
 }
 
-#endif // HAVE_MSC
+#endif // HAVE_WINDOWS
 
 // --[d]aemon [--[u]ser]
 bool executor::do_daemon()
@@ -648,7 +648,7 @@ bool executor::do_daemon()
         return false;
     }
 
-#if defined(HAVE_MSC) || defined(HAVE_POSIX)
+#if defined(HAVE_WINDOWS) || defined(HAVE_POSIX)
     std::string account{}, password{};
     if (user.has_value())
     {
@@ -684,7 +684,7 @@ bool executor::do_daemon()
             logger(BS_DAEMON_ABSENT);
             return false;
         }
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
         case daemon_unknown_user:
         {
             logger(BS_DAEMON_UNKNOWN_USER);
@@ -711,7 +711,7 @@ bool executor::do_daemon()
 // True unless running as a service or daemon (prompts are then not awaited).
 bool executor::interactive()
 {
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
     return !service_;
 #else
     // A daemon is reparented to init or is its own session leader.

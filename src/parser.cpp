@@ -2801,7 +2801,7 @@ options_metadata parser::load_settings() THROWS
         setting<uint32_t>(&configured.log.maximum_size),
         "The maximum byte size of each pair of rotated log files, defaults to {}."
     )
-#if defined (HAVE_MSC)
+#if defined (HAVE_WINDOWS)
     (
         "log.symbols",
         setting<config::path>(&configured.log.symbols),

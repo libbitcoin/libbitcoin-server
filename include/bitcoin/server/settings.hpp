@@ -48,7 +48,7 @@ public:
     uint32_t maximum_size;
     system::config::path path;
 
-#if defined (HAVE_MSC)
+#if defined (HAVE_WINDOWS)
     system::config::path symbols;
 #endif
 

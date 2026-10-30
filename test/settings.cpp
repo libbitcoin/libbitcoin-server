@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(settings__log__default_context__expected)
     BOOST_REQUIRE_EQUAL(log.log_file1(), "bs_end.log");
     BOOST_REQUIRE_EQUAL(log.log_file2(), "bs_begin.log");
     BOOST_REQUIRE_EQUAL(log.events_file(), "events.log");
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
     BOOST_REQUIRE_EQUAL(log.symbols, "");
 #endif
 }

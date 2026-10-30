@@ -26,7 +26,7 @@
 namespace libbitcoin {
 namespace server {
 
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
 LRESULT CALLBACK executor::window_proc(HWND handle, UINT message,
     WPARAM wparam, LPARAM lparam)
 {
@@ -50,7 +50,7 @@ LRESULT CALLBACK executor::window_proc(HWND handle, UINT message,
 #endif
 
 // static initializers.
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
 HWND executor::window_handle_{};
 std::promise<bool> executor::window_ready_{};
 std::optional<std::thread> executor::window_thread_{};
@@ -59,7 +59,7 @@ std::optional<std::thread> executor::window_thread_{};
 // static
 void executor::create_hidden_window()
 {
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
     // A service has no interactive session, and is stopped by the manager.
     if (service_)
         return;
@@ -121,7 +121,7 @@ void executor::create_hidden_window()
 
 void executor::destroy_hidden_window()
 {
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
     if (service_)
         return;
 

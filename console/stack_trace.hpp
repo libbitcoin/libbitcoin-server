@@ -22,7 +22,7 @@
 #include <bitcoin/system.hpp>
 
  // This is some temporary code to explore emission of win32 stack dump.
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
 
 #include <windows.h>
 

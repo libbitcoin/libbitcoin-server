@@ -23,7 +23,7 @@
 #include "executor.hpp"
 
 // This is some experimental code to explore emission of win32 stack dump.
-#ifdef HAVE_MSC
+#ifdef HAVE_WINDOWS
 #include "stack_trace.hpp"
 
 namespace libbitcoin {
@@ -130,7 +130,7 @@ int bc::system::main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
     symbols_path = metadata.configured.log.symbols;
 #endif
 
