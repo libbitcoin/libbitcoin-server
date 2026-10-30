@@ -21,7 +21,7 @@
 #include <bitcoin/system.hpp>
 
 // This is some experimental code to explore emission of win32 stack dump.
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
 
 #include <algorithm>
 #include <atomic>

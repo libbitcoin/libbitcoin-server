@@ -25,7 +25,7 @@ namespace server {
 
 // TODO: use RegisterServiceCtrlHandlerEx for service registration.
     
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
 BOOL WINAPI executor::control_handler(DWORD signal)
 {
     switch (signal)
@@ -59,7 +59,7 @@ BOOL WINAPI executor::control_handler(DWORD signal)
 // static
 void executor::set_signal_handlers()
 {
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
     ::SetConsoleCtrlHandler(&executor::control_handler, TRUE);
 #else
     // struct keyword avoids name conflict with posix function sigaction.

@@ -393,8 +393,6 @@
     "Hardware configuration (arm64)..."
 #define BS_HARDWARE_HEADER_X64 \
     "Hardware configuration (x64)..."
-#define BS_HARDWARE_PLATFORM \
-    "platform:{:d}."
 #define BS_HARDWARE_COMPILED \
     "platform:{:d} compiled:{:d}."
 #define BS_HARDWARE_ENABLED \

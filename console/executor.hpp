@@ -228,7 +228,7 @@ private:
     static void handle_stop(int code);
     static bool canceled();
 
-#if defined(HAVE_MSC)
+#if defined(HAVE_WINDOWS)
     static HWND window_handle_;
     static std::promise<bool> window_ready_;
     static std::optional<std::thread> window_thread_;
