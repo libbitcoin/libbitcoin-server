@@ -55,6 +55,7 @@ src_libbitcoin_server_la_LIBADD = \
 
 src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/configuration.cpp \
+    ${srcdir}/../../src/define.cpp \
     ${srcdir}/../../src/parser.cpp \
     ${srcdir}/../../src/server_node.cpp \
     ${srcdir}/../../src/settings.cpp \
