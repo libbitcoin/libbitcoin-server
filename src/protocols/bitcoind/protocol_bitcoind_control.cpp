@@ -301,8 +301,8 @@ bool protocol_bitcoind_control::handle_uptime(const code& ec,
     if (stopped(ec))
         return false;
 
-    send_result(floored_subtract(to_unsigned(zulu_time()),
-        to_unsigned(start_time())));
+    send_result(possible_wide_cast<uint64_t>(floored_subtract(
+        to_unsigned(zulu_time()), to_unsigned(start_time()))));
     return true;
 }
 
