@@ -31,6 +31,8 @@ REM --build-mode mode           Determines action on target.
 REM                               Default: Rebuild
 REM --build-symbols mode        Determines treatment of symbols.
 REM                               Values: { default, disabled, public-only }
+REM --build-compiler compiler   Determines the compiler.
+REM                               Values: { msvc, clang }
 REM --build-src-dir path        Location for sources.
 REM                               Default: !CD!
 REM --build-full-repositories   Sync full github repositories.
@@ -165,6 +167,18 @@ if "!libbitcoin_server_TAG!" == "" (
         call :msg_verbose "BUILD_SYMBOLS 'public-only'."
     ) else (
         call :msg_error "BUILD_SYMBOLS value '!BUILD_SYMBOLS!' unrecognized."
+        call :help
+        exit /b 1
+    )
+
+    if "!BUILD_COMPILER!" == "" (
+        call :msg_verbose "BUILD_COMPILER not defined or empty, defaulting to 'msvc'."
+    ) else if "!BUILD_COMPILER!" == "msvc" (
+        call :msg_verbose "BUILD_COMPILER 'msvc'."
+    ) else if "!BUILD_COMPILER!" == "clang" (
+        call :msg_verbose "BUILD_COMPILER 'clang'."
+    ) else (
+        call :msg_error "BUILD_COMPILER value '!BUILD_COMPILER!' unrecognized."
         call :help
         exit /b 1
     )
@@ -364,6 +378,9 @@ if "!libbitcoin_server_TAG!" == "" (
     ) else if "%~1" == "--build-symbols" (
         set "BUILD_SYMBOLS=%~2"
         shift
+    ) else if "%~1" == "--build-compiler" (
+        set "BUILD_COMPILER=%~2"
+        shift
     ) else if "%~1" == "--build-src-dir" (
         set "BUILD_SRC_DIR=%~2"
         shift
@@ -522,6 +539,11 @@ if "!libbitcoin_server_TAG!" == "" (
         set "SYMBOLS_ARG=/p:DebugSymbols=false "
     )
 
+    set "COMPILER_ARG="
+    if "!BUILD_COMPILER!" == "clang" (
+        set "COMPILER_ARG=/p:Option-clang=true "
+    )
+
     call :push_directory "!BUILD_SRC_DIR!\%PROJECT%\%RELATIVE_PATH%\!BUILD_VERSION!"
     if %ERRORLEVEL% neq 0 (
         exit /b %ERRORLEVEL%
@@ -532,10 +554,10 @@ if "!libbitcoin_server_TAG!" == "" (
         exit /b %ERRORLEVEL%
     )
 
-    !MSBUILD_EXE! /verbosity:!MSBUILD_VERBOSE! !SYMBOLS_ARG!/p:Platform=!BUILD_PLATFORM! /p:Configuration=!BUILD_CONFIG! /p:PreferredToolArchitecture=x64 %TARGET_ARG% %PROJECT%.sln /p:PreBuildEventUseInBuild=false /p:PostBuildEventUseInBuild=false !UNHANDLED_ARGS! !ADDITIONAL_PARAMS!
+    !MSBUILD_EXE! /verbosity:!MSBUILD_VERBOSE! !SYMBOLS_ARG!!COMPILER_ARG!/p:Platform=!BUILD_PLATFORM! /p:Configuration=!BUILD_CONFIG! /p:PreferredToolArchitecture=x64 %TARGET_ARG% %PROJECT%.sln /p:PreBuildEventUseInBuild=false /p:PostBuildEventUseInBuild=false !UNHANDLED_ARGS! !ADDITIONAL_PARAMS!
 
     if %ERRORLEVEL% neq 0 (
-        call :msg_error "!MSBUILD_EXE! /verbosity:!MSBUILD_VERBOSE! !SYMBOLS_ARG!/p:Platform=!BUILD_PLATFORM! /p:Configuration=!BUILD_CONFIG! /p:PreferredToolArchitecture=x64 %TARGET_ARG% %PROJECT%.sln /p:PreBuildEventUseInBuild=false /p:PostBuildEventUseInBuild=false !UNHANDLED_ARGS! !ADDITIONAL_PARAMS!"
+        call :msg_error "!MSBUILD_EXE! /verbosity:!MSBUILD_VERBOSE! !SYMBOLS_ARG!!COMPILER_ARG!/p:Platform=!BUILD_PLATFORM! /p:Configuration=!BUILD_CONFIG! /p:PreferredToolArchitecture=x64 %TARGET_ARG% %PROJECT%.sln /p:PreBuildEventUseInBuild=false /p:PostBuildEventUseInBuild=false !UNHANDLED_ARGS! !ADDITIONAL_PARAMS!"
         call :pop_directory
         exit /b 1
     )
@@ -567,6 +589,7 @@ if "!libbitcoin_server_TAG!" == "" (
     call :msg "BUILD_USE_LOCAL_SRC             : !BUILD_USE_LOCAL_SRC!"
     call :msg "BUILD_MODE                      : !BUILD_MODE!"
     call :msg "BUILD_SYMBOLS                   : !BUILD_SYMBOLS!"
+    call :msg "BUILD_COMPILER                  : !BUILD_COMPILER!"
     call :msg "DISPLAY_VERBOSE                 : !DISPLAY_VERBOSE!"
     call :msg "DISPLAY_HELP                    : !DISPLAY_HELP!"
     exit /b %ERRORLEVEL%
@@ -614,6 +637,8 @@ if "!libbitcoin_server_TAG!" == "" (
     call :msg "                              Default: Rebuild"
     call :msg "--build-symbols mode        Determines treatment of symbols."
     call :msg "                              Values: { default, disabled, public-only }"
+    call :msg "--build-compiler compiler   Determines the compiler."
+    call :msg "                              Values: { msvc, clang }"
     call :msg "--build-src-dir path        Location for sources."
     call :msg "                              Default: !CD!"
     call :msg "--build-full-repositories   Sync full github repositories."
