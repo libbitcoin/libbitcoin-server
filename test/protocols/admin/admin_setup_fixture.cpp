@@ -38,6 +38,7 @@ admin_setup_fixture::admin_setup_fixture(const initializer& setup,
     {
         [&]() NOEXCEPT -> const database::settings&
         {
+            test::configure(config_);
             config_.database.path = TEST_DIRECTORY;
             return config_.database;
         }()

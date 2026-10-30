@@ -51,7 +51,7 @@ public:
     bool accept{};
 
     /// Actions.
-    bool newstore{};
+    system::config::selection new_store{};
     bool backup{};
     bool restore{};
 

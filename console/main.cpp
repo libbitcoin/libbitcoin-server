@@ -118,6 +118,9 @@ int bc::system::main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    // The store's network precedes initialization and store construction.
+    metadata.read_envelope();
+
     // Settings files are read and derived values packed, once, here.
     if (const auto ec = metadata.configured.initialize())
     {

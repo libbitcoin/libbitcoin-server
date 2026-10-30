@@ -38,6 +38,7 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup,
     {
         [&]() NOEXCEPT -> const database::settings&
         {
+            test::configure(config_);
             auto& esplora = config_.server.esplora;
             esplora.binds = { { ESPLORA_ENDPOINT } };
             esplora.connections = 1;

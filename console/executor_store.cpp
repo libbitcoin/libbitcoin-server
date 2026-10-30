@@ -64,6 +64,18 @@ bool executor::check_store_path(bool create) const
 
 bool executor::create_store(bool details)
 {
+    using selection = system::config::selection;
+    const auto& selected = metadata_.configured.bitcoin.network;
+    if (metadata_.is_configured(settings::bitcoin_network))
+    {
+        const auto& variables = metadata_.variables();
+        const auto& value = variables.at(settings::bitcoin_network);
+        const auto& configured = value.as<selection>();
+        if (configured != selected)
+            logger(std::format(BS_NEW_NETWORK_OVERRIDE,
+                selection::to_word(selected), selection::to_word(configured)));
+    }
+
     logger(BS_INITCHAIN_CREATING);
     const auto start = logger::now();
     if (const auto ec = store_.create([&](auto event_, auto table)
@@ -108,6 +120,16 @@ bool executor::open_store(bool details)
 // not timed or announced (generally fast)
 code executor::open_store_coded(bool details)
 {
+    if (metadata_.stored_code == database::error::schema_version)
+    {
+        logger(std::format(BS_DATABASE_START_FAIL,
+            metadata_.stored_code.message()));
+        logger(std::format(BS_DATABASE_SCHEMA_MISMATCH,
+            metadata_.stored.schema.to_string(),
+            database::envelope::compiled.to_string()));
+        return metadata_.stored_code;
+    }
+
     ////logger(BS_DATABASE_STARTING);
     if (const auto ec = store_.open([&](auto event_, auto table)
     {
@@ -118,16 +140,6 @@ code executor::open_store_coded(bool details)
     }))
     {
         logger(std::format(BS_DATABASE_START_FAIL, ec.message()));
-        if (ec == database::error::schema_version)
-        {
-            system::config::version schema{};
-            if (const auto read = store_.read_schema(schema))
-                logger(std::format(BS_DATABASE_SCHEMA_FAIL, read.message()));
-            else
-                logger(std::format(BS_DATABASE_SCHEMA_MISMATCH, schema.to_string(),
-                    database::envelope::compiled.to_string()));
-        }
-
         return ec;
     }
 

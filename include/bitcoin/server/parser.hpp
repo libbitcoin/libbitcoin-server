@@ -41,7 +41,7 @@ public:
     static constexpr auto settings_variable = "settings";
     static constexpr auto version_variable = "version";
     static constexpr auto accept_variable = "accept";
-    static constexpr auto newstore_variable = "newstore";
+    static constexpr auto new_variable = "new";
     static constexpr auto backup_variable = "backup";
     static constexpr auto restore_variable = "restore";
     static constexpr auto daemon_variable = "daemon";
@@ -74,15 +74,25 @@ public:
     virtual bool parse(int argc, const char* argv[],
         std::ostream& error) THROWS;
 
+    /// Read the envelope of an existing store and reset defaults to its network.
+    virtual void read_envelope() NOEXCEPT;
+
     /// The populated configuration settings values.
     configuration configured;
 
+    /// The envelope of an existing store and the result of reading it.
+    database::envelope stored{};
+    code stored_code{};
+
 protected:
+    /// Select the network and reset the defaults to it when it differs.
+    virtual void select_network() NOEXCEPT;
+
+    /// Reset the network defaults, preserving configured settings.
+    virtual void reset_network(system::chain::selection context) NOEXCEPT;
+
     /// Derive each unconfigured hashmap bucket count from its expected count.
     virtual void derive_buckets() NOEXCEPT;
-
-    /// Set the default port of each service binding without a port.
-    virtual void derive_ports() NOEXCEPT;
 };
 
 } // namespace server

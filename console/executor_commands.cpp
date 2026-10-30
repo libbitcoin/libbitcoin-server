@@ -222,7 +222,7 @@ bool executor::dispatch()
     if (config.flags)
         return do_flags();
 
-    if (config.newstore)
+    if (config.new_store != system::chain::selection::none)
         return do_new_store();
 
     if (config.buckets)

@@ -425,6 +425,118 @@ BOOST_AUTO_TEST_CASE(server__settings__initialize__default__no_failure)
     BOOST_REQUIRE(instance.failure.empty());
 }
 
+// [network]
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize_mainnet__service_ports)
+{
+    const server::settings::embedded_pages pages{};
+    server::settings instance{ selection::mainnet, pages, pages };
+    BOOST_REQUIRE(instance.network == selection::mainnet);
+    BOOST_REQUIRE(!instance.initialize());
+    BOOST_REQUIRE_EQUAL(instance.admin.bind_port, 8080u);
+    BOOST_REQUIRE_EQUAL(instance.admin.safe_port, 8043u);
+    BOOST_REQUIRE_EQUAL(instance.native.bind_port, 8180u);
+    BOOST_REQUIRE_EQUAL(instance.native.safe_port, 8143u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind.bind_port, 8280u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind.safe_port, 8243u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind_zmq.bind_port, 8380u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind_zmq.safe_port, 8343u);
+    BOOST_REQUIRE_EQUAL(instance.btcd.bind_port, 8480u);
+    BOOST_REQUIRE_EQUAL(instance.btcd.safe_port, 8443u);
+    BOOST_REQUIRE_EQUAL(instance.electrum.bind_port, 8580u);
+    BOOST_REQUIRE_EQUAL(instance.electrum.safe_port, 8543u);
+    BOOST_REQUIRE_EQUAL(instance.sparrow.bind_port, 8680u);
+    BOOST_REQUIRE_EQUAL(instance.sparrow.safe_port, 8643u);
+    BOOST_REQUIRE_EQUAL(instance.esplora.bind_port, 8780u);
+    BOOST_REQUIRE_EQUAL(instance.esplora.safe_port, 8743u);
+    BOOST_REQUIRE_EQUAL(instance.stratum_v1.bind_port, 8880u);
+    BOOST_REQUIRE_EQUAL(instance.stratum_v1.safe_port, 8843u);
+    BOOST_REQUIRE_EQUAL(instance.stratum_v2.bind_port, 8980u);
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__mainnet__service_limits)
+{
+    const server::settings::embedded_pages pages{};
+    const server::settings instance{ selection::mainnet, pages, pages };
+    constexpr auto encoded = 2u * max_payload + 4u * kilobyte;
+    BOOST_REQUIRE_EQUAL(instance.admin.maximum_backlog, 10u * megabyte);
+    BOOST_REQUIRE_EQUAL(instance.btcd.maximum_backlog, 20u * megabyte);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind_zmq.maximum_backlog, 32u * megabyte);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind_zmq.inactivity_minutes, 0u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind_zmq.expiration_minutes, 0u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind.maximum_request, encoded);
+    BOOST_REQUIRE_EQUAL(instance.btcd.maximum_request, encoded);
+    BOOST_REQUIRE_EQUAL(instance.electrum.maximum_request, encoded);
+    BOOST_REQUIRE_EQUAL(instance.sparrow.maximum_request, encoded);
+    BOOST_REQUIRE_EQUAL(instance.esplora.maximum_request, encoded);
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize_testnet4__offset_ports_testnet_wallet)
+{
+    const server::settings::embedded_pages pages{};
+    server::settings instance{ selection::testnet4, pages, pages };
+    BOOST_REQUIRE(instance.network == selection::testnet4);
+    BOOST_REQUIRE_EQUAL(instance.wallet.witness_prefix, "tb");
+    BOOST_REQUIRE(!instance.initialize());
+    BOOST_REQUIRE_EQUAL(instance.admin.bind_port, 48080u);
+    BOOST_REQUIRE_EQUAL(instance.admin.safe_port, 48043u);
+    BOOST_REQUIRE_EQUAL(instance.native.bind_port, 48180u);
+    BOOST_REQUIRE_EQUAL(instance.native.safe_port, 48143u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind.bind_port, 48280u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind.safe_port, 48243u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind_zmq.bind_port, 48380u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind_zmq.safe_port, 48343u);
+    BOOST_REQUIRE_EQUAL(instance.btcd.bind_port, 48480u);
+    BOOST_REQUIRE_EQUAL(instance.btcd.safe_port, 48443u);
+    BOOST_REQUIRE_EQUAL(instance.electrum.bind_port, 48580u);
+    BOOST_REQUIRE_EQUAL(instance.electrum.safe_port, 48543u);
+    BOOST_REQUIRE_EQUAL(instance.sparrow.bind_port, 48680u);
+    BOOST_REQUIRE_EQUAL(instance.sparrow.safe_port, 48643u);
+    BOOST_REQUIRE_EQUAL(instance.esplora.bind_port, 48780u);
+    BOOST_REQUIRE_EQUAL(instance.esplora.safe_port, 48743u);
+    BOOST_REQUIRE_EQUAL(instance.stratum_v1.bind_port, 48880u);
+    BOOST_REQUIRE_EQUAL(instance.stratum_v1.safe_port, 48843u);
+    BOOST_REQUIRE_EQUAL(instance.stratum_v2.bind_port, 48980u);
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize_regtest_network__offset_ports)
+{
+    const server::settings::embedded_pages pages{};
+    server::settings instance{ selection::mainnet, pages, pages };
+    instance.network = selection::regtest;
+    BOOST_REQUIRE(!instance.initialize());
+    BOOST_REQUIRE_EQUAL(instance.admin.bind_port, 28080u);
+    BOOST_REQUIRE_EQUAL(instance.admin.safe_port, 28043u);
+    BOOST_REQUIRE_EQUAL(instance.native.bind_port, 28180u);
+    BOOST_REQUIRE_EQUAL(instance.native.safe_port, 28143u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind.bind_port, 28280u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind.safe_port, 28243u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind_zmq.bind_port, 28380u);
+    BOOST_REQUIRE_EQUAL(instance.bitcoind_zmq.safe_port, 28343u);
+    BOOST_REQUIRE_EQUAL(instance.btcd.bind_port, 28480u);
+    BOOST_REQUIRE_EQUAL(instance.btcd.safe_port, 28443u);
+    BOOST_REQUIRE_EQUAL(instance.electrum.bind_port, 28580u);
+    BOOST_REQUIRE_EQUAL(instance.electrum.safe_port, 28543u);
+    BOOST_REQUIRE_EQUAL(instance.sparrow.bind_port, 28680u);
+    BOOST_REQUIRE_EQUAL(instance.sparrow.safe_port, 28643u);
+    BOOST_REQUIRE_EQUAL(instance.esplora.bind_port, 28780u);
+    BOOST_REQUIRE_EQUAL(instance.esplora.safe_port, 28743u);
+    BOOST_REQUIRE_EQUAL(instance.stratum_v1.bind_port, 28880u);
+    BOOST_REQUIRE_EQUAL(instance.stratum_v1.safe_port, 28843u);
+    BOOST_REQUIRE_EQUAL(instance.stratum_v2.bind_port, 28980u);
+}
+
+BOOST_AUTO_TEST_CASE(server__settings__initialize_unported_bind__default_port)
+{
+    const server::settings::embedded_pages pages{};
+    server::settings instance{ selection::testnet4, pages, pages };
+    instance.electrum.binds.emplace_back(network::asio::address{}, 0_u16);
+    instance.electrum.binds.emplace_back(network::asio::address{}, 42_u16);
+    BOOST_REQUIRE(!instance.initialize());
+    BOOST_REQUIRE_EQUAL(instance.electrum.binds.front().port(), 48580u);
+    BOOST_REQUIRE_EQUAL(instance.electrum.binds.back().port(), 42u);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // [tls]
