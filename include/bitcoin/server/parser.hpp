@@ -29,7 +29,7 @@ namespace server {
 /// Parse configurable values from environment variables, settings file, and
 /// command line positional and non-positional options.
 class BCS_API parser
-  : public system::config::parser
+  : public system::options::parser
 {
 public:
     /// Environment variable prefix, case must match the env var.

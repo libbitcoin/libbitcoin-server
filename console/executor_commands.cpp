@@ -22,7 +22,7 @@
 namespace libbitcoin {
 namespace server {
 
-using system::config::printer;
+using system::options::printer;
 
 const std::string executor::name_{ "bs" };
 
