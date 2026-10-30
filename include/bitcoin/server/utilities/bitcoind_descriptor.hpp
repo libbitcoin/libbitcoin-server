@@ -24,9 +24,6 @@
 namespace libbitcoin {
 namespace server {
 
-/// The bip380 output descriptor checksum, empty on invalid characters.
-BCS_API std::string descriptor_checksum(const std::string& descriptor) NOEXCEPT;
-
 /// The output descriptor of a script, raw where no pattern is expressible.
 BCS_API std::string infer_descriptor(const system::chain::script& script,
     uint8_t p2kh, uint8_t p2sh, const std::string& witness) NOEXCEPT;

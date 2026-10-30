@@ -93,7 +93,7 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     if (!script.is_valid() || script.is_underflow())
     {
         const auto body = "raw(" + encode_base16(data) + ")";
-        result["desc"] = body + "#" + descriptor_checksum(body);
+        result["desc"] = body + "#" + wallet::descriptor::to_checksum(body);
         result.stable_erase("address");
         send_result(std::move(model));
         return true;
@@ -338,7 +338,7 @@ bool protocol_bitcoind_utility::handle_get_index_info(const code& ec,
     const object_t status
     {
         { "synced", is_current_chain(true) && query.is_coalesced() },
-        { "best_block_height", query.get_top_confirmed() }
+        { "best_block_height", to64(query.get_top_confirmed()) }
     };
 
     object_t result{};
@@ -422,7 +422,7 @@ void protocol_bitcoind_utility::complete_estimate(const code& ec,
         {
             { "errors", array_t{ std::string{
                 "Insufficient data or no feerate found" } } },
-            { "blocks", target }
+            { "blocks", to64(target) }
         });
         return;
     }
@@ -430,7 +430,7 @@ void protocol_bitcoind_utility::complete_estimate(const code& ec,
     send_result(object_t
     {
         { "feerate", fee / fee_scale },
-        { "blocks", target }
+        { "blocks", to64(target) }
     });
 }
 

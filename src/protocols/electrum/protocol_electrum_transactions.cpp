@@ -391,8 +391,8 @@ void protocol_electrum::handle_blockchain_transaction_get_merkle(
     send_result(object_t
     {
         { "merkle", std::move(branch) },
-        { "block_height", block_height },
-        { "pos", position }
+        { "block_height", to64(block_height) },
+        { "pos", to64(position) }
     });
 }
 

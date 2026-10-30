@@ -347,7 +347,7 @@ array_t protocol_electrum::transform(const histories& ins) NOEXCEPT
     {
         object_t object
         {
-            { "height", to_signed(in.tx.height()) },
+            { "height", to64(to_signed(in.tx.height())) },
             { "tx_hash", encode_hash(in.tx.hash()) }
         };
 
@@ -379,7 +379,7 @@ array_t protocol_electrum::transform(const unspent_outputs& ins) NOEXCEPT
         {
             { "tx_hash", encode_hash(out.point().hash()) },
             { "tx_pos",  out.point().index() },
-            { "height",  in.height },
+            { "height",  to64(in.height) },
             { "value",   out.value() }
         };
     });

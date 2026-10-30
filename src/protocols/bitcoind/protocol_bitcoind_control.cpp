@@ -151,12 +151,12 @@ bool protocol_bitcoind_control::handle_get_memory_info(const code& ec,
     // Nothing is locked and the arena is empty, not unknown.
     object_t locked
     {
-        { "used", zero },
-        { "free", zero },
-        { "total", zero },
-        { "locked", zero },
-        { "chunks_used", zero },
-        { "chunks_free", zero }
+        { "used", to64(zero) },
+        { "free", to64(zero) },
+        { "total", to64(zero) },
+        { "locked", to64(zero) },
+        { "chunks_used", to64(zero) },
+        { "chunks_free", to64(zero) }
     };
 
     send_result(object_t
@@ -301,8 +301,8 @@ bool protocol_bitcoind_control::handle_uptime(const code& ec,
     if (stopped(ec))
         return false;
 
-    send_result(floored_subtract(to_unsigned(zulu_time()),
-        to_unsigned(start_time())));
+    send_result(possible_wide_cast<uint64_t>(floored_subtract(
+        to_unsigned(zulu_time()), to_unsigned(start_time()))));
     return true;
 }
 

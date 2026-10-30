@@ -108,6 +108,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\src\configuration.cpp" />
+    <ClCompile Include="..\..\..\..\src\define.cpp" />
     <ClCompile Include="..\..\..\..\src\error\bitcoind_error_t.cpp" />
     <ClCompile Include="..\..\..\..\src\error\btcd_error_t.cpp" />
     <ClCompile Include="..\..\..\..\src\error\electrum_error_t.cpp" />

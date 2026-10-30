@@ -253,7 +253,7 @@ bool protocol_bitcoind_blockchain::handle_get_block_count(const code& ec,
         return false;
 
     const auto top = archive().get_top_confirmed();
-    send_result(top);
+    send_result(to64(top));
     return true;
 }
 
@@ -535,10 +535,10 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
     object_t result
     {
         { "time", header->timestamp() },
-        { "txcount", query.get_branch_tx_count(link) },
+        { "txcount", to64(query.get_branch_tx_count(link)) },
         { "window_final_block_hash", encode_hash(query.get_header_key(link)) },
-        { "window_final_block_height", height },
-        { "window_block_count", window }
+        { "window_final_block_height", to64(height) },
+        { "window_block_count", to64(window) }
     };
 
     if (is_nonzero(window))
@@ -561,7 +561,7 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
             txs += query.get_tx_count(branch.at(index));
 
         result.emplace("window_interval", interval);
-        result.emplace("window_tx_count", txs);
+        result.emplace("window_tx_count", to64(txs));
 
         if (is_nonzero(interval))
             result.emplace("txrate", to_floating(txs) / interval);
@@ -626,7 +626,7 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
     send_result(object_t
     {
         { "bestblock", encode_hash(query.get_header_key(header_link)) },
-        { "confirmations", depth },
+        { "confirmations", to64(depth) },
         { "value", coins },
         { "scriptPubKey", script_public_key(output->script()) },
         { "coinbase", query.is_coinbase(tx_link) }
@@ -757,16 +757,16 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
 
     object_t result
     {
-        { "height", height },
+        { "height", to64(height) },
         { "bestblock", encode_hash(query.get_header_key(link)) },
-        { "transactions", totals.transactions },
-        { "txouts", totals.outputs },
+        { "transactions", to64(totals.transactions) },
+        { "txouts", to64(totals.outputs) },
 
         // bitcoind's per-utxo accounting fiction (50 byte overhead).
-        { "bogosize", 50u * totals.outputs + totals.script_bytes },
+        { "bogosize", to64(50u * totals.outputs + totals.script_bytes) },
 
         // The coin-serialized set size (bitcoind estimates leveldb size).
-        { "disk_size", totals.coin_bytes },
+        { "disk_size", to64(totals.coin_bytes) },
         { "total_amount", to_floating(totals.value) /
             chain::satoshi_per_bitcoin }
     };
@@ -1178,7 +1178,7 @@ bool protocol_bitcoind_blockchain::handle_get_chain_states(const code& ec,
     send_result(object_t
     {
         // bitcoind OB1 error ("headers" wants height).
-        { "headers", candidate },
+        { "headers", to64(candidate) },
         { "chainstates", states }
     });
     return true;
@@ -1205,7 +1205,7 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tips(const code& ec,
     {
         object_t
         {
-            { "height", confirmed },
+            { "height", to64(confirmed) },
             { "hash", encode_hash(query.get_header_key(confirmed_link)) },
             { "branchlen", 0 },
             { "status", std::string{ "active" } }
@@ -1238,9 +1238,9 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tips(const code& ec,
 
             tips.emplace_back(object_t
             {
-                { "height", candidate },
+                { "height", to64(candidate) },
                 { "hash", encode_hash(query.get_header_key(candidate_link)) },
-                { "branchlen", branchlen },
+                { "branchlen", to64(branchlen) },
                 { "status", std::string{ present ? "valid-headers" :
                     "headers-only" } }
             });
@@ -1554,8 +1554,8 @@ bool protocol_bitcoind_blockchain::handle_scan_blocks(const code& ec,
 
     send_result(object_t
     {
-        { "from_height", from },
-        { "to_height", to },
+        { "from_height", to64(from) },
+        { "to_height", to64(to) },
         { "relevant_blocks", std::move(relevant) },
         { "completed", true }
     });
@@ -2073,7 +2073,7 @@ void protocol_bitcoind_blockchain::send_top() NOEXCEPT
     send_result(object_t
     {
         { "hash", encode_hash(query.get_header_key(link)) },
-        { "height", top }
+        { "height", to64(top) }
     });
 }
 

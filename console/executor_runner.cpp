@@ -60,7 +60,7 @@ void executor::subscribe_connect()
 
             return true;
         },
-        [&](const code&, uintptr_t)
+        [&](const code&, network::net::object_key)
         {
             // By not handling it is possible stop could fire before complete.
             // But the handler is not required for termination, so this is ok.
@@ -87,7 +87,7 @@ void executor::subscribe_close()
 
             return false;
         },
-        [&](const code&, size_t)
+        [&](const code&, network::net::object_key)
         {
             // By not handling it is possible stop could fire before complete.
             // But the handler is not required for termination, so this is ok.

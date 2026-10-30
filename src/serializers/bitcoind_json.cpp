@@ -53,14 +53,14 @@ network::rpc::object_t chain_states_entry(
     return object_t
     {
         // bitcoind OB1 error ("blocks" wants height).
-        { "blocks", height },
+        { "blocks", to64(height) },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },
         { "bits", encode_base16(to_big_endian(bits)) },
         { "target", encode_hash(from_uintx(chain::compact::expand(bits))) },
         { "difficulty", header->difficulty() },
         { "verificationprogress", progress },
-        { "coins_db_cache_bytes", zero },
-        { "coins_tip_cache_bytes", zero },
+        { "coins_db_cache_bytes", to64(zero) },
+        { "coins_tip_cache_bytes", to64(zero) },
         { "validated", validated }
     };
 }
@@ -192,7 +192,7 @@ void inject_activity(network::rpc::array_t& out, const chain::block& block,
     const network::rpc::object_t location
     {
         { "blockhash", blockhash },
-        { "height", height }
+        { "height", to64(height) }
     };
 
     for (const auto& tx: *block.transactions_ptr())
@@ -307,8 +307,8 @@ bool chain_info(network::rpc::object_t& out,
     {
         // bitcoind OB1 error ("blocks" wants height).
         { "chain", chain_name(query) },
-        { "blocks", blocks },
-        { "headers", headers },
+        { "blocks", to64(blocks) },
+        { "headers", to64(headers) },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },
         { "bits", encode_base16(to_big_endian(bits)) },
         { "target", encode_hash(from_uintx(chain::compact::expand(bits))) },
@@ -318,7 +318,7 @@ bool chain_info(network::rpc::object_t& out,
         { "verificationprogress", progress(blocks, headers) },
         { "initialblockdownload", !current },
         { "chainwork", encode_hash(from_uintx(work)) },
-        { "size_on_disk", query.store_size() },
+        { "size_on_disk", to64(query.store_size()) },
         { "pruned", pruned },
         { "warnings", network::rpc::array_t{} }
     };
@@ -334,7 +334,7 @@ bool chain_info(network::rpc::object_t& out,
             { "bit", 2 },
             { "startTime", -1 },
             { "timeout", -1 },
-            { "since", settings.bip9_bit2_active_checkpoint.height() },
+            { "since", to64(settings.bip9_bit2_active_checkpoint.height()) },
             { "min_activation_height", 0 }
         });
     }
@@ -462,7 +462,7 @@ bool mempool_info(system::json::object& out, const node::query& query,
     const std::filesystem::path& store, double minimum, double relay,
     double increment) NOEXCEPT
 {
-    size_t space{};
+    uint64_t space{};
     database::fee_rates rates{};
     if (!query.get_confirmable_fees(rates) ||
         !database::file::space(space, store))

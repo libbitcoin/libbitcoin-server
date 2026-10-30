@@ -96,6 +96,9 @@
     <ClCompile Include="..\..\..\..\src\configuration.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\define.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\error\bitcoind_error_t.cpp">
       <Filter>src\error</Filter>
     </ClCompile>

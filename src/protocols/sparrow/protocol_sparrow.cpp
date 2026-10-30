@@ -191,7 +191,7 @@ void protocol_sparrow::handle_blockchain_silent_payments_subscribe(
         {
             { "address", address },
             { "labels", std::move(values) },
-            { "start_height", cut.start }
+            { "start_height", to64(cut.start) }
         },
         .cut = cut
     };
@@ -226,7 +226,7 @@ void protocol_sparrow::do_silent_subscribe(const std::string& address,
         if (same)
         {
             current.cut.start = start;
-            current.subscription["start_height"] = start;
+            current.subscription["start_height"] = to64(start);
         }
     }
 
@@ -358,7 +358,7 @@ void protocol_sparrow::scan_silent(silent_subscription& subscription,
             const auto& [height, hash, tweak] = matches.at(match);
             part.emplace_back(object_t
             {
-                { "height", height },
+                { "height", to64(height) },
                 { "tx_hash", encode_hash(hash) },
                 { "tweak_key", encode_base16(tweak) }
             });

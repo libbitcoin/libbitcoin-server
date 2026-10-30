@@ -94,7 +94,7 @@ void executor::warn_memory(system::string_list& out) const
 
 void executor::warn_space(system::string_list& out) const
 {
-    size_t available{};
+    uint64_t available{};
     if (!database::file::space(available, metadata_.configured.database.path))
         return;
 

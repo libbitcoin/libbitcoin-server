@@ -59,7 +59,8 @@ public:
 private:
     // Executor.
     void handle_started(const system::code& ec);
-    void handle_subscribed(const system::code& ec, size_t key);
+    void handle_subscribed(const system::code& ec,
+        network::net::object_key key);
     void handle_running(const system::code& ec);
     bool handle_stopped(const system::code& ec);
 

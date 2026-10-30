@@ -151,21 +151,21 @@ main()
 
     CONFIGURE_OPTIONS_ORIGINAL=("$@")
     CONFIGURE_OPTIONS=("$@")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--build-boost/}")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--build-secp256k1/}")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--build-preset=*/}")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--build-src-dir=*/}")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--build-limit=*/}")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--build-full-repositories/}")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--build-post-install-clean/}")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--build-skip-tests/}")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--build-parallel=*/}")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--build-use-local-src/}")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--hardware-optimized/}")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--noninteractive/}")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--verbose/}")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/--help/}")
-    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/-h/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#--build-boost/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#--build-secp256k1/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#--build-preset=*/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#--build-src-dir=*/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#--build-limit=*/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#--build-full-repositories/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#--build-post-install-clean/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#--build-skip-tests/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#--build-parallel=*/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#--build-use-local-src/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#--hardware-optimized/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#--noninteractive/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#--verbose/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#--help/}")
+    CONFIGURE_OPTIONS=("${CONFIGURE_OPTIONS[@]/#-h/}")
     CONFIGURE_OPTIONS_CMAKE=("${CONFIGURE_OPTIONS[@]}")
     msg_verbose "*** ARGUMENTS: ${CONFIGURE_OPTIONS_ORIGINAL[*]}"
     msg_verbose "*** SANITIZED: ${CONFIGURE_OPTIONS[*]}"
@@ -410,6 +410,14 @@ main()
         fi
     else
         msg_verbose "CXX using defined value '${CXX}'"
+    fi
+
+    if [[ -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
+        if [[ ${OS} == Darwin ]]; then
+            export MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion)
+        fi
+    else
+        msg_verbose "MACOSX_DEPLOYMENT_TARGET using defined value '${MACOSX_DEPLOYMENT_TARGET}'"
     fi
 
     # HARDWARE_OPTIMIZED

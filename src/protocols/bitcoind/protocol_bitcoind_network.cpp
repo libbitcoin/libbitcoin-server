@@ -158,9 +158,9 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
         { "localservicesnames", to_service_names(services) },
         { "localrelay", net_settings.enable_relay },
         { "timeoffset", 0 },
-        { "connections", connections },
-        { "connections_in", inbound },
-        { "connections_out", floored_subtract(connections, inbound) },
+        { "connections", to64(connections) },
+        { "connections_in", to64(inbound) },
+        { "connections_out", to64(floored_subtract(connections, inbound)) },
         { "networkactive", !node::protocol::suspended() },
         { "networks", array_t
         {
@@ -417,9 +417,9 @@ static object_t address_bucket(size_t count) NOEXCEPT
 {
     return object_t
     {
-        { "new", count },
-        { "tried", zero },
-        { "total", count }
+        { "new", to64(count) },
+        { "tried", to64(zero) },
+        { "total", to64(count) }
     };
 }
 
@@ -553,7 +553,7 @@ bool protocol_bitcoind_network::handle_get_connection_count(const code& ec,
     if (stopped(ec))
         return false;
 
-    send_result(channel_count());
+    send_result(to64(channel_count()));
     return true;
 }
 
@@ -712,7 +712,7 @@ void protocol_bitcoind_network::do_send_peer_info(
             { "inbound", row.group == diagnostics::target::inbound },
             { "version", row.peer_version },
             { "subver", row.peer_user_agent },
-            { "startingheight", row.peer_start_height },
+            { "startingheight", to64(row.peer_start_height) },
             { "conntime", row.created },
             { "timeoffset", row.time_offset },
             { "lastsend", row.last_write },

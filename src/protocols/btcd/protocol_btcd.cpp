@@ -332,7 +332,7 @@ bool protocol_btcd::handle_rescan(const code& ec,
     send_notification("rescanfinished", array_t
     {
         encode_hash(header->hash()),
-        top,
+        to64(top),
         header->timestamp()
     });
     return true;
