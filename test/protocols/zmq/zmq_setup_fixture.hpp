@@ -48,8 +48,8 @@ protected:
     test::store_t store_;
     test::query_t query_;
 
-    boost::asio::io_context io{};
-    boost::asio::ip::tcp::socket socket_{ io };
+    network::io::context io{};
+    network::io::socket socket_{ io };
 
 private:
     network::logger log_;

@@ -530,8 +530,8 @@ BOOST_AUTO_TEST_CASE(server__settings__initialize_unported_bind__default_port)
 {
     const server::settings::embedded_pages pages{};
     server::settings instance{ selection::testnet4, pages, pages };
-    instance.electrum.binds.emplace_back(network::asio::address{}, 0_u16);
-    instance.electrum.binds.emplace_back(network::asio::address{}, 42_u16);
+    instance.electrum.binds.emplace_back(system::ip::address{}, 0_u16);
+    instance.electrum.binds.emplace_back(system::ip::address{}, 42_u16);
     BOOST_REQUIRE(!instance.initialize());
     BOOST_REQUIRE_EQUAL(instance.electrum.binds.front().port(), 48580u);
     BOOST_REQUIRE_EQUAL(instance.electrum.binds.back().port(), 42u);

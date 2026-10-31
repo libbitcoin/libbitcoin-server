@@ -23,7 +23,8 @@
 #include <sstream>
 
 using namespace system;
-using namespace boost::beast;
+namespace http = network::http;
+namespace ws = network::ws;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
@@ -48,7 +49,7 @@ btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
                 configure(config);
         }, address_index)
 {
-    const auto endpoint = network::config::to_asio(config_.server.btcd.binds.back().to_endpoint());
+    const auto endpoint = config_.server.btcd.binds.back().to_endpoint();
     client_.connect(endpoint);
     const auto ec = client_.upgrade();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());

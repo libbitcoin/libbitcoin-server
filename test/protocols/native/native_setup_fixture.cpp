@@ -22,7 +22,8 @@
 #include <future>
 
 using namespace system;
-using namespace boost::beast;
+namespace http = network::http;
+namespace ws = network::ws;
 
 BC_PUSH_WARNING(NO_CONST_CAST)
 BC_PUSH_WARNING(NO_REINTERPRET_CAST)
@@ -130,22 +131,22 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
     // Block until server is running.
     ec = running.get_future().get();
     BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    socket_.connect(network::config::to_asio(native.binds.back().to_endpoint()));
+    REQUIRE_SUCCESS(socket_, connect, native.binds.back().to_endpoint());
 }
 
 native_setup_fixture::~native_setup_fixture()
 {
-    network::boost_code ec{};
+    network::code ec{};
     if (websocket_.has_value())
     {
-        websocket_.value().close(websocket::close_code::normal, ec);
+        ec = websocket_.value().close(network::ws::close_code::normal);
 
         // Expected and harmless during fixture teardown:
-        // beast::websocket::error::closed : normal (graceful handshake).
-        // asio::error::operation_aborted  : hard (invalid request test).
+        // websocket_closed   : normal (graceful handshake).
+        // peer_disconnect    : dropped by the server (invalid request test).
         if (ec &&
-            ec != boost::beast::websocket::error::closed &&
-            ec != boost::asio::error::operation_aborted)
+            ec != network::error::websocket_closed &&
+            ec != network::error::peer_disconnect)
         {
             BOOST_WARN_MESSAGE(false, ec.message());
         }
@@ -169,29 +170,29 @@ native_setup_fixture::create_request(std::string_view target)
     // Build HTTP/1.1 GET string request.
     string_request request{ http::verb::get, target, network::http::version_1_1 };
     request.set(http::field::host, "localhost");
-    request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    request.set(http::field::user_agent, "libbitcoin");
     request.keep_alive(true);
     return request;
 }
 
 bool native_setup_fixture::expect_dropped(std::string_view target)
 {
-    http::write(socket_, create_request(target));
+    test::write_http(socket_, create_request(target));
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    return ec == boost::beast::net::error::eof;
+    return ec == network::error::http_error_t::end_of_stream;
 }
 
 http::status native_setup_fixture::get_status(std::string_view target)
 {
-    http::write(socket_, create_request(target));
+    test::write_http(socket_, create_request(target));
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
 
@@ -203,11 +204,11 @@ http::status native_setup_fixture::get_status(std::string_view target,
 {
     auto request = create_request(target);
     request.set(name, value);
-    http::write(socket_, request);
+    test::write_http(socket_, request);
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
 
@@ -216,11 +217,11 @@ http::status native_setup_fixture::get_status(std::string_view target,
 
 std::string native_setup_fixture::get_text(std::string_view target)
 {
-    http::write(socket_, create_request(target));
+    test::write_http(socket_, create_request(target));
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<boost::beast::http::string_body> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
     BOOST_CHECK_EQUAL(response.result(), http::status::ok);
@@ -230,11 +231,11 @@ std::string native_setup_fixture::get_text(std::string_view target)
 
 system::data_chunk native_setup_fixture::get_data(std::string_view target)
 {
-    http::write(socket_, create_request(target));
+    test::write_http(socket_, create_request(target));
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<boost::beast::http::vector_body<uint8_t>> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::chunk_body> response{};
     http::read(socket_, buffer, response, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
     BOOST_CHECK_EQUAL(response.result(), http::status::ok);
@@ -247,11 +248,11 @@ system::data_chunk native_setup_fixture::get_data(std::string_view target)
 // streaming. So instead just use a string buffer and parse explicitly.
 system::json::value native_setup_fixture::get_json(std::string_view target)
 {
-    http::write(socket_, create_request(target));
+    test::write_http(socket_, create_request(target));
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
     BOOST_CHECK_EQUAL(response.result(), http::status::ok);
@@ -259,33 +260,32 @@ system::json::value native_setup_fixture::get_json(std::string_view target)
     return test::parse_json(response.body());
 }
 
-network::boost_code native_setup_fixture::ws_upgrade()
+network::code native_setup_fixture::ws_upgrade()
 {
-    network::boost_code ec{};
+    network::code ec{};
     BOOST_CHECK(!websocket_.has_value());
 
     websocket_.emplace(socket_);
-    websocket_.value().text(true);
-    websocket_.value().handshake("localhost", "/", ec);
+    ec = websocket_.value().handshake("localhost", "/");
     return ec;
 }
 
 void native_setup_fixture::ws_send(std::string_view message)
 {
-    network::boost_code ec{};
+    network::code ec{};
     BOOST_CHECK(websocket_.has_value());
 
-    websocket_.value().write(net::buffer(message), ec);
+    ec = websocket_.value().write(message);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
 }
 
 data_chunk native_setup_fixture::ws_receive()
 {
-    flat_buffer buffer{};
-    network::boost_code ec{};
+    http::flat_buffer buffer{};
+    network::code ec{};
     BOOST_CHECK(websocket_.has_value());
 
-    websocket_.value().read(buffer, ec);
+    ec = websocket_.value().read(buffer);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
 
     const auto data = pointer_cast<uint8_t>(buffer.data().data());
@@ -294,23 +294,23 @@ data_chunk native_setup_fixture::ws_receive()
 
 bool native_setup_fixture::ws_dropped(std::string_view message)
 {
-    network::boost_code ec{};
+    network::code ec{};
     BOOST_CHECK(websocket_.has_value());
 
-    websocket_.value().write(net::buffer(message), ec);
+    ec = websocket_.value().write(message);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
 
-    flat_buffer buffer{};
-    websocket_.value().read(buffer, ec);
-    return ec == websocket::error::closed;
+    http::flat_buffer buffer{};
+    ec = websocket_.value().read(buffer);
+    return ec == network::error::websocket_closed;
 }
 
 std::string native_setup_fixture::ws_get_text(std::string_view message)
 {
-    network::boost_code ec{};
+    network::code ec{};
     BOOST_CHECK(websocket_.has_value());
 
-    websocket_.value().write(net::buffer(message), ec);
+    ec = websocket_.value().write(message);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
 
     return to_string(ws_receive());
@@ -324,10 +324,10 @@ system::json::value native_setup_fixture::ws_get_json(
 
 data_chunk native_setup_fixture::ws_get_data(std::string_view message)
 {
-    network::boost_code ec{};
+    network::code ec{};
     BOOST_CHECK(websocket_.has_value());
 
-    websocket_.value().write(net::buffer(message), ec);
+    ec = websocket_.value().write(message);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
 
     return ws_receive();

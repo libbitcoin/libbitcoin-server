@@ -22,7 +22,7 @@
 using namespace system;
 using zmtp_stream = network::zmtp::stream;
 using zmq_protocol = protocol_bitcoind_zmq;
-using peer_socket = boost::asio::ip::tcp::socket;
+using peer_socket = network::io::socket;
 
 // Test infrastructure (synchronous ZMTP subscriber peer).
 // ----------------------------------------------------------------------------
@@ -67,8 +67,8 @@ static data_chunk ready(const std::string& type)
 // Synchronously write the whole buffer to the peer socket.
 static void peer_write(peer_socket& peer, const data_chunk& data)
 {
-    const boost::asio::const_buffer out{ data.data(), data.size() };
-    boost::asio::write(peer, out);
+    const network::io::const_buffer out{ data.data(), data.size() };
+    test::write(peer, out);
 }
 
 // Synchronously read one frame (flags and body) from the peer socket.
@@ -76,23 +76,23 @@ static void peer_read_frame(peer_socket& peer, uint8_t& flags,
     data_chunk& body)
 {
     uint8_t head{};
-    const boost::asio::mutable_buffer in{ &head, sizeof(head) };
-    boost::asio::read(peer, in);
+    const network::io::mutable_buffer in{ &head, sizeof(head) };
+    test::read(peer, in);
     flags = head;
 
     size_t length{};
     if (is_zero(flags & zmtp_stream::flag_long))
     {
         uint8_t size{};
-        const boost::asio::mutable_buffer one{ &size, sizeof(size) };
-        boost::asio::read(peer, one);
+        const network::io::mutable_buffer one{ &size, sizeof(size) };
+        test::read(peer, one);
         length = size;
     }
     else
     {
         data_array<sizeof(uint64_t)> size{};
-        const boost::asio::mutable_buffer eight{ size.data(), size.size() };
-        boost::asio::read(peer, eight);
+        const network::io::mutable_buffer eight{ size.data(), size.size() };
+        test::read(peer, eight);
         length = possible_narrow_cast<size_t>(from_big_endian<uint64_t>(size));
     }
 
@@ -100,8 +100,8 @@ static void peer_read_frame(peer_socket& peer, uint8_t& flags,
     if (body.empty())
         return;
 
-    const boost::asio::mutable_buffer rest{ body.data(), body.size() };
-    boost::asio::read(peer, rest);
+    const network::io::mutable_buffer rest{ body.data(), body.size() };
+    test::read(peer, rest);
 }
 
 // Synchronously read one whole (multipart) message from the peer socket.
@@ -125,9 +125,9 @@ static data_stack peer_read_message(peer_socket& peer)
 static void peer_read_closed(peer_socket& peer)
 {
     uint8_t byte{};
-    network::boost_code ec{};
-    const boost::asio::mutable_buffer in{ &byte, sizeof(byte) };
-    boost::asio::read(peer, in, ec);
+    network::code ec{};
+    const network::io::mutable_buffer in{ &byte, sizeof(byte) };
+    network::io::read(peer, in, ec);
     BOOST_REQUIRE(ec);
 }
 
@@ -137,8 +137,8 @@ static void peer_handshake(peer_socket& peer)
     peer_write(peer, zmtp_stream::make_greeting(false, false));
 
     data_chunk theirs(zmtp_stream::greeting_size, 0x00);
-    const boost::asio::mutable_buffer in{ theirs.data(), theirs.size() };
-    boost::asio::read(peer, in);
+    const network::io::mutable_buffer in{ theirs.data(), theirs.size() };
+    test::read(peer, in);
     uint8_t minor{};
     bool curve{};
     bool as_server{};
@@ -194,8 +194,8 @@ static void peer_curve_handshake(peer_socket& peer, zmtp_cipher& client)
 {
     peer_write(peer, zmtp_stream::make_greeting(false, true));
     data_chunk theirs(zmtp_stream::greeting_size, 0x00);
-    const boost::asio::mutable_buffer in{ theirs.data(), theirs.size() };
-    boost::asio::read(peer, in);
+    const network::io::mutable_buffer in{ theirs.data(), theirs.size() };
+    test::read(peer, in);
 
     uint8_t minor{};
     bool curve{};
@@ -316,8 +316,8 @@ static data_chunk peer_curve_initiate(peer_socket& peer, zmtp_cipher& client)
 {
     peer_write(peer, zmtp_stream::make_greeting(false, true));
     data_chunk theirs(zmtp_stream::greeting_size, 0x00);
-    const boost::asio::mutable_buffer in{ theirs.data(), theirs.size() };
-    boost::asio::read(peer, in);
+    const network::io::mutable_buffer in{ theirs.data(), theirs.size() };
+    test::read(peer, in);
 
     uint8_t minor{};
     bool curve{};
@@ -643,8 +643,8 @@ BOOST_AUTO_TEST_CASE(zmq_curve__handshake__null_peer__error_command)
 {
     peer_write(socket_, zmtp_stream::make_greeting(false, false));
     data_chunk theirs(zmtp_stream::greeting_size, 0x00);
-    const boost::asio::mutable_buffer in{ theirs.data(), theirs.size() };
-    boost::asio::read(socket_, in);
+    const network::io::mutable_buffer in{ theirs.data(), theirs.size() };
+    test::read(socket_, in);
 
     uint8_t minor{};
     bool curve{};

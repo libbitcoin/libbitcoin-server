@@ -20,7 +20,8 @@
 #include "native_setup_fixture.hpp"
 
 using namespace system;
-using namespace boost::beast;
+namespace http = network::http;
+namespace ws = network::ws;
 
 BOOST_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
 

@@ -288,7 +288,7 @@ void protocol_esplora::set_body(rpc::request_t& model,
 
     // A malformed package body is presented as an empty package.
     network::rpc::array_t transactions{};
-    boost::system::error_code ec{};
+    code ec{};
     const auto parsed = system::json::parse(body, ec);
     if (!ec && parsed.is_array())
     {

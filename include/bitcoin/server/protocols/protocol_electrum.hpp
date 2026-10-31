@@ -368,7 +368,7 @@ protected:
     template <class Derived, typename Method, typename... Args>
     inline auto notify(Method&& method, Args&&... args) NOEXCEPT
     {
-        return boost::asio::post(notification_strand_,
+        return network::io::post(notification_strand_,
             BIND_SAFE(BIND_SHARED(method, args)));
     }
 
@@ -435,7 +435,7 @@ private:
     const channel_t::ptr channel_;
 
     // This is thread safe, uses network threadpool.
-    network::asio::strand notification_strand_;
+    network::io::strand notification_strand_;
 
     // These are protected by notification strand.
     std::map<point, outpoint_subscription> outpoint_subscriptions_{};

@@ -20,7 +20,8 @@
 #include "native_setup_fixture.hpp"
 
 using namespace system;
-using namespace boost::beast;
+namespace http = network::http;
+namespace ws = network::ws;
 
 static const std::string coinbase1_hash = "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098";
 static const chain::transaction& coinbase1() NOEXCEPT

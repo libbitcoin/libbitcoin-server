@@ -20,7 +20,8 @@
 #include "native_setup_fixture.hpp"
 
 using namespace system;
-using namespace boost::beast;
+namespace http = network::http;
+namespace ws = network::ws;
 
 static const chain::transaction& tx1() NOEXCEPT
 {

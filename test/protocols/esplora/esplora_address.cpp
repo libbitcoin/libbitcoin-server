@@ -21,7 +21,8 @@
 #include "esplora_setup_fixture.hpp"
 
 using namespace system;
-using namespace boost::beast;
+namespace http = network::http;
+namespace ws = network::ws;
 
 BOOST_FIXTURE_TEST_SUITE(esplora_tests, esplora_ten_block_setup_fixture)
 

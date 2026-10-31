@@ -55,7 +55,7 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
         }, address_index, true),
     which_{ which }
 {
-    client_.connect(network::config::to_asio(options().binds.back().to_endpoint()));
+    client_.connect(options().binds.back().to_endpoint());
 }
 
 electrum_setup_fixture::~electrum_setup_fixture()
@@ -184,12 +184,12 @@ rpc_client::status electrum_setup_fixture::options_status(
 // websocket.
 // ----------------------------------------------------------------------------
 
-network::boost_code electrum_setup_fixture::ws_upgrade()
+network::code electrum_setup_fixture::ws_upgrade()
 {
     return client_.upgrade();
 }
 
-network::boost_code electrum_setup_fixture::ws_upgrade(
+network::code electrum_setup_fixture::ws_upgrade(
     const std::string& username, const std::string& password)
 {
     return client_.upgrade(username, password);

@@ -33,7 +33,7 @@
 struct bitcoind_setup_fixture
   : rpc_setup_fixture
 {
-    using status = boost::beast::http::status;
+    using status = network::http::status;
     using initializer = std::function<bool(test::query_t&)>;
     using configurator = std::function<void(configuration&)>;
 
@@ -63,10 +63,10 @@ struct bitcoind_setup_fixture
         const std::string& password);
 
     // Upgrade the connection to websocket (no further http requests).
-    network::boost_code ws_upgrade();
+    network::code ws_upgrade();
 
     // As ws_upgrade(), with basic authorization on the upgrade request.
-    network::boost_code ws_upgrade(const std::string& username,
+    network::code ws_upgrade(const std::string& username,
         const std::string& password);
 
     // As rpc(), over the upgraded websocket connection.

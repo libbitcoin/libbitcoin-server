@@ -24,9 +24,6 @@
 #include <filesystem>
 #include <format>
 #include <bitcoin/server.hpp>
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/websocket.hpp>
 
 #define REQUIRE_NO_THROW_TRUE(expression) \
     BOOST_REQUIRE_NO_THROW(expression); \
@@ -56,6 +53,70 @@ using namespace bc;
 ////using namespace bc::system;
 ////using namespace bc::network;
 using namespace bc::server;
+
+// Require success of a synchronous io call (the code is appended).
+namespace libbitcoin {
+namespace network {
+namespace http {
+
+// http status (printable by test assertions).
+inline std::ostream& operator<<(std::ostream& stream, status value) NOEXCEPT
+{
+    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+    stream << to_value(value);
+    BC_POP_WARNING()
+    return stream;
+}
+
+} // namespace http
+} // namespace network
+} // namespace libbitcoin
+
+// Require success of a synchronous io call (the code is appended).
+#define REQUIRE_SUCCESS(object, method, ...) \
+{ \
+    network::code require_ec{}; \
+    (object).method(__VA_ARGS__ __VA_OPT__(,) require_ec); \
+    BOOST_REQUIRE_EQUAL(require_ec, ::libbitcoin::network::error::success); \
+}
+
+namespace test {
+
+// Blocking transfers of test peers (required to succeed).
+template <typename Stream, typename Buffers>
+inline size_t write(Stream& stream, const Buffers& buffers) NOEXCEPT
+{
+    network::code ec{};
+    const auto size = network::io::write(stream, buffers, ec);
+    BOOST_REQUIRE_EQUAL(ec, network::error::success);
+    return size;
+}
+
+template <typename Stream, typename Buffers>
+inline size_t read(Stream& stream, const Buffers& buffers) NOEXCEPT
+{
+    network::code ec{};
+    const auto size = network::io::read(stream, buffers, ec);
+    BOOST_REQUIRE_EQUAL(ec, network::error::success);
+    return size;
+}
+
+// Blocking write of an http message (required to succeed).
+template <typename Stream, typename Message>
+inline void write_http(Stream& stream, Message&& message) NOEXCEPT
+{
+    network::code ec{};
+    network::http::write(stream, std::forward<Message>(message), ec);
+    BOOST_REQUIRE_EQUAL(ec, network::error::success);
+}
+
+// The bytes of a buffer as text.
+inline std::string to_string(const network::io::const_buffer& buffer) NOEXCEPT
+{
+    return { system::pointer_cast<const char>(buffer.data()), buffer.size() };
+}
+
+} // namespace test
 
 namespace std {
 

@@ -251,7 +251,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__blockpart_excess__bad_request)
 BOOST_AUTO_TEST_CASE(bitcoind_rest__blockfilter_basic__filters_disabled__not_ok)
 {
     const auto target = "/rest/blockfilter/basic/" + block9 + ".json";
-    BOOST_REQUIRE(rest_status(target) != boost::beast::http::status::ok);
+    BOOST_REQUIRE(rest_status(target) != network::http::status::ok);
 }
 
 static const chain::transaction& coinbase1() NOEXCEPT
@@ -611,17 +611,19 @@ struct bitcoind_origin_setup_fixture
 
     status origin_status(std::string_view target, std::string_view origin)
     {
-        using namespace boost::beast;
+        namespace http = network::http;
         rpc_client client{ io_ };
-        client.connect(network::config::to_asio(config_.server.bitcoind.binds.back().to_endpoint()));
+        client.connect(config_.server.bitcoind.binds.back().to_endpoint());
 
         auto request = rpc_client::create_get(target);
         request.set(http::field::origin, origin);
-        http::write(client.stream(), request);
+        test::write_http(client.stream(), request);
 
-        flat_buffer buffer{};
-        http::response<http::string_body> response{};
-        http::read(client.stream(), buffer, response);
+        http::flat_buffer buffer{};
+        http::message<false, http::string_body> response{};
+        network::code ec{};
+        http::read(client.stream(), buffer, response, ec);
+        BOOST_REQUIRE(!ec);
         return response.result();
     }
 };
