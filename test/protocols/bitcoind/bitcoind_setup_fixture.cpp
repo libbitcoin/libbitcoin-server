@@ -242,7 +242,7 @@ system::data_chunk bitcoind_setup_fixture::rest_data(std::string_view target)
 
     flat_buffer buffer{};
     network::boost_code ec{};
-    http::response<network::http::chunk_body> response{};
+    http::response<boost::beast::http::vector_body<uint8_t>> response{};
     http::read(socket, buffer, response, ec);
     BOOST_CHECK_MESSAGE(!ec, ec.message());
     BOOST_CHECK_EQUAL(response.result(), http::status::ok);

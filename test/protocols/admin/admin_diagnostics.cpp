@@ -294,12 +294,12 @@ BOOST_FIXTURE_TEST_SUITE(admin_scoped_credential_tests, admin_scoped_credential_
 
 BOOST_AUTO_TEST_CASE(admin__event_subscribe__scoped_credential__ok)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/v1/event/subscribe?filter=1&format=json", field::authorization, ADMIN_TEST_AUTHORIZATION), status::ok);
+    BOOST_REQUIRE_EQUAL(get_status("/v1/event/subscribe?filter=1&format=json", boost::beast::http::field::authorization, ADMIN_TEST_AUTHORIZATION), status::ok);
 }
 
 BOOST_AUTO_TEST_CASE(admin__log_subscribe__scoped_credential_unlisted_method__forbidden)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/v1/log/subscribe?filter=1&format=json", field::authorization, ADMIN_TEST_AUTHORIZATION), status::forbidden);
+    BOOST_REQUIRE_EQUAL(get_status("/v1/log/subscribe?filter=1&format=json", boost::beast::http::field::authorization, ADMIN_TEST_AUTHORIZATION), status::forbidden);
 }
 
 BOOST_AUTO_TEST_CASE(admin__event_subscribe__no_credential__unauthorized)

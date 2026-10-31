@@ -68,7 +68,7 @@ protected:
     test::query_t query_;
 
 private:
-    using string_body = network::http::string_body;
+    using string_body = boost::beast::http::string_body;
     using string_request = boost::beast::http::request<string_body>;
     static string_request create_request(std::string_view target);
 
