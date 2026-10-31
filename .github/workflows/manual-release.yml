@@ -574,7 +574,6 @@ jobs:
           --build-config="${{ matrix.configuration }}"
           --build-link="${{ matrix.link }}"
           --build-skip-tests
-          --build-boost
           ${{ matrix.options }}
 
       - name: Build [gnu]
@@ -591,7 +590,6 @@ jobs:
           --build-config="${{ matrix.configuration }}"
           --build-link="${{ matrix.link }}"
           --build-skip-tests
-          --build-boost
           ${{ matrix.options }}
 
       - name: Build [msbuild]
@@ -618,7 +616,6 @@ jobs:
           --build-src-dir="${{ github.workspace }}"
           --build-preset="${{ matrix.preset }}"
           --build-skip-tests
-          --build-boost
           ${{ matrix.options }}
 
       - name: Normalize output location

@@ -41,7 +41,6 @@ void executor::dump_version(bool stored) const
     };
 
     logger(std::format(BS_VERSION_HEADER));
-    logger(std::format("boost................ {}.{}.{}", (BOOST_VERSION / 100000), (BOOST_VERSION / 100 % 1000), (BOOST_VERSION % 100)));
     logger(std::format("secp256k1............ {}", system::secp256k1_library()));
     logger(std::format("openssl (tls)........ {}", network::tls_library()));
     logger(std::format("libbitcoin-system.... {}", thumb(system::build_version())));

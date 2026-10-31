@@ -76,7 +76,7 @@ libbitcoin-server ships with **three installation scripts**, each targeting a di
 | `builds/cmake/install-cmake.sh` | CMake | Linux, macOS — flexible |
 | `builds/cmake/install-presets.sh` | CMake with Presets | Linux — simplified, named configurations |
 
-All scripts download and build Boost, libsecp256k1, and the full libbitcoin stack from source. A complete build typically takes **30–90 minutes** depending on your hardware.
+All scripts download and build libsecp256k1 and the full libbitcoin stack from source. A complete build typically takes **30–90 minutes** depending on your hardware.
 
 ### Linux
 
@@ -117,7 +117,6 @@ cd libbitcoin-server
 ./builds/gnu/install-gnu.sh \
   --prefix=$HOME/libbitcoin \
   --build-secp256k1 \
-  --build-boost \
   --build-config=release \
   --build-link=static \
   --build-post-install-clean
@@ -132,7 +131,6 @@ On success, the `bs` binary is at `$HOME/libbitcoin/bin/bs`.
 | `--prefix=<path>` | absolute path | Installation destination |
 | `--build-config=<mode>` | `release`, `debug` | Build configuration |
 | `--build-secp256k1` | — | Build libsecp256k1 from source |
-| `--build-boost` | — | Build Boost from source |
 | `--build-use-local-src` | — | Reuse already-present source directories instead of cloning from GitHub |
 | `--build-parallel=<n>` | integer | Number of parallel compile jobs |
 | `--enable-shani` | — | Enable SHA-NI hardware acceleration |
@@ -159,7 +157,6 @@ cd libbitcoin-server
 ./builds/cmake/install-cmake.sh \
   --prefix=$HOME/libbitcoin \
   --build-secp256k1 \
-  --build-boost \
   --build-config=release \
   --build-link=static \
   --build-post-install-clean
@@ -172,7 +169,6 @@ cd libbitcoin-server
 | `--prefix=<path>` | absolute path | Installation destination |
 | `--build-config=<mode>` | `release`, `debug` | Build configuration |
 | `--build-secp256k1` | — | Build libsecp256k1 from source |
-| `--build-boost` | — | Build Boost from source |
 | `--build-use-local-src` | — | Reuse already-present source directories instead of cloning from GitHub |
 | `-Denable-shani=ON` | `ON`, `OFF` | Enable SHA-NI hardware acceleration |
 | `-Denable-avx2=ON` | `ON`, `OFF` | Enable AVX2 SIMD acceleration |
@@ -208,8 +204,7 @@ cd libbitcoin-server
 
 ./builds/cmake/install-presets.sh \
   --build-preset=nix-gnu-release-static \
-  --build-secp256k1 \
-  --build-boost \
+  --build-secp256k1
 ```
 
 The `bs` binary is placed at `prefix/nix-gnu-release-static/bin/bs` inside the repository directory.
@@ -277,7 +272,6 @@ Example build with all extensions enabled (GNU):
 ```bash
 ./builds/gnu/install-gnu.sh \
   --prefix=$HOME/libbitcoin \
-  --build-boost \
   --build-config=release \
   --build-link=static \
   --enable-shani \
