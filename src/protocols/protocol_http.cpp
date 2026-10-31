@@ -46,6 +46,17 @@ void protocol_http::handle_receive_unknown(const code& ec,
     dispatch_websocket(*unknown);
 }
 
+void protocol_http::handle_receive_websocket(const code& ec,
+    const method::websocket::cptr& websocket) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped(ec))
+        return;
+
+    dispatch_websocket(*websocket);
+}
+
 void protocol_http::dispatch_websocket(const request& ) NOEXCEPT
 {
     BC_ASSERT(stranded());
