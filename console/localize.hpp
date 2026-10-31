@@ -368,8 +368,8 @@
     "Database schema {} does not match compiled schema {}."
 #define BS_DATABASE_ENVELOPE_OVERRIDE \
     "Database envelope [{}] overrides configuration."
-#define BS_NEW_NETWORK_OVERRIDE \
-    "New store network [{}] overrides configured network [{}]."
+#define BS_NETWORK_OVERRIDE \
+    "Network [{}] overrides configured network [{}]."
 #define BS_DATABASE_STOPPING \
     "Please wait while database is stopping..."
 #define BS_DATABASE_STOP_FAIL \

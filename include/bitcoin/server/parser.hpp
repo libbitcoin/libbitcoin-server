@@ -41,7 +41,7 @@ public:
     static constexpr auto settings_variable = "settings";
     static constexpr auto version_variable = "version";
     static constexpr auto accept_variable = "accept";
-    static constexpr auto new_variable = "new";
+    static constexpr auto make_variable = "make";
     static constexpr auto backup_variable = "backup";
     static constexpr auto restore_variable = "restore";
     static constexpr auto daemon_variable = "daemon";
@@ -53,6 +53,7 @@ public:
     static constexpr auto get_variable = "get";
     static constexpr auto put_variable = "put";
     static constexpr auto config_variable = "config";
+    static constexpr auto net_variable = "net";
 
     parser(system::chain::selection context,
         const server::settings::embedded_pages& native,

@@ -73,8 +73,8 @@ bool executor::do_version()
     return true;
 }
 
-// --[n]ewstore
-bool executor::do_new_store()
+// --[m]ake
+bool executor::do_make()
 {
     log_.stop();
     if (!check_store_path(true) ||
@@ -222,8 +222,8 @@ bool executor::dispatch()
     if (config.flags)
         return do_flags();
 
-    if (config.new_store != system::chain::selection::none)
-        return do_new_store();
+    if (config.make)
+        return do_make();
 
     if (config.buckets)
         return do_buckets();

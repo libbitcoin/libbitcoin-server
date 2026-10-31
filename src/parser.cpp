@@ -84,10 +84,10 @@ void parser::derive_buckets() NOEXCEPT
             database.wtxid.expected, contested, target);
 }
 
-// A specified new store network governs, otherwise configuration.
+// A specified network governs, otherwise configuration.
 void parser::select_network() NOEXCEPT
 {
-    const chain::selection selected = configured.new_store;
+    const chain::selection selected = configured.net;
     const auto specified = selected != chain::selection::none &&
         selected != chain::selection::mainnet;
 
@@ -102,11 +102,12 @@ void parser::select_network() NOEXCEPT
         configured.bitcoin.network = network;
 }
 
-// The network of an existing store governs, for commands that use the store.
+// The network of an existing store governs at its path, for commands that
+// use the store.
 void parser::read_envelope() NOEXCEPT
 {
-    if (configured.new_store != chain::selection::none || configured.help ||
-        configured.hardware || configured.daemon.has_value())
+    if (configured.make || configured.help || configured.hardware ||
+        configured.daemon.has_value())
         return;
 
     server_node::store store{ configured.database };
@@ -114,7 +115,9 @@ void parser::read_envelope() NOEXCEPT
     if (stored_code || stored.network == configured.node.network)
         return;
 
+    const auto path = configured.database.path;
     reset_network(stored.network);
+    configured.database.path = path;
     derive_buckets();
 }
 
@@ -153,6 +156,12 @@ options_metadata parser::load_options() THROWS
         value<config::path>(&configured.file),
         "Specify path to a configuration settings file."
     )
+    (
+        alias(net_variable, 'n').c_str(),
+        value<config::selection>(&configured.net),
+        ("Specify the network (" + config::selection::names() + "), "
+            "defaults to the configured network.").c_str()
+    )
     // Prompts.
     (
         alias(accept_variable, 'a').c_str(),
@@ -187,12 +196,10 @@ options_metadata parser::load_options() THROWS
     )
     // Actions.
     (
-        alias(new_variable, 'n').c_str(),
-        value<config::selection>(&configured.new_store)->
-            implicit_value(config::selection{ chain::selection::mainnet }, ""),
-        ("Create new store in configured directory for the network (" +
-            config::selection::names() + "), defaults to the configured "
-            "network.").c_str()
+        alias(make_variable, 'm').c_str(),
+        value<bool>(&configured.make)->
+            default_value(false)->zero_tokens(),
+        "Create new store in configured directory."
     )
     (
         alias(backup_variable, 'b').c_str(),

@@ -39,6 +39,18 @@ bool executor::check_store_path(bool create) const
         logger(std::format(BS_USING_CONFIG_FILE, system::from_path(configuration)));
     }
 
+    using selection = system::config::selection;
+    const auto& selected = metadata_.configured.bitcoin.network;
+    if (metadata_.is_configured(settings::bitcoin_network))
+    {
+        const auto& variables = metadata_.variables();
+        const auto& value = variables.at(settings::bitcoin_network);
+        const auto& configured = value.as<selection>();
+        if (configured != selected)
+            logger(std::format(BS_NETWORK_OVERRIDE,
+                selection::to_word(selected), selection::to_word(configured)));
+    }
+
     const auto& store = metadata_.configured.database.path;
     if (create)
     {
@@ -64,18 +76,6 @@ bool executor::check_store_path(bool create) const
 
 bool executor::create_store(bool details)
 {
-    using selection = system::config::selection;
-    const auto& selected = metadata_.configured.bitcoin.network;
-    if (metadata_.is_configured(settings::bitcoin_network))
-    {
-        const auto& variables = metadata_.variables();
-        const auto& value = variables.at(settings::bitcoin_network);
-        const auto& configured = value.as<selection>();
-        if (configured != selected)
-            logger(std::format(BS_NEW_NETWORK_OVERRIDE,
-                selection::to_word(selected), selection::to_word(configured)));
-    }
-
     logger(BS_INITCHAIN_CREATING);
     const auto start = logger::now();
     if (const auto ec = store_.create([&](auto event_, auto table)
