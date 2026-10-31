@@ -46,14 +46,13 @@ void rpc_client::close()
         websocket_.value().close(websocket::close_code::normal, ec);
 
         // Expected and harmless during teardown:
-        // websocket_closed   : normal (graceful handshake).
-        // operation_canceled : hard (invalid request test).
-        // peer_disconnect    : peer gone (failed authenticate test).
-        const auto reason = network::error::ws_to_error_code(ec);
+        // websocket::error::closed       : normal (graceful handshake).
+        // asio::error::operation_aborted : hard (invalid request test).
+        // asio::error::connection_reset  : peer gone (failed authenticate test).
         if (ec &&
-            reason != network::error::websocket_closed &&
-            reason != network::error::operation_canceled &&
-            reason != network::error::peer_disconnect)
+            ec != websocket::error::closed &&
+            ec != boost::asio::error::operation_aborted &&
+            ec != boost::asio::error::connection_reset)
         {
             BOOST_WARN_MESSAGE(false, ec.message());
         }

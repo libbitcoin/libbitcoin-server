@@ -24,6 +24,9 @@
 #include <filesystem>
 #include <format>
 #include <bitcoin/server.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/websocket.hpp>
 
 #define REQUIRE_NO_THROW_TRUE(expression) \
     BOOST_REQUIRE_NO_THROW(expression); \
