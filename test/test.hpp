@@ -19,8 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_TEST_HPP
 #define LIBBITCOIN_SERVER_TEST_HPP
 
-#include <boost/test/unit_test.hpp>
-
 #include <filesystem>
 #include <format>
 #include <bitcoin/server.hpp>
@@ -34,9 +32,7 @@
     BOOST_REQUIRE(!expression)
 
 #define TEST_NAME \
-    boost::unit_test::framework::current_test_case().p_name.get()
-#define SUITE_NAME \
-    boost::unit_test::framework::current_auto_test_suite().p_name.get()
+    ::libbitcoin::system::unit_test::session::instance().case_name()
 #define TEST_DIRECTORY \
     test::directory
 #define TEST_PATH \
