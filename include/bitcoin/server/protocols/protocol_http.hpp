@@ -43,10 +43,10 @@ protected:
     }
 
     /// Override to capture websocket and downgraded requests.
-    void handle_receive_unknown(const code& ec,
-        const network::http::method::unknown::cptr& unknown) NOEXCEPT override;
     void handle_receive_websocket(const code& ec,
         const network::http::method::websocket::cptr& websocket) NOEXCEPT override;
+    void handle_receive_stream(const code& ec,
+        const network::http::method::stream::cptr& stream) NOEXCEPT override;
 
     /// Override to dispatch websocket and downgraded messages.
     virtual void dispatch_websocket(

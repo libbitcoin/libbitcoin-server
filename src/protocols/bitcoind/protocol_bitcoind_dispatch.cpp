@@ -41,13 +41,13 @@ void CLASS::start() NOEXCEPT
     // Publish served method names (e.g. for control subgroup help).
     register_methods(Interface::names);
 
-    using unknown = network::http::method::unknown;
     using websocket = network::http::method::websocket;
+    using stream = network::http::method::stream;
     subscribe_channel<CLASS, post>(&CLASS::handle_receive_post,
         std::placeholders::_1, std::placeholders::_2);
-    subscribe_channel<CLASS, unknown>(&CLASS::handle_receive_unknown,
-        std::placeholders::_1, std::placeholders::_2);
     subscribe_channel<CLASS, websocket>(&CLASS::handle_receive_websocket,
+        std::placeholders::_1, std::placeholders::_2);
+    subscribe_channel<CLASS, stream>(&CLASS::handle_receive_stream,
         std::placeholders::_1, std::placeholders::_2);
     network::protocol::start();
 }

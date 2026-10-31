@@ -35,17 +35,6 @@ BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 // Websocket dispatch.
 // ----------------------------------------------------------------------------
 
-void protocol_http::handle_receive_unknown(const code& ec,
-    const method::unknown::cptr& unknown) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    if (stopped(ec))
-        return;
-
-    dispatch_websocket(*unknown);
-}
-
 void protocol_http::handle_receive_websocket(const code& ec,
     const method::websocket::cptr& websocket) NOEXCEPT
 {
@@ -55,6 +44,17 @@ void protocol_http::handle_receive_websocket(const code& ec,
         return;
 
     dispatch_websocket(*websocket);
+}
+
+void protocol_http::handle_receive_stream(const code& ec,
+    const method::stream::cptr& stream) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped(ec))
+        return;
+
+    dispatch_websocket(*stream);
 }
 
 void protocol_http::dispatch_websocket(const request& ) NOEXCEPT
