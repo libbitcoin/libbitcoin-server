@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(parser__parse__new_testnet4__testnet4_defaults)
     BOOST_REQUIRE_EQUAL(configured.network.identifier, 675223068u);
     BOOST_REQUIRE(configured.server.network == selection::testnet4);
     BOOST_REQUIRE_EQUAL(configured.database.header.expected, 156'456u);
-    BOOST_REQUIRE_EQUAL(configured.database.strong.buckets, 148'101u);
+    BOOST_REQUIRE_EQUAL(configured.database.strong.buckets, 14'810'011u);
 }
 
 BOOST_AUTO_TEST_CASE(parser__parse__new_attached_signet__signet_defaults)
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(parser__parse__new_bare__mainnet_defaults)
     BOOST_REQUIRE(configured.new_store == selection::mainnet);
     BOOST_REQUIRE(configured.bitcoin.network == selection::mainnet);
     BOOST_REQUIRE_EQUAL(configured.network.identifier, 3652501241u);
-    BOOST_REQUIRE_EQUAL(configured.database.strong.buckets, 13'598'717u);
+    BOOST_REQUIRE_EQUAL(configured.database.strong.buckets, 1'359'871'695u);
 }
 
 BOOST_AUTO_TEST_CASE(parser__parse__new_unknown__false)
@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(parser__read_envelope__regtest_store__stored_defaults)
     const auto& configured = instance.configured;
     BOOST_REQUIRE(configured.bitcoin.network == selection::regtest);
     BOOST_REQUIRE_EQUAL(configured.network.identifier, 3669344250u);
-    BOOST_REQUIRE_EQUAL(configured.database.strong.buckets, 1'000u);
+    BOOST_REQUIRE_EQUAL(configured.database.strong.buckets, 100'000u);
 }
 
 BOOST_AUTO_TEST_CASE(parser__read_envelope__new_store__unchanged)

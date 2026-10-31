@@ -53,7 +53,6 @@ void parser::derive_buckets() NOEXCEPT
     constexpr uint32_t target = 25;
     constexpr uint32_t address_contested = 500;
     constexpr uint32_t address_target = 50;
-    constexpr uint64_t strong_divisor = 100;
     auto& database = configured.database;
 
     if (!is_configured("table.header.buckets"))
@@ -64,10 +63,9 @@ void parser::derive_buckets() NOEXCEPT
         database.tx.buckets = table::transaction::derive_buckets(
             database.tx.expected, contested, target);
 
-    // One percent of expected tx.
     if (!is_configured("table.strong.buckets"))
         database.strong.buckets = possible_narrow_cast<uint32_t>(
-            ceilinged_divide(database.tx.expected, strong_divisor));
+            database.tx.expected);
 
     if (!is_configured("table.ins.buckets"))
         database.ins.buckets = table::ins::derive_buckets(
