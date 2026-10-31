@@ -2169,7 +2169,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "node.compact_missing_percent",
-        setting<uint16_t>(&configured.node.compact_missing_percent),
+        setting<uint8_t>(&configured.node.compact_missing_percent),
         "Maximum percent of a compact block not pooled to fill it, defaults to {}."
     )
     (
@@ -2216,7 +2216,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "database.interval_depth",
-        setting<uint16_t>(&configured.database.interval_depth),
+        setting<uint8_t>(&configured.database.interval_depth),
         "The interval depth for merkle proof optimization, defaults to {}."
     )
 
