@@ -38,8 +38,6 @@
 #                                 Default: --without-valgrind
 # --<enable/disable>-cuda       Use cuda (gpu) batch signature verification (inert on macOS).
 #                                 Default: --enable-cuda
-# --<with/without>-ssl          Use embedded ssl library.
-#                                 Default: --with-ssl
 # --<with/without>-embedded     Compile web pages into the console application.
 #                               --with-embedded
 # --build-boost                 Build Boost libraries
@@ -1207,8 +1205,6 @@ help()
     msg "                                Default: --without-valgrind"
     msg "--<enable/disable>-cuda       Use cuda (gpu) batch signature verification (inert on macOS)."
     msg "                                Default: --enable-cuda"
-    msg "--<with/without>-ssl          Use embedded ssl library."
-    msg "                                Default: --with-ssl"
     msg "--<with/without>-embedded     Compile web pages into the console application."
     msg "                              --with-embedded"
     msg "--build-boost                 Build Boost libraries"
