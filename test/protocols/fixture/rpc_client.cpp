@@ -55,7 +55,7 @@ void rpc_client::close()
             ec != network::error::operation_canceled &&
             ec != network::error::peer_disconnect)
         {
-            BOOST_WARN_MESSAGE(false, ec.message());
+            BC_WARN_MESSAGE(false, ec.message());
         }
 
         websocket_.reset();
@@ -85,7 +85,7 @@ system::json::value rpc_client::send(const std::string& text, bool checked)
 {
     error_code ec{};
     network::io::write(socket_, network::io::buffer(text), ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     if (ec)
         return dropped();
@@ -100,7 +100,7 @@ system::json::value rpc_client::receive(bool checked)
 
     if (checked)
     {
-        BOOST_CHECK_MESSAGE(!ec, ec.message());
+        BC_CHECK_MESSAGE(!ec, ec.message());
     }
 
     if (ec)
@@ -161,7 +161,7 @@ http::message<false, http::string_body> rpc_client::get(std::string_view target)
     http::flat_buffer buffer{};
     http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response;
 }
@@ -179,7 +179,7 @@ http::message<false, http::string_body> rpc_client::get_authorized(
     http::flat_buffer buffer{};
     http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response;
 }
@@ -190,7 +190,7 @@ system::json::value rpc_client::post(const std::string& body,
     error_code ec{};
     http::write(socket_, create_post(target, body), ec);
     if (checked)
-        BOOST_CHECK_MESSAGE(!ec, ec.message());
+        BC_CHECK_MESSAGE(!ec, ec.message());
 
     if (ec)
         return dropped();
@@ -199,7 +199,7 @@ system::json::value rpc_client::post(const std::string& body,
     http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
     if (checked)
-        BOOST_CHECK_MESSAGE(!ec, ec.message());
+        BC_CHECK_MESSAGE(!ec, ec.message());
 
     if (ec)
         return dropped();
@@ -220,7 +220,7 @@ rpc_client::status rpc_client::options_status(std::string_view target)
     http::flat_buffer buffer{};
     http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response.result();
 }
@@ -234,7 +234,7 @@ rpc_client::status rpc_client::post_status(const std::string& body,
     http::flat_buffer buffer{};
     http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response.result();
 }
@@ -271,7 +271,7 @@ rpc_client::status rpc_client::post_status_authorized(const std::string& body,
     http::flat_buffer buffer{};
     http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response.result();
 }
@@ -287,7 +287,7 @@ bool rpc_client::upgraded() const
 rpc_client::error_code rpc_client::upgrade()
 {
     error_code ec{};
-    BOOST_CHECK(!websocket_.has_value());
+    BC_CHECK(!websocket_.has_value());
 
     websocket_.emplace(socket_);
     ec = websocket_.value().handshake("localhost", "/");
@@ -305,7 +305,7 @@ rpc_client::error_code rpc_client::upgrade(const std::string& username,
     error_code ec{};
     const auto credential = basic(username, password);
 
-    BOOST_CHECK(!websocket_.has_value());
+    BC_CHECK(!websocket_.has_value());
     websocket_.emplace(socket_);
     network::http::fields extra{};
     extra.set(http::field::authorization, credential);
@@ -321,22 +321,22 @@ rpc_client::error_code rpc_client::upgrade(const std::string& username,
 void rpc_client::write_frame(std::string_view text)
 {
     error_code ec{};
-    BOOST_CHECK(websocket_.has_value());
+    BC_CHECK(websocket_.has_value());
 
     ec = websocket_.value().write(text);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 }
 
 system::json::value rpc_client::read_frame(bool checked)
 {
     error_code ec{};
-    BOOST_CHECK(websocket_.has_value());
+    BC_CHECK(websocket_.has_value());
 
     http::flat_buffer buffer{};
     ec = websocket_.value().read(buffer);
     if (checked)
     {
-        BOOST_CHECK_MESSAGE(!ec, ec.message());
+        BC_CHECK_MESSAGE(!ec, ec.message());
     }
 
     if (ec)
@@ -348,10 +348,10 @@ system::json::value rpc_client::read_frame(bool checked)
 system::json::value rpc_client::frame(const std::string& text, bool checked)
 {
     error_code ec{};
-    BOOST_CHECK(websocket_.has_value());
+    BC_CHECK(websocket_.has_value());
 
     ec = websocket_.value().write(text);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     if (ec)
         return dropped();

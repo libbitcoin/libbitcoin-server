@@ -40,158 +40,158 @@ static chain::outpoint outpoint1() NOEXCEPT
     return chain::outpoint{ chain::point{ coinbase1().hash(false), 0 }, 5000000000 };
 }
 
-BOOST_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
+BC_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
 
 // address
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(native__address__data__expected)
+BC_AUTO_TEST_CASE(native__address__data__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_data("/v1/address/" + funded() + "?format=data"), outpoint1().to_data());
+    BC_REQUIRE_EQUAL(get_data("/v1/address/" + funded() + "?format=data"), outpoint1().to_data());
 }
 
-BOOST_AUTO_TEST_CASE(native__address__text__expected)
+BC_AUTO_TEST_CASE(native__address__text__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_text("/v1/address/" + funded() + "?format=text"), encode_base16(outpoint1().to_data()));
+    BC_REQUIRE_EQUAL(get_text("/v1/address/" + funded() + "?format=text"), encode_base16(outpoint1().to_data()));
 }
 
-BOOST_AUTO_TEST_CASE(native__address__json__expected)
+BC_AUTO_TEST_CASE(native__address__json__expected)
 {
     const auto response = get_json("/v1/address/" + funded() + "?format=json");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE_EQUAL(response.as_array().size(), 1u);
-    BOOST_REQUIRE_EQUAL(response.as_array().front().as_object().at("value").as_int64(), 5000000000);
-    BOOST_REQUIRE_EQUAL(response.as_array().front(), value_from(outpoint1()));
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
+    BC_REQUIRE_EQUAL(response.as_array().front().as_object().at("value").as_int64(), 5000000000);
+    BC_REQUIRE_EQUAL(response.as_array().front(), value_from(outpoint1()));
 }
 
-BOOST_AUTO_TEST_CASE(native__address__no_turbo__expected)
+BC_AUTO_TEST_CASE(native__address__no_turbo__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_data("/v1/address/" + funded() + "?format=data&turbo=false"), outpoint1().to_data());
+    BC_REQUIRE_EQUAL(get_data("/v1/address/" + funded() + "?format=data&turbo=false"), outpoint1().to_data());
 }
 
-BOOST_AUTO_TEST_CASE(native__address__unfunded__not_found)
+BC_AUTO_TEST_CASE(native__address__unfunded__not_found)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/v1/address/" + unfunded + "?format=data"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/address/" + unfunded + "?format=data"), http::status::not_found);
 }
 
 // address/confirmed
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(native__address_confirmed__data__expected)
+BC_AUTO_TEST_CASE(native__address_confirmed__data__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_data("/v1/address/" + funded() + "/confirmed?format=data"), outpoint1().to_data());
+    BC_REQUIRE_EQUAL(get_data("/v1/address/" + funded() + "/confirmed?format=data"), outpoint1().to_data());
 }
 
-BOOST_AUTO_TEST_CASE(native__address_confirmed__unfunded__not_found)
+BC_AUTO_TEST_CASE(native__address_confirmed__unfunded__not_found)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/v1/address/" + unfunded + "/confirmed?format=data"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/address/" + unfunded + "/confirmed?format=data"), http::status::not_found);
 }
 
 // address/unconfirmed
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(native__address_unconfirmed__confirmed__not_found)
+BC_AUTO_TEST_CASE(native__address_unconfirmed__confirmed__not_found)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/v1/address/" + funded() + "/unconfirmed?format=data"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/address/" + funded() + "/unconfirmed?format=data"), http::status::not_found);
 }
 
 // address/balance
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(native__address_balance__data__expected)
+BC_AUTO_TEST_CASE(native__address_balance__data__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_data("/v1/address/" + funded() + "/balance?format=data"), base16_chunk("00f2052a01"));
+    BC_REQUIRE_EQUAL(get_data("/v1/address/" + funded() + "/balance?format=data"), base16_chunk("00f2052a01"));
 }
 
-BOOST_AUTO_TEST_CASE(native__address_balance__text__expected)
+BC_AUTO_TEST_CASE(native__address_balance__text__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_text("/v1/address/" + funded() + "/balance?format=text"), "00f2052a01");
+    BC_REQUIRE_EQUAL(get_text("/v1/address/" + funded() + "/balance?format=text"), "00f2052a01");
 }
 
-BOOST_AUTO_TEST_CASE(native__address_balance__json__expected)
+BC_AUTO_TEST_CASE(native__address_balance__json__expected)
 {
     const auto response = get_json("/v1/address/" + funded() + "/balance?format=json");
-    BOOST_REQUIRE(response.is_int64());
-    BOOST_REQUIRE_EQUAL(response.as_int64(), 5000000000);
+    BC_REQUIRE(response.is_int64());
+    BC_REQUIRE_EQUAL(response.as_int64(), 5000000000);
 }
 
-BOOST_AUTO_TEST_CASE(native__address_balance__unfunded__zero)
+BC_AUTO_TEST_CASE(native__address_balance__unfunded__zero)
 {
     const auto response = get_json("/v1/address/" + unfunded + "/balance?format=json");
-    BOOST_REQUIRE(response.is_int64());
-    BOOST_REQUIRE_EQUAL(response.as_int64(), 0);
+    BC_REQUIRE(response.is_int64());
+    BC_REQUIRE_EQUAL(response.as_int64(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(native__address_balance__unfunded_data__zero_byte)
+BC_AUTO_TEST_CASE(native__address_balance__unfunded_data__zero_byte)
 {
-    BOOST_REQUIRE_EQUAL(get_data("/v1/address/" + unfunded + "/balance?format=data"), base16_chunk("00"));
+    BC_REQUIRE_EQUAL(get_data("/v1/address/" + unfunded + "/balance?format=data"), base16_chunk("00"));
 }
 
-BOOST_AUTO_TEST_CASE(native__address_balance__unfunded_text__zero_byte)
+BC_AUTO_TEST_CASE(native__address_balance__unfunded_text__zero_byte)
 {
-    BOOST_REQUIRE_EQUAL(get_text("/v1/address/" + unfunded + "/balance?format=text"), "00");
+    BC_REQUIRE_EQUAL(get_text("/v1/address/" + unfunded + "/balance?format=text"), "00");
 }
 
 // address/subscribe
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(native__address_subscribe__data__outpoints)
+BC_AUTO_TEST_CASE(native__address_subscribe__data__outpoints)
 {
-    BOOST_REQUIRE_EQUAL(get_data("/v1/address/" + funded() + "/subscribe?format=data"), outpoint1().to_data());
+    BC_REQUIRE_EQUAL(get_data("/v1/address/" + funded() + "/subscribe?format=data"), outpoint1().to_data());
 }
 
-BOOST_AUTO_TEST_CASE(native__ws_address_subscribe__stop__empty)
+BC_AUTO_TEST_CASE(native__ws_address_subscribe__stop__empty)
 {
-    BOOST_REQUIRE(!ws_upgrade());
-    BOOST_REQUIRE(ws_get_text("/v1/address/" + funded() + "/subscribe?stop=true").empty());
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(ws_get_text("/v1/address/" + funded() + "/subscribe?stop=true").empty());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
-BOOST_FIXTURE_TEST_SUITE(native_no_address_tests, native_no_address_setup_fixture)
+BC_FIXTURE_TEST_SUITE(native_no_address_tests, native_no_address_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(native__address__disabled__not_implemented)
+BC_AUTO_TEST_CASE(native__address__disabled__not_implemented)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/v1/address/" + funded() + "?format=data"), http::status::not_implemented);
+    BC_REQUIRE_EQUAL(get_status("/v1/address/" + funded() + "?format=data"), http::status::not_implemented);
 }
 
-BOOST_AUTO_TEST_CASE(native__address_confirmed__disabled__not_implemented)
+BC_AUTO_TEST_CASE(native__address_confirmed__disabled__not_implemented)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/v1/address/" + funded() + "/confirmed?format=data"), http::status::not_implemented);
+    BC_REQUIRE_EQUAL(get_status("/v1/address/" + funded() + "/confirmed?format=data"), http::status::not_implemented);
 }
 
-BOOST_AUTO_TEST_CASE(native__address_balance__disabled__not_implemented)
+BC_AUTO_TEST_CASE(native__address_balance__disabled__not_implemented)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/v1/address/" + funded() + "/balance?format=data"), http::status::not_implemented);
+    BC_REQUIRE_EQUAL(get_status("/v1/address/" + funded() + "/balance?format=data"), http::status::not_implemented);
 }
 
-BOOST_AUTO_TEST_CASE(native__configuration__no_address__disabled)
+BC_AUTO_TEST_CASE(native__configuration__no_address__disabled)
 {
     const auto response = get_json("/v1/configuration?format=json");
-    BOOST_REQUIRE(response.is_object());
-    BOOST_REQUIRE(!response.as_object().at("address").as_bool());
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE(!response.as_object().at("address").as_bool());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
 // address/unconfirmed (unconfirmed)
 // ----------------------------------------------------------------------------
 
-BOOST_FIXTURE_TEST_SUITE(native_unconfirmed_tests, native_unconfirmed_setup_fixture)
+BC_FIXTURE_TEST_SUITE(native_unconfirmed_tests, native_unconfirmed_setup_fixture)
 
 static std::string unconfirmed() NOEXCEPT
 {
     return encode_hash(sha256_hash(test::tx4.outputs_ptr()->front()->script().to_data(false)));
 }
 
-BOOST_AUTO_TEST_CASE(native__address_unconfirmed__json__unconfirmed_outputs)
+BC_AUTO_TEST_CASE(native__address_unconfirmed__json__unconfirmed_outputs)
 {
     const auto response = get_json("/v1/address/" + unconfirmed() + "/unconfirmed?format=json");
-    BOOST_REQUIRE(response.is_array());
+    BC_REQUIRE(response.is_array());
 
     const auto& outputs = response.as_array();
-    BOOST_REQUIRE(contains(outputs, value_from(chain::outpoint{ chain::point{ test::tx4.hash(false), 0 }, 0x08 })));
-    BOOST_REQUIRE(contains(outputs, value_from(chain::outpoint{ chain::point{ test::tx5.hash(false), 0 }, 0x85 })));
+    BC_REQUIRE(contains(outputs, value_from(chain::outpoint{ chain::point{ test::tx4.hash(false), 0 }, 0x08 })));
+    BC_REQUIRE(contains(outputs, value_from(chain::outpoint{ chain::point{ test::tx5.hash(false), 0 }, 0x85 })));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

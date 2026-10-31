@@ -72,11 +72,11 @@ zmq_setup_fixture::zmq_setup_fixture(const initializer& setup,
 
     // Create and populate the store.
     auto ec = store_.create([](auto, auto) {});
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BC_REQUIRE_MESSAGE(!ec, ec.message());
 
     // Settings files are read and derived values packed, as by the executor.
     ec = config_.initialize();
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BC_REQUIRE_MESSAGE(!ec, ec.message());
     setup(query_);
 
     std::promise<code> started{};
@@ -87,7 +87,7 @@ zmq_setup_fixture::zmq_setup_fixture(const initializer& setup,
 
     // Block until server is started.
     ec = started.get_future().get();
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BC_REQUIRE_MESSAGE(!ec, ec.message());
 
     std::promise<code> running{};
     server_.run([&](const code& ec) NOEXCEPT
@@ -97,7 +97,7 @@ zmq_setup_fixture::zmq_setup_fixture(const initializer& setup,
 
     // Block until server is running.
     ec = running.get_future().get();
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BC_REQUIRE_MESSAGE(!ec, ec.message());
     const auto& bound = key.empty() ? zmq.binds : zmq.safes;
     REQUIRE_SUCCESS(socket_, connect, bound.back().to_endpoint());
 }
@@ -107,7 +107,7 @@ zmq_setup_fixture::~zmq_setup_fixture()
     socket_.close();
     server_.close();
     const auto ec = store_.close([](auto, auto){});
-    BOOST_WARN_MESSAGE(!ec, ec.message());
+    BC_WARN_MESSAGE(!ec, ec.message());
     test::clear(test::directory);
 }
 

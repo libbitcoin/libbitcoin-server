@@ -19,7 +19,7 @@
 #include "../../test.hpp"
 #include "electrum_setup_fixture.hpp"
 
-BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
+BC_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
 using namespace system;
 static const code wrong_version{ server::error::electrum::bad_request };
@@ -27,132 +27,132 @@ static const code not_implemented{ server::error::electrum::method_not_found };
 
 // mempool.get_fee_histogram
 
-BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__insufficient_version__wrong_version)
+BC_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__insufficient_version__wrong_version)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto result = get_error(R"({"id":600,"method":"mempool.get_fee_histogram","params":[]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+    BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__no_params_key__dropped)
+BC_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__no_params_key__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+    BC_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"id":601,"method":"mempool.get_fee_histogram"})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__extra_param__dropped)
+BC_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__extra_param__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+    BC_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"id":602,"method":"mempool.get_fee_histogram","params":[42]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-////BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__empty_params__not_implemented)
+////BC_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__empty_params__not_implemented)
 ////{
-////    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+////    BC_REQUIRE(handshake(electrum::version::v1_2));
 ////
 ////    const auto result = get_error(R"({"id":603,"method":"mempool.get_fee_histogram","params":[]})" "\n");
-////    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+////    BC_REQUIRE_EQUAL(result, not_implemented.value());
 ////}
 
-BOOST_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__empty_params__empty)
+BC_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__empty_params__empty)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_2));
+    BC_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"id":603,"method":"mempool.get_fee_histogram","params":[]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
-    BOOST_REQUIRE(response.at("result").as_array().empty());
+    BC_REQUIRE(response.at("result").as_array().empty());
 }
 
 // mempool.get_info
 
-BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__insufficient_version__wrong_version)
+BC_AUTO_TEST_CASE(electrum__mempool_get_info__insufficient_version__wrong_version)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto result = get_error(R"({"id":700,"method":"mempool.get_info","params":[]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+    BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__no_params_key__dropped)
+BC_AUTO_TEST_CASE(electrum__mempool_get_info__no_params_key__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":701,"method":"mempool.get_info"})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__extra_param__dropped)
+BC_AUTO_TEST_CASE(electrum__mempool_get_info__extra_param__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":702,"method":"mempool.get_info","params":[42]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__mempool_get_info__empty_params__expected)
+BC_AUTO_TEST_CASE(electrum__mempool_get_info__empty_params__expected)
 {
     config_.node.minimum_fee_rate = 42.42;
     config_.node.minimum_bump_rate = 24.24;
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":703,"method":"mempool.get_info","params":[]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
     REQUIRE_NO_THROW_TRUE(result.at("mempoolminfee").is_number());
     REQUIRE_NO_THROW_TRUE(result.at("minrelaytxfee").is_number());
     REQUIRE_NO_THROW_TRUE(result.at("incrementalrelayfee").is_number());
-    BOOST_REQUIRE_EQUAL(result.at("mempoolminfee").as_double(), config_.node.minimum_fee_rate);
-    BOOST_REQUIRE_EQUAL(result.at("minrelaytxfee").as_double(), config_.node.minimum_fee_rate);
-    BOOST_REQUIRE_EQUAL(result.at("incrementalrelayfee").as_double(), config_.node.minimum_bump_rate);
+    BC_REQUIRE_EQUAL(result.at("mempoolminfee").as_double(), config_.node.minimum_fee_rate);
+    BC_REQUIRE_EQUAL(result.at("minrelaytxfee").as_double(), config_.node.minimum_fee_rate);
+    BC_REQUIRE_EQUAL(result.at("incrementalrelayfee").as_double(), config_.node.minimum_bump_rate);
 }
 
 // mempool.recent
 
-BOOST_AUTO_TEST_CASE(electrum__mempool_recent__insufficient_version__wrong_version)
+BC_AUTO_TEST_CASE(electrum__mempool_recent__insufficient_version__wrong_version)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto result = get_error(R"({"id":710,"method":"mempool.recent","params":[]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+    BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__mempool_recent__extra_param__dropped)
+BC_AUTO_TEST_CASE(electrum__mempool_recent__extra_param__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":711,"method":"mempool.recent","params":[42]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__mempool_recent__empty_params__empty)
+BC_AUTO_TEST_CASE(electrum__mempool_recent__empty_params__empty)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":712,"method":"mempool.recent","params":[]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
 // to_compact_fee_histogram
 
-BOOST_AUTO_TEST_SUITE(electrum_histogram_tests)
+BC_AUTO_TEST_SUITE(electrum_histogram_tests)
 
-BOOST_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__empty__empty)
+BC_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__empty__empty)
 {
-    BOOST_REQUIRE(to_compact_fee_histogram({}, 100).empty());
+    BC_REQUIRE(to_compact_fee_histogram({}, 100).empty());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__growing_bins__trailing_omitted)
+BC_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__growing_bins__trailing_omitted)
 {
     const database::fee_rates rates
     {
@@ -163,10 +163,10 @@ BOOST_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__growing_bins__trailing_
     };
 
     const fee_histogram expected{ { 9.0, 120 }, { 2.0, 300 } };
-    BOOST_REQUIRE(to_compact_fee_histogram(rates, 100) == expected);
+    BC_REQUIRE(to_compact_fee_histogram(rates, 100) == expected);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__lump__prior_bin_closed)
+BC_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__lump__prior_bin_closed)
 {
     const database::fee_rates rates
     {
@@ -175,10 +175,10 @@ BOOST_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__lump__prior_bin_closed)
     };
 
     const fee_histogram expected{ { 10.0, 60 }, { 2.0, 300 } };
-    BOOST_REQUIRE(to_compact_fee_histogram(rates, 100) == expected);
+    BC_REQUIRE(to_compact_fee_histogram(rates, 100) == expected);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__tenths__floored_and_merged)
+BC_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__tenths__floored_and_merged)
 {
     const database::fee_rates rates
     {
@@ -187,7 +187,7 @@ BOOST_AUTO_TEST_CASE(electrum__to_compact_fee_histogram__tenths__floored_and_mer
     };
 
     const fee_histogram expected{ { 2.5, 30 } };
-    BOOST_REQUIRE(to_compact_fee_histogram(rates, 20) == expected);
+    BC_REQUIRE(to_compact_fee_histogram(rates, 20) == expected);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

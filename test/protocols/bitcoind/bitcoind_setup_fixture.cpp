@@ -172,12 +172,12 @@ static bitcoind_setup_fixture::status status_of(network::io::socket& socket,
 {
     network::code ec{};
     http::write(socket, request, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     http::flat_buffer buffer{};
     http::message<false, http::string_body> response{};
     http::read(socket, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
     return response.result();
 }
 
@@ -224,14 +224,14 @@ bitcoind_setup_fixture::options_status(std::string_view target)
 system::json::value bitcoind_setup_fixture::rest_json(std::string_view target)
 {
     const auto response = client_.get(target);
-    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
+    BC_CHECK_EQUAL(response.result(), http::status::ok);
     return test::parse_json(response.body());
 }
 
 std::string bitcoind_setup_fixture::rest_text(std::string_view target)
 {
     const auto response = client_.get(target);
-    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
+    BC_CHECK_EQUAL(response.result(), http::status::ok);
     return response.body();
 }
 
@@ -245,7 +245,7 @@ system::data_chunk bitcoind_setup_fixture::rest_data(std::string_view target)
     network::code ec{};
     http::message<false, http::chunk_body> response{};
     http::read(socket, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
-    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
+    BC_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_EQUAL(response.result(), http::status::ok);
     return system::to_chunk(response.body());
 }

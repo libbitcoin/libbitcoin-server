@@ -18,36 +18,36 @@
  */
 #include "test.hpp"
 
-BOOST_AUTO_TEST_SUITE(configuration_tests)
+BC_AUTO_TEST_SUITE(configuration_tests)
 
-BOOST_AUTO_TEST_CASE(configuration__construct1__none_context__expected)
+BC_AUTO_TEST_CASE(configuration__construct1__none_context__expected)
 {
     const settings::embedded_pages admin{};
     const settings::embedded_pages native{};
     const configuration instance(system::chain::selection::none, native, admin);
 
-    BOOST_REQUIRE(instance.file.empty());
-    BOOST_REQUIRE(!instance.help);
-    BOOST_REQUIRE(!instance.hardware);
-    BOOST_REQUIRE(!instance.settings);
-    BOOST_REQUIRE(!instance.version);
-    BOOST_REQUIRE(instance.net == system::chain::selection::none);
-    BOOST_REQUIRE(!instance.make);
-    BOOST_REQUIRE(!instance.backup);
-    BOOST_REQUIRE(!instance.restore);
-    BOOST_REQUIRE(!instance.daemon);
-    BOOST_REQUIRE(!instance.user);
-    BOOST_REQUIRE(!instance.flags);
-    BOOST_REQUIRE(!instance.information);
-    BOOST_REQUIRE(!instance.buckets);
-    BOOST_REQUIRE(!instance.collisions);
-    BOOST_REQUIRE_EQUAL(instance.get, system::null_hash);
-    BOOST_REQUIRE_EQUAL(instance.put, system::null_hash);
+    BC_REQUIRE(instance.file.empty());
+    BC_REQUIRE(!instance.help);
+    BC_REQUIRE(!instance.hardware);
+    BC_REQUIRE(!instance.settings);
+    BC_REQUIRE(!instance.version);
+    BC_REQUIRE(instance.net == system::chain::selection::none);
+    BC_REQUIRE(!instance.make);
+    BC_REQUIRE(!instance.backup);
+    BC_REQUIRE(!instance.restore);
+    BC_REQUIRE(!instance.daemon);
+    BC_REQUIRE(!instance.user);
+    BC_REQUIRE(!instance.flags);
+    BC_REQUIRE(!instance.information);
+    BC_REQUIRE(!instance.buckets);
+    BC_REQUIRE(!instance.collisions);
+    BC_REQUIRE_EQUAL(instance.get, system::null_hash);
+    BC_REQUIRE_EQUAL(instance.put, system::null_hash);
 
     // Just a sample of settings.
-    BOOST_REQUIRE_EQUAL(instance.network.threads, 0u);
-    BOOST_REQUIRE_EQUAL(instance.bitcoin.first_version, 1u);
-    BOOST_REQUIRE_EQUAL(instance.log.application, network::levels::application_defined);
+    BC_REQUIRE_EQUAL(instance.network.threads, 0u);
+    BC_REQUIRE_EQUAL(instance.bitcoin.first_version, 1u);
+    BC_REQUIRE_EQUAL(instance.log.application, network::levels::application_defined);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

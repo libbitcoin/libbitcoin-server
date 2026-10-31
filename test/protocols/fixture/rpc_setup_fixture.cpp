@@ -59,13 +59,13 @@ rpc_setup_fixture::rpc_setup_fixture(const initializer& setup,
 {
     test::clear(test::directory);
     auto ec = store_.create([](auto, auto) {});
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BC_REQUIRE_MESSAGE(!ec, ec.message());
 
     // Settings files are read and derived values packed, as by the executor.
     ec = config_.initialize();
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BC_REQUIRE_MESSAGE(!ec, ec.message());
 
-    BOOST_REQUIRE(setup(query_));
+    BC_REQUIRE(setup(query_));
 
     // The node (chasers and address pool), bypassed by default.
     if (start)
@@ -77,7 +77,7 @@ rpc_setup_fixture::rpc_setup_fixture(const initializer& setup,
         });
 
         ec = started.get_future().get();
-        BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
     }
 
     std::promise<code> running{};
@@ -87,14 +87,14 @@ rpc_setup_fixture::rpc_setup_fixture(const initializer& setup,
     });
 
     ec = running.get_future().get();
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BC_REQUIRE_MESSAGE(!ec, ec.message());
 }
 
 rpc_setup_fixture::~rpc_setup_fixture()
 {
     server_.close();
     const auto ec = store_.close([](auto, auto){});
-    BOOST_WARN_MESSAGE(!ec, ec.message());
+    BC_WARN_MESSAGE(!ec, ec.message());
 
     test::clear(test::directory);
 }

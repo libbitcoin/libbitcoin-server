@@ -24,12 +24,12 @@
 #include <bitcoin/server.hpp>
 
 #define REQUIRE_NO_THROW_TRUE(expression) \
-    BOOST_REQUIRE_NO_THROW(expression); \
-    BOOST_REQUIRE(expression)
+    BC_REQUIRE_NO_THROW(expression); \
+    BC_REQUIRE(expression)
 
 #define REQUIRE_NO_THROW_FALSE(expression) \
-    BOOST_REQUIRE_NO_THROW(expression); \
-    BOOST_REQUIRE(!expression)
+    BC_REQUIRE_NO_THROW(expression); \
+    BC_REQUIRE(!expression)
 
 #define TEST_NAME \
     ::libbitcoin::system::unit_test::session::instance().case_name()
@@ -73,7 +73,7 @@ inline std::ostream& operator<<(std::ostream& stream, status value) NOEXCEPT
 { \
     network::code require_ec{}; \
     (object).method(__VA_ARGS__ __VA_OPT__(,) require_ec); \
-    BOOST_REQUIRE_EQUAL(require_ec, ::libbitcoin::network::error::success); \
+    BC_REQUIRE_EQUAL(require_ec, ::libbitcoin::network::error::success); \
 }
 
 namespace test {
@@ -84,7 +84,7 @@ inline size_t write(Stream& stream, const Buffers& buffers) NOEXCEPT
 {
     network::code ec{};
     const auto size = network::io::write(stream, buffers, ec);
-    BOOST_REQUIRE_EQUAL(ec, network::error::success);
+    BC_REQUIRE_EQUAL(ec, network::error::success);
     return size;
 }
 
@@ -93,7 +93,7 @@ inline size_t read(Stream& stream, const Buffers& buffers) NOEXCEPT
 {
     network::code ec{};
     const auto size = network::io::read(stream, buffers, ec);
-    BOOST_REQUIRE_EQUAL(ec, network::error::success);
+    BC_REQUIRE_EQUAL(ec, network::error::success);
     return size;
 }
 
@@ -103,7 +103,7 @@ inline void write_http(Stream& stream, Message&& message) NOEXCEPT
 {
     network::code ec{};
     network::http::write(stream, std::forward<Message>(message), ec);
-    BOOST_REQUIRE_EQUAL(ec, network::error::success);
+    BC_REQUIRE_EQUAL(ec, network::error::success);
 }
 
 // The bytes of a buffer as text.
@@ -168,11 +168,11 @@ struct directory_setup_fixture
 
     directory_setup_fixture() NOEXCEPT
     {
-        BOOST_REQUIRE(clear(directory));
+        BC_REQUIRE(clear(directory));
     }
     ~directory_setup_fixture() NOEXCEPT
     {
-        BOOST_REQUIRE(clear(directory));
+        BC_REQUIRE(clear(directory));
     }
 };
 

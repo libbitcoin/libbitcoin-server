@@ -18,7 +18,7 @@
  */
 #include "../test.hpp"
 
-BOOST_AUTO_TEST_SUITE(bitcoind_query_tests)
+BC_AUTO_TEST_SUITE(bitcoind_query_tests)
 
 using namespace system;
 using namespace network::rpc;
@@ -30,84 +30,84 @@ static const std::string test_hash = encode_hash(expected_hash);
 
 static const object_t& params_of(const request_t& request) NOEXCEPT
 {
-    BOOST_REQUIRE(request.params.has_value());
-    BOOST_REQUIRE(std::holds_alternative<object_t>(request.params.value()));
+    BC_REQUIRE(request.params.has_value());
+    BC_REQUIRE(std::holds_alternative<object_t>(request.params.value()));
     return std::get<object_t>(request.params.value());
 }
 
-BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__count__overlays_target_default)
+BC_AUTO_TEST_CASE(parsers__bitcoind_query__count__overlays_target_default)
 {
     request_t out{};
     const auto target = "/rest/headers/" + test_hash + ".json?count=7";
-    BOOST_REQUIRE(!bitcoind_target(out, target));
-    BOOST_REQUIRE(bitcoind_query(out, target));
-    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("count").value()), 7u);
+    BC_REQUIRE(!bitcoind_target(out, target));
+    BC_REQUIRE(bitcoind_query(out, target));
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("count").value()), 7u);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__no_query__target_default)
+BC_AUTO_TEST_CASE(parsers__bitcoind_query__no_query__target_default)
 {
     request_t out{};
     const auto target = "/rest/headers/" + test_hash + ".json";
-    BOOST_REQUIRE(!bitcoind_target(out, target));
-    BOOST_REQUIRE(bitcoind_query(out, target));
-    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("count").value()), 5u);
+    BC_REQUIRE(!bitcoind_target(out, target));
+    BC_REQUIRE(bitcoind_query(out, target));
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("count").value()), 5u);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__booleans__overlaid)
+BC_AUTO_TEST_CASE(parsers__bitcoind_query__booleans__overlaid)
 {
     request_t out{};
     const auto target = "/rest/mempool/contents.json?verbose=false&mempool_sequence=true";
-    BOOST_REQUIRE(!bitcoind_target(out, target));
-    BOOST_REQUIRE(bitcoind_query(out, target));
-    BOOST_REQUIRE(!std::get<bool>(params_of(out).at("verbose").value()));
-    BOOST_REQUIRE(std::get<bool>(params_of(out).at("mempool_sequence").value()));
+    BC_REQUIRE(!bitcoind_target(out, target));
+    BC_REQUIRE(bitcoind_query(out, target));
+    BC_REQUIRE(!std::get<bool>(params_of(out).at("verbose").value()));
+    BC_REQUIRE(std::get<bool>(params_of(out).at("mempool_sequence").value()));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__malformed_boolean__false)
+BC_AUTO_TEST_CASE(parsers__bitcoind_query__malformed_boolean__false)
 {
     request_t out{};
     const auto target = "/rest/mempool/contents.json?verbose=yes";
-    BOOST_REQUIRE(!bitcoind_target(out, target));
-    BOOST_REQUIRE(!bitcoind_query(out, target));
+    BC_REQUIRE(!bitcoind_target(out, target));
+    BC_REQUIRE(!bitcoind_query(out, target));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__malformed_count__false)
+BC_AUTO_TEST_CASE(parsers__bitcoind_query__malformed_count__false)
 {
     request_t out{};
     const auto target = "/rest/headers/" + test_hash + ".json?count=abc";
-    BOOST_REQUIRE(!bitcoind_target(out, target));
-    BOOST_REQUIRE(!bitcoind_query(out, target));
+    BC_REQUIRE(!bitcoind_target(out, target));
+    BC_REQUIRE(!bitcoind_query(out, target));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__empty_count__false)
+BC_AUTO_TEST_CASE(parsers__bitcoind_query__empty_count__false)
 {
     request_t out{};
     const auto target = "/rest/headers/" + test_hash + ".json?count=";
-    BOOST_REQUIRE(!bitcoind_target(out, target));
-    BOOST_REQUIRE(!bitcoind_query(out, target));
+    BC_REQUIRE(!bitcoind_target(out, target));
+    BC_REQUIRE(!bitcoind_query(out, target));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__empty_target__false)
+BC_AUTO_TEST_CASE(parsers__bitcoind_query__empty_target__false)
 {
     request_t out{};
-    BOOST_REQUIRE(!bitcoind_target(out, "/rest/chaininfo.json"));
-    BOOST_REQUIRE(!bitcoind_query(out, ""));
+    BC_REQUIRE(!bitcoind_target(out, "/rest/chaininfo.json"));
+    BC_REQUIRE(!bitcoind_query(out, ""));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__no_params__false)
+BC_AUTO_TEST_CASE(parsers__bitcoind_query__no_params__false)
 {
     request_t out{};
-    BOOST_REQUIRE(!bitcoind_query(out, "/rest/headers/" + test_hash + ".json?count=7"));
+    BC_REQUIRE(!bitcoind_query(out, "/rest/headers/" + test_hash + ".json?count=7"));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__bitcoind_query__offset_and_size__overlaid)
+BC_AUTO_TEST_CASE(parsers__bitcoind_query__offset_and_size__overlaid)
 {
     request_t out{};
     const auto target = "/rest/blockpart/" + test_hash + ".bin?offset=80&size=1";
-    BOOST_REQUIRE(!bitcoind_target(out, target));
-    BOOST_REQUIRE(bitcoind_query(out, target));
-    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("offset").value()), 80u);
-    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("size").value()), 1u);
+    BC_REQUIRE(!bitcoind_target(out, target));
+    BC_REQUIRE(bitcoind_query(out, target));
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("offset").value()), 80u);
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("size").value()), 1u);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

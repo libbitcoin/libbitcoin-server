@@ -24,7 +24,7 @@ using namespace system;
 namespace http = network::http;
 namespace ws = network::ws;
 
-BOOST_FIXTURE_TEST_SUITE(esplora_tests, esplora_ten_block_setup_fixture)
+BC_FIXTURE_TEST_SUITE(esplora_tests, esplora_ten_block_setup_fixture)
 
 static const chain::transaction& coinbase1() NOEXCEPT
 {
@@ -45,204 +45,204 @@ static std::string funded_scripthash() NOEXCEPT
 // key resolution
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__address__undecodable__bad_request)
+BC_AUTO_TEST_CASE(esplora__address__undecodable__bad_request)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/address/notanaddress"), http::status::bad_request);
+    BC_REQUIRE_EQUAL(get_status("/address/notanaddress"), http::status::bad_request);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_txs__undecodable__bad_request)
+BC_AUTO_TEST_CASE(esplora__address_txs__undecodable__bad_request)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/address/notanaddress/txs"), http::status::bad_request);
+    BC_REQUIRE_EQUAL(get_status("/address/notanaddress/txs"), http::status::bad_request);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_utxo__undecodable__bad_request)
+BC_AUTO_TEST_CASE(esplora__address_utxo__undecodable__bad_request)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/address/notanaddress/utxo"), http::status::bad_request);
+    BC_REQUIRE_EQUAL(get_status("/address/notanaddress/utxo"), http::status::bad_request);
 }
 
 // address/txs/mempool
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__address_txs_mempool__scripthash__empty)
+BC_AUTO_TEST_CASE(esplora__address_txs_mempool__scripthash__empty)
 {
     const auto response = get_json("/scripthash/" + scripthash + "/txs/mempool");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE(response.as_array().empty());
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE(response.as_array().empty());
 }
 
 // scripthash of the block one coinbase output
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__address__funded__expected)
+BC_AUTO_TEST_CASE(esplora__address__funded__expected)
 {
     const auto response = get_json("/scripthash/" + funded_scripthash());
-    BOOST_REQUIRE(response.is_object());
+    BC_REQUIRE(response.is_object());
 
     const auto& object = response.as_object();
-    BOOST_REQUIRE_EQUAL(object.at("scripthash").as_string(), funded_scripthash());
+    BC_REQUIRE_EQUAL(object.at("scripthash").as_string(), funded_scripthash());
 
     const auto& stats = object.at("chain_stats").as_object();
-    BOOST_REQUIRE_EQUAL(stats.at("funded_txo_count").as_int64(), 1);
-    BOOST_REQUIRE_EQUAL(stats.at("funded_txo_sum").as_int64(), 5000000000);
-    BOOST_REQUIRE_EQUAL(stats.at("spent_txo_count").as_int64(), 0);
-    BOOST_REQUIRE_EQUAL(stats.at("spent_txo_sum").as_int64(), 0);
-    BOOST_REQUIRE_EQUAL(stats.at("tx_count").as_int64(), 1);
+    BC_REQUIRE_EQUAL(stats.at("funded_txo_count").as_int64(), 1);
+    BC_REQUIRE_EQUAL(stats.at("funded_txo_sum").as_int64(), 5000000000);
+    BC_REQUIRE_EQUAL(stats.at("spent_txo_count").as_int64(), 0);
+    BC_REQUIRE_EQUAL(stats.at("spent_txo_sum").as_int64(), 0);
+    BC_REQUIRE_EQUAL(stats.at("tx_count").as_int64(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address__unfunded__zeroed)
+BC_AUTO_TEST_CASE(esplora__address__unfunded__zeroed)
 {
     const auto response = get_json("/scripthash/" + scripthash);
-    BOOST_REQUIRE(response.is_object());
+    BC_REQUIRE(response.is_object());
 
     const auto& stats = response.as_object().at("chain_stats").as_object();
-    BOOST_REQUIRE_EQUAL(stats.at("funded_txo_count").as_int64(), 0);
-    BOOST_REQUIRE_EQUAL(stats.at("tx_count").as_int64(), 0);
+    BC_REQUIRE_EQUAL(stats.at("funded_txo_count").as_int64(), 0);
+    BC_REQUIRE_EQUAL(stats.at("tx_count").as_int64(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_txs__funded__expected)
+BC_AUTO_TEST_CASE(esplora__address_txs__funded__expected)
 {
     const auto response = get_json("/scripthash/" + funded_scripthash() + "/txs");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE_EQUAL(response.as_array().size(), 1u);
-    BOOST_REQUIRE_EQUAL(response.as_array().front().as_object().at("txid").as_string(), block1_tx());
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
+    BC_REQUIRE_EQUAL(response.as_array().front().as_object().at("txid").as_string(), block1_tx());
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_utxo__funded__expected)
+BC_AUTO_TEST_CASE(esplora__address_utxo__funded__expected)
 {
     const auto response = get_json("/scripthash/" + funded_scripthash() + "/utxo");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE_EQUAL(response.as_array().size(), 1u);
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
 
     const auto& utxo = response.as_array().front().as_object();
-    BOOST_REQUIRE_EQUAL(utxo.at("txid").as_string(), block1_tx());
-    BOOST_REQUIRE_EQUAL(utxo.at("vout").as_int64(), 0);
-    BOOST_REQUIRE_EQUAL(utxo.at("value").as_int64(), 5000000000);
-    BOOST_REQUIRE(utxo.at("status").as_object().at("confirmed").as_bool());
+    BC_REQUIRE_EQUAL(utxo.at("txid").as_string(), block1_tx());
+    BC_REQUIRE_EQUAL(utxo.at("vout").as_int64(), 0);
+    BC_REQUIRE_EQUAL(utxo.at("value").as_int64(), 5000000000);
+    BC_REQUIRE(utxo.at("status").as_object().at("confirmed").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_utxo__unfunded__empty)
+BC_AUTO_TEST_CASE(esplora__address_utxo__unfunded__empty)
 {
     const auto response = get_json("/scripthash/" + scripthash + "/utxo");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE(response.as_array().empty());
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE(response.as_array().empty());
 }
 
 // address/txs/chain
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__address_txs_chain__funded__expected)
+BC_AUTO_TEST_CASE(esplora__address_txs_chain__funded__expected)
 {
     const auto response = get_json("/scripthash/" + funded_scripthash() + "/txs/chain");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE_EQUAL(response.as_array().size(), 1u);
-    BOOST_REQUIRE_EQUAL(response.as_array().front().as_object().at("txid").as_string(), block1_tx());
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
+    BC_REQUIRE_EQUAL(response.as_array().front().as_object().at("txid").as_string(), block1_tx());
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_txs_chain__last_seen__empty)
+BC_AUTO_TEST_CASE(esplora__address_txs_chain__last_seen__empty)
 {
     const auto response = get_json("/scripthash/" + funded_scripthash() + "/txs/chain/" + block1_tx());
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE(response.as_array().empty());
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE(response.as_array().empty());
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_txs_chain__unknown_last_seen__not_found)
+BC_AUTO_TEST_CASE(esplora__address_txs_chain__unknown_last_seen__not_found)
 {
     const auto target = "/scripthash/" + funded_scripthash() + "/txs/chain/" + encode_hash(null_hash);
-    BOOST_REQUIRE_EQUAL(get_status(target), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status(target), http::status::not_found);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_txs_mempool__undecodable__bad_request)
+BC_AUTO_TEST_CASE(esplora__address_txs_mempool__undecodable__bad_request)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/address/notanaddress/txs/mempool"), http::status::bad_request);
+    BC_REQUIRE_EQUAL(get_status("/address/notanaddress/txs/mempool"), http::status::bad_request);
 }
 
 // address (payment address)
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__address__payment_address__echoed_unfunded)
+BC_AUTO_TEST_CASE(esplora__address__payment_address__echoed_unfunded)
 {
     const std::string address{ "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa" };
     const auto response = get_json("/address/" + address);
-    BOOST_REQUIRE(response.is_object());
-    BOOST_REQUIRE_EQUAL(response.as_object().at("address").as_string(), address);
-    BOOST_REQUIRE_EQUAL(response.as_object().at("chain_stats").as_object().at("tx_count").as_int64(), 0);
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE_EQUAL(response.as_object().at("address").as_string(), address);
+    BC_REQUIRE_EQUAL(response.as_object().at("chain_stats").as_object().at("tx_count").as_int64(), 0);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
-BOOST_FIXTURE_TEST_SUITE(esplora_no_address_tests, esplora_no_address_setup_fixture)
+BC_FIXTURE_TEST_SUITE(esplora_no_address_tests, esplora_no_address_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(esplora__address__disabled__not_implemented)
+BC_AUTO_TEST_CASE(esplora__address__disabled__not_implemented)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/scripthash/" + esplora_tests::funded_scripthash()), http::status::not_implemented);
+    BC_REQUIRE_EQUAL(get_status("/scripthash/" + esplora_tests::funded_scripthash()), http::status::not_implemented);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_txs__disabled__not_implemented)
+BC_AUTO_TEST_CASE(esplora__address_txs__disabled__not_implemented)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/scripthash/" + esplora_tests::funded_scripthash() + "/txs"), http::status::not_implemented);
+    BC_REQUIRE_EQUAL(get_status("/scripthash/" + esplora_tests::funded_scripthash() + "/txs"), http::status::not_implemented);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_utxo__disabled__not_implemented)
+BC_AUTO_TEST_CASE(esplora__address_utxo__disabled__not_implemented)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/scripthash/" + esplora_tests::funded_scripthash() + "/utxo"), http::status::not_implemented);
+    BC_REQUIRE_EQUAL(get_status("/scripthash/" + esplora_tests::funded_scripthash() + "/utxo"), http::status::not_implemented);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
 // unconfirmed address
 // ----------------------------------------------------------------------------
 
-BOOST_FIXTURE_TEST_SUITE(esplora_unconfirmed_address_tests, esplora_unconfirmed_setup_fixture)
+BC_FIXTURE_TEST_SUITE(esplora_unconfirmed_address_tests, esplora_unconfirmed_setup_fixture)
 
 static std::string pick_scripthash() NOEXCEPT
 {
     return encode_base16(sha256_hash(test::tx4.outputs_ptr()->front()->script().to_data(false)));
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address__unconfirmed__mempool_stats)
+BC_AUTO_TEST_CASE(esplora__address__unconfirmed__mempool_stats)
 {
     const auto response = get_json("/scripthash/" + pick_scripthash());
-    BOOST_REQUIRE(response.is_object());
+    BC_REQUIRE(response.is_object());
 
     const auto& chain = response.as_object().at("chain_stats").as_object();
-    BOOST_REQUIRE_EQUAL(chain.at("funded_txo_count").as_int64(), 0);
-    BOOST_REQUIRE_EQUAL(chain.at("tx_count").as_int64(), 0);
+    BC_REQUIRE_EQUAL(chain.at("funded_txo_count").as_int64(), 0);
+    BC_REQUIRE_EQUAL(chain.at("tx_count").as_int64(), 0);
 
     const auto& mempool = response.as_object().at("mempool_stats").as_object();
-    BOOST_REQUIRE_EQUAL(mempool.at("funded_txo_count").as_int64(), 6);
-    BOOST_REQUIRE_EQUAL(mempool.at("funded_txo_sum").as_int64(), 0x18 + 0x81 + 0x81 + 0x83 + 0x08 + 0x85);
-    BOOST_REQUIRE_EQUAL(mempool.at("spent_txo_count").as_int64(), 1);
-    BOOST_REQUIRE_EQUAL(mempool.at("spent_txo_sum").as_int64(), 0x18);
-    BOOST_REQUIRE_EQUAL(mempool.at("tx_count").as_int64(), 6);
+    BC_REQUIRE_EQUAL(mempool.at("funded_txo_count").as_int64(), 6);
+    BC_REQUIRE_EQUAL(mempool.at("funded_txo_sum").as_int64(), 0x18 + 0x81 + 0x81 + 0x83 + 0x08 + 0x85);
+    BC_REQUIRE_EQUAL(mempool.at("spent_txo_count").as_int64(), 1);
+    BC_REQUIRE_EQUAL(mempool.at("spent_txo_sum").as_int64(), 0x18);
+    BC_REQUIRE_EQUAL(mempool.at("tx_count").as_int64(), 6);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_txs_mempool__unconfirmed__expected)
+BC_AUTO_TEST_CASE(esplora__address_txs_mempool__unconfirmed__expected)
 {
     const auto response = get_json("/scripthash/" + pick_scripthash() + "/txs/mempool");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE_EQUAL(response.as_array().size(), 6u);
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 6u);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_txs__unconfirmed__mempool_first)
+BC_AUTO_TEST_CASE(esplora__address_txs__unconfirmed__mempool_first)
 {
     const auto response = get_json("/scripthash/" + pick_scripthash() + "/txs");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE_EQUAL(response.as_array().size(), 6u);
-    BOOST_REQUIRE(!response.as_array().front().as_object().at("status").as_object().at("confirmed").as_bool());
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 6u);
+    BC_REQUIRE(!response.as_array().front().as_object().at("status").as_object().at("confirmed").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_txs_chain__unconfirmed__empty)
+BC_AUTO_TEST_CASE(esplora__address_txs_chain__unconfirmed__empty)
 {
     const auto response = get_json("/scripthash/" + pick_scripthash() + "/txs/chain");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE(response.as_array().empty());
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE(response.as_array().empty());
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_utxo__unconfirmed__unspent)
+BC_AUTO_TEST_CASE(esplora__address_utxo__unconfirmed__unspent)
 {
     const auto response = get_json("/scripthash/" + pick_scripthash() + "/utxo");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE_EQUAL(response.as_array().size(), 5u);
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 5u);
 
     const auto& utxos = response.as_array();
     const auto found = std::find_if(utxos.begin(), utxos.end(), [](const auto& utxo)
@@ -250,17 +250,17 @@ BOOST_AUTO_TEST_CASE(esplora__address_utxo__unconfirmed__unspent)
         return utxo.as_object().at("txid").as_string() == encode_hash(test::tx4.hash(false));
     });
 
-    BOOST_REQUIRE(found != utxos.end());
-    BOOST_REQUIRE_EQUAL(found->as_object().at("value").as_int64(), 0x08);
-    BOOST_REQUIRE(!found->as_object().at("status").as_object().at("confirmed").as_bool());
+    BC_REQUIRE(found != utxos.end());
+    BC_REQUIRE_EQUAL(found->as_object().at("value").as_int64(), 0x08);
+    BC_REQUIRE(!found->as_object().at("status").as_object().at("confirmed").as_bool());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
 // broadcast address
 // ----------------------------------------------------------------------------
 
-BOOST_FIXTURE_TEST_SUITE(esplora_broadcast_address_tests, esplora_broadcast_setup_fixture)
+BC_FIXTURE_TEST_SUITE(esplora_broadcast_address_tests, esplora_broadcast_setup_fixture)
 
 static std::string funder_scripthash() NOEXCEPT
 {
@@ -277,66 +277,66 @@ static std::string tx1c() NOEXCEPT
     return encode_hash(test::tx1c.hash(false));
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address__confirmed_spent_by_broadcast__mempool_spent)
+BC_AUTO_TEST_CASE(esplora__address__confirmed_spent_by_broadcast__mempool_spent)
 {
-    BOOST_REQUIRE_EQUAL(post_text("/tx", encode_base16(test::tx1c.to_data(true))), tx1c());
+    BC_REQUIRE_EQUAL(post_text("/tx", encode_base16(test::tx1c.to_data(true))), tx1c());
 
     const auto response = get_json("/scripthash/" + funder_scripthash());
-    BOOST_REQUIRE(response.is_object());
+    BC_REQUIRE(response.is_object());
 
     const auto& chain = response.as_object().at("chain_stats").as_object();
-    BOOST_REQUIRE_EQUAL(chain.at("funded_txo_count").as_int64(), 1);
-    BOOST_REQUIRE_EQUAL(chain.at("funded_txo_sum").as_int64(), 0x64);
-    BOOST_REQUIRE_EQUAL(chain.at("spent_txo_count").as_int64(), 0);
-    BOOST_REQUIRE_EQUAL(chain.at("tx_count").as_int64(), 1);
+    BC_REQUIRE_EQUAL(chain.at("funded_txo_count").as_int64(), 1);
+    BC_REQUIRE_EQUAL(chain.at("funded_txo_sum").as_int64(), 0x64);
+    BC_REQUIRE_EQUAL(chain.at("spent_txo_count").as_int64(), 0);
+    BC_REQUIRE_EQUAL(chain.at("tx_count").as_int64(), 1);
 
     const auto& mempool = response.as_object().at("mempool_stats").as_object();
-    BOOST_REQUIRE_EQUAL(mempool.at("funded_txo_count").as_int64(), 0);
-    BOOST_REQUIRE_EQUAL(mempool.at("spent_txo_count").as_int64(), 1);
-    BOOST_REQUIRE_EQUAL(mempool.at("spent_txo_sum").as_int64(), 0x64);
-    BOOST_REQUIRE_EQUAL(mempool.at("tx_count").as_int64(), 1);
+    BC_REQUIRE_EQUAL(mempool.at("funded_txo_count").as_int64(), 0);
+    BC_REQUIRE_EQUAL(mempool.at("spent_txo_count").as_int64(), 1);
+    BC_REQUIRE_EQUAL(mempool.at("spent_txo_sum").as_int64(), 0x64);
+    BC_REQUIRE_EQUAL(mempool.at("tx_count").as_int64(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address__broadcast_payee__mempool_funded)
+BC_AUTO_TEST_CASE(esplora__address__broadcast_payee__mempool_funded)
 {
-    BOOST_REQUIRE_EQUAL(post_text("/tx", encode_base16(test::tx1c.to_data(true))), tx1c());
+    BC_REQUIRE_EQUAL(post_text("/tx", encode_base16(test::tx1c.to_data(true))), tx1c());
 
     const auto response = get_json("/scripthash/" + payee_scripthash());
-    BOOST_REQUIRE(response.is_object());
+    BC_REQUIRE(response.is_object());
 
     const auto& mempool = response.as_object().at("mempool_stats").as_object();
-    BOOST_REQUIRE_EQUAL(mempool.at("funded_txo_count").as_int64(), 1);
-    BOOST_REQUIRE_EQUAL(mempool.at("funded_txo_sum").as_int64(), 0x5a);
-    BOOST_REQUIRE_EQUAL(mempool.at("spent_txo_count").as_int64(), 0);
-    BOOST_REQUIRE_EQUAL(mempool.at("tx_count").as_int64(), 1);
+    BC_REQUIRE_EQUAL(mempool.at("funded_txo_count").as_int64(), 1);
+    BC_REQUIRE_EQUAL(mempool.at("funded_txo_sum").as_int64(), 0x5a);
+    BC_REQUIRE_EQUAL(mempool.at("spent_txo_count").as_int64(), 0);
+    BC_REQUIRE_EQUAL(mempool.at("tx_count").as_int64(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_txs_mempool__broadcast_payee__tx)
+BC_AUTO_TEST_CASE(esplora__address_txs_mempool__broadcast_payee__tx)
 {
-    BOOST_REQUIRE_EQUAL(post_text("/tx", encode_base16(test::tx1c.to_data(true))), tx1c());
+    BC_REQUIRE_EQUAL(post_text("/tx", encode_base16(test::tx1c.to_data(true))), tx1c());
 
     const auto response = get_json("/scripthash/" + payee_scripthash() + "/txs/mempool");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE_EQUAL(response.as_array().size(), 1u);
-    BOOST_REQUIRE_EQUAL(response.as_array().front().as_object().at("txid").as_string(), tx1c());
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
+    BC_REQUIRE_EQUAL(response.as_array().front().as_object().at("txid").as_string(), tx1c());
 }
 
-BOOST_AUTO_TEST_CASE(esplora__address_utxo__broadcast__spent_excluded_payee_included)
+BC_AUTO_TEST_CASE(esplora__address_utxo__broadcast__spent_excluded_payee_included)
 {
-    BOOST_REQUIRE_EQUAL(post_text("/tx", encode_base16(test::tx1c.to_data(true))), tx1c());
+    BC_REQUIRE_EQUAL(post_text("/tx", encode_base16(test::tx1c.to_data(true))), tx1c());
 
     const auto spent = get_json("/scripthash/" + funder_scripthash() + "/utxo");
-    BOOST_REQUIRE(spent.is_array());
-    BOOST_REQUIRE(spent.as_array().empty());
+    BC_REQUIRE(spent.is_array());
+    BC_REQUIRE(spent.as_array().empty());
 
     const auto response = get_json("/scripthash/" + payee_scripthash() + "/utxo");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE_EQUAL(response.as_array().size(), 1u);
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
 
     const auto& utxo = response.as_array().front().as_object();
-    BOOST_REQUIRE_EQUAL(utxo.at("txid").as_string(), tx1c());
-    BOOST_REQUIRE_EQUAL(utxo.at("value").as_int64(), 0x5a);
-    BOOST_REQUIRE(!utxo.at("status").as_object().at("confirmed").as_bool());
+    BC_REQUIRE_EQUAL(utxo.at("txid").as_string(), tx1c());
+    BC_REQUIRE_EQUAL(utxo.at("value").as_int64(), 0x5a);
+    BC_REQUIRE(!utxo.at("status").as_object().at("confirmed").as_bool());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
