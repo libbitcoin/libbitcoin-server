@@ -646,6 +646,9 @@
     <ClInclude Include="..\..\..\..\build\include\bitcoin\server\version.hpp">
       <Filter>include\bitcoin\server</Filter>
     </ClInclude>
+    <ClCompile Include="..\..\..\..\build\src\version.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_native.ipp">

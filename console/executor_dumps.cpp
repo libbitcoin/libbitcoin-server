@@ -34,20 +34,21 @@ constexpr double to_double(auto integer)
 // version information for libbitcoin libraries
 void executor::dump_version(bool stored) const
 {
-    const auto thumb = [](std::string_view hash, bool dirty)
+    const auto thumb = [](const auto& version)
     {
-        return std::string{ hash.substr(0, 8) } + (dirty ? "-dirty" : "");
+        return std::format("{} {}{}", version.semantic,
+            version.commit_hash.substr(0, 8), version.dirty ? "-dirty" : "");
     };
 
     logger(std::format(BS_VERSION_HEADER));
     logger(std::format("boost................ {}.{}.{}", (BOOST_VERSION / 100000), (BOOST_VERSION / 100 % 1000), (BOOST_VERSION % 100)));
     logger(std::format("secp256k1............ {}", system::secp256k1_library()));
     logger(std::format("openssl (tls)........ {}", network::tls_library()));
-    logger(std::format("libbitcoin-system.... {} {}", LIBBITCOIN_SYSTEM_VERSION, thumb(LIBBITCOIN_SYSTEM_COMMIT_HASH, LIBBITCOIN_SYSTEM_IS_DIRTY)));
-    logger(std::format("libbitcoin-database.. {} {}", LIBBITCOIN_DATABASE_VERSION, thumb(LIBBITCOIN_DATABASE_COMMIT_HASH, LIBBITCOIN_DATABASE_IS_DIRTY)));
-    logger(std::format("libbitcoin-network... {} {}", LIBBITCOIN_NETWORK_VERSION, thumb(LIBBITCOIN_NETWORK_COMMIT_HASH, LIBBITCOIN_NETWORK_IS_DIRTY)));
-    logger(std::format("libbitcoin-node...... {} {}", LIBBITCOIN_NODE_VERSION, thumb(LIBBITCOIN_NODE_COMMIT_HASH, LIBBITCOIN_NODE_IS_DIRTY)));
-    logger(std::format("libbitcoin-server.... {} {}", LIBBITCOIN_SERVER_VERSION, thumb(LIBBITCOIN_SERVER_COMMIT_HASH, LIBBITCOIN_SERVER_IS_DIRTY)));
+    logger(std::format("libbitcoin-system.... {}", thumb(system::build_version())));
+    logger(std::format("libbitcoin-database.. {}", thumb(database::build_version())));
+    logger(std::format("libbitcoin-network... {}", thumb(network::build_version())));
+    logger(std::format("libbitcoin-node...... {}", thumb(node::build_version())));
+    logger(std::format("libbitcoin-server.... {}", thumb(server::build_version())));
     logger(std::format("compiled schema...... {}", database::envelope::compiled.to_string()));
 
     if (stored)
