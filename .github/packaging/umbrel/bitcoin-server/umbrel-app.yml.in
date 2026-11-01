@@ -1,0 +1,32 @@
+manifestVersion: 1.1
+id: bitcoin-server
+storage:
+  dataRoot: data
+category: bitcoin
+name: Bitcoin Server
+version: "@VERSION@"
+tagline: Run a full node powered by Libbitcoin Server
+description: >-
+  Bitcoin Server is a full node and query server built on the Libbitcoin
+  libraries, an independent implementation of the Bitcoin protocol. It
+  validates the chain and serves it to peers. The app opens to its
+  management console, and its block explorer is served on port 8187.
+
+
+  Powered by Libbitcoin Server: https://libbitcoin.info
+releaseNotes: ""
+developer: libbitcoin
+website: https://libbitcoin.info
+dependencies: []
+repo: https://github.com/libbitcoin/libbitcoin-server
+support: https://github.com/libbitcoin/libbitcoin-server/issues
+port: 8186
+gallery: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+backupIgnore:
+  - data/bs/bitcoin
+  - data/bs/log
+submitter: libbitcoin
+submission: ""

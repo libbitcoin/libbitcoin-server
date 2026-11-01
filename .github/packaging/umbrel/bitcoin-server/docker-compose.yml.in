@@ -1,0 +1,18 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: bitcoin-server_server_1
+      APP_PORT: 8080
+
+  server:
+    image: @IMAGE@
+    user: "1000:1000"
+    restart: on-failure
+    stop_grace_period: 15m30s
+    ports:
+      - "8334:8334"
+      - "8187:8180"
+    volumes:
+      - ${APP_DATA_DIR}/data/bs:/data

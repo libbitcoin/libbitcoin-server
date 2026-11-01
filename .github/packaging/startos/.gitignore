@@ -1,0 +1,6 @@
+*.s9pk
+startos/*.js
+node_modules/
+docker-images
+javascript
+ncc-cache

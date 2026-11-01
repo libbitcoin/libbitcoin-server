@@ -117,6 +117,76 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+      - name: Assemble image binaries
+        shell: bash
+        run: |
+          IMAGE="image/${{ matrix.architecture }}"
+          mkdir -p "${IMAGE}"
+
+          install -m 0755 "binaries/${{ matrix.selector }}" "${IMAGE}/selector"
+          install -m 0755 "binaries/${{ matrix.optimized }}" "${IMAGE}/${{ matrix.optimized }}"
+          install -m 0755 "binaries/${{ matrix.baseline }}" "${IMAGE}/${{ matrix.baseline }}"
+
+          printf '%s %s\n%s %s\n' \
+            "${{ matrix.optimized }}" "${{ matrix.optimized_requires }}" \
+            "${{ matrix.baseline }}" "${{ matrix.baseline_requires }}" \
+            > "${IMAGE}/variants"
+
+      - name: Upload image binaries
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: image-${{ matrix.architecture }}
+          path: image
+          retention-days: 1
+          if-no-files-found: error
+
+  docker:
+    needs: [ version, debian ]
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+
+    steps:
+      - name: Checkout packaging
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: 'libbitcoin-server'
+
+      - name: Retrieve image binaries
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: image-*
+          merge-multiple: true
+          path: libbitcoin-server/.github/packaging/docker
+
+      - name: Prepare buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to the container registry
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build and push image
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: libbitcoin-server/.github/packaging/docker
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/libbitcoin-server:${{ env.VERSION }}
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+
   windows:
     needs: version
     runs-on: windows-latest
@@ -199,7 +269,7 @@ jobs:
           if-no-files-found: error
 
   manifests:
-    needs: [ version, windows ]
+    needs: [ version, windows, docker ]
     runs-on: ubuntu-latest
 
     # Draft release assets are visible only with write access.
@@ -209,6 +279,7 @@ jobs:
     env:
       VERSION: ${{ needs.version.outputs.version }}
       RELEASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.tag }}
+      IMAGE: ghcr.io/${{ github.repository_owner }}/libbitcoin-server:${{ needs.version.outputs.version }}@${{ needs.docker.outputs.digest }}
 
     steps:
       - name: Checkout packaging
@@ -260,6 +331,17 @@ jobs:
                 "${template}" > "manifests/$(basename "${template}" .in)"
           done
 
+      - name: Generate Umbrel app
+        shell: bash
+        run: |
+          UMBREL="libbitcoin-server/.github/packaging/umbrel/bitcoin-server"
+          APP="umbrel/bitcoin-server"
+          mkdir -p "${APP}"
+          cp -r "${UMBREL}/data" "${APP}/"
+          sed -e "s|@VERSION@|${VERSION}|" "${UMBREL}/umbrel-app.yml.in" > "${APP}/umbrel-app.yml"
+          sed -e "s|@IMAGE@|${IMAGE}|" "${UMBREL}/docker-compose.yml.in" > "${APP}/docker-compose.yml"
+          tar -czf "manifests/libbitcoin-server-${VERSION}-umbrel.tar.gz" -C umbrel bitcoin-server
+
       - name: Upload manifests
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -268,8 +350,74 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+  startos:
+    needs: [ version, docker ]
+    runs-on: ${{ matrix.image }}
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        include:
+          - target: "x86"
+            image: "ubuntu-latest"
+
+          - target: "arm"
+            image: "ubuntu-24.04-arm"
+
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      IMAGE: ghcr.io/${{ github.repository_owner }}/libbitcoin-server:${{ needs.version.outputs.version }}@${{ needs.docker.outputs.digest }}
+
+    steps:
+      - name: Checkout packaging
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: 'libbitcoin-server'
+
+      - name: Prepare Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+
+      - name: Prepare start-cli
+        uses: Start9Labs/start-technologies/.github/actions/install-start-cli@61d175bf10e10784e0b62459dc0596bb22aa9fd5
+
+      - name: Build package
+        shell: bash
+        working-directory: libbitcoin-server/.github/packaging/startos
+        env:
+          DEV_KEY: ${{ secrets.STARTOS_DEV_KEY }}
+        run: |
+          mkdir -p ~/.startos .startos assets
+          if [ -n "${DEV_KEY}" ]; then
+            printf '%s' "${DEV_KEY}" > ~/.startos/id.key.pem
+          else
+            start-cli init-key
+          fi
+          cp ~/.startos/id.key.pem .startos/build.key.pem
+
+          sed -i "s|@IMAGE@|${IMAGE}|" startos/manifest/index.ts
+          sed -i "s|@VERSION@|${VERSION}|g" startos/versions/current.ts
+
+          npm install
+          make ${{ matrix.target }}
+
+          mkdir -p "${{ github.workspace }}/packages"
+          for package in *.s9pk; do
+            mv "${package}" "${{ github.workspace }}/packages/${package%.s9pk}-${VERSION}.s9pk"
+          done
+
+      - name: Upload package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package-startos-${{ matrix.target }}
+          path: packages/*
+          retention-days: 1
+          if-no-files-found: error
+
   publish:
-    needs: [ debian, windows, manifests ]
+    needs: [ debian, windows, manifests, startos ]
     runs-on: ubuntu-latest
 
     permissions:
