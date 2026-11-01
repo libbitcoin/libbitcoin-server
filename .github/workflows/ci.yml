@@ -179,6 +179,7 @@ jobs:
     steps:
       - name: Get branch name
         id: get-branch
+        shell: bash
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo "branch=${{ github.head_ref }}" >> $GITHUB_OUTPUT
@@ -294,6 +295,10 @@ jobs:
           if [[ -n "${{ matrix.llvm }}" ]]; then
               echo "PATH=/opt/homebrew/opt/${{ matrix.llvm }}/bin:${PATH}" >> $GITHUB_ENV
           fi
+
+      - name: Prepare toolchain [windows]
+        if: ${{ startsWith(matrix.image, 'windows') }}
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
 
       - name: Environmental Computation
         shell: bash
@@ -449,6 +454,7 @@ jobs:
     steps:
       - name: Get branch name
         id: get-branch
+        shell: bash
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo "branch=${{ github.head_ref }}" >> $GITHUB_OUTPUT
@@ -564,6 +570,10 @@ jobs:
           if [[ -n "${{ matrix.llvm }}" ]]; then
               echo "PATH=/opt/homebrew/opt/${{ matrix.llvm }}/bin:${PATH}" >> $GITHUB_ENV
           fi
+
+      - name: Prepare toolchain [windows]
+        if: ${{ startsWith(matrix.image, 'windows') }}
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
 
       - name: Environmental Computation
         shell: bash
@@ -676,6 +686,22 @@ jobs:
 
       matrix:
         include:
+          - image: windows-latest
+            preset: "win-msvc-release-static"
+            cc: ""
+            cxx: ""
+            flags: ""
+            coverage: ""
+            options: ""
+
+          - image: windows-latest
+            preset: "win-clangcl-release-static"
+            cc: ""
+            cxx: ""
+            flags: ""
+            coverage: ""
+            options: ""
+
           - image: ubuntu-24.04
             preset: "nix-gnu-debug-static"
             cc: "gcc-13"
@@ -695,6 +721,7 @@ jobs:
     steps:
       - name: Get branch name
         id: get-branch
+        shell: bash
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo "branch=${{ github.head_ref }}" >> $GITHUB_OUTPUT
@@ -810,6 +837,10 @@ jobs:
           if [[ -n "${{ matrix.llvm }}" ]]; then
               echo "PATH=/opt/homebrew/opt/${{ matrix.llvm }}/bin:${PATH}" >> $GITHUB_ENV
           fi
+
+      - name: Prepare toolchain [windows]
+        if: ${{ startsWith(matrix.image, 'windows') }}
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
 
       - name: Environmental Computation
         shell: bash
