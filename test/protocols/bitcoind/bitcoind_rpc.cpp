@@ -4052,31 +4052,6 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__broadcast_mempool_sequence__tx
     BOOST_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 1);
 }
 
-// Spends the tx1c output, leaving a fee.
-static const chain::transaction tx1c_child
-{
-    0x01,
-    chain::inputs
-    {
-        chain::input
-        {
-            chain::point{ test::tx1c.hash(false), 0x00 },
-            chain::script{ { { chain::opcode::push_positive_1 } } },
-            chain::witness{},
-            max_uint32
-        }
-    },
-    chain::outputs
-    {
-        chain::output
-        {
-            0x50,
-            chain::script{ { { chain::opcode::push_positive_3 } } }
-        }
-    },
-    0x00
-};
-
 static std::string send_param(const chain::transaction& tx) NOEXCEPT
 {
     return "[\"" + encode_base16(tx.to_data(true)) + "\"]";
@@ -4085,11 +4060,11 @@ static std::string send_param(const chain::transaction& tx) NOEXCEPT
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolancestors__broadcast_child__parent)
 {
     const auto parent = rpc("sendrawtransaction", send_param(test::tx1c));
-    const auto child = rpc("sendrawtransaction", send_param(tx1c_child));
+    const auto child = rpc("sendrawtransaction", send_param(test::tx1c_child));
     BOOST_REQUIRE_MESSAGE(parent.is_object() && parent.as_object().contains("result"), serialize(parent));
     BOOST_REQUIRE_MESSAGE(child.is_object() && child.as_object().contains("result"), serialize(child));
 
-    const auto response = rpc("getmempoolancestors", "[\"" + encode_hash(tx1c_child.hash(false)) + "\"]");
+    const auto response = rpc("getmempoolancestors", "[\"" + encode_hash(test::tx1c_child.hash(false)) + "\"]");
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
 
     const auto& txids = response.at("result").as_array();
@@ -4103,11 +4078,11 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolancestors__broadcast_child__parent)
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolancestors__broadcast_child_verbose__parent_entry)
 {
     const auto parent = rpc("sendrawtransaction", send_param(test::tx1c));
-    const auto child = rpc("sendrawtransaction", send_param(tx1c_child));
+    const auto child = rpc("sendrawtransaction", send_param(test::tx1c_child));
     BOOST_REQUIRE_MESSAGE(parent.is_object() && parent.as_object().contains("result"), serialize(parent));
     BOOST_REQUIRE_MESSAGE(child.is_object() && child.as_object().contains("result"), serialize(child));
 
-    const auto response = rpc("getmempoolancestors", "[\"" + encode_hash(tx1c_child.hash(false)) + "\", true]");
+    const auto response = rpc("getmempoolancestors", "[\"" + encode_hash(test::tx1c_child.hash(false)) + "\", true]");
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
 
     const auto& entries = response.at("result").as_object();
@@ -4122,7 +4097,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempoolancestors__broadcast_child_verbose_
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempooldescendants__broadcast_parent__child)
 {
     const auto parent = rpc("sendrawtransaction", send_param(test::tx1c));
-    const auto child = rpc("sendrawtransaction", send_param(tx1c_child));
+    const auto child = rpc("sendrawtransaction", send_param(test::tx1c_child));
     BOOST_REQUIRE_MESSAGE(parent.is_object() && parent.as_object().contains("result"), serialize(parent));
     BOOST_REQUIRE_MESSAGE(child.is_object() && child.as_object().contains("result"), serialize(child));
 
@@ -4131,7 +4106,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempooldescendants__broadcast_parent__chil
 
     const auto& txids = response.at("result").as_array();
     BOOST_REQUIRE_EQUAL(txids.size(), 1u);
-    BOOST_REQUIRE_EQUAL(as_text(txids.front()), encode_hash(tx1c_child.hash(false)));
+    BOOST_REQUIRE_EQUAL(as_text(txids.front()), encode_hash(test::tx1c_child.hash(false)));
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__getmempooldescendants__not_pooled__invalid_address_or_key)
@@ -4202,7 +4177,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__confirmed_spender_mempo
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitpackage__parent_and_child__success)
 {
-    const auto package = "[[\"" + encode_base16(test::tx1c.to_data(true)) + "\", \"" + encode_base16(tx1c_child.to_data(true)) + "\"]]";
+    const auto package = "[[\"" + encode_base16(test::tx1c.to_data(true)) + "\", \"" + encode_base16(test::tx1c_child.to_data(true)) + "\"]]";
     const auto response = rpc("submitpackage", package);
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
 
@@ -4225,14 +4200,14 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitpackage__parent_and_child__success)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__submitpackage__orphan__failed)
 {
-    const auto package = "[[\"" + encode_base16(tx1c_child.to_data(true)) + "\"]]";
+    const auto package = "[[\"" + encode_base16(test::tx1c_child.to_data(true)) + "\"]]";
     const auto response = rpc("submitpackage", package);
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
 
     const auto& result = response.at("result");
     BOOST_REQUIRE_EQUAL(as_text(result.at("package_msg")), "transaction failed");
 
-    const auto& child = result.at("tx-results").at(encode_hash(tx1c_child.hash(true)));
+    const auto& child = result.at("tx-results").at(encode_hash(test::tx1c_child.hash(true)));
     BOOST_REQUIRE(child.as_object().contains("error"));
     BOOST_REQUIRE(!child.as_object().contains("fees"));
 }
@@ -4325,7 +4300,7 @@ BOOST_AUTO_TEST_CASE(bitcoind_rpc__importmempool__obfuscated__pooled)
 
 BOOST_AUTO_TEST_CASE(bitcoind_rpc__importmempool__invalid_tx__skipped)
 {
-    const auto path = write_file("import.dat", mempool_data(tx1c_child));
+    const auto path = write_file("import.dat", mempool_data(test::tx1c_child));
     const auto response = rpc("importmempool", import_param(path));
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
 

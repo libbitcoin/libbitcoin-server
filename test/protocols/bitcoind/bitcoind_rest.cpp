@@ -254,8 +254,16 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__blockfilter_basic__filters_disabled__not_ok)
     BOOST_REQUIRE(rest_status(target) != boost::beast::http::status::ok);
 }
 
-static const auto& coinbase1 = *test::block1.transactions_ptr()->front();
-static const auto txid1 = encode_hash(coinbase1.hash(false));
+static const chain::transaction& coinbase1() NOEXCEPT
+{
+    return *test::block1.transactions_ptr()->front();
+}
+
+static std::string txid1() NOEXCEPT
+{
+    return encode_hash(coinbase1().hash(false));
+}
+
 static const auto unknown_hash = encode_hash(null_hash);
 
 // tx
@@ -263,12 +271,12 @@ static const auto unknown_hash = encode_hash(null_hash);
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__tx_hex__coinbase__expected)
 {
-    BOOST_REQUIRE_EQUAL(rest_text("/rest/tx/" + txid1 + ".hex"), encode_base16(coinbase1.to_data(true)) + "\n");
+    BOOST_REQUIRE_EQUAL(rest_text("/rest/tx/" + txid1() + ".hex"), encode_base16(coinbase1().to_data(true)) + "\n");
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__tx_bin__coinbase__expected)
 {
-    BOOST_REQUIRE_EQUAL(rest_data("/rest/tx/" + txid1 + ".bin"), coinbase1.to_data(true));
+    BOOST_REQUIRE_EQUAL(rest_data("/rest/tx/" + txid1() + ".bin"), coinbase1().to_data(true));
 }
 
 // block
@@ -448,9 +456,9 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__getutxos_bin__hit__bip64_framing)
     const auto prefix = base16_chunk("09000000");
     const auto bitmap = base16_chunk("0101" "01");
     const auto utxo = base16_chunk("00000000" "01000000");
-    const auto output = coinbase1.outputs_ptr()->front()->to_data();
+    const auto output = coinbase1().outputs_ptr()->front()->to_data();
     const auto expected = build_chunk({ prefix, test::block9_hash, bitmap, utxo, output });
-    BOOST_REQUIRE_EQUAL(rest_data("/rest/getutxos/" + txid1 + "-0.bin"), expected);
+    BOOST_REQUIRE_EQUAL(rest_data("/rest/getutxos/" + txid1() + "-0.bin"), expected);
 }
 
 // mempool
@@ -515,17 +523,28 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__options__allowed__ok)
 // spenttxouts (spending block)
 // ----------------------------------------------------------------------------
 
-static const auto& spent3 = *test::block3.transactions_ptr()->front()->outputs_ptr()->front();
-static const auto& spent13 = *test::mock_tx13.outputs_ptr()->front();
-static const auto block13 = encode_hash(test::mock_block13.hash());
+static const chain::output& spent3() NOEXCEPT
+{
+    return *test::block3.transactions_ptr()->front()->outputs_ptr()->front();
+}
+
+static const chain::output& spent13() NOEXCEPT
+{
+    return *test::mock_tx13.outputs_ptr()->front();
+}
+
+static std::string block13() NOEXCEPT
+{
+    return encode_hash(test::mock_block13.hash());
+}
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts_bin__block13__undo_framing)
 {
     BOOST_REQUIRE(query_.set(test::mock_block13, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block13.hash()), true));
 
-    const auto expected = build_chunk({ base16_chunk("030001"), spent3.to_data(), base16_chunk("01"), spent13.to_data() });
-    BOOST_REQUIRE_EQUAL(rest_data("/rest/spenttxouts/" + block13 + ".bin"), expected);
+    const auto expected = build_chunk({ base16_chunk("030001"), spent3().to_data(), base16_chunk("01"), spent13().to_data() });
+    BOOST_REQUIRE_EQUAL(rest_data("/rest/spenttxouts/" + block13() + ".bin"), expected);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts_hex__block13__undo_framing)
@@ -533,8 +552,8 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts_hex__block13__undo_framing)
     BOOST_REQUIRE(query_.set(test::mock_block13, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block13.hash()), true));
 
-    const auto expected = "030001" + encode_base16(spent3.to_data()) + "01" + encode_base16(spent13.to_data()) + "\n";
-    BOOST_REQUIRE_EQUAL(rest_text("/rest/spenttxouts/" + block13 + ".hex"), expected);
+    const auto expected = "030001" + encode_base16(spent3().to_data()) + "01" + encode_base16(spent13().to_data()) + "\n";
+    BOOST_REQUIRE_EQUAL(rest_text("/rest/spenttxouts/" + block13() + ".hex"), expected);
 }
 
 BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts_json__block13__prevouts_per_tx)
@@ -542,15 +561,15 @@ BOOST_AUTO_TEST_CASE(bitcoind_rest__spenttxouts_json__block13__prevouts_per_tx)
     BOOST_REQUIRE(query_.set(test::mock_block13, database::context{ 0, 10, 0 }, {}, false, false));
     BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block13.hash()), true));
 
-    const auto result = rest_json("/rest/spenttxouts/" + block13 + ".json");
+    const auto result = rest_json("/rest/spenttxouts/" + block13() + ".json");
     BOOST_REQUIRE_EQUAL(result.as_array().size(), 3u);
     BOOST_REQUIRE(result.at(0).as_array().empty());
     BOOST_REQUIRE_EQUAL(result.at(1).as_array().size(), 1u);
     BOOST_REQUIRE_EQUAL(result.at(2).as_array().size(), 1u);
     BOOST_REQUIRE_EQUAL(result.at(1).at(0).at("value").to_number<double>(), 50.0);
-    BOOST_REQUIRE_EQUAL(as_text(result.at(1).at(0).at("scriptPubKey").at("hex")), encode_base16(spent3.script().to_data(false)));
+    BOOST_REQUIRE_EQUAL(as_text(result.at(1).at(0).at("scriptPubKey").at("hex")), encode_base16(spent3().script().to_data(false)));
     BOOST_REQUIRE_EQUAL(result.at(2).at(0).at("value").to_number<double>(), 9 / 100'000'000.0);
-    BOOST_REQUIRE_EQUAL(as_text(result.at(2).at(0).at("scriptPubKey").at("hex")), encode_base16(spent13.script().to_data(false)));
+    BOOST_REQUIRE_EQUAL(as_text(result.at(2).at(0).at("scriptPubKey").at("hex")), encode_base16(spent13().script().to_data(false)));
     BOOST_REQUIRE_EQUAL(as_text(result.at(2).at(0).at("scriptPubKey").at("address")), "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM");
 }
 

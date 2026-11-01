@@ -466,7 +466,10 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE(electrum_duplicate_tests, electrum_duplicate_setup_fixture)
 
-static const std::string duplicate_hash = encode_hash(test::mock_block10.transactions_ptr()->at(1)->hash(false));
+static std::string duplicate_hash() NOEXCEPT
+{
+    return encode_hash(test::mock_block10.transactions_ptr()->at(1)->hash(false));
+}
 
 BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__duplicate__strong_instance)
 {
@@ -478,7 +481,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__duplicate__str
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
 
     const auto& history = response.at("result").as_array();
-    const auto duplicate = [](const auto& item) { return item.at("tx_hash").as_string() == duplicate_hash; };
+    const auto duplicate = [](const auto& item) { return item.at("tx_hash").as_string() == duplicate_hash(); };
     const auto found = std::find_if(history.begin(), history.end(), duplicate);
     BOOST_REQUIRE_EQUAL(std::count_if(history.begin(), history.end(), duplicate), 1);
     BOOST_REQUIRE_EQUAL(found->at("height").as_int64(), 10);
@@ -494,7 +497,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__duplicate__st
     BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
 
     const auto& unspent = response.at("result").as_array();
-    const auto duplicate = [](const auto& item) { return item.at("tx_hash").as_string() == duplicate_hash && item.at("tx_pos").as_int64() == 0; };
+    const auto duplicate = [](const auto& item) { return item.at("tx_hash").as_string() == duplicate_hash() && item.at("tx_pos").as_int64() == 0; };
     const auto found = std::find_if(unspent.begin(), unspent.end(), duplicate);
     BOOST_REQUIRE_EQUAL(std::count_if(unspent.begin(), unspent.end(), duplicate), 1);
     BOOST_REQUIRE_EQUAL(found->at("height").as_int64(), 10);
