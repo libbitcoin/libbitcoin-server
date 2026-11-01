@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    remove|deconfigure)
+        rm -f /usr/bin/bs
+        ;;
+esac

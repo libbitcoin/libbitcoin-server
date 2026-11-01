@@ -1,0 +1,301 @@
+###############################################################################
+#  Copyright (c) 2014-2026 libbitcoin-server developers (see COPYING).
+#
+###############################################################################
+
+name: Package Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag whose signed binaries are packaged."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+
+  version:
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Compute version
+        id: version
+        shell: bash
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+  debian:
+    needs: version
+    runs-on: ubuntu-latest
+
+    # Draft release assets are visible only with write access.
+    permissions:
+      contents: write
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        include:
+          - architecture: "amd64"
+            selector: "selector-linux-x64"
+            baseline: "bs-linux-x64"
+            baseline_requires: "avx2"
+            optimized: "bs-linux-x64-shani"
+            optimized_requires: "shani avx2 sse41"
+
+          - architecture: "arm64"
+            selector: "selector-linux-arm64"
+            baseline: "bs-linux-arm64"
+            baseline_requires: ""
+            optimized: "bs-linux-arm64-crypto"
+            optimized_requires: "aes sha"
+
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+
+    steps:
+      - name: Checkout packaging
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: 'libbitcoin-server'
+
+      - name: Download release binaries
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLIC_KEY: ${{ vars.PUBLIC_KEY }}
+        run: >
+          bash libbitcoin-server/.github/packaging/fetch.sh
+          "${{ github.event.inputs.tag }}"
+          binaries
+          "${{ matrix.selector }}"
+          "${{ matrix.baseline }}"
+          "${{ matrix.optimized }}"
+
+      - name: Assemble package
+        shell: bash
+        run: |
+          PACKAGING="libbitcoin-server/.github/packaging/debian"
+          LIBRARY="package/usr/lib/libbitcoin-server"
+          mkdir -p package/DEBIAN "${LIBRARY}" packages
+
+          install -m 0755 "binaries/${{ matrix.selector }}" "${LIBRARY}/selector"
+          install -m 0755 "binaries/${{ matrix.baseline }}" "${LIBRARY}/${{ matrix.baseline }}"
+          install -m 0755 "binaries/${{ matrix.optimized }}" "${LIBRARY}/${{ matrix.optimized }}"
+
+          sed -e "s|@VERSION@|${VERSION}|" \
+              -e "s|@ARCHITECTURE@|${{ matrix.architecture }}|" \
+              "${PACKAGING}/control.in" > package/DEBIAN/control
+
+          sed -e "s|@BASELINE@|${{ matrix.baseline }}|" \
+              -e "s|@BASELINE_REQUIRES@|${{ matrix.baseline_requires }}|" \
+              -e "s|@OPTIMIZED@|${{ matrix.optimized }}|" \
+              -e "s|@OPTIMIZED_REQUIRES@|${{ matrix.optimized_requires }}|" \
+              "${PACKAGING}/postinst.in" > package/DEBIAN/postinst
+
+          install -m 0755 "${PACKAGING}/prerm" package/DEBIAN/prerm
+          chmod 0755 package/DEBIAN/postinst
+
+          dpkg-deb --root-owner-group --build package \
+            "packages/libbitcoin-server_${VERSION}_${{ matrix.architecture }}.deb"
+          dpkg-deb --info "packages/libbitcoin-server_${VERSION}_${{ matrix.architecture }}.deb"
+
+      - name: Upload package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package-debian-${{ matrix.architecture }}
+          path: packages/*
+          retention-days: 1
+          if-no-files-found: error
+
+  windows:
+    needs: version
+    runs-on: windows-latest
+
+    # Draft release assets are visible only with write access.
+    permissions:
+      contents: write
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        include:
+          - suffix: "x64"
+            architecture: "x64os"
+            selector: "selector-windows-x64.exe"
+            baseline: "bs-windows-x64.exe"
+            baseline_requires: "avx2"
+            optimized: "bs-windows-x64-shani.exe"
+            optimized_requires: "shani avx2 sse41"
+
+          - suffix: "arm64"
+            architecture: "arm64"
+            selector: "selector-windows-arm64.exe"
+            baseline: "bs-windows-arm64.exe"
+            baseline_requires: ""
+            optimized: "bs-windows-arm64-crypto.exe"
+            optimized_requires: "aes sha"
+
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+
+    steps:
+      - name: Checkout packaging
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: 'libbitcoin-server'
+
+      - name: Download release binaries
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLIC_KEY: ${{ vars.PUBLIC_KEY }}
+        run: >
+          bash libbitcoin-server/.github/packaging/fetch.sh
+          "${{ github.event.inputs.tag }}"
+          binaries
+          "${{ matrix.selector }}"
+          "${{ matrix.baseline }}"
+          "${{ matrix.optimized }}"
+
+      - name: Prepare Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $workspace = "${{ github.workspace }}"
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Q `
+            "/DAppVersion=$env:VERSION" `
+            "/DArchitecture=${{ matrix.architecture }}" `
+            "/DSourceDir=$workspace\binaries" `
+            "/DOutputDir=$workspace\installers" `
+            "/DOutputBase=libbitcoin-server-$env:VERSION-windows-${{ matrix.suffix }}-setup" `
+            "/DSelector=${{ matrix.selector }}" `
+            "/DBaseline=${{ matrix.baseline }}" `
+            "/DBaselineRequires=${{ matrix.baseline_requires }}" `
+            "/DOptimized=${{ matrix.optimized }}" `
+            "/DOptimizedRequires=${{ matrix.optimized_requires }}" `
+            "$workspace\libbitcoin-server\.github\packaging\windows\bs.iss"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload installer
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package-windows-${{ matrix.suffix }}
+          path: installers/*
+          retention-days: 1
+          if-no-files-found: error
+
+  manifests:
+    needs: [ version, windows ]
+    runs-on: ubuntu-latest
+
+    # Draft release assets are visible only with write access.
+    permissions:
+      contents: write
+
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      RELEASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.tag }}
+
+    steps:
+      - name: Checkout packaging
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: 'libbitcoin-server'
+
+      - name: Download release binaries
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLIC_KEY: ${{ vars.PUBLIC_KEY }}
+        run: >
+          bash libbitcoin-server/.github/packaging/fetch.sh
+          "${{ github.event.inputs.tag }}"
+          binaries
+          bs-macos-arm64
+          bs-macos-x64
+
+      - name: Retrieve installers
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: package-windows-*
+          merge-multiple: true
+          path: installers
+
+      - name: Generate Homebrew formula
+        shell: bash
+        run: |
+          mkdir -p manifests
+          sed -e "s|@VERSION@|${VERSION}|" \
+              -e "s|@RELEASE_URL@|${RELEASE_URL}|" \
+              -e "s|@SHA256_ARM64@|$(sha256sum binaries/bs-macos-arm64 | cut -d' ' -f1)|" \
+              -e "s|@SHA256_X64@|$(sha256sum binaries/bs-macos-x64 | cut -d' ' -f1)|" \
+              libbitcoin-server/.github/packaging/homebrew/libbitcoin-server.rb.in \
+              > manifests/libbitcoin-server.rb
+
+      - name: Generate winget manifests
+        shell: bash
+        run: |
+          WINGET="libbitcoin-server/.github/packaging/winget"
+          X64="installers/libbitcoin-server-${VERSION}-windows-x64-setup.exe"
+          ARM64="installers/libbitcoin-server-${VERSION}-windows-arm64-setup.exe"
+          for template in "${WINGET}"/*.yaml.in; do
+            sed -e "s|@VERSION@|${VERSION}|" \
+                -e "s|@RELEASE_URL@|${RELEASE_URL}|" \
+                -e "s|@SHA256_X64@|$(sha256sum "${X64}" | cut -d' ' -f1 | tr a-f A-F)|" \
+                -e "s|@SHA256_ARM64@|$(sha256sum "${ARM64}" | cut -d' ' -f1 | tr a-f A-F)|" \
+                "${template}" > "manifests/$(basename "${template}" .in)"
+          done
+
+      - name: Upload manifests
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package-manifests
+          path: manifests/*
+          retention-days: 1
+          if-no-files-found: error
+
+  publish:
+    needs: [ debian, windows, manifests ]
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Retrieve packages
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: package-*
+          merge-multiple: true
+          path: packages
+
+      - name: Compute checksums
+        shell: bash
+        working-directory: packages
+        run: |
+          sha256sum * > packages-sha256.txt
+          cat packages-sha256.txt
+
+      - name: Attach packages to release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release upload "${{ github.event.inputs.tag }}"
+          --repo "${{ github.repository }}"
+          --clobber
+          packages/*

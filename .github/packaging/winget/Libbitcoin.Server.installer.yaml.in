@@ -1,0 +1,16 @@
+PackageIdentifier: Libbitcoin.Server
+PackageVersion: @VERSION@
+InstallerType: inno
+Scope: machine
+ElevationRequirement: elevatesSelf
+Commands:
+- bs
+Installers:
+- Architecture: x64
+  InstallerUrl: @RELEASE_URL@/libbitcoin-server-@VERSION@-windows-x64-setup.exe
+  InstallerSha256: @SHA256_X64@
+- Architecture: arm64
+  InstallerUrl: @RELEASE_URL@/libbitcoin-server-@VERSION@-windows-arm64-setup.exe
+  InstallerSha256: @SHA256_ARM64@
+ManifestType: installer
+ManifestVersion: 1.6.0

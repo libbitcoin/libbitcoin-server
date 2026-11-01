@@ -1,0 +1,27 @@
+#!/bin/sh
+set -e
+
+directory=/usr/lib/libbitcoin-server
+
+supports()
+{
+    for feature in "$@"; do
+        echo "${features}" | grep -qx "${feature}" || return 1
+    done
+}
+
+if [ "$1" = "configure" ]; then
+    features="$("${directory}/selector")"
+
+    if supports @OPTIMIZED_REQUIRES@; then
+        variant=@OPTIMIZED@
+    elif supports @BASELINE_REQUIRES@; then
+        variant=@BASELINE@
+    else
+        echo "libbitcoin-server: this processor supports no packaged variant of bs." >&2
+        exit 1
+    fi
+
+    ln -sf "${directory}/${variant}" /usr/bin/bs
+    echo "libbitcoin-server: installed ${variant} as /usr/bin/bs."
+fi
