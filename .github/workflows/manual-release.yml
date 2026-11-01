@@ -436,9 +436,9 @@ jobs:
     env:
       CC: '${{ matrix.cc }}'
       CXX: '${{ matrix.cxx }}'
-      CFLAGS: '${{ matrix.flags }}'
-      CXXFLAGS: '${{ matrix.flags }}'
-      LDFLAGS: '${{ matrix.linkflags }}'
+      CFLAGS: '${{ matrix.flags }} -g'
+      CXXFLAGS: '${{ matrix.flags }} -g'
+      LDFLAGS: "${{ matrix.linkflags }}${{ (startsWith(matrix.image, 'ubuntu') && ' -Wl,--build-id') || '' }}"
 
     steps:
       # Disabled pending security discussion
@@ -649,6 +649,7 @@ jobs:
               fi
               CANDIDATE="${WORKSPACE}/${PROJECT}/bin/${{ matrix.platform }}/${CONFIG}/${{ matrix.toolset }}/static/${PROGRAM}.exe"
               CANONICAL="${{ matrix.basename }}.exe"
+              echo "pdb=${CANDIDATE%.exe}.pdb" >> "$GITHUB_OUTPUT"
           else
               echo "\e[0;91mUnexpected toolchain provided.\e[0m"
               exit 1
@@ -683,25 +684,41 @@ jobs:
         if: ${{ matrix.configuration != 'debug' && matrix.toolchain != 'msbuild' }}
         shell: bash
         run: |
-          echo "Stripping debug symbols to reduce binary size..."
-          find candidate -type f \
-            \( -perm -111 -o -name "*.so" -o -name "*.dylib" \) \
-            ! -path "*/.git/*" \
-            ! -name "*.a" \
-            -print0 | while IFS= read -r -d '' f; do
-              if file "$f" | grep -qE "ELF|Mach-O|PE32"; then
-                before=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
-                if [[ "$(uname -s)" == "Darwin" ]]; then
-                  strip -x "$f"
-                else
-                  strip --strip-unneeded --preserve-dates "$f"
-                fi
-                after=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
-                saved=$((before - after))
-                printf "Stripped: %s  (%'d → %'d bytes, saved %'d)\n" \
-                  "$f" "$before" "$after" "$saved"
-              fi
-            done || true
+          echo "Separating debug symbols from the binary..."
+          mkdir -p symbols
+          NAME="${{ steps.normalizer.outputs.candidate_identifier }}"
+          f="candidate/${NAME}"
+          before=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
+          if [[ "$(uname -s)" == "Darwin" ]]; then
+            dsymutil "$f" -o "symbols/${NAME}.dSYM"
+            strip -x "$f"
+            BINARY_UUID=$(dwarfdump --uuid "$f" | cut -d' ' -f2)
+            SYMBOLS_UUID=$(dwarfdump --uuid "symbols/${NAME}.dSYM" | cut -d' ' -f2)
+            echo "UUID: ${BINARY_UUID} (binary), ${SYMBOLS_UUID} (symbols)"
+            if [[ -z "${BINARY_UUID}" || "${BINARY_UUID}" != "${SYMBOLS_UUID}" ]]; then
+              echo "Symbol UUID does not match binary."
+              exit 1
+            fi
+            ditto -c -k --keepParent "symbols/${NAME}.dSYM" "symbols/${NAME}.dSYM.zip"
+            rm -rf "symbols/${NAME}.dSYM"
+          else
+            objcopy --only-keep-debug --compress-debug-sections=zlib "$f" "symbols/${NAME}.debug"
+            strip --strip-all "$f"
+            objcopy --add-gnu-debuglink="symbols/${NAME}.debug" "$f"
+            readelf -n "$f" | grep "Build ID"
+            readelf -n "symbols/${NAME}.debug" | grep "Build ID"
+          fi
+          after=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
+          printf "Stripped: %s  (%'d → %'d bytes)\n" "$f" "$before" "$after"
+          ls -la symbols
+
+      - name: Collect debug symbols [msbuild]
+        if: ${{ matrix.toolchain == 'msbuild' }}
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force symbols | Out-Null
+          Compress-Archive -Path "${{ steps.normalizer.outputs.pdb }}" -DestinationPath "symbols\${{ matrix.basename }}.pdb.zip"
+          Get-ChildItem symbols
 
       - name: Display candidate files
         working-directory: candidate
@@ -772,6 +789,15 @@ jobs:
         with:
           name: ${{ steps.normalizer.outputs.candidate_identifier }}
           path: candidate/*
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload symbols
+        if: ${{ matrix.configuration != 'debug' || matrix.toolchain == 'msbuild' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.basename }}-symbols
+          path: symbols/*
           retention-days: 1
           if-no-files-found: error
 
