@@ -1,0 +1,317 @@
+###############################################################################
+#  Copyright (c) 2014-2026 libbitcoin-server developers (see COPYING).
+###############################################################################
+
+name: Double Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch or tag of all five repositories (default: this branch)."
+        required: false
+        default: ''
+        type: string
+  workflow_call:
+    inputs:
+      tag-database:
+        type: string
+        required: true
+      tag-network:
+        type: string
+        required: true
+      tag-node:
+        type: string
+        required: true
+      tag-server:
+        type: string
+        required: true
+      tag-system:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+
+  resolve:
+    runs-on: ubuntu-24.04
+
+    outputs:
+      system: ${{ steps.resolve.outputs.system }}
+      database: ${{ steps.resolve.outputs.database }}
+      network: ${{ steps.resolve.outputs.network }}
+      node: ${{ steps.resolve.outputs.node }}
+      server: ${{ steps.resolve.outputs.server }}
+
+    steps:
+      - name: Resolve commits
+        id: resolve
+        shell: bash
+        env:
+          OWNER: ${{ github.repository_owner }}
+          DEFAULT: ${{ inputs.ref || github.ref_name }}
+          REF_system: ${{ inputs.tag-system }}
+          REF_database: ${{ inputs.tag-database }}
+          REF_network: ${{ inputs.tag-network }}
+          REF_node: ${{ inputs.tag-node }}
+          REF_server: ${{ inputs.tag-server }}
+        run: |
+          for REPO in system database network node server; do
+            NAME="REF_${REPO}"
+            REF="${!NAME:-${DEFAULT}}"
+            REFS=$(git ls-remote "https://github.com/${OWNER}/libbitcoin-${REPO}" \
+              "refs/heads/${REF}" "refs/tags/${REF}" "refs/tags/${REF}^{}")
+            SHA=$(echo "${REFS}" | awk '/\^\{\}$/ { print $1 }')
+            SHA=${SHA:-$(echo "${REFS}" | awk 'NR == 1 { print $1 }')}
+            if [[ -z "${SHA}" ]]; then
+              echo "libbitcoin-${REPO} has no branch or tag '${REF}'."
+              exit 1
+            fi
+            echo "libbitcoin-${REPO} ${REF} ${SHA}" | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "${REPO}=${SHA}" >> "$GITHUB_OUTPUT"
+          done
+
+  build:
+    needs: resolve
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        builder:
+          - name: "a"
+            root: "."
+            timezone: "UTC"
+            umask: "0022"
+          - name: "b"
+            root: "builder-b"
+            timezone: "Pacific/Auckland"
+            umask: "0002"
+
+        target:
+          - basename: "bs-linux-x64"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-avx2=ON -Denable-sse41=ON"
+            cc: "clang-18"
+            cxx: "clang++-18"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04
+            flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "selector-linux-x64"
+            project: "libbitcoin-system"
+            program: "selector"
+            configuration: release
+            link: static
+            toolchain: cmake
+            cc: "clang-18"
+            cxx: "clang++-18"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04
+
+          - basename: "bs-macos-arm64"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-sha3=ON -Denable-sha=ON -Denable-aes=ON"
+            cc: "clang"
+            cxx: "clang++"
+            image: macos-latest
+            deployment_target: "13.3"
+            flags: "-mcpu=apple-m1"
+
+          - basename: "bs-windows-x64"
+            configuration: StaticRelease
+            toolchain: msbuild
+            options: "--enable-avx2 --enable-sse41"
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-latest
+
+          - basename: "selector-windows-x64"
+            project: "libbitcoin-system"
+            program: "selector"
+            configuration: StaticRelease
+            toolchain: msbuild
+            options: '"/p:Option-arch=StreamingSIMDExtensions2"'
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-latest
+
+    runs-on: ${{ matrix.target.image }}
+
+    env:
+      CC: ${{ matrix.target.cc }}
+      CXX: ${{ matrix.target.cxx }}
+      TZ: ${{ matrix.builder.timezone }}
+      SOURCE: ${{ matrix.builder.root == '.' && github.workspace || format('{0}/{1}', github.workspace, matrix.builder.root) }}
+
+    steps:
+      - name: Checkout libbitcoin-server
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          path: "${{ matrix.builder.root }}/libbitcoin-server"
+          ref: ${{ needs.resolve.outputs.server }}
+          repository: ${{ github.repository_owner }}/libbitcoin-server
+
+      - name: Checkout libbitcoin-node
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          path: "${{ matrix.builder.root }}/libbitcoin-node"
+          ref: ${{ needs.resolve.outputs.node }}
+          repository: ${{ github.repository_owner }}/libbitcoin-node
+
+      - name: Checkout libbitcoin-network
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          path: "${{ matrix.builder.root }}/libbitcoin-network"
+          ref: ${{ needs.resolve.outputs.network }}
+          repository: ${{ github.repository_owner }}/libbitcoin-network
+
+      - name: Checkout libbitcoin-database
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          path: "${{ matrix.builder.root }}/libbitcoin-database"
+          ref: ${{ needs.resolve.outputs.database }}
+          repository: ${{ github.repository_owner }}/libbitcoin-database
+
+      - name: Checkout libbitcoin-system
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          path: "${{ matrix.builder.root }}/libbitcoin-system"
+          ref: ${{ needs.resolve.outputs.system }}
+          repository: ${{ github.repository_owner }}/libbitcoin-system
+
+      - name: Checkout build definition
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          path: ".definition"
+          ref: ${{ needs.resolve.outputs.server }}
+          repository: ${{ github.repository_owner }}/libbitcoin-server
+          sparse-checkout: .github/actions
+
+      - name: Apply umask
+        shell: bash
+        run: |
+          echo "umask ${{ matrix.builder.umask }}" > "${RUNNER_TEMP}/umask.sh"
+          echo "BASH_ENV=${RUNNER_TEMP}/umask.sh" >> "$GITHUB_ENV"
+
+      - name: Build
+        id: binary
+        uses: ./.definition/.github/actions/build-binary
+        with:
+          source: ${{ matrix.builder.root == '.' && github.workspace || format(runner.os == 'Windows' && '{0}\{1}' || '{0}/{1}', github.workspace, matrix.builder.root) }}
+          toolchain: ${{ matrix.target.toolchain }}
+          basename: ${{ matrix.target.basename }}
+          project: ${{ matrix.target.project || 'libbitcoin-server' }}
+          program: ${{ matrix.target.program || 'bs' }}
+          configuration: ${{ matrix.target.configuration }}
+          link: ${{ matrix.target.link }}
+          options: ${{ matrix.target.options }}
+          flags: ${{ matrix.target.flags }}
+          linkflags: ${{ matrix.target.linkflags }}
+          deployment_target: ${{ matrix.target.deployment_target }}
+          platform: ${{ matrix.target.platform }}
+          toolset: ${{ matrix.target.toolset }}
+          version: ${{ matrix.target.version }}
+
+      - name: Record build
+        shell: bash
+        run: |
+          mkdir output
+          cp candidate/* symbols/* output/
+          {
+            echo "image: ${ImageOS} ${ImageVersion}"
+            if [[ -n "${CXX}" ]]; then echo "compiler: $(${CXX} --version | head -1)"; fi
+            echo "source: ${SOURCE}"
+            echo "timezone: ${TZ}"
+            echo "umask: $(umask)"
+          } | tee output/toolchain.txt
+          cd output
+          FILES=$(ls | grep -v -x toolchain.txt)
+          if command -v sha256sum > /dev/null; then
+            sha256sum ${FILES}
+          else
+            shasum -a 256 ${FILES}
+          fi | sed 's/ [*]/  /' | tee SHA256SUMS
+
+      - name: Upload build
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: double-${{ matrix.target.basename }}-${{ matrix.builder.name }}
+          path: output
+          retention-days: 7
+
+  compare:
+    needs: build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Download builds
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: double-*
+
+      - name: Compare hashes
+        id: compare
+        shell: bash
+        run: |
+          echo "| file | builder a | builder b |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          DIFFER=""
+          for A in double-*-a; do
+            B="${A%-a}-b"
+            join -j 2 <(sort -k2 "${A}/SHA256SUMS") <(sort -k2 "${B}/SHA256SUMS") |
+              awk '{ print "| " $1 " | " substr($2, 1, 16) " | " substr($3, 1, 16) " |" }' >> "$GITHUB_STEP_SUMMARY"
+            if ! cmp -s <(grep -v '[.]pdb[.]zip$' "${A}/SHA256SUMS") <(grep -v '[.]pdb[.]zip$' "${B}/SHA256SUMS"); then
+              DIFFER="${DIFFER} ${A%-a}"
+            fi
+          done
+          echo "PDB files are not compared: link.exe does not write them deterministically." | tee -a "$GITHUB_STEP_SUMMARY"
+          if [[ -z "${DIFFER}" ]]; then
+            echo "Builds are identical." | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Builds differ:${DIFFER}" | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "differ=${DIFFER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Explain differences
+        if: ${{ steps.compare.outputs.differ != '' }}
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends diffoscope-minimal binutils
+          mkdir report
+          for PAIR in ${{ steps.compare.outputs.differ }}; do
+            for FILE in $(cut -d' ' -f3 "${PAIR}-a/SHA256SUMS"); do
+              diffoscope --max-report-size 50000000 \
+                --text "report/${FILE}.txt" --html "report/${FILE}.html" \
+                "${PAIR}-a/${FILE}" "${PAIR}-b/${FILE}" || true
+            done
+          done
+          head -c 20000 report/*.txt
+
+      - name: Upload report
+        if: ${{ steps.compare.outputs.differ != '' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: diffoscope
+          path: report
+          retention-days: 7
+
+      - name: Fail on difference
+        if: ${{ steps.compare.outputs.differ != '' }}
+        shell: bash
+        run: exit 1

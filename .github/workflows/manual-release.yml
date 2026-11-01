@@ -139,7 +139,7 @@ jobs:
     needs: validate-tags
 
     outputs:
-      candidate_identifier: ${{ steps.normalizer.outputs.candidate_identifier }}
+      candidate_identifier: ${{ steps.binary.outputs.candidate_identifier }}
 
     runs-on: ${{ matrix.image }}
     container: ${{ matrix.container  || null }}
@@ -417,7 +417,7 @@ jobs:
             program: "selector"
             configuration: StaticRelease
             toolchain: msbuild
-            options: "/p:Option-arch=StreamingSIMDExtensions2"
+            options: '"/p:Option-arch=StreamingSIMDExtensions2"'
             platform: "x64"
             toolset: "v145"
             version: "vs2026"
@@ -436,9 +436,6 @@ jobs:
     env:
       CC: '${{ matrix.cc }}'
       CXX: '${{ matrix.cxx }}'
-      CFLAGS: '${{ matrix.flags }} -g'
-      CXXFLAGS: '${{ matrix.flags }} -g'
-      LDFLAGS: "${{ matrix.linkflags }}${{ (startsWith(matrix.image, 'ubuntu') && ' -Wl,--build-id') || '' }}"
 
     steps:
       # Disabled pending security discussion
@@ -486,236 +483,28 @@ jobs:
           ref: ${{ github.event.inputs.tag-system }}
           repository: ${{ github.repository_owner }}/libbitcoin-system
 
-      - name: Prepare toolchain [linux/glibc]
-        if: ${{ startsWith(matrix.image, 'ubuntu') && matrix.container == '' }}
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ${{ matrix.packages || '' }} \
-            git build-essential autoconf automake libtool pkg-config
-
-      - name: Prepare toolchain [linux/musl -Alpine]
-        if: ${{ startsWith(matrix.container, 'alpine') }}
-        shell: sh
-        run: |
-          apk add --no-cache ${{ matrix.packages || '' }} \
-            build-base linux-headers \
-            g++ make autoconf automake libtool pkgconf cmake \
-            git bash
-
-      - name: Prepare toolchain [macos]
-        if: ${{ startsWith(matrix.image, 'macos') }}
-        shell: bash
-        run: |
-          # install packages
-          brew install ${{ matrix.packages || '' }} autoconf automake libtool
-
-          # Ensure Xcode command line tools are properly configured
-          sudo xcode-select --reset
-
-          # conditionally extend path
-          if [[ -n "${{ matrix.llvm }}" ]]; then
-            echo "PATH=/opt/homebrew/opt/${{ matrix.llvm }}/bin:${PATH}" >> $GITHUB_ENV
-            echo "PATH : /opt/homebrew/opt/${{ matrix.llvm }}/bin:${PATH}"
-          fi
-
-          # Set deployment target to a compatible or declared value
-          MACOSX_VERSION=$(sw_vers -productVersion | cut -d. -f1,2)
-          if [[ -n "${{ matrix.deployment_target }}" ]]; then
-              echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.deployment_target }}" >> $GITHUB_ENV
-              echo "MACOSX_DEPLOYMENT_TARGET  : ${{ matrix.deployment_target }}"
-              echo "MACOSX_VERSION            : ${MACOSX_VERSION}"
-          else
-              echo "MACOSX_DEPLOYMENT_TARGET=${MACOSX_VERSION}" >> $GITHUB_ENV
-              echo "MACOSX_DEPLOYMENT_TARGET  : ${MACOSX_VERSION}"
-          fi
-
-      - name: Prepare toolchain [windows]
-        if: ${{ startsWith(matrix.image, 'windows') }}
-        uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3
+      - name: Build
+        id: binary
+        uses: ./libbitcoin-server/.github/actions/build-binary
         with:
-          msbuild-architecture: x64
-
-      - name: Prepare toolchain - nuget cleanup [windows]
-        if: ${{ startsWith(matrix.image, 'windows') }}
-        shell: cmd
-        run: |
-          nuget locals all -clear
-
-      - name: Compute Environmental Variables
-        if: ${{ matrix.toolchain == 'cmake' || matrix.toolchain == 'gnu' || matrix.toolchain == 'presets' }}
-        shell: bash
-        run: |
-          if [[ "${{ matrix.link }}" == "dynamic" ]]; then
-              echo "LDFLAGS=-Wl,-rpath,${{ github.workspace }}/prefix/lib" >> $GITHUB_ENV
-          fi
-
-      - name: Display Compiler
-        if: ${{ matrix.toolchain == 'cmake' || matrix.toolchain == 'gnu' || matrix.toolchain == 'presets' }}
-        shell: bash
-        run: |
-          which ${CC}
-          ${CC} --version
-          which ${CXX}
-          ${CXX} --version
-
-      - name: Build [cmake]
-        if: ${{ matrix.toolchain == 'cmake' }}
-        shell: bash
-        run: >
-          ./${{ matrix.project || 'libbitcoin-server' }}/builds/cmake/install-cmake.sh
-          -DCMAKE_SKIP_INSTALL_RPATH=${{ matrix.link == 'static' && 'ON' || 'OFF' }}
-          --noninteractive
-          --build-use-local-src
-          --build-src-dir="${{ github.workspace }}"
-          --prefix="${{ github.workspace }}/prefix"
-          --build-obj-dir="obj"
-          --build-obj-dir-relative
-          --build-config="${{ matrix.configuration }}"
-          --build-link="${{ matrix.link }}"
-          --build-skip-tests
-          ${{ matrix.options }}
-
-      - name: Build [gnu]
-        if: ${{ matrix.toolchain == 'gnu' }}
-        shell: bash
-        run: >
-          ./${{ matrix.project || 'libbitcoin-server' }}/builds/gnu/install-gnu.sh
-          --noninteractive
-          --build-use-local-src
-          --build-src-dir="${{ github.workspace }}"
-          --prefix="${{ github.workspace }}/prefix"
-          --build-obj-dir="obj"
-          --build-obj-dir-relative
-          --build-config="${{ matrix.configuration }}"
-          --build-link="${{ matrix.link }}"
-          --build-skip-tests
-          ${{ matrix.options }}
-
-      - name: Build [msbuild]
-        if: ${{ matrix.toolchain == 'msbuild' }}
-        shell: cmd
-        run: >
-          .\${{ matrix.project || 'libbitcoin-server' }}\builds\msvc\build-msvc.cmd
-          --noninteractive
-          --build-src-dir "${{ github.workspace }}"
-          --build-config ${{ matrix.configuration }}
-          --build-platform ${{ matrix.platform }}
-          --build-version ${{ matrix.version }}
-          --build-use-local-src
-          --build-skip-tests
-          ${{ matrix.options }}
-
-      - name: Build [presets]
-        if: ${{ matrix.toolchain == 'presets' }}
-        shell: bash
-        run: >
-          ./${{ matrix.project || 'libbitcoin-server' }}/builds/cmake/install-presets.sh
-          --noninteractive
-          --build-use-local-src
-          --build-src-dir="${{ github.workspace }}"
-          --build-preset="${{ matrix.preset }}"
-          --build-skip-tests
-          ${{ matrix.options }}
-
-      - name: Normalize output location
-        id: normalizer
-        shell: bash
-        run: |
-          mkdir candidate
-          WORKSPACE="${{ github.workspace }}"
-          PROJECT="${{ matrix.project || 'libbitcoin-server' }}"
-          PROGRAM="${{ matrix.program || 'bs' }}"
-          if [[ "${{ matrix.toolchain }}" == "cmake" ]]; then
-              CANDIDATE="${WORKSPACE}/prefix/bin/${PROGRAM}"
-              CANONICAL="${{ matrix.basename }}"
-          elif [[ ${{ matrix.toolchain }} == "gnu" ]]; then
-              CANDIDATE="${WORKSPACE}/prefix/bin/${PROGRAM}"
-              CANONICAL="${{ matrix.basename }}"
-          elif [[ ${{ matrix.toolchain }} == "presets" ]]; then
-              CANDIDATE="${WORKSPACE}/prefix/${{ matrix.preset }}/bin/${PROGRAM}"
-              CANONICAL="${{ matrix.basename }}"
-          elif [[ ${{ matrix.toolchain }} == "msbuild" ]]; then
-              if [[ "${{ matrix.configuration }}" == *Debug* ]]; then
-                  CONFIG="Debug"
-              elif [[ "${{ matrix.configuration }}" == *Release* ]]; then
-                  CONFIG="Release"
-              else
-                  echo "Configuration unexpected."
-                  exit 1
-              fi
-              CANDIDATE="${WORKSPACE}/${PROJECT}/bin/${{ matrix.platform }}/${CONFIG}/${{ matrix.toolset }}/static/${PROGRAM}.exe"
-              CANONICAL="${{ matrix.basename }}.exe"
-              echo "pdb=${CANDIDATE%.exe}.pdb" >> "$GITHUB_OUTPUT"
-          else
-              echo "\e[0;91mUnexpected toolchain provided.\e[0m"
-              exit 1
-          fi
-
-          cp -L -n ${CANDIDATE} candidate/${CANONICAL}
-          echo "candidate_identifier=${CANONICAL}" >> "$GITHUB_OUTPUT"
-
-      - name: Remove embedded RUNPATH/RPATH
-        if: ${{
-            matrix.link == 'static' &&
-            matrix.toolchain != 'msbuild' &&
-            startsWith(matrix.image, 'ubuntu') &&
-            matrix.container == ''
-          }}
-        shell: bash
-        run: |
-          sudo apt-get install -y patchelf
-          find candidate -type f -executable -print0 | while IFS= read -r -d '' f; do
-            if file "$f" | grep -q ELF; then
-              echo "=== $f ==="
-              echo "Before:"
-              readelf -d "$f" | grep -E 'RPATH|RUNPATH' || echo "(none)"
-              # or: patchelf --print-rpath "$f"
-              patchelf --remove-rpath "$f" || true
-              echo "After:"
-              readelf -d "$f" | grep -E 'RPATH|RUNPATH' || echo "(none)"
-            fi
-          done
-
-      - name: Strip symbols from binaries
-        if: ${{ matrix.configuration != 'debug' && matrix.toolchain != 'msbuild' }}
-        shell: bash
-        run: |
-          echo "Separating debug symbols from the binary..."
-          mkdir -p symbols
-          NAME="${{ steps.normalizer.outputs.candidate_identifier }}"
-          f="candidate/${NAME}"
-          before=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
-          if [[ "$(uname -s)" == "Darwin" ]]; then
-            dsymutil "$f" -o "symbols/${NAME}.dSYM"
-            strip -x "$f"
-            BINARY_UUID=$(dwarfdump --uuid "$f" | cut -d' ' -f2)
-            SYMBOLS_UUID=$(dwarfdump --uuid "symbols/${NAME}.dSYM" | cut -d' ' -f2)
-            echo "UUID: ${BINARY_UUID} (binary), ${SYMBOLS_UUID} (symbols)"
-            if [[ -z "${BINARY_UUID}" || "${BINARY_UUID}" != "${SYMBOLS_UUID}" ]]; then
-              echo "Symbol UUID does not match binary."
-              exit 1
-            fi
-            ditto -c -k --keepParent "symbols/${NAME}.dSYM" "symbols/${NAME}.dSYM.zip"
-            rm -rf "symbols/${NAME}.dSYM"
-          else
-            objcopy --only-keep-debug --compress-debug-sections=zlib "$f" "symbols/${NAME}.debug"
-            strip --strip-all "$f"
-            objcopy --add-gnu-debuglink="symbols/${NAME}.debug" "$f"
-            readelf -n "$f" | grep "Build ID"
-            readelf -n "symbols/${NAME}.debug" | grep "Build ID"
-          fi
-          after=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
-          printf "Stripped: %s  (%'d → %'d bytes)\n" "$f" "$before" "$after"
-          ls -la symbols
-
-      - name: Collect debug symbols [msbuild]
-        if: ${{ matrix.toolchain == 'msbuild' }}
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force symbols | Out-Null
-          Compress-Archive -Path "${{ steps.normalizer.outputs.pdb }}" -DestinationPath "symbols\${{ matrix.basename }}.pdb.zip"
-          Get-ChildItem symbols
+          source: ${{ github.workspace }}
+          toolchain: ${{ matrix.toolchain }}
+          basename: ${{ matrix.basename }}
+          project: ${{ matrix.project || 'libbitcoin-server' }}
+          program: ${{ matrix.program || 'bs' }}
+          configuration: ${{ matrix.configuration }}
+          link: ${{ matrix.link }}
+          preset: ${{ matrix.preset }}
+          options: ${{ matrix.options }}
+          flags: ${{ matrix.flags }}
+          linkflags: ${{ matrix.linkflags }}
+          packages: ${{ matrix.packages }}
+          llvm: ${{ matrix.llvm }}
+          deployment_target: ${{ matrix.deployment_target }}
+          platform: ${{ matrix.platform }}
+          toolset: ${{ matrix.toolset }}
+          version: ${{ matrix.version }}
+          container: ${{ matrix.container }}
 
       - name: Display candidate files
         working-directory: candidate
@@ -729,8 +518,8 @@ jobs:
         shell: bash
         working-directory: candidate
         run: |
-          ./${{ steps.normalizer.outputs.candidate_identifier }} --version
-          ./${{ steps.normalizer.outputs.candidate_identifier }} --hardware
+          ./${{ steps.binary.outputs.candidate_identifier }} --version
+          ./${{ steps.binary.outputs.candidate_identifier }} --hardware
 
       - name: Display binary information [cmd]
         if: ${{ matrix.toolchain == 'msbuild' }}
@@ -738,8 +527,8 @@ jobs:
         shell: cmd
         working-directory: candidate
         run: |
-          .\${{ steps.normalizer.outputs.candidate_identifier }} --version
-          .\${{ steps.normalizer.outputs.candidate_identifier }} --hardware
+          .\${{ steps.binary.outputs.candidate_identifier }} --version
+          .\${{ steps.binary.outputs.candidate_identifier }} --hardware
 
       - name: Display linkage
         if: ${{ matrix.toolchain != 'msbuild' }}
@@ -784,7 +573,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{ steps.normalizer.outputs.candidate_identifier }}
+          name: ${{ steps.binary.outputs.candidate_identifier }}
           path: candidate/*
           retention-days: 1
           if-no-files-found: error
@@ -798,9 +587,21 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+  double-build:
+    needs: validate-tags
+    permissions:
+      contents: read
+    uses: ./.github/workflows/double-build.yml
+    with:
+      tag-database: ${{ github.event.inputs.tag-database }}
+      tag-network: ${{ github.event.inputs.tag-network }}
+      tag-node: ${{ github.event.inputs.tag-node }}
+      tag-server: ${{ github.event.inputs.tag-server }}
+      tag-system: ${{ github.event.inputs.tag-system }}
+
   sign:
     name: Sign artifacts
-    needs: build-candidates
+    needs: [ build-candidates, double-build ]
     environment: release
     permissions:
       contents: write
@@ -811,6 +612,7 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: artifacts
+          pattern: "{bs,selector}-*"
 
       - name: GPG Keyring Initialization
         id: gpg-init

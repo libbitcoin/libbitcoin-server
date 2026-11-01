@@ -1,0 +1,388 @@
+###############################################################################
+#  Copyright (c) 2014-2026 libbitcoin-server developers (see COPYING).
+###############################################################################
+
+name: Build binary
+description: Prepare the toolchain, build one release binary and separate its debug symbols.
+
+inputs:
+  source:
+    description: "Directory containing the libbitcoin repositories."
+    required: true
+  toolchain:
+    description: "cmake, gnu, presets or msbuild."
+    required: true
+  basename:
+    description: "Published name of the binary."
+    required: true
+  project:
+    description: "Repository that builds the program."
+    required: false
+    default: "libbitcoin-server"
+  program:
+    description: "Installed name of the program."
+    required: false
+    default: "bs"
+  configuration:
+    description: "Build configuration."
+    required: false
+    default: ""
+  link:
+    description: "static or dynamic."
+    required: false
+    default: ""
+  preset:
+    description: "CMake preset, for the presets toolchain."
+    required: false
+    default: ""
+  options:
+    description: "Additional build script options."
+    required: false
+    default: ""
+  flags:
+    description: "Compiler flags."
+    required: false
+    default: ""
+  linkflags:
+    description: "Linker flags."
+    required: false
+    default: ""
+  packages:
+    description: "Additional toolchain packages."
+    required: false
+    default: ""
+  llvm:
+    description: "Homebrew llvm formula to put on the path (macOS)."
+    required: false
+    default: ""
+  deployment_target:
+    description: "Minimum macOS version."
+    required: false
+    default: ""
+  platform:
+    description: "msbuild platform."
+    required: false
+    default: ""
+  toolset:
+    description: "msbuild platform toolset."
+    required: false
+    default: ""
+  version:
+    description: "Visual Studio version."
+    required: false
+    default: ""
+  container:
+    description: "Container image the job runs in, if any."
+    required: false
+    default: ""
+
+outputs:
+  candidate_identifier:
+    description: "File name of the binary in candidate/."
+    value: ${{ steps.normalizer.outputs.candidate_identifier || steps.normalizer-msbuild.outputs.candidate_identifier }}
+
+runs:
+  using: composite
+  steps:
+    - name: Prepare toolchain [linux/glibc]
+      if: ${{ runner.os == 'Linux' && inputs.container == '' }}
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ${{ inputs.packages }} \
+          git build-essential autoconf automake libtool pkg-config
+
+    - name: Prepare toolchain [linux/musl -Alpine]
+      if: ${{ startsWith(inputs.container, 'alpine') }}
+      shell: sh
+      run: |
+        apk add --no-cache ${{ inputs.packages }} \
+          build-base linux-headers \
+          g++ make autoconf automake libtool pkgconf cmake \
+          git bash
+
+    - name: Prepare toolchain [macos]
+      if: ${{ runner.os == 'macOS' }}
+      shell: bash
+      run: |
+        # install packages
+        brew install ${{ inputs.packages }} autoconf automake libtool
+
+        # Ensure Xcode command line tools are properly configured
+        sudo xcode-select --reset
+
+        # conditionally extend path
+        if [[ -n "${{ inputs.llvm }}" ]]; then
+          echo "PATH=/opt/homebrew/opt/${{ inputs.llvm }}/bin:${PATH}" >> $GITHUB_ENV
+          echo "PATH : /opt/homebrew/opt/${{ inputs.llvm }}/bin:${PATH}"
+        fi
+
+        # Set deployment target to a compatible or declared value
+        MACOSX_VERSION=$(sw_vers -productVersion | cut -d. -f1,2)
+        if [[ -n "${{ inputs.deployment_target }}" ]]; then
+            echo "MACOSX_DEPLOYMENT_TARGET=${{ inputs.deployment_target }}" >> $GITHUB_ENV
+            echo "MACOSX_DEPLOYMENT_TARGET  : ${{ inputs.deployment_target }}"
+            echo "MACOSX_VERSION            : ${MACOSX_VERSION}"
+        else
+            echo "MACOSX_DEPLOYMENT_TARGET=${MACOSX_VERSION}" >> $GITHUB_ENV
+            echo "MACOSX_DEPLOYMENT_TARGET  : ${MACOSX_VERSION}"
+        fi
+
+    - name: Prepare toolchain [windows]
+      if: ${{ runner.os == 'Windows' }}
+      uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3
+      with:
+        msbuild-architecture: x64
+
+    - name: Prepare toolchain - nuget cleanup [windows]
+      if: ${{ runner.os == 'Windows' }}
+      shell: cmd
+      run: |
+        nuget locals all -clear
+
+    - name: Compute Environmental Variables
+      if: ${{ inputs.toolchain != 'msbuild' }}
+      shell: bash
+      run: |
+        FLAGS="${{ inputs.flags }} -g -ffile-prefix-map=${{ inputs.source }}=. -gno-record-gcc-switches"
+        echo "CFLAGS=${FLAGS}" >> $GITHUB_ENV
+        echo "CXXFLAGS=${FLAGS}" >> $GITHUB_ENV
+        if [[ "${{ inputs.link }}" == "dynamic" ]]; then
+            LINK="-Wl,-rpath,${{ inputs.source }}/prefix/lib"
+        else
+            LINK="${{ inputs.linkflags }}${{ (runner.os == 'Linux' && ' -Wl,--build-id') || '' }}"
+        fi
+        if [[ "$(uname -s)" == "Darwin" ]]; then
+            LINK="${LINK} -Wl,-oso_prefix,${{ inputs.source }}/"
+            echo "ZERO_AR_DATE=1" >> $GITHUB_ENV
+        fi
+        echo "LDFLAGS=${LINK}" >> $GITHUB_ENV
+
+    - name: Compute Environmental Variables [msbuild]
+      if: ${{ inputs.toolchain == 'msbuild' }}
+      shell: bash
+      run: |
+        echo "CL=/Brepro /experimental:deterministic /pathmap:${{ inputs.source }}=." >> $GITHUB_ENV
+        echo "_LINK_=/Brepro /PDBALTPATH:${{ inputs.program }}.pdb" >> $GITHUB_ENV
+
+    - name: Display Compiler
+      if: ${{ inputs.toolchain != 'msbuild' }}
+      shell: bash
+      run: |
+        which ${CC}
+        ${CC} --version
+        which ${CXX}
+        ${CXX} --version
+
+    - name: Build [cmake]
+      if: ${{ inputs.toolchain == 'cmake' }}
+      shell: bash
+      run: >
+        ${{ inputs.source }}/${{ inputs.project }}/builds/cmake/install-cmake.sh
+        -DCMAKE_SKIP_INSTALL_RPATH=${{ inputs.link == 'static' && 'ON' || 'OFF' }}
+        --noninteractive
+        --build-use-local-src
+        --build-src-dir="${{ inputs.source }}"
+        --prefix="${{ inputs.source }}/prefix"
+        --build-obj-dir="obj"
+        --build-obj-dir-relative
+        --build-config="${{ inputs.configuration }}"
+        --build-link="${{ inputs.link }}"
+        --build-skip-tests
+        ${{ inputs.options }}
+
+    - name: Build [gnu]
+      if: ${{ inputs.toolchain == 'gnu' }}
+      shell: bash
+      run: >
+        ${{ inputs.source }}/${{ inputs.project }}/builds/gnu/install-gnu.sh
+        --noninteractive
+        --build-use-local-src
+        --build-src-dir="${{ inputs.source }}"
+        --prefix="${{ inputs.source }}/prefix"
+        --build-obj-dir="obj"
+        --build-obj-dir-relative
+        --build-config="${{ inputs.configuration }}"
+        --build-link="${{ inputs.link }}"
+        --build-skip-tests
+        ${{ inputs.options }}
+
+    - name: Build [presets]
+      if: ${{ inputs.toolchain == 'presets' }}
+      shell: bash
+      run: >
+        ${{ inputs.source }}/${{ inputs.project }}/builds/cmake/install-presets.sh
+        --noninteractive
+        --build-use-local-src
+        --build-src-dir="${{ inputs.source }}"
+        --build-preset="${{ inputs.preset }}"
+        --build-skip-tests
+        ${{ inputs.options }}
+
+    - name: Build [msbuild]
+      if: ${{ inputs.toolchain == 'msbuild' }}
+      shell: cmd
+      run: >
+        "${{ inputs.source }}\${{ inputs.project }}\builds\msvc\build-msvc.cmd"
+        --noninteractive
+        --build-src-dir "${{ inputs.source }}"
+        --build-config ${{ inputs.configuration }}
+        --build-platform ${{ inputs.platform }}
+        --build-version ${{ inputs.version }}
+        --build-use-local-src
+        --build-skip-tests
+        ${{ inputs.options }}
+
+    - name: Normalize output location
+      id: normalizer
+      if: ${{ inputs.toolchain != 'msbuild' }}
+      shell: bash
+      run: |
+        mkdir candidate
+        if [[ "${{ inputs.toolchain }}" == "presets" ]]; then
+            CANDIDATE="${{ inputs.source }}/prefix/${{ inputs.preset }}/bin/${{ inputs.program }}"
+        else
+            CANDIDATE="${{ inputs.source }}/prefix/bin/${{ inputs.program }}"
+        fi
+        cp -L -n ${CANDIDATE} candidate/${{ inputs.basename }}
+        echo "candidate_identifier=${{ inputs.basename }}" >> "$GITHUB_OUTPUT"
+
+    - name: Normalize output location [msbuild]
+      id: normalizer-msbuild
+      if: ${{ inputs.toolchain == 'msbuild' }}
+      shell: bash
+      run: |
+        mkdir candidate
+        if [[ "${{ inputs.configuration }}" == *Debug* ]]; then
+            CONFIG="Debug"
+        elif [[ "${{ inputs.configuration }}" == *Release* ]]; then
+            CONFIG="Release"
+        else
+            echo "Configuration unexpected."
+            exit 1
+        fi
+        CANDIDATE="${{ inputs.source }}/${{ inputs.project }}/bin/${{ inputs.platform }}/${CONFIG}/${{ inputs.toolset }}/static/${{ inputs.program }}.exe"
+        cp -L -n "${CANDIDATE}" "candidate/${{ inputs.basename }}.exe"
+        echo "pdb=${CANDIDATE%.exe}.pdb" >> "$GITHUB_OUTPUT"
+        echo "candidate_identifier=${{ inputs.basename }}.exe" >> "$GITHUB_OUTPUT"
+
+    - name: Remove embedded RUNPATH/RPATH
+      if: ${{ inputs.link == 'static' && runner.os == 'Linux' && inputs.container == '' }}
+      shell: bash
+      run: |
+        sudo apt-get install -y patchelf
+        find candidate -type f -executable -print0 | while IFS= read -r -d '' f; do
+          if file "$f" | grep -q ELF; then
+            echo "=== $f ==="
+            echo "Before:"
+            readelf -d "$f" | grep -E 'RPATH|RUNPATH' || echo "(none)"
+            patchelf --remove-rpath "$f" || true
+            echo "After:"
+            readelf -d "$f" | grep -E 'RPATH|RUNPATH' || echo "(none)"
+          fi
+        done
+
+    - name: Strip symbols from binaries
+      if: ${{ inputs.configuration != 'debug' && inputs.toolchain != 'msbuild' }}
+      shell: bash
+      run: |
+        echo "Separating debug symbols from the binary..."
+        mkdir -p symbols
+        NAME="${{ steps.normalizer.outputs.candidate_identifier }}"
+        f="candidate/${NAME}"
+        before=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
+        if [[ "$(uname -s)" == "Darwin" ]]; then
+          dsymutil --oso-prepend-path="${{ inputs.source }}" "$f" -o "symbols/${NAME}.dSYM"
+          strip -x "$f"
+          chmod -R u=rwX,go=rX "symbols/${NAME}.dSYM"
+          find "symbols/${NAME}.dSYM" -exec env TZ=UTC touch -h -t 200001010000 {} +
+          TZ=UTC ditto -c -k --norsrc --noextattr --noacl --keepParent "symbols/${NAME}.dSYM" "symbols/${NAME}.dSYM.zip"
+          rm -rf "symbols/${NAME}.dSYM"
+        else
+          objcopy --only-keep-debug --compress-debug-sections=zlib "$f" "symbols/${NAME}.debug"
+          strip --strip-all "$f"
+          objcopy --add-gnu-debuglink="symbols/${NAME}.debug" "$f"
+        fi
+        after=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
+        printf "Stripped: %s  (%'d → %'d bytes)\n" "$f" "$before" "$after"
+        ls -la symbols
+
+    - name: Verify debug symbols
+      if: ${{ inputs.configuration != 'debug' && inputs.toolchain != 'msbuild' }}
+      shell: bash
+      run: |
+        NAME="${{ steps.normalizer.outputs.candidate_identifier }}"
+        VERIFY="${RUNNER_TEMP}/verify-symbols"
+        rm -rf "${VERIFY}"
+        mkdir -p "${VERIFY}"
+        cp "candidate/${NAME}" "${VERIFY}/"
+        if [[ "$(uname -s)" == "Darwin" ]]; then
+          ditto -x -k "symbols/${NAME}.dSYM.zip" "${VERIFY}"
+          SYMBOLS="${VERIFY}/${NAME}.dSYM"
+          BINARY_ID=$(dwarfdump --uuid "${VERIFY}/${NAME}" | cut -d' ' -f2)
+          SYMBOLS_ID=$(dwarfdump --uuid "${SYMBOLS}" | cut -d' ' -f2)
+          ENTRY="main"
+          ADDRESS=$(nm "${VERIFY}/${NAME}" | awk '$3 == "_main" { print $1 }')
+          FUNCTION=$(atos -o "${SYMBOLS}/Contents/Resources/DWARF/${NAME}" -arch "$(uname -m)" "0x${ADDRESS}" | cut -d' ' -f1)
+          LINE=$(dwarfdump --lookup "0x${ADDRESS}" "${SYMBOLS}" | sed -n "s/^Line info: file '\([^']*\)', line \([0-9]*\).*/\1:\2/p")
+        else
+          cp "symbols/${NAME}.debug" "${VERIFY}/"
+          BINARY_ID=$(readelf -n "${VERIFY}/${NAME}" | awk '/Build ID/ { print $3 }')
+          SYMBOLS_ID=$(readelf -n "${VERIFY}/${NAME}.debug" | awk '/Build ID/ { print $3 }')
+          ENTRY="main"
+          ADDRESS=$(nm --defined-only "${VERIFY}/${NAME}.debug" | awk '$3 == "main" { print $1 }')
+          LOOKUP=$(addr2line -f -e "${VERIFY}/${NAME}" "0x${ADDRESS}")
+          FUNCTION=$(echo "${LOOKUP}" | sed -n 1p)
+          LINE=$(echo "${LOOKUP}" | sed -n 2p | cut -d' ' -f1)
+        fi
+        echo "Identity: ${BINARY_ID} (binary), ${SYMBOLS_ID} (symbols)"
+        if [[ -z "${BINARY_ID}" || "${BINARY_ID}" != "${SYMBOLS_ID}" ]]; then
+          echo "Symbols do not match binary."
+          exit 1
+        fi
+        echo "${ENTRY}: ${FUNCTION} ${LINE}"
+        if [[ "${FUNCTION}" != "${ENTRY}" || -z "${LINE}" || "${LINE}" == "??"* || "${LINE}" == /* || "${LINE}" == *"${{ inputs.source }}"* ]]; then
+          echo "Symbols do not resolve the entry point to a relative source line."
+          exit 1
+        fi
+
+    - name: Collect debug symbols [msbuild]
+      if: ${{ inputs.toolchain == 'msbuild' }}
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force symbols | Out-Null
+        $pdb = Get-Item "${{ steps.normalizer-msbuild.outputs.pdb }}"
+        $pdb.LastWriteTimeUtc = [datetime]::new(2000, 1, 1, 0, 0, 0, [DateTimeKind]::Utc)
+        Compress-Archive -Path $pdb.FullName -DestinationPath "symbols\${{ inputs.basename }}.pdb.zip"
+        Get-ChildItem symbols
+
+    - name: Verify debug symbols [msbuild]
+      if: ${{ inputs.toolchain == 'msbuild' }}
+      shell: pwsh
+      run: |
+        $symbolizer = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -find "VC\Tools\Llvm\x64\bin\llvm-symbolizer.exe" | Select-Object -First 1
+        if (-not $symbolizer) { throw "llvm-symbolizer not found." }
+        $llvm = Split-Path $symbolizer
+        $verify = Join-Path $env:RUNNER_TEMP "verify-symbols"
+        Remove-Item -Recurse -Force $verify -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory $verify | Out-Null
+        $exe = Join-Path $verify "${{ steps.normalizer-msbuild.outputs.candidate_identifier }}"
+        Copy-Item "candidate\${{ steps.normalizer-msbuild.outputs.candidate_identifier }}" $exe
+        Expand-Archive "symbols\${{ inputs.basename }}.pdb.zip" -DestinationPath $verify
+        $pdb = Join-Path $verify "${{ inputs.program }}.pdb"
+        $binary = (& "$llvm\llvm-readobj.exe" --coff-debug-directory $exe) -join "`n"
+        $symbols = (& "$llvm\llvm-pdbutil.exe" dump -summary $pdb) -join "`n"
+        $binaryId = "{0} {1}" -f ([regex]::Match($binary, 'PDBGUID: (\S+)').Groups[1].Value), ([regex]::Match($binary, 'PDBAge: (\d+)').Groups[1].Value)
+        $symbolsId = "{0} {1}" -f ([regex]::Match($symbols, '\sGUID: (\S+)').Groups[1].Value), ([regex]::Match($symbols, '\sAge: (\d+)').Groups[1].Value)
+        Write-Output "Identity: $binaryId (binary), $symbolsId (symbols)"
+        if ($binaryId.Trim() -eq "" -or $binaryId -ne $symbolsId) { throw "Symbols do not match binary." }
+        $publics = (& "$llvm\llvm-pdbutil.exe" dump -publics $pdb) -join "`n"
+        $entry = [regex]::Match($publics, '`(w?main)`\s+flags = function, addr = (\d+):(\d+)')
+        if (-not $entry.Success) { throw "Entry point not found in symbols." }
+        $sections = (& "$llvm\llvm-readobj.exe" --file-headers --sections $exe) -join "`n"
+        $base = [Convert]::ToUInt64([regex]::Match($sections, 'ImageBase: 0x([0-9A-Fa-f]+)').Groups[1].Value, 16)
+        $section = [regex]::Match($sections, "Number: $([int]$entry.Groups[2].Value)\s+Name: [^\n]*\s+VirtualSize: \S+\s+VirtualAddress: 0x([0-9A-Fa-f]+)")
+        $address = $base + [Convert]::ToUInt64($section.Groups[1].Value, 16) + [UInt64]$entry.Groups[3].Value
+        $lines = & "$llvm\llvm-symbolizer.exe" "--obj=$exe" ("0x{0:x}" -f $address)
+        Write-Output "$($entry.Groups[1].Value): $($lines -join ' ')"
+        if ($lines[0] -ne $entry.Groups[1].Value -or $lines[1].StartsWith("??") -or $lines[1] -match '^[A-Za-z]:' -or $lines[1].Contains('${{ inputs.source }}')) { throw "Symbols do not resolve the entry point to a relative source line." }
