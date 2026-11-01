@@ -319,13 +319,14 @@ void protocol_html::notify_empty(const request& request) NOEXCEPT
 std::filesystem::path protocol_html::to_path(
     const std::string& target) const NOEXCEPT
 {
-    return target == "/" ? target + options_.default_ : target;
+    return system::to_path(target == "/" ? target + options_.default_ :
+        target);
 }
 
 std::filesystem::path protocol_html::to_local_path(
     const std::string& target) const NOEXCEPT
 {
-    return sanitize_origin(options_.path, to_path(target).string());
+    return sanitize_origin(options_.path, from_path(to_path(target)));
 }
 
 BC_POP_WARNING()
