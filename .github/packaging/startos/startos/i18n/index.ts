@@ -1,0 +1,5 @@
+import { setupI18n } from '@start9labs/start-sdk'
+import defaultDict, { DEFAULT_LANG } from './dictionaries/default'
+import translations from './dictionaries/translations'
+
+export const i18n = setupI18n(defaultDict, translations, DEFAULT_LANG)
