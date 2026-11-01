@@ -253,6 +253,33 @@ BOOST_AUTO_TEST_CASE(parser__read_envelope__regtest_store__stored_defaults)
     BOOST_REQUIRE_EQUAL(configured.database.strong.buckets, 100'000u);
 }
 
+BOOST_AUTO_TEST_CASE(parser__read_envelope__specified_network__stored_defaults_specified_network)
+{
+    const auto config = write_config("");
+    const char* create_argv[]{ "bs", "-m", "-n", "regtest", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser creator{ selection::mainnet, pages, pages };
+    BOOST_REQUIRE(creator.parse(6, create_argv, error));
+    BOOST_REQUIRE(!creator.configured.initialize());
+    BOOST_REQUIRE(test::clear(TEST_PATH));
+    server::server_node::store store{ creator.configured.database };
+    BOOST_REQUIRE(!store.create([](auto, auto) {}));
+    BOOST_REQUIRE(!store.close([](auto, auto) {}));
+
+    const char* argv[]{ "bs", "-n", "testnet4", "-c", config.c_str() };
+    server::parser instance{ selection::mainnet, pages, pages };
+    BOOST_REQUIRE(instance.parse(5, argv, error));
+    instance.read_envelope();
+
+    BOOST_REQUIRE(!instance.stored_code);
+    BOOST_REQUIRE(instance.stored.network == selection::regtest);
+
+    const auto& configured = instance.configured;
+    BOOST_REQUIRE(configured.bitcoin.network == selection::testnet4);
+    BOOST_REQUIRE_EQUAL(configured.network.identifier, 3669344250u);
+    BOOST_REQUIRE_EQUAL(configured.database.strong.buckets, 100'000u);
+}
+
 BOOST_AUTO_TEST_CASE(parser__read_envelope__make__unchanged)
 {
     const auto config = write_config("");
