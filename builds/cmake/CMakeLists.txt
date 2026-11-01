@@ -388,7 +388,7 @@ if ( with-console )
   )
 
   target_sources( bitcoin-server
-    PUBLIC
+    PRIVATE
       FILE_SET HEADERS
       BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../../console"
       FILES
