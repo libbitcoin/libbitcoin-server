@@ -21,7 +21,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
     subcontainer: server,
     exec: {
       command: sdk.useEntrypoint(),
-      sigtermTimeout: 900_000,
+      sigtermTimeout: 300_000,
     },
     ready: {
       display: i18n('Web Interface'),
