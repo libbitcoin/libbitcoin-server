@@ -98,6 +98,10 @@ void executor::subscribe_close()
 
 bool executor::do_run()
 {
+    // Initializes the gpu (expensive), disabling its scan if unavailable.
+    if (!metadata_.configured.node.use_gpu_())
+        metadata_.configured.database.gpu_scan_minimum = max_uint32;
+
     if (!metadata_.configured.log.path.empty())
         database::file::create_directory(metadata_.configured.log.path);
 
