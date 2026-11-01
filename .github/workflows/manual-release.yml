@@ -390,12 +390,55 @@ jobs:
             version: "vs2026"
             image: windows-11-vs2026-arm
 
+          - basename: "selector-linux-x64"
+            project: "libbitcoin-system"
+            program: "selector"
+            configuration: release
+            link: static
+            toolchain: cmake
+            cc: "clang-18"
+            cxx: "clang++-18"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04
+
+          - basename: "selector-linux-arm64"
+            project: "libbitcoin-system"
+            program: "selector"
+            configuration: release
+            link: static
+            toolchain: cmake
+            cc: "gcc-14"
+            cxx: "g++-14"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04-arm
+
+          - basename: "selector-windows-x64"
+            project: "libbitcoin-system"
+            program: "selector"
+            configuration: StaticRelease
+            toolchain: msbuild
+            options: "/p:Option-arch=StreamingSIMDExtensions2"
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-latest
+
+          - basename: "selector-windows-arm64"
+            project: "libbitcoin-system"
+            program: "selector"
+            configuration: StaticRelease
+            toolchain: msbuild
+            platform: "ARM64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-11-vs2026-arm
+
     env:
       CC: '${{ matrix.cc }}'
       CXX: '${{ matrix.cxx }}'
-      CFLAGS: '${{ matrix.flags }}'
-      CXXFLAGS: '${{ matrix.flags }}'
-      LDFLAGS: '${{ matrix.linkflags }}'
+      CFLAGS: '${{ matrix.flags }} -g'
+      CXXFLAGS: '${{ matrix.flags }} -g'
+      LDFLAGS: "${{ matrix.linkflags }}${{ (startsWith(matrix.image, 'ubuntu') && ' -Wl,--build-id') || '' }}"
 
     steps:
       # Disabled pending security discussion
@@ -520,7 +563,7 @@ jobs:
         if: ${{ matrix.toolchain == 'cmake' }}
         shell: bash
         run: >
-          ./libbitcoin-server/builds/cmake/install-cmake.sh
+          ./${{ matrix.project || 'libbitcoin-server' }}/builds/cmake/install-cmake.sh
           -DCMAKE_SKIP_INSTALL_RPATH=${{ matrix.link == 'static' && 'ON' || 'OFF' }}
           --noninteractive
           --build-use-local-src
@@ -538,7 +581,7 @@ jobs:
         if: ${{ matrix.toolchain == 'gnu' }}
         shell: bash
         run: >
-          ./libbitcoin-server/builds/gnu/install-gnu.sh
+          ./${{ matrix.project || 'libbitcoin-server' }}/builds/gnu/install-gnu.sh
           --noninteractive
           --build-use-local-src
           --build-src-dir="${{ github.workspace }}"
@@ -555,7 +598,7 @@ jobs:
         if: ${{ matrix.toolchain == 'msbuild' }}
         shell: cmd
         run: >
-          .\libbitcoin-server\builds\msvc\build-msvc.cmd
+          .\${{ matrix.project || 'libbitcoin-server' }}\builds\msvc\build-msvc.cmd
           --noninteractive
           --build-src-dir "${{ github.workspace }}"
           --build-config ${{ matrix.configuration }}
@@ -569,7 +612,7 @@ jobs:
         if: ${{ matrix.toolchain == 'presets' }}
         shell: bash
         run: >
-          ./libbitcoin-server/builds/cmake/install-presets.sh
+          ./${{ matrix.project || 'libbitcoin-server' }}/builds/cmake/install-presets.sh
           --noninteractive
           --build-use-local-src
           --build-src-dir="${{ github.workspace }}"
@@ -584,14 +627,16 @@ jobs:
         run: |
           mkdir candidate
           WORKSPACE="${{ github.workspace }}"
+          PROJECT="${{ matrix.project || 'libbitcoin-server' }}"
+          PROGRAM="${{ matrix.program || 'bs' }}"
           if [[ "${{ matrix.toolchain }}" == "cmake" ]]; then
-              CANDIDATE="${WORKSPACE}/prefix/bin/bs"
+              CANDIDATE="${WORKSPACE}/prefix/bin/${PROGRAM}"
               CANONICAL="${{ matrix.basename }}"
           elif [[ ${{ matrix.toolchain }} == "gnu" ]]; then
-              CANDIDATE="${WORKSPACE}/prefix/bin/bs"
+              CANDIDATE="${WORKSPACE}/prefix/bin/${PROGRAM}"
               CANONICAL="${{ matrix.basename }}"
           elif [[ ${{ matrix.toolchain }} == "presets" ]]; then
-              CANDIDATE="${WORKSPACE}/prefix/${{ matrix.preset }}/bin/bs"
+              CANDIDATE="${WORKSPACE}/prefix/${{ matrix.preset }}/bin/${PROGRAM}"
               CANONICAL="${{ matrix.basename }}"
           elif [[ ${{ matrix.toolchain }} == "msbuild" ]]; then
               if [[ "${{ matrix.configuration }}" == *Debug* ]]; then
@@ -602,8 +647,9 @@ jobs:
                   echo "Configuration unexpected."
                   exit 1
               fi
-              CANDIDATE="${WORKSPACE}/libbitcoin-server/bin/${{ matrix.platform }}/${CONFIG}/${{ matrix.toolset }}/static/bs.exe"
+              CANDIDATE="${WORKSPACE}/${PROJECT}/bin/${{ matrix.platform }}/${CONFIG}/${{ matrix.toolset }}/static/${PROGRAM}.exe"
               CANONICAL="${{ matrix.basename }}.exe"
+              echo "pdb=${CANDIDATE%.exe}.pdb" >> "$GITHUB_OUTPUT"
           else
               echo "\e[0;91mUnexpected toolchain provided.\e[0m"
               exit 1
@@ -638,25 +684,41 @@ jobs:
         if: ${{ matrix.configuration != 'debug' && matrix.toolchain != 'msbuild' }}
         shell: bash
         run: |
-          echo "Stripping debug symbols to reduce binary size..."
-          find candidate -type f \
-            \( -perm -111 -o -name "*.so" -o -name "*.dylib" \) \
-            ! -path "*/.git/*" \
-            ! -name "*.a" \
-            -print0 | while IFS= read -r -d '' f; do
-              if file "$f" | grep -qE "ELF|Mach-O|PE32"; then
-                before=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
-                if [[ "$(uname -s)" == "Darwin" ]]; then
-                  strip -x "$f"
-                else
-                  strip --strip-unneeded --preserve-dates "$f"
-                fi
-                after=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
-                saved=$((before - after))
-                printf "Stripped: %s  (%'d → %'d bytes, saved %'d)\n" \
-                  "$f" "$before" "$after" "$saved"
-              fi
-            done || true
+          echo "Separating debug symbols from the binary..."
+          mkdir -p symbols
+          NAME="${{ steps.normalizer.outputs.candidate_identifier }}"
+          f="candidate/${NAME}"
+          before=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
+          if [[ "$(uname -s)" == "Darwin" ]]; then
+            dsymutil "$f" -o "symbols/${NAME}.dSYM"
+            strip -x "$f"
+            BINARY_UUID=$(dwarfdump --uuid "$f" | cut -d' ' -f2)
+            SYMBOLS_UUID=$(dwarfdump --uuid "symbols/${NAME}.dSYM" | cut -d' ' -f2)
+            echo "UUID: ${BINARY_UUID} (binary), ${SYMBOLS_UUID} (symbols)"
+            if [[ -z "${BINARY_UUID}" || "${BINARY_UUID}" != "${SYMBOLS_UUID}" ]]; then
+              echo "Symbol UUID does not match binary."
+              exit 1
+            fi
+            ditto -c -k --keepParent "symbols/${NAME}.dSYM" "symbols/${NAME}.dSYM.zip"
+            rm -rf "symbols/${NAME}.dSYM"
+          else
+            objcopy --only-keep-debug --compress-debug-sections=zlib "$f" "symbols/${NAME}.debug"
+            strip --strip-all "$f"
+            objcopy --add-gnu-debuglink="symbols/${NAME}.debug" "$f"
+            readelf -n "$f" | grep "Build ID"
+            readelf -n "symbols/${NAME}.debug" | grep "Build ID"
+          fi
+          after=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
+          printf "Stripped: %s  (%'d → %'d bytes)\n" "$f" "$before" "$after"
+          ls -la symbols
+
+      - name: Collect debug symbols [msbuild]
+        if: ${{ matrix.toolchain == 'msbuild' }}
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force symbols | Out-Null
+          Compress-Archive -Path "${{ steps.normalizer.outputs.pdb }}" -DestinationPath "symbols\${{ matrix.basename }}.pdb.zip"
+          Get-ChildItem symbols
 
       - name: Display candidate files
         working-directory: candidate
@@ -727,6 +789,15 @@ jobs:
         with:
           name: ${{ steps.normalizer.outputs.candidate_identifier }}
           path: candidate/*
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload symbols
+        if: ${{ matrix.configuration != 'debug' || matrix.toolchain == 'msbuild' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.basename }}-symbols
+          path: symbols/*
           retention-days: 1
           if-no-files-found: error
 

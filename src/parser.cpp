@@ -115,10 +115,18 @@ void parser::read_envelope() NOEXCEPT
     if (stored_code || stored.network == configured.node.network)
         return;
 
+    const chain::selection selected = configured.net;
+    const auto specified = selected != chain::selection::none &&
+        selected != chain::selection::mainnet;
+
     const auto path = configured.database.path;
     reset_network(stored.network);
     configured.database.path = path;
     derive_buckets();
+
+    // A specified network is retained as configured, for override reporting.
+    if (specified)
+        configured.bitcoin.network = selected;
 }
 
 // Network defaults are reset, and then configured settings are reapplied.

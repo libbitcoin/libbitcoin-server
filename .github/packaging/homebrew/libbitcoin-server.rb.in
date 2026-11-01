@@ -1,0 +1,25 @@
+class LibbitcoinServer < Formula
+  desc "Bitcoin Full Node and Query Server"
+  homepage "https://github.com/libbitcoin/libbitcoin-server"
+  version "@VERSION@"
+  license "AGPL-3.0-or-later"
+
+  on_macos do
+    on_arm do
+      url "@RELEASE_URL@/bs-macos-arm64"
+      sha256 "@SHA256_ARM64@"
+    end
+    on_intel do
+      url "@RELEASE_URL@/bs-macos-x64"
+      sha256 "@SHA256_X64@"
+    end
+  end
+
+  def install
+    bin.install Dir["bs-macos-*"].first => "bs"
+  end
+
+  test do
+    system bin/"bs", "--version"
+  end
+end

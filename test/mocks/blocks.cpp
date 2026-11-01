@@ -943,6 +943,31 @@ const transaction tx1c
     0x00            // locktime (not absolute locked)
 };
 
+// Spends the tx1c output, leaving a fee.
+const transaction tx1c_child
+{
+    0x01,           // version
+    inputs
+    {
+        input
+        {
+            point{ tx1c.hash(false), 0x00 },
+            script{ { { opcode::push_positive_1 } } },
+            witness{},
+            max_uint32  // sequence (not relative locked)
+        }
+    },
+    outputs
+    {
+        output
+        {
+            0x50,   // value (80, fee of 10)
+            script{ { { opcode::push_positive_3 } } }
+        }
+    },
+    0x00            // locktime (not absolute locked)
+};
+
 // Pays found_address, spent by a later transaction in the same block.
 const transaction mock_tx13
 {

@@ -287,7 +287,10 @@ BOOST_AUTO_TEST_CASE(native__dispatch__opaque_origin__forbidden)
 
 static const std::string block1_hash = "00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048";
 static const std::string coinbase1_hash = "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098";
-static const auto& coinbase1 = *test::block1.transactions_ptr()->front();
+static const chain::transaction& coinbase1() NOEXCEPT
+{
+    return *test::block1.transactions_ptr()->front();
+}
 
 BOOST_AUTO_TEST_CASE(native__block__height_data__expected)
 {
@@ -473,12 +476,12 @@ BOOST_AUTO_TEST_CASE(native__block_txs__json__expected)
 
 BOOST_AUTO_TEST_CASE(native__block_txs__data__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_data("/v1/block/height/1/txs?format=data"), to_chunk(coinbase1.hash(false)));
+    BOOST_REQUIRE_EQUAL(get_data("/v1/block/height/1/txs?format=data"), to_chunk(coinbase1().hash(false)));
 }
 
 BOOST_AUTO_TEST_CASE(native__block_txs__text__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_text("/v1/block/height/1/txs?format=text"), encode_base16(coinbase1.hash(false)));
+    BOOST_REQUIRE_EQUAL(get_text("/v1/block/height/1/txs?format=text"), encode_base16(coinbase1().hash(false)));
 }
 
 BOOST_AUTO_TEST_CASE(native__block_txs__above_top__not_found)
@@ -491,12 +494,12 @@ BOOST_AUTO_TEST_CASE(native__block_txs__above_top__not_found)
 
 BOOST_AUTO_TEST_CASE(native__block_tx__data__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_data("/v1/block/height/1/tx/0?format=data"), coinbase1.to_data(true));
+    BOOST_REQUIRE_EQUAL(get_data("/v1/block/height/1/tx/0?format=data"), coinbase1().to_data(true));
 }
 
 BOOST_AUTO_TEST_CASE(native__block_tx__text__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_text("/v1/block/hash/" + block1_hash + "/tx/0?format=text"), encode_base16(coinbase1.to_data(true)));
+    BOOST_REQUIRE_EQUAL(get_text("/v1/block/hash/" + block1_hash + "/tx/0?format=text"), encode_base16(coinbase1().to_data(true)));
 }
 
 BOOST_AUTO_TEST_CASE(native__block_tx__json__expected)

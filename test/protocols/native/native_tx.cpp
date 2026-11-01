@@ -23,7 +23,10 @@ using namespace system;
 using namespace boost::beast;
 
 static const std::string coinbase1_hash = "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098";
-static const auto& coinbase1 = *test::block1.transactions_ptr()->front();
+static const chain::transaction& coinbase1() NOEXCEPT
+{
+    return *test::block1.transactions_ptr()->front();
+}
 
 BOOST_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
 
@@ -32,12 +35,12 @@ BOOST_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
 
 BOOST_AUTO_TEST_CASE(native__tx__data__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_data("/v1/tx/" + coinbase1_hash + "?format=data"), coinbase1.to_data(true));
+    BOOST_REQUIRE_EQUAL(get_data("/v1/tx/" + coinbase1_hash + "?format=data"), coinbase1().to_data(true));
 }
 
 BOOST_AUTO_TEST_CASE(native__tx__text__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_text("/v1/tx/" + coinbase1_hash + "?format=text"), encode_base16(coinbase1.to_data(true)));
+    BOOST_REQUIRE_EQUAL(get_text("/v1/tx/" + coinbase1_hash + "?format=text"), encode_base16(coinbase1().to_data(true)));
 }
 
 BOOST_AUTO_TEST_CASE(native__tx__json__expected)
@@ -133,10 +136,10 @@ BOOST_AUTO_TEST_CASE(native__ws_tx_subscribe__notify_text__expected)
     BOOST_REQUIRE(!ws_upgrade());
     BOOST_REQUIRE(ws_get_text("/v1/tx/subscribe?format=text").empty());
 
-    const auto link = query_.to_tx(coinbase1.hash(false));
+    const auto link = query_.to_tx(coinbase1().hash(false));
     notify(node::chases::transaction{ link.value });
 
-    BOOST_REQUIRE_EQUAL(to_string(ws_receive()), encode_base16(coinbase1.hash(false)));
+    BOOST_REQUIRE_EQUAL(to_string(ws_receive()), encode_base16(coinbase1().hash(false)));
 }
 
 BOOST_AUTO_TEST_CASE(native__ws_tx_subscribe__notify_data__expected)
@@ -144,10 +147,10 @@ BOOST_AUTO_TEST_CASE(native__ws_tx_subscribe__notify_data__expected)
     BOOST_REQUIRE(!ws_upgrade());
     BOOST_REQUIRE(ws_get_text("/v1/tx/subscribe?format=data").empty());
 
-    const auto link = query_.to_tx(coinbase1.hash(false));
+    const auto link = query_.to_tx(coinbase1().hash(false));
     notify(node::chases::transaction{ link.value });
 
-    BOOST_REQUIRE_EQUAL(ws_receive(), to_chunk(coinbase1.hash(false)));
+    BOOST_REQUIRE_EQUAL(ws_receive(), to_chunk(coinbase1().hash(false)));
 }
 
 BOOST_AUTO_TEST_CASE(native__ws_tx_subscribe__notify_json__expected)
@@ -155,7 +158,7 @@ BOOST_AUTO_TEST_CASE(native__ws_tx_subscribe__notify_json__expected)
     BOOST_REQUIRE(!ws_upgrade());
     BOOST_REQUIRE(ws_get_text("/v1/tx/subscribe?format=json").empty());
 
-    const auto link = query_.to_tx(coinbase1.hash(false));
+    const auto link = query_.to_tx(coinbase1().hash(false));
     notify(node::chases::transaction{ link.value });
 
     const auto response = test::parse_json(to_string(ws_receive()));

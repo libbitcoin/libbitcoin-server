@@ -1,0 +1,11 @@
+Package: libbitcoin-server
+Version: @VERSION@
+Architecture: @ARCHITECTURE@
+Maintainer: libbitcoin developers <eric@voskuil.org>
+Section: net
+Priority: optional
+Homepage: https://github.com/libbitcoin/libbitcoin-server
+Description: Bitcoin Full Node and Query Server
+ Libbitcoin Server (bs) is a full bitcoin node and query server. The package
+ contains processor variants of bs, and installation links the best variant
+ the processor supports as /usr/bin/bs.

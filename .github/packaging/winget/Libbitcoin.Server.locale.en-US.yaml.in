@@ -1,0 +1,13 @@
+PackageIdentifier: Libbitcoin.Server
+PackageVersion: @VERSION@
+PackageLocale: en-US
+Publisher: libbitcoin
+PublisherUrl: https://github.com/libbitcoin
+PackageName: Libbitcoin Server
+PackageUrl: https://github.com/libbitcoin/libbitcoin-server
+License: AGPL-3.0-or-later
+LicenseUrl: https://github.com/libbitcoin/libbitcoin-server/blob/master/COPYING
+ShortDescription: Bitcoin Full Node and Query Server
+Moniker: bs
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

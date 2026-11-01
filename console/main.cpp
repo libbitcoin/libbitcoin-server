@@ -44,6 +44,7 @@ int wmain(int argc, wchar_t* argv[])
     // frame below covers only faults on this (main) thread.
     install_stack_trace();
 
+#if defined(HAVE_MSC)
     __try
     {
         return bc::system::call_utf8_main(argc, argv, &bc::system::main);
@@ -52,6 +53,9 @@ int wmain(int argc, wchar_t* argv[])
     {
         return -1;
     }
+#else
+    return bc::system::call_utf8_main(argc, argv, &bc::system::main);
+#endif
 }
 
 // This is invoked by dump_stack_trace.
