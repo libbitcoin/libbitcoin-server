@@ -18,4 +18,7 @@ export const manifest = setupManifest({
       emulateMissing: false,
     },
   },
+  hardwareRequirements: {
+    ram: 15 * 1024 ** 3,
+  },
 })

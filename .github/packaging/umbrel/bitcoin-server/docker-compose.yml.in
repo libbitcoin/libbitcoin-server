@@ -10,7 +10,7 @@ services:
     image: @IMAGE@
     user: "1000:1000"
     restart: on-failure
-    stop_grace_period: 15m30s
+    stop_grace_period: 5m30s
     ports:
       - "8334:8334"
       - "8187:8180"
