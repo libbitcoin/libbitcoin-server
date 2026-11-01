@@ -51,6 +51,8 @@ protected:
     network::io::context io_{};
 
 private:
+    void teardown();
+
     network::logger log_;
     server::server_node server_;
 };

@@ -43,68 +43,81 @@ zmq_setup_fixture::zmq_setup_fixture(const initializer& setup,
     query_{ store_ }, log_{},
     server_{ query_, config_, log_ }
 {
-    test::clear(test::directory);
-
-    auto& network_settings = config_.network;
-    auto& node_settings = config_.node;
-    auto& zmq = config_.server.bitcoind_zmq;
-
-    // The secured (CURVE) bindings are configured only with a server key.
-    if (key.empty())
+    try
     {
-        zmq.binds = { { ZMQ_ENDPOINT } };
+        test::clear(test::directory);
+
+        auto& network_settings = config_.network;
+        auto& node_settings = config_.node;
+        auto& zmq = config_.server.bitcoind_zmq;
+
+        // The secured (CURVE) bindings are configured only with a server key.
+        if (key.empty())
+        {
+            zmq.binds = { { ZMQ_ENDPOINT } };
+        }
+        else
+        {
+            zmq.safes = { { ZMQ_ENDPOINT } };
+            zmq.key = key;
+            for (const auto& cert: certs)
+                zmq.certs.emplace_back(cert);
+        }
+
+        zmq.maximum_subscriptions = 2;
+        zmq.connections = 1;
+        zmq.inactivity_minutes = 1;
+        node_settings.delay_inbound = false;
+        node_settings.currency_window_minutes = 0;
+        network_settings.inbound.connections = 0;
+        network_settings.outbound.connections = 0;
+
+        // Create and populate the store.
+        auto ec = store_.create([](auto, auto) {});
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+
+        // Settings files are read and derived values packed, as by the executor.
+        ec = config_.initialize();
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+        setup(query_);
+
+        std::promise<code> started{};
+        server_.start([&](const code& ec) NOEXCEPT
+        {
+            started.set_value(ec);
+        });
+
+        // Block until server is started.
+        ec = started.get_future().get();
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+
+        std::promise<code> running{};
+        server_.run([&](const code& ec) NOEXCEPT
+        {
+            running.set_value(ec);
+        });
+
+        // Block until server is running.
+        ec = running.get_future().get();
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+        const auto& bound = key.empty() ? zmq.binds : zmq.safes;
+        REQUIRE_SUCCESS(socket_, connect, bound.back().to_endpoint());
     }
-    else
+    catch (...)
     {
-        zmq.safes = { { ZMQ_ENDPOINT } };
-        zmq.key = key;
-        for (const auto& cert: certs)
-            zmq.certs.emplace_back(cert);
+        teardown();
+        throw;
     }
-
-    zmq.maximum_subscriptions = 2;
-    zmq.connections = 1;
-    zmq.inactivity_minutes = 1;
-    node_settings.delay_inbound = false;
-    node_settings.currency_window_minutes = 0;
-    network_settings.inbound.connections = 0;
-    network_settings.outbound.connections = 0;
-
-    // Create and populate the store.
-    auto ec = store_.create([](auto, auto) {});
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
-
-    // Settings files are read and derived values packed, as by the executor.
-    ec = config_.initialize();
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
-    setup(query_);
-
-    std::promise<code> started{};
-    server_.start([&](const code& ec) NOEXCEPT
-    {
-        started.set_value(ec);
-    });
-
-    // Block until server is started.
-    ec = started.get_future().get();
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
-
-    std::promise<code> running{};
-    server_.run([&](const code& ec) NOEXCEPT
-    {
-        running.set_value(ec);
-    });
-
-    // Block until server is running.
-    ec = running.get_future().get();
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
-    const auto& bound = key.empty() ? zmq.binds : zmq.safes;
-    REQUIRE_SUCCESS(socket_, connect, bound.back().to_endpoint());
 }
 
 zmq_setup_fixture::~zmq_setup_fixture()
 {
     socket_.close();
+    teardown();
+}
+
+void zmq_setup_fixture::teardown()
+{
     server_.close();
     const auto ec = store_.close([](auto, auto){});
     BC_WARN_MESSAGE(!ec, ec.message());

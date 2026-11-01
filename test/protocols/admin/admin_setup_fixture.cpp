@@ -47,45 +47,53 @@ admin_setup_fixture::admin_setup_fixture(const initializer& setup,
     query_{ store_ }, log_{},
     server_{ query_, config_, log_ }
 {
-    test::clear(test::directory);
-    auto& database_settings = config_.database;
-    auto& network_settings = config_.network;
-    auto& node_settings = config_.node;
-    auto& server_settings = config_.server;
-    auto& admin = server_settings.admin;
-
-    admin.binds = { { ADMIN_ENDPOINT } };
-    admin.connections = 1;
-    admin.path = "unused";
-    admin.inactivity_minutes = 1;
-    database_settings.interval_depth = 2;
-    node_settings.minimum_fee_rate = 99.0;
-    network_settings.inbound.connections = 0;
-    network_settings.outbound.connections = 0;
-    if (configure)
-        configure(config_);
-
-    // Create and populate the store.
-    auto ec = store_.create([](auto, auto) {});
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
-
-    // Settings files are read and derived values packed, as by the executor.
-    ec = config_.initialize();
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
-
-    setup(query_);
-
-    // Run the server.
-    std::promise<code> running{};
-    server_.run([&](const code& ec) NOEXCEPT
+    try
     {
-        running.set_value(ec);
-    });
+        test::clear(test::directory);
+        auto& database_settings = config_.database;
+        auto& network_settings = config_.network;
+        auto& node_settings = config_.node;
+        auto& server_settings = config_.server;
+        auto& admin = server_settings.admin;
 
-    // Block until server is running.
-    ec = running.get_future().get();
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
-    REQUIRE_SUCCESS(socket_, connect, admin.binds.back().to_endpoint());
+        admin.binds = { { ADMIN_ENDPOINT } };
+        admin.connections = 1;
+        admin.path = "unused";
+        admin.inactivity_minutes = 1;
+        database_settings.interval_depth = 2;
+        node_settings.minimum_fee_rate = 99.0;
+        network_settings.inbound.connections = 0;
+        network_settings.outbound.connections = 0;
+        if (configure)
+            configure(config_);
+
+        // Create and populate the store.
+        auto ec = store_.create([](auto, auto) {});
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+
+        // Settings files are read and derived values packed, as by the executor.
+        ec = config_.initialize();
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+
+        setup(query_);
+
+        // Run the server.
+        std::promise<code> running{};
+        server_.run([&](const code& ec) NOEXCEPT
+        {
+            running.set_value(ec);
+        });
+
+        // Block until server is running.
+        ec = running.get_future().get();
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+        REQUIRE_SUCCESS(socket_, connect, admin.binds.back().to_endpoint());
+    }
+    catch (...)
+    {
+        teardown();
+        throw;
+    }
 }
 
 admin_setup_fixture::~admin_setup_fixture()
@@ -110,8 +118,13 @@ admin_setup_fixture::~admin_setup_fixture()
         socket_.close();
     }
 
+    teardown();
+}
+
+void admin_setup_fixture::teardown()
+{
     server_.close();
-    ec = store_.close([](auto, auto){});
+    const auto ec = store_.close([](auto, auto){});
     BC_WARN_MESSAGE(!ec, ec.message());
     test::clear(test::directory);
 }

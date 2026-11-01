@@ -59,44 +59,52 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup,
     query_{ store_ }, log_{},
     server_{ query_, config_, log_ }
 {
-    test::clear(test::directory);
-    config_.database.interval_depth = 2;
-    const auto& esplora = config_.server.esplora;
-
-    // Create and populate the store.
-    auto ec = store_.create([](auto, auto) {});
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
-
-    // Settings files are read and derived values packed, as by the executor.
-    ec = config_.initialize();
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
-
-    BC_REQUIRE(setup(query_));
-
-    // The node (chasers and address pool), bypassed by default.
-    if (start)
+    try
     {
-        std::promise<code> started{};
-        server_.start([&](const code& ec) NOEXCEPT
+        test::clear(test::directory);
+        config_.database.interval_depth = 2;
+        const auto& esplora = config_.server.esplora;
+
+        // Create and populate the store.
+        auto ec = store_.create([](auto, auto) {});
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+
+        // Settings files are read and derived values packed, as by the executor.
+        ec = config_.initialize();
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+
+        BC_REQUIRE(setup(query_));
+
+        // The node (chasers and address pool), bypassed by default.
+        if (start)
         {
-            started.set_value(ec);
+            std::promise<code> started{};
+            server_.start([&](const code& ec) NOEXCEPT
+            {
+                started.set_value(ec);
+            });
+
+            ec = started.get_future().get();
+            BC_REQUIRE_MESSAGE(!ec, ec.message());
+        }
+
+        // Run the server.
+        std::promise<code> running{};
+        server_.run([&](const code& ec) NOEXCEPT
+        {
+            running.set_value(ec);
         });
 
-        ec = started.get_future().get();
+        // Block until server is running.
+        ec = running.get_future().get();
         BC_REQUIRE_MESSAGE(!ec, ec.message());
+        REQUIRE_SUCCESS(socket_, connect, esplora.binds.back().to_endpoint());
     }
-
-    // Run the server.
-    std::promise<code> running{};
-    server_.run([&](const code& ec) NOEXCEPT
+    catch (...)
     {
-        running.set_value(ec);
-    });
-
-    // Block until server is running.
-    ec = running.get_future().get();
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
-    REQUIRE_SUCCESS(socket_, connect, esplora.binds.back().to_endpoint());
+        teardown();
+        throw;
+    }
 }
 
 esplora_setup_fixture::~esplora_setup_fixture()
@@ -121,8 +129,13 @@ esplora_setup_fixture::~esplora_setup_fixture()
         socket_.close();
     }
 
+    teardown();
+}
+
+void esplora_setup_fixture::teardown()
+{
     server_.close();
-    ec = store_.close([](auto, auto){});
+    const auto ec = store_.close([](auto, auto){});
     BC_WARN_MESSAGE(!ec, ec.message());
     test::clear(test::directory);
 }

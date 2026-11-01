@@ -75,25 +75,38 @@ struct bitcoind_json_setup_fixture
         },
         query_{ store_ }
     {
-        BC_REQUIRE_MESSAGE(test::clear(test::directory), "json setup");
-        config_.database.interval_depth = 2;
+        try
+        {
+            BC_REQUIRE_MESSAGE(test::clear(test::directory), "json setup");
+            config_.database.interval_depth = 2;
 
-        const auto ec = store_.create([](auto, auto) {});
-        BC_REQUIRE_MESSAGE(!ec, ec.message());
-        BC_REQUIRE_MESSAGE(test::setup_ten_block_store(query_),
-            "json initialize");
+            const auto ec = store_.create([](auto, auto) {});
+            BC_REQUIRE_MESSAGE(!ec, ec.message());
+            BC_REQUIRE_MESSAGE(test::setup_ten_block_store(query_), "json initialize");
+        }
+        catch (...)
+        {
+            teardown();
+            throw;
+        }
     }
 
     ~bitcoind_json_setup_fixture()
     {
-        const auto ec = store_.close([](auto, auto) {});
-        BC_WARN_MESSAGE(!ec, ec.message());
-        BC_WARN_MESSAGE(test::clear(test::directory), "json cleanup");
+        teardown();
     }
 
     configuration config_;
     test::store_t store_;
     test::query_t query_;
+
+private:
+    void teardown()
+    {
+        const auto ec = store_.close([](auto, auto) {});
+        BC_WARN_MESSAGE(!ec, ec.message());
+        BC_WARN_MESSAGE(test::clear(test::directory), "json cleanup");
+    }
 };
 
 BC_FIXTURE_TEST_SUITE(bitcoind_json_tests, bitcoind_json_setup_fixture)

@@ -69,6 +69,8 @@ private:
     using tcp_stream = network::io::socket;
     using websocket_stream = network::ws::client<network::io::socket>;
 
+    void teardown();
+
     network::logger log_;
     server::server_node server_;
     network::io::context io{};

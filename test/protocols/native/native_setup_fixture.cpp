@@ -100,38 +100,46 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
     query_{ store_ }, log_{},
     server_{ query_, config_, log_ }
 {
-    test::clear(test::directory);
-    auto& database_settings = config_.database;
-    auto& network_settings = config_.network;
-    auto& node_settings = config_.node;
-    const auto& native = config_.server.native;
-
-    database_settings.interval_depth = 2;
-    node_settings.minimum_fee_rate = 99.0;
-    network_settings.inbound.connections = 0;
-    network_settings.outbound.connections = 0;
-
-    // Create and populate the store.
-    auto ec = store_.create([](auto, auto) {});
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
-
-    // Settings files are read and derived values packed, as by the executor.
-    ec = config_.initialize();
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
-
-    BC_REQUIRE(setup(query_));
-
-    // Run the server.
-    std::promise<code> running{};
-    server_.run([&](const code& ec) NOEXCEPT
+    try
     {
-        running.set_value(ec);
-    });
+        test::clear(test::directory);
+        auto& database_settings = config_.database;
+        auto& network_settings = config_.network;
+        auto& node_settings = config_.node;
+        const auto& native = config_.server.native;
 
-    // Block until server is running.
-    ec = running.get_future().get();
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
-    REQUIRE_SUCCESS(socket_, connect, native.binds.back().to_endpoint());
+        database_settings.interval_depth = 2;
+        node_settings.minimum_fee_rate = 99.0;
+        network_settings.inbound.connections = 0;
+        network_settings.outbound.connections = 0;
+
+        // Create and populate the store.
+        auto ec = store_.create([](auto, auto) {});
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+
+        // Settings files are read and derived values packed, as by the executor.
+        ec = config_.initialize();
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+
+        BC_REQUIRE(setup(query_));
+
+        // Run the server.
+        std::promise<code> running{};
+        server_.run([&](const code& ec) NOEXCEPT
+        {
+            running.set_value(ec);
+        });
+
+        // Block until server is running.
+        ec = running.get_future().get();
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+        REQUIRE_SUCCESS(socket_, connect, native.binds.back().to_endpoint());
+    }
+    catch (...)
+    {
+        teardown();
+        throw;
+    }
 }
 
 native_setup_fixture::~native_setup_fixture()
@@ -156,8 +164,13 @@ native_setup_fixture::~native_setup_fixture()
         socket_.close();
     }
 
+    teardown();
+}
+
+void native_setup_fixture::teardown()
+{
     server_.close();
-    ec = store_.close([](auto, auto){});
+    const auto ec = store_.close([](auto, auto){});
     BC_WARN_MESSAGE(!ec, ec.message());
     test::clear(test::directory);
 }
@@ -359,17 +372,30 @@ server_node_setup_fixture::server_node_setup_fixture()
     query_{ store_ }, log_{},
     server_{ query_, config_, log_ }
 {
-    test::clear(test::directory);
-    config_.database.interval_depth = 2;
-    config_.node.minimum_fee_rate = 99.0;
-    config_.network.inbound.connections = 0;
-    config_.network.outbound.connections = 0;
+    try
+    {
+        test::clear(test::directory);
+        config_.database.interval_depth = 2;
+        config_.node.minimum_fee_rate = 99.0;
+        config_.network.inbound.connections = 0;
+        config_.network.outbound.connections = 0;
 
-    const auto ec = store_.create([](auto, auto) {});
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
+        const auto ec = store_.create([](auto, auto) {});
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+    }
+    catch (...)
+    {
+        teardown();
+        throw;
+    }
 }
 
 server_node_setup_fixture::~server_node_setup_fixture()
+{
+    teardown();
+}
+
+void server_node_setup_fixture::teardown()
 {
     server_.close();
     const auto ec = store_.close([](auto, auto){});

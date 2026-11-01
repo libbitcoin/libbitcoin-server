@@ -52,6 +52,8 @@ protected:
     network::io::socket socket_{ io };
 
 private:
+    void teardown();
+
     network::logger log_;
     server::server_node server_;
 };
