@@ -331,7 +331,10 @@ Options (named):
 -k [--buckets]       Scan and display hashmap bucket fill.               
 -l [--collisions]    Scan and display hashmap collision stats (may exceed
                      RAM and result in SIGKILL).                         
--n [--newstore]      Create new store in configured directory.           
+-m [--make]          Create new store in configured directory.           
+-n [--net]           Specify the network                                 
+                     (mainnet|testnet3|testnet4|regtest|signet), defaults
+                     to the configured network.                          
 -p [--put]           Run built-in write test and display.                
 -r [--restore]       Restore from most recent snapshot.                  
 -s [--settings]      Display all configuration settings.                 

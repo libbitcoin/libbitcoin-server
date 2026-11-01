@@ -68,6 +68,7 @@ struct bitcoind_json_setup_fixture
         {
             [this]() NOEXCEPT -> const database::settings&
             {
+                test::configure(config_);
                 config_.database.path = TEST_DIRECTORY;
                 return config_.database;
             }()

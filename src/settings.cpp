@@ -84,16 +84,90 @@ using namespace system::wallet;
 
 // settings::settings
 settings::settings(system::chain::selection context,
-    const embedded_pages& native, const embedded_pages& admin) NOEXCEPT
-  : wallet(context),
-    native("native", native),
-    admin("admin", admin)
+    const embedded_pages& native_pages,
+    const embedded_pages& admin_pages) NOEXCEPT
+  : network(context),
+    wallet(context),
+    admin("admin", admin_pages),
+    native("native", native_pages)
 {
+    // Admin may accumulate a large amount of log backlog.
+    admin.maximum_backlog = 10 * network::megabyte;
+
+    // The largest btcd notification is a filtered block.
+    btcd.maximum_backlog = 20 * network::megabyte;
+
+    // Raw block publications drop beyond the bound, eight blocks deep.
+    bitcoind_zmq.maximum_backlog = 32 * network::megabyte;
+
+    // Subscribers send nothing after subscribing, so publishers do not expire.
+    bitcoind_zmq.inactivity_minutes = 0;
+    bitcoind_zmq.expiration_minutes = 0;
+
+    // A submitted block is base16 encoded within a json envelope.
+    constexpr auto encoded = 2 * network::max_payload + 4 * network::kilobyte;
+    bitcoind.maximum_request = encoded;
+    btcd.maximum_request = encoded;
+
+    // A broadcast transaction package is base16 encoded within a json envelope.
+    electrum.maximum_request = encoded;
+    sparrow.maximum_request = encoded;
+    esplora.maximum_request = encoded;
 }
 
 // The service contexts are read from configured files, once, at startup.
 code settings::initialize() NOEXCEPT
 {
+    // Service ports are offset by chain.
+    const auto port = [this](uint16_t base) NOEXCEPT
+    {
+        switch (network)
+        {
+            case system::chain::selection::testnet3:
+                return possible_narrow_cast<uint16_t>(base + 10000_u32);
+            case system::chain::selection::regtest:
+                return possible_narrow_cast<uint16_t>(base + 20000_u32);
+            case system::chain::selection::signet:
+                return possible_narrow_cast<uint16_t>(base + 30000_u32);
+            case system::chain::selection::testnet4:
+                return possible_narrow_cast<uint16_t>(base + 40000_u32);
+            default:
+                return base;
+        }
+    };
+
+    admin.bind_port = port(8080);
+    admin.safe_port = port(8043);
+    native.bind_port = port(8180);
+    native.safe_port = port(8143);
+    bitcoind.bind_port = port(8280);
+    bitcoind.safe_port = port(8243);
+    bitcoind_zmq.bind_port = port(8380);
+    bitcoind_zmq.safe_port = port(8343);
+    btcd.bind_port = port(8480);
+    btcd.safe_port = port(8443);
+    electrum.bind_port = port(8580);
+    electrum.safe_port = port(8543);
+    sparrow.bind_port = port(8680);
+    sparrow.safe_port = port(8643);
+    esplora.bind_port = port(8780);
+    esplora.safe_port = port(8743);
+    stratum_v1.bind_port = port(8880);
+    stratum_v1.safe_port = port(8843);
+    stratum_v2.bind_port = port(8980);
+
+    // Service bindings without a port take the service's default port.
+    admin.default_ports();
+    native.default_ports();
+    bitcoind.default_ports();
+    bitcoind_zmq.default_ports();
+    btcd.default_ports();
+    electrum.default_ports();
+    sparrow.default_ports();
+    esplora.default_ports();
+    stratum_v1.default_ports();
+    stratum_v2.default_ports();
+
     const auto initialize = [this](auto& service) NOEXCEPT
     {
         const auto ec = service.initialize_context();

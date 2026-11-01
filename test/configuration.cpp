@@ -31,7 +31,8 @@ BOOST_AUTO_TEST_CASE(configuration__construct1__none_context__expected)
     BOOST_REQUIRE(!instance.hardware);
     BOOST_REQUIRE(!instance.settings);
     BOOST_REQUIRE(!instance.version);
-    BOOST_REQUIRE(!instance.newstore);
+    BOOST_REQUIRE(instance.net == system::chain::selection::none);
+    BOOST_REQUIRE(!instance.make);
     BOOST_REQUIRE(!instance.backup);
     BOOST_REQUIRE(!instance.restore);
     BOOST_REQUIRE(!instance.daemon);

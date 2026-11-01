@@ -114,7 +114,7 @@ private:
     bool do_version();
     bool do_hardware();
     bool do_settings();
-    bool do_new_store();
+    bool do_make();
     bool do_backup();
     bool do_restore();
     bool do_daemon();

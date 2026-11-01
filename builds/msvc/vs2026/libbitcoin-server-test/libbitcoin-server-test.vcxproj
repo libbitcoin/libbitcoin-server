@@ -100,6 +100,7 @@
     <ClCompile Include="..\..\..\..\test\interfaces\btcd.cpp" />
     <ClCompile Include="..\..\..\..\test\main.cpp" />
     <ClCompile Include="..\..\..\..\test\mocks\blocks.cpp" />
+    <ClCompile Include="..\..\..\..\test\parser.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\admin_query.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\admin_target.cpp" />
     <ClCompile Include="..\..\..\..\test\parsers\bitcoind_query.cpp" />

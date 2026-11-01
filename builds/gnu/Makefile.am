@@ -319,6 +319,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/configuration.cpp \
     ${srcdir}/../../test/error.cpp \
     ${srcdir}/../../test/main.cpp \
+    ${srcdir}/../../test/parser.cpp \
     ${srcdir}/../../test/settings.cpp \
     ${srcdir}/../../test/test.cpp \
     ${srcdir}/../../test/interfaces/bitcoind.cpp \

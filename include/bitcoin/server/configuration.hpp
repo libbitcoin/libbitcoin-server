@@ -40,6 +40,7 @@ public:
 
     /// Environment.
     system::config::path file{};
+    system::config::selection net{};
 
     /// Information.
     bool help{};
@@ -51,7 +52,7 @@ public:
     bool accept{};
 
     /// Actions.
-    bool newstore{};
+    bool make{};
     bool backup{};
     bool restore{};
 

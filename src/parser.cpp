@@ -21,6 +21,7 @@
 #include <filesystem>
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/server_node.hpp>
 #include <bitcoin/server/settings.hpp>
 
 ////std::filesystem::path config_default_path() NOEXCEPT
@@ -42,201 +43,6 @@ parser::parser(system::chain::selection context,
     const server::settings::embedded_pages& admin) NOEXCEPT
   : configured(context, native, admin)
 {
-    // network
-
-    using level = network::messages::peer::level;
-
-    configured.network.enable_relay = true;
-    configured.network.enable_address = true;
-    configured.network.enable_not_found = true;
-    configured.network.enable_address_v2 = true;
-    configured.network.enable_witness_tx = false;
-    configured.network.enable_compact = true;
-    configured.network.outbound.host_pool_capacity = 10000;
-    configured.network.outbound.connections = 100;
-    configured.network.inbound.connections = 100;
-    configured.network.maximum_skew_minutes = 120;
-    configured.network.protocol_minimum = level::headers_protocol;
-    configured.network.protocol_maximum = level::maximum_protocol;
-
-    // TODO: from bitcoind, revert to defaults when seeds are up.
-    configured.network.outbound.seeds.clear();
-    configured.network.outbound.seeds.emplace_back("seed.bitcoin.sipa.be", 8333_u16);
-    configured.network.outbound.seeds.emplace_back("dnsseed.bluematt.me", 8333_u16);
-    ////configured.network.outbound.seeds.emplace_back("dnsseed.bitcoin.dashjr-list-of-p2p-nodes.us", 8333_u16);
-    configured.network.outbound.seeds.emplace_back("seed.bitcoin.jonasschnelli.ch", 8333_u16);
-    configured.network.outbound.seeds.emplace_back("seed.btc.petertodd.net", 8333_u16);
-    configured.network.outbound.seeds.emplace_back("seed.bitcoin.sprovoost.nl", 8333_u16);
-    configured.network.outbound.seeds.emplace_back("dnsseed.emzy.de", 8333_u16);
-    configured.network.outbound.seeds.emplace_back("seed.bitcoin.wiz.biz", 8333_u16);
-    configured.network.outbound.seeds.emplace_back("seed.mainnet.achownodes.xyz", 8333_u16);
-
-    // server
-
-    // Admin may accumulate a large amount of log backlog.
-    configured.server.admin.maximum_backlog = 10 * network::megabyte;
-
-    // The largest btcd notification is a filtered block.
-    configured.server.btcd.maximum_backlog = 20 * network::megabyte;
-
-    // Raw block publications drop beyond the bound, eight blocks deep.
-    configured.server.bitcoind_zmq.maximum_backlog = 32 * network::megabyte;
-
-    // Subscribers send nothing after subscribing, so publishers do not expire.
-    configured.server.bitcoind_zmq.inactivity_minutes = 0;
-    configured.server.bitcoind_zmq.expiration_minutes = 0;
-
-    // A submitted block is base16 encoded within a json envelope.
-    configured.server.bitcoind.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
-    configured.server.btcd.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
-
-    // A broadcast transaction package is base16 encoded within a json envelope.
-    configured.server.electrum.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
-    configured.server.sparrow.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
-    configured.server.esplora.maximum_request = 2 * network::max_payload + 4 * network::kilobyte;
-
-    // Service ports are offset by chain.
-    const auto port = [&context](uint16_t base) NOEXCEPT
-    {
-        switch (context)
-        {
-            case chain::selection::testnet3:
-                return possible_narrow_cast<uint16_t>(base + 10000_u32);
-            case chain::selection::regtest:
-                return possible_narrow_cast<uint16_t>(base + 20000_u32);
-            case chain::selection::signet:
-                return possible_narrow_cast<uint16_t>(base + 30000_u32);
-            case chain::selection::testnet4:
-                return possible_narrow_cast<uint16_t>(base + 40000_u32);
-            default:
-                return base;
-        }
-    };
-
-    configured.server.admin.bind_port = port(8080);
-    configured.server.admin.safe_port = port(8043);
-    configured.server.native.bind_port = port(8180);
-    configured.server.native.safe_port = port(8143);
-    configured.server.bitcoind.bind_port = port(8280);
-    configured.server.bitcoind.safe_port = port(8243);
-    configured.server.bitcoind_zmq.bind_port = port(8380);
-    configured.server.bitcoind_zmq.safe_port = port(8343);
-    configured.server.btcd.bind_port = port(8480);
-    configured.server.btcd.safe_port = port(8443);
-    configured.server.electrum.bind_port = port(8580);
-    configured.server.electrum.safe_port = port(8543);
-    configured.server.sparrow.bind_port = port(8680);
-    configured.server.sparrow.safe_port = port(8643);
-    configured.server.esplora.bind_port = port(8780);
-    configured.server.esplora.safe_port = port(8743);
-    configured.server.stratum_v1.bind_port = port(8880);
-    configured.server.stratum_v1.safe_port = port(8843);
-    configured.server.stratum_v2.bind_port = port(8980);
-
-    // node
-
-    configured.node.minimum_fee_rate = 0.000001;
-    configured.node.batch_verify = 1'000'000;
-    configured.node.batch_silent = 1'000'000;
-
-    // database
-
-    configured.database.turbo = true;
-
-    // expected are element counts @ 950K, deriving filter k at create.
-    // sizes are set to 1% of measured pruned body @ 950K (tiny tables 100%).
-
-    // Only used for electrum queries (255 is optimal otherwise).
-    configured.database.interval_depth = 11;
-
-    // archive
-
-    configured.database.header.expected = 962'953;
-    configured.database.header.size = 124'220'679;
-    configured.database.header.rate = 1;
-
-    configured.database.txs.buckets = 950'001;
-    configured.database.txs.size = 54'471'017;
-    configured.database.txs.rate = 1;
-
-    configured.database.tx.expected = 1'359'871'695;
-    configured.database.tx.size = 870'317'885;
-    configured.database.tx.rate = 1;
-
-    // ins (required)
-    configured.database.ins.expected = 3'363'467'251;
-    configured.database.ins.size = 1'749'002'971;
-    configured.database.ins.rate = 1;
-
-    // outs (optional, disabled by a configured bucket count of zero)
-    configured.database.outs.expected = 3'741'929'086;
-    configured.database.outs.size = 336'773'618;
-    configured.database.outs.rate = 1;
-
-    configured.database.input.size = 67'269'346;
-    configured.database.input.rate = 1;
-    configured.database.output.size = 1'278'023'220;
-    configured.database.output.rate = 1;
-
-    // indexes
-
-    configured.database.candidate.buckets = 950'001;
-    configured.database.candidate.rate = 1;
-    configured.database.confirmed.buckets = 950'001;
-    configured.database.confirmed.rate = 1;
-
-    configured.database.strong.buckets = 13'598'717;
-    configured.database.strong.rate = 1;
-    configured.database.scan.buckets = 950'001;
-    configured.database.scan.size = 0;
-    configured.database.scan.rate = 1;
-
-    // caches
-
-    configured.database.ecdsa.size = 0;
-    configured.database.ecdsa.rate = 1;
-    configured.database.schnorr.size = 0;
-    configured.database.schnorr.rate = 1;
-    configured.database.silent.size = 0;
-    configured.database.silent.rate = 1;
-    configured.database.prevalid.size = 0;
-    configured.database.prevalid.rate = 1;
-    configured.database.presilent.size = 0;
-    configured.database.presilent.rate = 1;
-
-    configured.database.prevout.buckets = 0;
-    configured.database.prevout.size = 0;
-    configured.database.prevout.rate = 1;
-
-    configured.database.duplicate.buckets = 1024;
-    configured.database.duplicate.expected = 0;
-    configured.database.duplicate.size = 0;
-    configured.database.duplicate.rate = 1;
-
-    configured.database.state.buckets = 950'001;
-    configured.database.state.rate = 1;
-
-    // pool and spends (disabled by zero buckets)
-    configured.database.pool.expected = 10'000'000;
-    configured.database.pool.size = 0;
-    configured.database.pool.rate = 1;
-    configured.database.wtxid.expected = 10'000'000;
-    configured.database.wtxid.size = 0;
-    configured.database.wtxid.rate = 1;
-    configured.database.spends.size = 0;
-    configured.database.spends.rate = 1;
-
-    // optional
-
-    // also disabled by filter_tx
-    configured.database.filter_bk.buckets = 0;
-    configured.database.filter_bk.size = 0;
-    configured.database.filter_bk.rate = 1;
-
-    // also disabled by filter_bk
-    configured.database.filter_tx.buckets = 0;
-    configured.database.filter_tx.size = 0;
-    configured.database.filter_tx.rate = 1;
 }
 
 // Hashmap buckets derive from expected and installed memory; a configured
@@ -257,6 +63,10 @@ void parser::derive_buckets() NOEXCEPT
         database.tx.buckets = table::transaction::derive_buckets(
             database.tx.expected, contested, target);
 
+    if (!is_configured("table.strong.buckets"))
+        database.strong.buckets = possible_narrow_cast<uint32_t>(
+            database.tx.expected);
+
     if (!is_configured("table.ins.buckets"))
         database.ins.buckets = table::ins::derive_buckets(
             database.ins.expected, contested, target);
@@ -274,20 +84,61 @@ void parser::derive_buckets() NOEXCEPT
             database.wtxid.expected, contested, target);
 }
 
-// Service bindings without a port take the service's default port.
-void parser::derive_ports() NOEXCEPT
+// A specified network governs, otherwise configuration.
+void parser::select_network() NOEXCEPT
 {
-    auto& server = configured.server;
-    server.admin.default_ports();
-    server.native.default_ports();
-    server.bitcoind.default_ports();
-    server.bitcoind_zmq.default_ports();
-    server.btcd.default_ports();
-    server.electrum.default_ports();
-    server.sparrow.default_ports();
-    server.esplora.default_ports();
-    server.stratum_v1.default_ports();
-    server.stratum_v2.default_ports();
+    const chain::selection selected = configured.net;
+    const auto specified = selected != chain::selection::none &&
+        selected != chain::selection::mainnet;
+
+    chain::selection network = configured.bitcoin.network;
+    if (specified)
+        network = selected;
+
+    if (network != configured.node.network)
+        reset_network(network);
+
+    if (specified)
+        configured.bitcoin.network = network;
+}
+
+// The network of an existing store governs at its path, for commands that
+// use the store.
+void parser::read_envelope() NOEXCEPT
+{
+    if (configured.make || configured.help || configured.hardware ||
+        configured.daemon.has_value())
+        return;
+
+    server_node::store store{ configured.database };
+    stored_code = store.read_envelope(stored);
+    if (stored_code || stored.network == configured.node.network)
+        return;
+
+    const auto path = configured.database.path;
+    reset_network(stored.network);
+    configured.database.path = path;
+    derive_buckets();
+}
+
+// Network defaults are reset, and then configured settings are reapplied.
+void parser::reset_network(chain::selection context) NOEXCEPT
+{
+    configured.bitcoin = system::settings{ context };
+    configured.database = database::settings{ context };
+    configured.network = network::settings{ context };
+    configured.node = node::settings{ context };
+    configured.server.network = context;
+    configured.server.wallet = server::settings::wallet_settings{ context };
+
+    BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
+    for (const auto& option: settings().options())
+    {
+        const auto& name = option->long_name();
+        if (is_configured(name))
+            option->semantic()->notify(variables().at(name).value());
+    }
+    BC_POP_WARNING()
 }
 
 // Composes a variable name with its command line shortcut.
@@ -304,6 +155,12 @@ options_metadata parser::load_options() THROWS
         alias(config_variable, 'c').c_str(),
         value<config::path>(&configured.file),
         "Specify path to a configuration settings file."
+    )
+    (
+        alias(net_variable, 'n').c_str(),
+        value<config::selection>(&configured.net),
+        ("Specify the network (" + config::selection::names() + "), "
+            "defaults to the configured network.").c_str()
     )
     // Prompts.
     (
@@ -339,8 +196,8 @@ options_metadata parser::load_options() THROWS
     )
     // Actions.
     (
-        alias(newstore_variable, 'n').c_str(),
-        value<bool>(&configured.newstore)->
+        alias(make_variable, 'm').c_str(),
+        value<bool>(&configured.make)->
             default_value(false)->zero_tokens(),
         "Create new store in configured directory."
     )
@@ -562,6 +419,12 @@ options_metadata parser::load_settings() THROWS
     )
 
     /* [bitcoin] */
+    (
+        "bitcoin.network",
+        setting<config::selection>(&configured.bitcoin.network),
+        ("The network of the defaults (" + config::selection::names() +
+            "), defaults to {}.").c_str()
+    )
     (
         "bitcoin.initial_block_subsidy_bitcoin",
         setting<uint64_t>(&configured.bitcoin.initial_subsidy_bitcoin),
@@ -2499,7 +2362,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.strong.buckets",
         setting<uint32_t>(&configured.database.strong.buckets),
-        "The number of buckets provisioned in the strong table head, defaults to {}."
+        "The number of buckets provisioned in the strong table head, dynamic default."
     )
     (
         "table.strong.rate",
@@ -2836,8 +2699,8 @@ BC_POP_WARNING()
 
         // Update bound variables in metadata.settings.
         notify(variables_);
+        select_network();
         derive_buckets();
-        derive_ports();
 
         // Clear the config file path if it wasn't used.
         if (!file)

@@ -34,6 +34,7 @@ rpc_setup_fixture::rpc_setup_fixture(const initializer& setup,
     {
         [&]() NOEXCEPT -> const database::settings&
         {
+            test::configure(config_);
             config_.database.path = TEST_DIRECTORY;
             config_.database.interval_depth = 2;
             if (!address_index)

@@ -99,6 +99,9 @@ bool create(const std::filesystem::path& file_path) NOEXCEPT;
 bool exists(const std::filesystem::path& file_path) NOEXCEPT;
 bool remove(const std::filesystem::path& file_path) NOEXCEPT;
 
+/// Set explicit values, independent of the defaults.
+void configure(server::configuration& out) NOEXCEPT;
+
 struct directory_setup_fixture
 {
     DELETE_COPY_MOVE(directory_setup_fixture);

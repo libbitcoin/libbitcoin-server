@@ -81,6 +81,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
     {
         [&]() NOEXCEPT -> const database::settings&
         {
+            test::configure(config_);
             auto& native = config_.server.native;
             native.binds = { { NATIVE_ENDPOINT } };
             native.connections = 1;
@@ -350,6 +351,7 @@ server_node_setup_fixture::server_node_setup_fixture()
     {
         [&]() NOEXCEPT -> const database::settings&
         {
+            test::configure(config_);
             config_.database.path = TEST_DIRECTORY;
             return config_.database;
         }()

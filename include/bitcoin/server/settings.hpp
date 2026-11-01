@@ -70,6 +70,7 @@ class BCS_API settings
 public:
     /// Names of settings queried for explicit configuration.
     static constexpr auto milestone = "bitcoin.milestone";
+    static constexpr auto bitcoin_network = "bitcoin.network";
 
     /// References to process embeded resources for html_server.
     struct embedded_pages
@@ -239,8 +240,11 @@ public:
     settings(system::chain::selection context, const embedded_pages& native,
         const embedded_pages& admin) NOEXCEPT;
 
-    /// Initialize the service contexts (const thereafter).
+    /// Derive service ports and initialize contexts (const thereafter).
     virtual code initialize() NOEXCEPT;
+
+    /// The network of the service ports.
+    system::chain::selection network{};
 
     /// The name of the service that failed to initialize, if any.
     std::string failure{};
