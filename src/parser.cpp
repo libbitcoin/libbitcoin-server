@@ -529,16 +529,6 @@ options_metadata parser::load_settings() THROWS
         "The block height to freeze the bip66 softfork for bip90, defaults to {}."
     )
     (
-        "bitcoin.bip30_reactivate_height",
-        setting<size_t>(&configured.bitcoin.bip30_reactivate_height),
-        "The height for bip30 reactivation, defaults to {}."
-    )
-    (
-        "bitcoin.bip30_deactivate_checkpoint",
-        setting<chain::checkpoint>(&configured.bitcoin.bip30_deactivate_checkpoint),
-        "The hash:height checkpoint for bip30 deactivation, defaults to {}."
-    )
-    (
         "bitcoin.bip9_bit0_active_checkpoint",
         setting<chain::checkpoint>(&configured.bitcoin.bip9_bit0_active_checkpoint),
         "The hash:height checkpoint for bip9 bit0 activation, defaults to {}."
