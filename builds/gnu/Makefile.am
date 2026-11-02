@@ -168,6 +168,7 @@ include_bitcoin_server_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/configuration.hpp \
     ${srcdir}/../../include/bitcoin/server/define.hpp \
     ${srcdir}/../../include/bitcoin/server/parser.hpp \
+    ${srcdir}/../../include/bitcoin/server/preprocessor.hpp \
     ${srcdir}/../../include/bitcoin/server/server_node.hpp \
     ${srcdir}/../../include/bitcoin/server/settings.hpp \
     include/bitcoin/server/version.hpp

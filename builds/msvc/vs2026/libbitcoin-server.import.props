@@ -31,6 +31,8 @@
         $(ProjectDir)..\..\..\..\..\libbitcoin-server\bin\$(PlatformName)\Release\$(PlatformToolset)\$(Linkage-libbitcoin-server)\;
         $(ProjectDir)..\..\..\..\..\libbitcoin-server\obj\libbitcoin-server\$(PlatformName)\Release\$(PlatformToolset)\$(Linkage-libbitcoin-server)\;%(AdditionalLibraryDirectories)
       </AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(Linkage-libbitcoin-server)' == 'dynamic' And $(Configuration.IndexOf('Debug')) != -1">$(ProjectDir)..\..\..\..\..\bin\$(PlatformName)\Debug\$(PlatformToolset)\dynamic\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(Linkage-libbitcoin-server)' == 'dynamic' And $(Configuration.IndexOf('Release')) != -1">$(ProjectDir)..\..\..\..\..\bin\$(PlatformName)\Release\$(PlatformToolset)\dynamic\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
 </Project>

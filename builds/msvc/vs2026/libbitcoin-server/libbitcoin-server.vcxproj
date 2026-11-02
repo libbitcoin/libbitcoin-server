@@ -248,6 +248,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_query.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\native_target.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\parsers.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\preprocessor.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_admin.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind.hpp" />
