@@ -35,6 +35,11 @@ static std::string write_config(const std::string& text)
     return path;
 }
 
+static system::config::path store_path(const std::string& network)
+{
+    return std::filesystem::path{ TEST_PATH } / network;
+}
+
 // net
 
 BOOST_AUTO_TEST_CASE(parser__parse__net_testnet4__testnet4_defaults)
@@ -194,7 +199,7 @@ BOOST_AUTO_TEST_CASE(parser__parse__net_conflicting_network__net_network_configu
     BOOST_REQUIRE(configured.bitcoin.network == selection::testnet4);
     BOOST_REQUIRE_EQUAL(configured.network.identifier, 675223068u);
     BOOST_REQUIRE_EQUAL(configured.network.outbound.connections, 7u);
-    BOOST_REQUIRE_EQUAL(configured.database.path, TEST_PATH);
+    BOOST_REQUIRE_EQUAL(configured.database.path, store_path("testnet4"));
     BOOST_REQUIRE_EQUAL(configured.database.strong.buckets, 42u);
     BOOST_REQUIRE(instance.variables().at("bitcoin.network").as<system::config::selection>() == selection::regtest);
 }
@@ -208,6 +213,36 @@ BOOST_AUTO_TEST_CASE(parser__parse__net_mainnet_configured_network__configured_d
     BOOST_REQUIRE(instance.parse(5, argv, error));
     BOOST_REQUIRE(instance.configured.bitcoin.network == selection::testnet4);
     BOOST_REQUIRE_EQUAL(instance.configured.network.identifier, 675223068u);
+}
+
+BOOST_AUTO_TEST_CASE(parser__parse__configured_path__network_under_path)
+{
+    const auto config = write_config("");
+    const char* argv[]{ "bs", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BOOST_REQUIRE(instance.parse(3, argv, error));
+    BOOST_REQUIRE_EQUAL(instance.configured.database.path, store_path("mainnet"));
+}
+
+BOOST_AUTO_TEST_CASE(parser__parse__configured_path_net__net_under_path)
+{
+    const auto config = write_config("[bitcoin]\nnetwork = signet\n");
+    const char* argv[]{ "bs", "-n", "regtest", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BOOST_REQUIRE(instance.parse(5, argv, error));
+    BOOST_REQUIRE_EQUAL(instance.configured.database.path, store_path("regtest"));
+}
+
+BOOST_AUTO_TEST_CASE(parser__parse__configured_path_configured_network__network_under_path)
+{
+    const auto config = write_config("[bitcoin]\nnetwork = signet\n");
+    const char* argv[]{ "bs", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BOOST_REQUIRE(instance.parse(3, argv, error));
+    BOOST_REQUIRE_EQUAL(instance.configured.database.path, store_path("signet"));
 }
 
 // read_envelope
@@ -232,7 +267,8 @@ BOOST_AUTO_TEST_CASE(parser__read_envelope__regtest_store__stored_defaults)
     server::parser creator{ selection::mainnet, pages, pages };
     BOOST_REQUIRE(creator.parse(6, create_argv, error));
     BOOST_REQUIRE(!creator.configured.initialize());
-    BOOST_REQUIRE(test::clear(TEST_PATH));
+    creator.configured.database.path = store_path("mainnet");
+    BOOST_REQUIRE(test::clear(creator.configured.database.path));
     server::server_node::store store{ creator.configured.database };
     BOOST_REQUIRE(!store.create([](auto, auto) {}));
     BOOST_REQUIRE(!store.close([](auto, auto) {}));
@@ -251,6 +287,7 @@ BOOST_AUTO_TEST_CASE(parser__read_envelope__regtest_store__stored_defaults)
     BOOST_REQUIRE(configured.bitcoin.network == selection::regtest);
     BOOST_REQUIRE_EQUAL(configured.network.identifier, 3669344250u);
     BOOST_REQUIRE_EQUAL(configured.database.strong.buckets, 100'000u);
+    BOOST_REQUIRE_EQUAL(configured.database.path, store_path("mainnet"));
 }
 
 BOOST_AUTO_TEST_CASE(parser__read_envelope__specified_network__stored_defaults_specified_network)
@@ -261,7 +298,8 @@ BOOST_AUTO_TEST_CASE(parser__read_envelope__specified_network__stored_defaults_s
     server::parser creator{ selection::mainnet, pages, pages };
     BOOST_REQUIRE(creator.parse(6, create_argv, error));
     BOOST_REQUIRE(!creator.configured.initialize());
-    BOOST_REQUIRE(test::clear(TEST_PATH));
+    creator.configured.database.path = store_path("testnet4");
+    BOOST_REQUIRE(test::clear(creator.configured.database.path));
     server::server_node::store store{ creator.configured.database };
     BOOST_REQUIRE(!store.create([](auto, auto) {}));
     BOOST_REQUIRE(!store.close([](auto, auto) {}));
@@ -288,7 +326,7 @@ BOOST_AUTO_TEST_CASE(parser__read_envelope__make__unchanged)
     server::parser creator{ selection::mainnet, pages, pages };
     BOOST_REQUIRE(creator.parse(6, create_argv, error));
     BOOST_REQUIRE(!creator.configured.initialize());
-    BOOST_REQUIRE(test::clear(TEST_PATH));
+    BOOST_REQUIRE(test::clear(creator.configured.database.path));
     server::server_node::store store{ creator.configured.database };
     BOOST_REQUIRE(!store.create([](auto, auto) {}));
     BOOST_REQUIRE(!store.close([](auto, auto) {}));

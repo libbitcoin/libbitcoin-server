@@ -89,6 +89,9 @@ protected:
     /// Select the network and reset the defaults to it when it differs.
     virtual void select_network() NOEXCEPT;
 
+    /// Name the store directory for the network, under any configured path.
+    virtual void select_path() NOEXCEPT;
+
     /// Reset the network defaults, preserving configured settings.
     virtual void reset_network(system::chain::selection context) NOEXCEPT;
 

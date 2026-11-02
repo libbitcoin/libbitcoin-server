@@ -102,6 +102,15 @@ void parser::select_network() NOEXCEPT
         configured.bitcoin.network = network;
 }
 
+// A configured path is the base of the network-named store directory.
+void parser::select_path() NOEXCEPT
+{
+    auto& path = configured.database.path;
+    if (is_configured("database.path"))
+        path = path / std::string{ config::selection::to_word(
+            configured.node.network) };
+}
+
 // The network of an existing store governs at its path, for commands that
 // use the store.
 void parser::read_envelope() NOEXCEPT
@@ -2188,7 +2197,7 @@ options_metadata parser::load_settings() THROWS
     (
         "database.path",
         setting<config::path>(&configured.database.path),
-        "The blockchain database directory, defaults to {}."
+        "The base of the network-named blockchain database directory, defaults to the working directory."
     )
     (
         "database.turbo",
@@ -2708,6 +2717,7 @@ BC_POP_WARNING()
         // Update bound variables in metadata.settings.
         notify(variables_);
         select_network();
+        select_path();
         derive_buckets();
 
         // Clear the config file path if it wasn't used.
