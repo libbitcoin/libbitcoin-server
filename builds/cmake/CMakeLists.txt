@@ -375,15 +375,15 @@ endif()
 # bitcoin-server executable
 #------------------------------------------------------------------------------
 if ( with-console )
-  add_executable( bitcoin-server )
+  add_library( bitcoin-server-objects STATIC )
 
-  target_compile_features( bitcoin-server
+  target_compile_features( bitcoin-server-objects
     PUBLIC
       cxx_std_20
   )
 
   if ( NOT MSVC )
-    target_compile_options( bitcoin-server
+    target_compile_options( bitcoin-server-objects
       PRIVATE
         -Wall
         -Wextra
@@ -400,41 +400,49 @@ if ( with-console )
     )
   endif()
 
-  target_compile_definitions( bitcoin-server
+  target_compile_definitions( bitcoin-server-objects
     PRIVATE
       $<$<BOOL:${with-embedded}>:WITH_EMBEDDED>
   )
 
-  file( GLOB_RECURSE bitcoin_server_HEADERS CONFIGURE_DEPENDS
+  file( GLOB_RECURSE bitcoin_server_objects_HEADERS CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/../../console/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../console/*.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../console/*.ipp"
   )
 
-  file( GLOB_RECURSE bitcoin_server_SOURCES CONFIGURE_DEPENDS
+  file( GLOB_RECURSE bitcoin_server_objects_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/../../console/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../console/*.cpp"
   )
 
-  target_sources( bitcoin-server
+  target_sources( bitcoin-server-objects
     PRIVATE
       FILE_SET HEADERS
       BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../../console"
       FILES
-        ${bitcoin_server_HEADERS}
+        ${bitcoin_server_objects_HEADERS}
     PRIVATE
-      ${bitcoin_server_SOURCES}
+      ${bitcoin_server_objects_SOURCES}
   )
 
-  target_include_directories( bitcoin-server
+  target_include_directories( bitcoin-server-objects
     PRIVATE
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../console>
       $<INSTALL_INTERFACE:console>
   )
 
-  target_link_libraries( bitcoin-server
+  target_link_libraries( bitcoin-server-objects
     PRIVATE
       bitcoin::server
+  )
+
+  file( CONFIGURE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/bitcoin-server.cpp" CONTENT "" )
+  add_executable( bitcoin-server "${CMAKE_CURRENT_BINARY_DIR}/bitcoin-server.cpp" )
+
+  target_link_libraries( bitcoin-server
+    PRIVATE
+      $<LINK_LIBRARY:WHOLE_ARCHIVE,bitcoin-server-objects>
   )
 
   set_target_properties( bitcoin-server
