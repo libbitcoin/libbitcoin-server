@@ -1,5 +1,8 @@
 ###############################################################################
 #  Copyright (c) 2014-2026 libbitcoin-server developers (see COPYING).
+#
+#         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
+#
 ###############################################################################
 
 name: Double Build
@@ -91,6 +94,28 @@ jobs:
             umask: "0002"
 
         target:
+          - basename: "bs-macos-arm64"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-sha3=ON -Denable-sha=ON -Denable-aes=ON"
+            cc: "clang"
+            cxx: "clang++"
+            image: macos-latest
+            deployment_target: "13.3"
+            flags: "-mcpu=apple-m1"
+
+          - basename: "bs-macos-x64"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-avx2=ON -Denable-sse41=ON -Denable-aesni=ON"
+            cc: "clang"
+            cxx: "clang++"
+            image: macos-26-intel
+            deployment_target: "13.3"
+            flags: "-march=x86-64-v3 -mtune=generic"
+
           - basename: "bs-linux-x64"
             configuration: release
             link: static
@@ -101,6 +126,181 @@ jobs:
             linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-24.04
             flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-linux-x64-shani"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            cc: "clang-18"
+            cxx: "clang++-18"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04
+            flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-linux-x64-avxifma"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-avxifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            cc: "clang-18"
+            cxx: "clang++-18"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04
+            flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-linux-x64-avx512ifma"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-avx512ifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            cc: "clang-18"
+            cxx: "clang++-18"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04
+            flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-linux-arm64"
+            configuration: release
+            link: static
+            toolchain: cmake
+            cc: "gcc-14"
+            cxx: "g++-14"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04-arm
+            flags: "-march=armv8-a -mtune=generic"
+
+          - basename: "bs-linux-arm64-crypto"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-sha=ON"
+            cc: "gcc-14"
+            cxx: "g++-14"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04-arm
+            flags: "-march=armv8-a+crypto -mtune=generic"
+
+          - basename: "bs-linux-arm64-sha3"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-sha=ON -Denable-sha3=ON"
+            cc: "gcc-14"
+            cxx: "g++-14"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04-arm
+            flags: "-march=armv8.2-a+crypto+sha3 -mtune=generic"
+
+          - basename: "bs-musl-x64"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-avx2=ON -Denable-sse41=ON"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "--static -static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04
+            container: alpine:3.22.6
+            flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-musl-x64-shani"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "--static -static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04
+            container: alpine:3.22.6
+            flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-musl-x64-avxifma"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-avxifma=ON -Denable-shani=ON  -Denable-avx2=ON -Denable-sse41=ON"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "--static -static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04
+            container: alpine:3.22.6
+            flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-musl-x64-avx512ifma"
+            configuration: release
+            link: static
+            toolchain: cmake
+            options: "-Denable-avx512ifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            cc: "gcc"
+            cxx: "g++"
+            linkflags: "--static -static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04
+            container: alpine:3.22.6
+            flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-windows-x64"
+            configuration: StaticRelease
+            toolchain: msbuild
+            options: "--enable-avx2 --enable-sse41"
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-latest
+
+          - basename: "bs-windows-x64-shani"
+            configuration: StaticRelease
+            toolchain: msbuild
+            options: "--enable-shani --enable-avx2 --enable-sse41"
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-latest
+
+          - basename: "bs-windows-x64-avxifma"
+            configuration: StaticRelease
+            toolchain: msbuild
+            options: "--enable-avxifma --enable-shani --enable-avx2 --enable-sse41"
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-latest
+
+          - basename: "bs-windows-x64-avx512ifma"
+            configuration: StaticRelease
+            toolchain: msbuild
+            options: "--enable-avx512ifma --enable-shani --enable-avx2 --enable-sse41"
+            platform: "x64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-latest
+
+          - basename: "bs-windows-arm64"
+            configuration: StaticRelease
+            toolchain: msbuild
+            platform: "ARM64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-11-vs2026-arm
+
+          - basename: "bs-windows-arm64-crypto"
+            configuration: StaticRelease
+            toolchain: msbuild
+            options: "--enable-sha"
+            platform: "ARM64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-11-vs2026-arm
+
+          - basename: "bs-windows-arm64-sha3"
+            configuration: StaticRelease
+            toolchain: msbuild
+            options: "--enable-sha --enable-sha3"
+            platform: "ARM64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-11-vs2026-arm
 
           - basename: "selector-linux-x64"
             project: "libbitcoin-system"
@@ -113,25 +313,38 @@ jobs:
             linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-24.04
 
-          - basename: "bs-macos-arm64"
+          - basename: "selector-linux-arm64"
+            project: "libbitcoin-system"
+            program: "selector"
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-sha3=ON -Denable-sha=ON -Denable-aes=ON"
+            cc: "gcc-14"
+            cxx: "g++-14"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            image: ubuntu-24.04-arm
+
+          - basename: "selector-macos-arm64"
+            project: "libbitcoin-system"
+            program: "selector"
+            configuration: release
+            link: static
+            toolchain: cmake
             cc: "clang"
             cxx: "clang++"
             image: macos-latest
             deployment_target: "13.3"
-            flags: "-mcpu=apple-m1"
 
-          - basename: "bs-windows-x64"
-            configuration: StaticRelease
-            toolchain: msbuild
-            options: "--enable-avx2 --enable-sse41"
-            platform: "x64"
-            toolset: "v145"
-            version: "vs2026"
-            image: windows-latest
+          - basename: "selector-macos-x64"
+            project: "libbitcoin-system"
+            program: "selector"
+            configuration: release
+            link: static
+            toolchain: cmake
+            cc: "clang"
+            cxx: "clang++"
+            image: macos-26-intel
+            deployment_target: "13.3"
 
           - basename: "selector-windows-x64"
             project: "libbitcoin-system"
@@ -144,7 +357,19 @@ jobs:
             version: "vs2026"
             image: windows-latest
 
+          - basename: "selector-windows-arm64"
+            project: "libbitcoin-system"
+            program: "selector"
+            configuration: StaticRelease
+            toolchain: msbuild
+            platform: "ARM64"
+            toolset: "v145"
+            version: "vs2026"
+            image: windows-11-vs2026-arm
+
+
     runs-on: ${{ matrix.target.image }}
+    container: ${{ matrix.target.container || null }}
 
     env:
       CC: ${{ matrix.target.cc }}
@@ -203,7 +428,15 @@ jobs:
           sparse-checkout: .github/actions
 
       - name: Apply umask
+        if: ${{ !matrix.target.container }}
         shell: bash
+        run: |
+          echo "umask ${{ matrix.builder.umask }}" > "${RUNNER_TEMP}/umask.sh"
+          echo "BASH_ENV=${RUNNER_TEMP}/umask.sh" >> "$GITHUB_ENV"
+
+      - name: Apply umask [container]
+        if: ${{ matrix.target.container }}
+        shell: sh
         run: |
           echo "umask ${{ matrix.builder.umask }}" > "${RUNNER_TEMP}/umask.sh"
           echo "BASH_ENV=${RUNNER_TEMP}/umask.sh" >> "$GITHUB_ENV"
@@ -219,13 +452,81 @@ jobs:
           program: ${{ matrix.target.program || 'bs' }}
           configuration: ${{ matrix.target.configuration }}
           link: ${{ matrix.target.link }}
+          preset: ${{ matrix.target.preset }}
           options: ${{ matrix.target.options }}
           flags: ${{ matrix.target.flags }}
           linkflags: ${{ matrix.target.linkflags }}
+          packages: ${{ matrix.target.packages }}
+          llvm: ${{ matrix.target.llvm }}
           deployment_target: ${{ matrix.target.deployment_target }}
           platform: ${{ matrix.target.platform }}
           toolset: ${{ matrix.target.toolset }}
           version: ${{ matrix.target.version }}
+          container: ${{ matrix.target.container }}
+
+      - name: Display candidate files
+        working-directory: candidate
+        shell: bash
+        run: |
+          ls -lahR
+
+      - name: Display binary information [bash]
+        if: ${{ matrix.target.toolchain != 'msbuild' }}
+        continue-on-error: true
+        shell: bash
+        working-directory: candidate
+        run: |
+          ./${{ steps.binary.outputs.candidate_identifier }} --version
+          ./${{ steps.binary.outputs.candidate_identifier }} --hardware
+
+      - name: Display binary information [cmd]
+        if: ${{ matrix.target.toolchain == 'msbuild' }}
+        continue-on-error: true
+        shell: cmd
+        working-directory: candidate
+        run: |
+          .\${{ steps.binary.outputs.candidate_identifier }} --version
+          .\${{ steps.binary.outputs.candidate_identifier }} --hardware
+
+      - name: Display linkage
+        if: ${{ matrix.target.toolchain != 'msbuild' }}
+        shell: bash
+        run: |
+          echo "Binary linkage information:"
+          find candidate -type f \
+            \( -perm -111 -o -name "*.so" -o -name "*.dylib" \) \
+            ! -path "*/.git/*" \
+            ! -name "*.a" \
+            -print0 | while IFS= read -r -d '' f; do
+              if ! file "$f" | grep -qE "ELF|Mach-O|PE32"; then
+                continue
+              fi
+              echo "========================================"
+              echo "File: $f"
+              file "$f"
+              case "$(uname -s)" in
+                Linux)
+                  ldd "$f"
+                  if ldd "$f" 2>/dev/null | grep -q .; then
+                    echo "--- Dynamic dependencies (ldd) ---"
+                    ldd "$f" || true
+                  else
+                    echo "--- No dynamic dependencies (likely fully static) ---"
+                    ldd "$f" 2>&1 || true
+                  fi
+                  echo "--- ELF dynamic section (readelf -d) ---"
+                  readelf -d "$f" 2>/dev/null | grep -E 'NEEDED|RPATH|RUNPATH|SONAME' || echo "(none)"
+                  ;;
+                Darwin)
+                  otool -L "$f"
+                  echo "--- Linked libraries (otool -L) ---"
+                  otool -L "$f" || true
+                  ;;
+                *)
+                  echo "Unsupported platform for linkage display: $(uname -s)"
+                  ;;
+              esac
+            done || true
 
       - name: Record build
         shell: bash
@@ -254,8 +555,27 @@ jobs:
           path: output
           retention-days: 7
 
+      - name: Upload artifacts
+        if: ${{ matrix.builder.name == 'a' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.binary.outputs.candidate_identifier }}
+          path: candidate/*
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload symbols
+        if: ${{ matrix.builder.name == 'a' && (matrix.target.configuration != 'debug' || matrix.target.toolchain == 'msbuild') }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.basename }}-symbols
+          path: symbols/*
+          retention-days: 1
+          if-no-files-found: error
+
   compare:
     needs: build
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
 
     steps:
@@ -271,20 +591,30 @@ jobs:
           echo "| file | builder a | builder b |" >> "$GITHUB_STEP_SUMMARY"
           echo "| --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
           DIFFER=""
-          for A in double-*-a; do
-            B="${A%-a}-b"
+          MISSING=""
+          for NAME in bs-macos-arm64 bs-macos-x64 bs-linux-x64 bs-linux-x64-shani bs-linux-x64-avxifma bs-linux-x64-avx512ifma bs-linux-arm64 bs-linux-arm64-crypto bs-linux-arm64-sha3 bs-musl-x64 bs-musl-x64-shani bs-musl-x64-avxifma bs-musl-x64-avx512ifma bs-windows-x64 bs-windows-x64-shani bs-windows-x64-avxifma bs-windows-x64-avx512ifma bs-windows-arm64 bs-windows-arm64-crypto bs-windows-arm64-sha3 selector-linux-x64 selector-linux-arm64 selector-macos-arm64 selector-macos-x64 selector-windows-x64 selector-windows-arm64; do
+            A="double-${NAME}-a"
+            B="double-${NAME}-b"
+            if [[ ! -f "${A}/SHA256SUMS" || ! -f "${B}/SHA256SUMS" ]]; then
+              MISSING="${MISSING} ${NAME}"
+              continue
+            fi
             join -j 2 <(sort -k2 "${A}/SHA256SUMS") <(sort -k2 "${B}/SHA256SUMS") |
               awk '{ print "| " $1 " | " substr($2, 1, 16) " | " substr($3, 1, 16) " |" }' >> "$GITHUB_STEP_SUMMARY"
             if ! cmp -s <(grep -v '[.]pdb[.]zip$' "${A}/SHA256SUMS") <(grep -v '[.]pdb[.]zip$' "${B}/SHA256SUMS"); then
-              DIFFER="${DIFFER} ${A%-a}"
+              DIFFER="${DIFFER} double-${NAME}"
             fi
           done
           echo "PDB files are not compared: link.exe does not write them deterministically." | tee -a "$GITHUB_STEP_SUMMARY"
-          if [[ -z "${DIFFER}" ]]; then
-            echo "Builds are identical." | tee -a "$GITHUB_STEP_SUMMARY"
-          else
+          if [[ -n "${MISSING}" ]]; then
+            echo "Builds missing:${MISSING}" | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "missing=${MISSING}" >> "$GITHUB_OUTPUT"
+          fi
+          if [[ -n "${DIFFER}" ]]; then
             echo "Builds differ:${DIFFER}" | tee -a "$GITHUB_STEP_SUMMARY"
             echo "differ=${DIFFER}" >> "$GITHUB_OUTPUT"
+          elif [[ -z "${MISSING}" ]]; then
+            echo "Builds are identical." | tee -a "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Explain differences
@@ -312,6 +642,6 @@ jobs:
           retention-days: 7
 
       - name: Fail on difference
-        if: ${{ steps.compare.outputs.differ != '' }}
+        if: ${{ steps.compare.outputs.differ != '' || steps.compare.outputs.missing != '' }}
         shell: bash
         run: exit 1
