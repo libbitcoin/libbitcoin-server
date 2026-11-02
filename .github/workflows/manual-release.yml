@@ -1,7 +1,7 @@
 ###############################################################################
 #  Copyright (c) 2014-2026 libbitcoin-server developers (see COPYING).
 #
-#     SOON TO BE GENERATED CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
+#         GENERATED SOURCE CODE, DO NOT EDIT EXCEPT EXPERIMENTALLY
 #
 ###############################################################################
 
@@ -202,7 +202,6 @@ jobs:
             cxx: "clang++-18"
             linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-24.04
-            #flags: "-march=sapphirerapids -mtune=generic"
             flags: "-march=x86-64-v3 -mtune=generic"
 
           - basename: "bs-linux-x64-avx512ifma"
@@ -296,38 +295,6 @@ jobs:
             container: alpine:3.22.6
             flags: "-march=x86-64-v3 -mtune=generic"
 
-#          - basename: "bs-musl-arm64"
-#            configuration: release
-#            link: static
-#            toolchain: cmake
-#            cc: "gcc"
-#            cxx: "g++"
-#            linkflags: "--static -static-libstdc++ -static-libgcc"
-#            image: ubuntu-24.04-arm
-#            container: alpine:3.22.6
-#
-#          - basename: "bs-musl-arm64-crypto"
-#            configuration: release
-#            link: static
-#            toolchain: cmake
-#            options: "-Denable-sha=ON"
-#            cc: "gcc"
-#            cxx: "g++"
-#            linkflags: "--static -static-libstdc++ -static-libgcc"
-#            image: ubuntu-24.04-arm
-#            container: alpine:3.22.6
-#
-#          - basename: "bs-musl-arm64-sha3"
-#            configuration: release
-#            link: static
-#            toolchain: cmake
-#            options: "-Denable-sha=ON -Denable-sha3=ON"
-#            cc: "gcc"
-#            cxx: "g++"
-#            linkflags: "--static -static-libstdc++ -static-libgcc"
-#            image: ubuntu-24.04-arm
-#            container: alpine:3.22.6
-#
           - basename: "bs-windows-x64"
             configuration: StaticRelease
             toolchain: msbuild
