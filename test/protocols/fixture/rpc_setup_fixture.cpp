@@ -57,45 +57,57 @@ rpc_setup_fixture::rpc_setup_fixture(const initializer& setup,
     query_{ store_ }, log_{},
     server_{ query_, config_, log_ }
 {
-    test::clear(test::directory);
-    auto ec = store_.create([](auto, auto) {});
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-
-    // Settings files are read and derived values packed, as by the executor.
-    ec = config_.initialize();
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-
-    BOOST_REQUIRE(setup(query_));
-
-    // The node (chasers and address pool), bypassed by default.
-    if (start)
+    try
     {
-        std::promise<code> started{};
-        server_.start([&](const code& ec) NOEXCEPT
+        test::clear(test::directory);
+        auto ec = store_.create([](auto, auto) {});
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+
+        // Settings files are read and derived values packed, as by the executor.
+        ec = config_.initialize();
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+
+        BC_REQUIRE(setup(query_));
+
+        // The node (chasers and address pool), bypassed by default.
+        if (start)
         {
-            started.set_value(ec);
+            std::promise<code> started{};
+            server_.start([&](const code& ec) NOEXCEPT
+            {
+                started.set_value(ec);
+            });
+
+            ec = started.get_future().get();
+            BC_REQUIRE_MESSAGE(!ec, ec.message());
+        }
+
+        std::promise<code> running{};
+        server_.run([&](const code& ec) NOEXCEPT
+        {
+            running.set_value(ec);
         });
 
-        ec = started.get_future().get();
-        BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+        ec = running.get_future().get();
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
     }
-
-    std::promise<code> running{};
-    server_.run([&](const code& ec) NOEXCEPT
+    catch (...)
     {
-        running.set_value(ec);
-    });
-
-    ec = running.get_future().get();
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+        teardown();
+        throw;
+    }
 }
 
 rpc_setup_fixture::~rpc_setup_fixture()
 {
+    teardown();
+}
+
+void rpc_setup_fixture::teardown()
+{
     server_.close();
     const auto ec = store_.close([](auto, auto){});
-    BOOST_WARN_MESSAGE(!ec, ec.message());
-
+    BC_WARN_MESSAGE(!ec, ec.message());
     test::clear(test::directory);
 }
 

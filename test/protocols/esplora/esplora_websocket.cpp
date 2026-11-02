@@ -21,80 +21,81 @@
 #include "esplora_setup_fixture.hpp"
 
 using namespace system;
-using namespace boost::beast;
+namespace http = network::http;
+namespace ws = network::ws;
 
-BOOST_FIXTURE_TEST_SUITE(esplora_tests, esplora_ten_block_setup_fixture)
+BC_FIXTURE_TEST_SUITE(esplora_tests, esplora_ten_block_setup_fixture)
 
 // upgrade
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__ws_upgrade__always__success)
+BC_AUTO_TEST_CASE(esplora__ws_upgrade__always__success)
 {
     const auto ec = ws_upgrade();
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+    BC_REQUIRE_MESSAGE(!ec, ec.message());
 }
 
 // targets
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__ws_tip_height__text__expected)
+BC_AUTO_TEST_CASE(esplora__ws_tip_height__text__expected)
 {
-    BOOST_REQUIRE(!ws_upgrade());
-    BOOST_REQUIRE_EQUAL(ws_get_text("/blocks/tip/height"), "9");
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE_EQUAL(ws_get_text("/blocks/tip/height"), "9");
 }
 
-BOOST_AUTO_TEST_CASE(esplora__ws_tip_hash__text__expected)
+BC_AUTO_TEST_CASE(esplora__ws_tip_hash__text__expected)
 {
-    BOOST_REQUIRE(!ws_upgrade());
-    BOOST_REQUIRE_EQUAL(ws_get_text("/blocks/tip/hash"), encode_hash(test::block9.hash()));
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE_EQUAL(ws_get_text("/blocks/tip/hash"), encode_hash(test::block9.hash()));
 }
 
-BOOST_AUTO_TEST_CASE(esplora__ws_block__json__expected)
+BC_AUTO_TEST_CASE(esplora__ws_block__json__expected)
 {
-    BOOST_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(!ws_upgrade());
 
     const auto response = ws_get_json("/block/" + encode_hash(test::block1.hash()));
-    BOOST_REQUIRE(response.is_object());
-    BOOST_REQUIRE_EQUAL(response.as_object().at("height").as_int64(), 1);
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE_EQUAL(response.as_object().at("height").as_int64(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__ws_mempool__json__empty)
+BC_AUTO_TEST_CASE(esplora__ws_mempool__json__empty)
 {
-    BOOST_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(!ws_upgrade());
 
     const auto response = ws_get_json("/mempool/txids");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE(response.as_array().empty());
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE(response.as_array().empty());
 }
 
-BOOST_AUTO_TEST_CASE(esplora__ws_pipelined__ordered__expected)
+BC_AUTO_TEST_CASE(esplora__ws_pipelined__ordered__expected)
 {
-    BOOST_REQUIRE(!ws_upgrade());
-    BOOST_REQUIRE_EQUAL(ws_get_text("/block-height/0"), encode_hash(test::genesis.hash()));
-    BOOST_REQUIRE_EQUAL(ws_get_text("/block-height/1"), encode_hash(test::block1.hash()));
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE_EQUAL(ws_get_text("/block-height/0"), encode_hash(test::genesis.hash()));
+    BC_REQUIRE_EQUAL(ws_get_text("/block-height/1"), encode_hash(test::block1.hash()));
 }
 
 // body frame
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__ws_broadcast__delimited_body__rejected)
+BC_AUTO_TEST_CASE(esplora__ws_broadcast__delimited_body__rejected)
 {
-    BOOST_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(!ws_upgrade());
 
     const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
-    BOOST_REQUIRE(!ws_get_text("/tx\n" + tx0).empty());
+    BC_REQUIRE(!ws_get_text("/tx\n" + tx0).empty());
 }
 
-BOOST_AUTO_TEST_CASE(esplora__ws_broadcast__missing_body__dropped)
+BC_AUTO_TEST_CASE(esplora__ws_broadcast__missing_body__dropped)
 {
-    BOOST_REQUIRE(!ws_upgrade());
-    BOOST_REQUIRE(ws_dropped("/tx"));
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(ws_dropped("/tx"));
 }
 
-BOOST_AUTO_TEST_CASE(esplora__ws_invalid_target__dropped)
+BC_AUTO_TEST_CASE(esplora__ws_invalid_target__dropped)
 {
-    BOOST_REQUIRE(!ws_upgrade());
-    BOOST_REQUIRE(ws_dropped("/bogus"));
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(ws_dropped("/bogus"));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

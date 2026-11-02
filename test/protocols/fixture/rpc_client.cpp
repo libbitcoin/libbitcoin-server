@@ -19,12 +19,13 @@
 #include "rpc_client.hpp"
 
 using namespace libbitcoin;
-using namespace boost::beast;
+namespace http = network::http;
+namespace ws = network::ws;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-rpc_client::rpc_client(boost::asio::io_context& service)
-  : socket_(service.get_executor())
+rpc_client::rpc_client(network::io::context& service)
+  : socket_(service)
 {
 }
 
@@ -33,9 +34,9 @@ rpc_client::~rpc_client()
     close();
 }
 
-void rpc_client::connect(const boost::asio::ip::tcp::endpoint& endpoint)
+void rpc_client::connect(const network::io::endpoint& endpoint)
 {
-    socket_.socket().connect(endpoint);
+    REQUIRE_SUCCESS(socket_, connect, endpoint);
 }
 
 void rpc_client::close()
@@ -43,19 +44,18 @@ void rpc_client::close()
     if (websocket_.has_value())
     {
         error_code ec{};
-        websocket_.value().close(websocket::close_code::normal, ec);
+        ec = websocket_.value().close(network::ws::close_code::normal);
 
         // Expected and harmless during teardown:
         // websocket_closed   : normal (graceful handshake).
         // operation_canceled : hard (invalid request test).
         // peer_disconnect    : peer gone (failed authenticate test).
-        const auto reason = network::error::ws_to_error_code(ec);
         if (ec &&
-            reason != network::error::websocket_closed &&
-            reason != network::error::operation_canceled &&
-            reason != network::error::peer_disconnect)
+            ec != network::error::websocket_closed &&
+            ec != network::error::operation_canceled &&
+            ec != network::error::peer_disconnect)
         {
-            BOOST_WARN_MESSAGE(false, ec.message());
+            BC_WARN_MESSAGE(false, ec.message());
         }
 
         websocket_.reset();
@@ -63,7 +63,7 @@ void rpc_client::close()
     }
 
     error_code ignore{};
-    socket_.socket().close(ignore);
+    socket_.close(ignore);
 }
 
 system::json::value rpc_client::dropped()
@@ -71,7 +71,7 @@ system::json::value rpc_client::dropped()
     return system::json::parse(R"({"dropped":true})");
 }
 
-boost::beast::tcp_stream& rpc_client::stream()
+network::io::socket& rpc_client::stream()
 {
     return socket_;
 }
@@ -84,8 +84,8 @@ boost::beast::tcp_stream& rpc_client::stream()
 system::json::value rpc_client::send(const std::string& text, bool checked)
 {
     error_code ec{};
-    net::write(socket_, net::buffer(text), ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    network::io::write(socket_, network::io::buffer(text), ec);
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     if (ec)
         return dropped();
@@ -96,12 +96,11 @@ system::json::value rpc_client::send(const std::string& text, bool checked)
 system::json::value rpc_client::receive(bool checked)
 {
     error_code ec{};
-    const auto size = net::read_until(socket_,
-        net::dynamic_buffer(buffer_), '\n', ec);
+    const auto size = network::io::read_until(socket_, buffer_, "\n", ec);
 
     if (checked)
     {
-        BOOST_CHECK_MESSAGE(!ec, ec.message());
+        BC_CHECK_MESSAGE(!ec, ec.message());
     }
 
     if (ec)
@@ -129,7 +128,7 @@ rpc_client::request rpc_client::create_get(std::string_view target)
 {
     request out{ http::verb::get, target, network::http::version_1_1 };
     out.set(http::field::host, "localhost");
-    out.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    out.set(http::field::user_agent, "libbitcoin");
     out.keep_alive(true);
     return out;
 }
@@ -139,7 +138,7 @@ rpc_client::request rpc_client::create_post(std::string_view target,
 {
     request out{ http::verb::post, target, network::http::version_1_1 };
     out.set(http::field::host, "localhost");
-    out.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    out.set(http::field::user_agent, "libbitcoin");
     out.set(http::field::content_type, "application/json");
     out.body() = std::string{ body };
     out.prepare_payload();
@@ -154,20 +153,20 @@ static std::string basic(const std::string& username,
     return "Basic " + libbitcoin::system::encode_base64(plain);
 }
 
-http::response<http::string_body> rpc_client::get(std::string_view target)
+http::message<false, http::string_body> rpc_client::get(std::string_view target)
 {
     error_code ec{};
     http::write(socket_, create_get(target), ec);
 
-    flat_buffer buffer{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response;
 }
 
-http::response<http::string_body> rpc_client::get_authorized(
+http::message<false, http::string_body> rpc_client::get_authorized(
     std::string_view target, const std::string& username,
     const std::string& password)
 {
@@ -177,10 +176,10 @@ http::response<http::string_body> rpc_client::get_authorized(
     error_code ec{};
     http::write(socket_, out, ec);
 
-    flat_buffer buffer{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response;
 }
@@ -191,16 +190,16 @@ system::json::value rpc_client::post(const std::string& body,
     error_code ec{};
     http::write(socket_, create_post(target, body), ec);
     if (checked)
-        BOOST_CHECK_MESSAGE(!ec, ec.message());
+        BC_CHECK_MESSAGE(!ec, ec.message());
 
     if (ec)
         return dropped();
 
-    flat_buffer buffer{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
     if (checked)
-        BOOST_CHECK_MESSAGE(!ec, ec.message());
+        BC_CHECK_MESSAGE(!ec, ec.message());
 
     if (ec)
         return dropped();
@@ -212,16 +211,16 @@ rpc_client::status rpc_client::options_status(std::string_view target)
 {
     request out{ http::verb::options, target, network::http::version_1_1 };
     out.set(http::field::host, "localhost");
-    out.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    out.set(http::field::user_agent, "libbitcoin");
     out.keep_alive(true);
 
     error_code ec{};
     http::write(socket_, out, ec);
 
-    flat_buffer buffer{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response.result();
 }
@@ -232,10 +231,10 @@ rpc_client::status rpc_client::post_status(const std::string& body,
     error_code ec{};
     http::write(socket_, create_post(target, body), ec);
 
-    flat_buffer buffer{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response.result();
 }
@@ -251,8 +250,8 @@ system::json::value rpc_client::post_authorized(const std::string& body,
     if (ec)
         return dropped();
 
-    flat_buffer buffer{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
     if (ec)
         return dropped();
@@ -269,10 +268,10 @@ rpc_client::status rpc_client::post_status_authorized(const std::string& body,
     error_code ec{};
     http::write(socket_, out, ec);
 
-    flat_buffer buffer{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response.result();
 }
@@ -288,11 +287,10 @@ bool rpc_client::upgraded() const
 rpc_client::error_code rpc_client::upgrade()
 {
     error_code ec{};
-    BOOST_CHECK(!websocket_.has_value());
+    BC_CHECK(!websocket_.has_value());
 
     websocket_.emplace(socket_);
-    websocket_.value().text(true);
-    websocket_.value().handshake("localhost", "/", ec);
+    ec = websocket_.value().handshake("localhost", "/");
 
     // A refused upgrade leaves the connection in http (teardown as such).
     if (ec)
@@ -307,16 +305,12 @@ rpc_client::error_code rpc_client::upgrade(const std::string& username,
     error_code ec{};
     const auto credential = basic(username, password);
 
-    BOOST_CHECK(!websocket_.has_value());
+    BC_CHECK(!websocket_.has_value());
     websocket_.emplace(socket_);
-    websocket_.value().text(true);
-    websocket_.value().set_option(websocket::stream_base::decorator(
-        [credential](websocket::request_type& out) NOEXCEPT
-        {
-            out.set(http::field::authorization, credential);
-        }));
-
-    websocket_.value().handshake("localhost", "/", ec);
+    network::http::fields extra{};
+    extra.set(http::field::authorization, credential);
+    network::ws::response response{};
+    ec = websocket_.value().handshake(response, "localhost", "/", extra);
 
     if (ec)
         websocket_.reset();
@@ -327,37 +321,37 @@ rpc_client::error_code rpc_client::upgrade(const std::string& username,
 void rpc_client::write_frame(std::string_view text)
 {
     error_code ec{};
-    BOOST_CHECK(websocket_.has_value());
+    BC_CHECK(websocket_.has_value());
 
-    websocket_.value().write(net::buffer(text), ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    ec = websocket_.value().write(text);
+    BC_CHECK_MESSAGE(!ec, ec.message());
 }
 
 system::json::value rpc_client::read_frame(bool checked)
 {
     error_code ec{};
-    BOOST_CHECK(websocket_.has_value());
+    BC_CHECK(websocket_.has_value());
 
-    flat_buffer buffer{};
-    websocket_.value().read(buffer, ec);
+    http::flat_buffer buffer{};
+    ec = websocket_.value().read(buffer);
     if (checked)
     {
-        BOOST_CHECK_MESSAGE(!ec, ec.message());
+        BC_CHECK_MESSAGE(!ec, ec.message());
     }
 
     if (ec)
         return dropped();
 
-    return test::parse_json(buffers_to_string(buffer.data()));
+    return test::parse_json(test::to_string(buffer.data()));
 }
 
 system::json::value rpc_client::frame(const std::string& text, bool checked)
 {
     error_code ec{};
-    BOOST_CHECK(websocket_.has_value());
+    BC_CHECK(websocket_.has_value());
 
-    websocket_.value().write(net::buffer(text), ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    ec = websocket_.value().write(text);
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     if (ec)
         return dropped();

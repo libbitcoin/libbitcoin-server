@@ -16,7 +16,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define BOOST_TEST_MODULE libbitcoin_server_test
-#include <boost/test/included/unit_test.hpp>
-
 #include <bitcoin/server.hpp>
+
+int main(int argc, char* argv[])
+{
+    return libbitcoin::system::unit_test::runner{ "libbitcoin_server_test" }.run(argc, argv);
+}

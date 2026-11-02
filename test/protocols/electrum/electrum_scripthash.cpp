@@ -29,478 +29,478 @@ static const std::string found_scripthash{ "bad83872c90886be19b98734fd16741611ef
 static const chain::script bogus{ chain::script::to_pay_key_hash_pattern({ 0x42 }) };
 static const auto bogus_script = encode_base16(bogus.to_data(false));
 
-BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
+BC_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
 // blockchain.scripthash.get_balance
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__missing_arguments__dropped)
 {
-    BOOST_REQUIRE(query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":901,"method":"blockchain.scripthash.get_balance","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__insufficient_version__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__insufficient_version__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":902,"method":"blockchain.scripthash.get_balance","params":[""]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 }
 
 // Not yet.
-////BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__obsoleted_version__wrong_version)
+////BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__obsoleted_version__wrong_version)
 ////{
-////    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+////    BC_REQUIRE(handshake(electrum::version::v1_7));
 ////
 ////    const auto response = get(R"({"id":902,"method":"blockchain.scripthash.get_balance","params":[""]})" "\n");
 ////    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-////    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+////    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 ////}
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__invalid_address__invalid_argument)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__invalid_address__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":903,"method":"blockchain.scripthash.get_balance","params":["invalid"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__not_found_address__zero)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__not_found_address__zero)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     constexpr auto request = R"({{"id":904,"method":"blockchain.scripthash.get_balance","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, bogus_scripthash));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
     REQUIRE_NO_THROW_TRUE(result.at("confirmed").is_int64());
     REQUIRE_NO_THROW_TRUE(result.at("unconfirmed").is_int64());
-    BOOST_REQUIRE_EQUAL(result.at("confirmed").as_int64(), 0x00);
-    BOOST_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x00);
+    BC_REQUIRE_EQUAL(result.at("confirmed").as_int64(), 0x00);
+    BC_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x00);
 }
 
 // A null scripthash is a valid query that matches nothing, not an error.
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__null_scripthash__empty)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__null_scripthash__empty)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":905,"method":"blockchain.scripthash.get_balance","params":["0000000000000000000000000000000000000000000000000000000000000000"]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
-    BOOST_REQUIRE_EQUAL(result.at("confirmed").as_int64(), 0x00);
-    BOOST_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x00);
+    BC_REQUIRE_EQUAL(result.at("confirmed").as_int64(), 0x00);
+    BC_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x00);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__confirmed_and_unconfirmed_address__expected)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__confirmed_and_unconfirmed_address__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     constexpr auto request = R"({{"id":905,"method":"blockchain.scripthash.get_balance","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, found_scripthash));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
     REQUIRE_NO_THROW_TRUE(result.at("confirmed").is_int64());
     REQUIRE_NO_THROW_TRUE(result.at("unconfirmed").is_int64());
-    BOOST_REQUIRE_EQUAL(result.at("confirmed").as_int64(), 0x09); // mock_block10
+    BC_REQUIRE_EQUAL(result.at("confirmed").as_int64(), 0x09); // mock_block10
 
     // Currently unconfirmed ALWAYS returns zero (no graph to order conflicts).
-    BOOST_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x00);
-    ////BOOST_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x10 + 0x11 + 0x12); // mock_block11
+    BC_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x00);
+    ////BC_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x10 + 0x11 + 0x12); // mock_block11
 }
 
 // blockchain.scripthash.get_history
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__missing_arguments__dropped)
 {
-    BOOST_REQUIRE(query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":1002,"method":"blockchain.scripthash.get_history","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__insufficient_version__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__insufficient_version__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":902,"method":"blockchain.scripthash.get_history","params":[""]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 }
 
 // Not yet.
-////BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__obsoleted_version__wrong_version)
+////BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__obsoleted_version__wrong_version)
 ////{
-////    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+////    BC_REQUIRE(handshake(electrum::version::v1_7));
 ////
 ////    const auto response = get(R"({"id":1003,"method":"blockchain.scripthash.get_history","params":[""]})" "\n");
 ////    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-////    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+////    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 ////}
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__invalid_address__invalid_argument)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__invalid_address__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":1004,"method":"blockchain.scripthash.get_history","params":["invalid"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__not_found_address__empty)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__not_found_address__empty)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     constexpr auto request = R"({{"id":1005,"method":"blockchain.scripthash.get_history","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, bogus_scripthash));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
 
 // A null scripthash is a valid query that matches nothing, not an error.
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__null_scripthash__empty)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__null_scripthash__empty)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":915,"method":"blockchain.scripthash.get_history","params":["0000000000000000000000000000000000000000000000000000000000000000"]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__confirmed_and_unconfirmed_address__expected)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__confirmed_and_unconfirmed_address__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed (mirrors the get_balance confirmed test).
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     constexpr auto request = R"({{"id":1006,"method":"blockchain.scripthash.get_history","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, found_scripthash));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
     const auto& history = response.at("result").as_array();
-    BOOST_REQUIRE_EQUAL(history.size(), 3u);
+    BC_REQUIRE_EQUAL(history.size(), 3u);
 
     const auto hash1 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto& tx1 = history.at(0).as_object();
     REQUIRE_NO_THROW_TRUE(tx1.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx1.at("tx_hash").is_string());
-    BOOST_REQUIRE(!tx1.contains("fee"));
-    BOOST_REQUIRE_EQUAL(tx1.at("height").as_int64(), 10);
-    BOOST_REQUIRE_EQUAL(tx1.at("tx_hash").as_string(), encode_hash(hash1));
+    BC_REQUIRE(!tx1.contains("fee"));
+    BC_REQUIRE_EQUAL(tx1.at("height").as_int64(), 10);
+    BC_REQUIRE_EQUAL(tx1.at("tx_hash").as_string(), encode_hash(hash1));
 
     const auto hash2 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto& tx2 = history.at(1).as_object();
     REQUIRE_NO_THROW_TRUE(tx2.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx2.at("tx_hash").is_string());
-    BOOST_REQUIRE_EQUAL(tx2.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
-    BOOST_REQUIRE_EQUAL(tx2.at("height").as_int64(), 0);  // rooted
-    BOOST_REQUIRE_EQUAL(tx2.at("tx_hash").as_string(), encode_hash(hash2));
+    BC_REQUIRE_EQUAL(tx2.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
+    BC_REQUIRE_EQUAL(tx2.at("height").as_int64(), 0);  // rooted
+    BC_REQUIRE_EQUAL(tx2.at("tx_hash").as_string(), encode_hash(hash2));
 
     const auto hash3 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
     const auto& tx3 = history.at(2).as_object();
     REQUIRE_NO_THROW_TRUE(tx3.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx3.at("tx_hash").is_string());
-    BOOST_REQUIRE_EQUAL(tx3.at("fee").as_int64(), floored_subtract(0x10 + 0x11, 0x0a));
-    BOOST_REQUIRE_EQUAL(tx3.at("height").as_int64(), -1); // not rooted
-    BOOST_REQUIRE_EQUAL(tx3.at("tx_hash").as_string(), encode_hash(hash3));
+    BC_REQUIRE_EQUAL(tx3.at("fee").as_int64(), floored_subtract(0x10 + 0x11, 0x0a));
+    BC_REQUIRE_EQUAL(tx3.at("height").as_int64(), -1); // not rooted
+    BC_REQUIRE_EQUAL(tx3.at("tx_hash").as_string(), encode_hash(hash3));
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__history_exceeds_maximum__excessive_history)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__history_exceeds_maximum__excessive_history)
 {
     config_.server.electrum.maximum_history = 1;
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     constexpr auto request = R"({{"id":1007,"method":"blockchain.scripthash.get_history","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, found_scripthash));
-    BOOST_REQUIRE_EQUAL(result, excessive_history.value());
+    BC_REQUIRE_EQUAL(result, excessive_history.value());
 }
 
 // blockchain.scripthash.get_mempool
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__missing_arguments__dropped)
 {
-    BOOST_REQUIRE(query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":1002,"method":"blockchain.scripthash.get_mempool","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__insufficient_version__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__insufficient_version__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":902,"method":"blockchain.scripthash.get_mempool","params":[""]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 }
 
 // Not yet.
-////BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__obsoleted_version__wrong_version)
+////BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__obsoleted_version__wrong_version)
 ////{
-////    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+////    BC_REQUIRE(handshake(electrum::version::v1_7));
 ////
 ////    const auto response = get(R"({"id":1003,"method":"blockchain.scripthash.get_mempool","params":[""]})" "\n");
 ////    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-////    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+////    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 ////}
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__invalid_address__invalid_argument)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__invalid_address__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":1004,"method":"blockchain.scripthash.get_mempool","params":["invalid"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__not_found_address__empty)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__not_found_address__empty)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     constexpr auto request = R"({{"id":1005,"method":"blockchain.scripthash.get_mempool","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, bogus_scripthash));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
 
 // A null scripthash is a valid query that matches nothing, not an error.
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__null_scripthash__empty)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__null_scripthash__empty)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":925,"method":"blockchain.scripthash.get_mempool","params":["0000000000000000000000000000000000000000000000000000000000000000"]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__confirmed_and_unconfirmed_address__expected)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__confirmed_and_unconfirmed_address__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed (mirrors the get_balance confirmed test).
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     constexpr auto request = R"({{"id":1006,"method":"blockchain.scripthash.get_mempool","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, found_scripthash));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
     const auto& history = response.at("result").as_array();
-    BOOST_REQUIRE_EQUAL(history.size(), 2u);
+    BC_REQUIRE_EQUAL(history.size(), 2u);
 
     const auto hash1 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto& tx1 = history.at(0).as_object();
     REQUIRE_NO_THROW_TRUE(tx1.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx1.at("tx_hash").is_string());
-    BOOST_REQUIRE_EQUAL(tx1.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
-    BOOST_REQUIRE_EQUAL(tx1.at("height").as_int64(), 0);  // rooted
-    BOOST_REQUIRE_EQUAL(tx1.at("tx_hash").as_string(), encode_hash(hash1));
+    BC_REQUIRE_EQUAL(tx1.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
+    BC_REQUIRE_EQUAL(tx1.at("height").as_int64(), 0);  // rooted
+    BC_REQUIRE_EQUAL(tx1.at("tx_hash").as_string(), encode_hash(hash1));
 
     const auto hash2 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
     const auto& tx2 = history.at(1).as_object();
     REQUIRE_NO_THROW_TRUE(tx2.at("height").is_int64());
     REQUIRE_NO_THROW_TRUE(tx2.at("tx_hash").is_string());
-    BOOST_REQUIRE_EQUAL(tx1.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
-    BOOST_REQUIRE_EQUAL(tx2.at("height").as_int64(), -1); // not rooted
-    BOOST_REQUIRE_EQUAL(tx2.at("tx_hash").as_string(), encode_hash(hash2));
+    BC_REQUIRE_EQUAL(tx1.at("fee").as_int64(), floored_subtract(5'000'000'000 + 5'000'000'000, 0x10 + 0x11 + 0x12 + 0x13 + 0x14));
+    BC_REQUIRE_EQUAL(tx2.at("height").as_int64(), -1); // not rooted
+    BC_REQUIRE_EQUAL(tx2.at("tx_hash").as_string(), encode_hash(hash2));
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__history_exceeds_maximum__excessive_history)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__history_exceeds_maximum__excessive_history)
 {
     config_.server.electrum.maximum_history = 1;
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
 
     constexpr auto request = R"({{"id":1007,"method":"blockchain.scripthash.get_mempool","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, found_scripthash));
-    BOOST_REQUIRE_EQUAL(result, excessive_history.value());
+    BC_REQUIRE_EQUAL(result, excessive_history.value());
 }
 
 // blockchain.scripthash.list_unspent
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__missing_arguments__dropped)
 {
-    BOOST_REQUIRE(query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":1002,"method":"blockchain.scripthash.listunspent","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__insufficient_version__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__insufficient_version__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":902,"method":"blockchain.scripthash.listunspent","params":[""]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 }
 
 // Not yet.
-////BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__obsoleted_version__wrong_version)
+////BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__obsoleted_version__wrong_version)
 ////{
-////    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+////    BC_REQUIRE(handshake(electrum::version::v1_7));
 ////
 ////    const auto response = get(R"({"id":1003,"method":"blockchain.scripthash.listunspent","params":[""]})" "\n");
 ////    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-////    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+////    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 ////}
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__invalid_address__invalid_argument)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__invalid_address__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":1004,"method":"blockchain.scripthash.listunspent","params":["invalid"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__not_found_address__empty)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__not_found_address__empty)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     constexpr auto request = R"({{"id":1005,"method":"blockchain.scripthash.listunspent","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, bogus_scripthash));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
 
 // A null scripthash is a valid query that matches nothing, not an error.
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__null_scripthash__empty)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__null_scripthash__empty)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":935,"method":"blockchain.scripthash.listunspent","params":["0000000000000000000000000000000000000000000000000000000000000000"]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__confirmed_and_unconfirmed_address__expected)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__confirmed_and_unconfirmed_address__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     // Add one confirmed p2sh/p2kh block and one unconfirmed (mirrors the get_balance confirmed test).
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     constexpr auto request = R"({{"id":1006,"method":"blockchain.scripthash.listunspent","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, found_scripthash));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
     const auto& unspent = response.at("result").as_array();
-    BOOST_REQUIRE_EQUAL(unspent.size(), 4u);
+    BC_REQUIRE_EQUAL(unspent.size(), 4u);
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto& tx1 = unspent.at(0).as_object();
-    BOOST_REQUIRE_EQUAL(tx1.at("tx_hash").as_string(), encode_hash(hash10));
-    BOOST_REQUIRE_EQUAL(tx1.at("tx_pos").as_int64(), 0);    // tx.output.index(0)
-    BOOST_REQUIRE_EQUAL(tx1.at("height").as_int64(), 10);   // confirmed
-    BOOST_REQUIRE_EQUAL(tx1.at("value").as_int64(), 0x09);
+    BC_REQUIRE_EQUAL(tx1.at("tx_hash").as_string(), encode_hash(hash10));
+    BC_REQUIRE_EQUAL(tx1.at("tx_pos").as_int64(), 0);    // tx.output.index(0)
+    BC_REQUIRE_EQUAL(tx1.at("height").as_int64(), 10);   // confirmed
+    BC_REQUIRE_EQUAL(tx1.at("value").as_int64(), 0x09);
 
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto& tx2 = unspent.at(1).as_object();
-    BOOST_REQUIRE_EQUAL(tx2.at("tx_hash").as_string(), encode_hash(hash11));
-    BOOST_REQUIRE_EQUAL(tx2.at("tx_pos").as_int64(), 0);    // tx.output.index(0)
-    BOOST_REQUIRE_EQUAL(tx2.at("height").as_int64(), 0);    // unconfirmed
-    BOOST_REQUIRE_EQUAL(tx2.at("value").as_int64(), 0x10);
+    BC_REQUIRE_EQUAL(tx2.at("tx_hash").as_string(), encode_hash(hash11));
+    BC_REQUIRE_EQUAL(tx2.at("tx_pos").as_int64(), 0);    // tx.output.index(0)
+    BC_REQUIRE_EQUAL(tx2.at("height").as_int64(), 0);    // unconfirmed
+    BC_REQUIRE_EQUAL(tx2.at("value").as_int64(), 0x10);
 
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
     const auto& tx4 = unspent.at(2).as_object();
-    BOOST_REQUIRE_EQUAL(tx4.at("tx_hash").as_string(), encode_hash(hash12));
-    BOOST_REQUIRE_EQUAL(tx4.at("tx_pos").as_int64(), 0);    // tx.output.index(0)
-    BOOST_REQUIRE_EQUAL(tx4.at("height").as_int64(), 0);    // unconfirmed
-    BOOST_REQUIRE_EQUAL(tx4.at("value").as_int64(), 0x10);
+    BC_REQUIRE_EQUAL(tx4.at("tx_hash").as_string(), encode_hash(hash12));
+    BC_REQUIRE_EQUAL(tx4.at("tx_pos").as_int64(), 0);    // tx.output.index(0)
+    BC_REQUIRE_EQUAL(tx4.at("height").as_int64(), 0);    // unconfirmed
+    BC_REQUIRE_EQUAL(tx4.at("value").as_int64(), 0x10);
 
     const auto& tx3 = unspent.at(3).as_object();
-    BOOST_REQUIRE_EQUAL(tx3.at("tx_hash").as_string(), encode_hash(hash11));
-    BOOST_REQUIRE_EQUAL(tx3.at("tx_pos").as_int64(), 1);    // tx.output.index(1)
-    BOOST_REQUIRE_EQUAL(tx3.at("height").as_int64(), 0);    // unconfirmed
-    BOOST_REQUIRE_EQUAL(tx3.at("value").as_int64(), 0x11);
+    BC_REQUIRE_EQUAL(tx3.at("tx_hash").as_string(), encode_hash(hash11));
+    BC_REQUIRE_EQUAL(tx3.at("tx_pos").as_int64(), 1);    // tx.output.index(1)
+    BC_REQUIRE_EQUAL(tx3.at("height").as_int64(), 0);    // unconfirmed
+    BC_REQUIRE_EQUAL(tx3.at("value").as_int64(), 0x11);
 
     // Index is point arbitrary sort priority.
     const auto point11_0 = chain::point{ hash11, 0 };
     const auto point11_1 = chain::point{ hash11, 1 };
     const auto point12_0 = chain::point{ hash12, 0 };
-    BOOST_REQUIRE(point11_0 < point12_0);
-    BOOST_REQUIRE(point12_0 < point11_1);
+    BC_REQUIRE(point11_0 < point12_0);
+    BC_REQUIRE(point12_0 < point11_1);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
 // duplicate
 // ----------------------------------------------------------------------------
 
-BOOST_FIXTURE_TEST_SUITE(electrum_duplicate_tests, electrum_duplicate_setup_fixture)
+BC_FIXTURE_TEST_SUITE(electrum_duplicate_tests, electrum_duplicate_setup_fixture)
 
 static std::string duplicate_hash() NOEXCEPT
 {
     return encode_hash(test::mock_block10.transactions_ptr()->at(1)->hash(false));
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__duplicate__strong_instance)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__duplicate__strong_instance)
 {
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     constexpr auto request = R"({{"id":1102,"method":"blockchain.scripthash.get_history","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, found_scripthash));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
 
     const auto& history = response.at("result").as_array();
     const auto duplicate = [](const auto& item) { return item.at("tx_hash").as_string() == duplicate_hash(); };
     const auto found = std::find_if(history.begin(), history.end(), duplicate);
-    BOOST_REQUIRE_EQUAL(std::count_if(history.begin(), history.end(), duplicate), 1);
-    BOOST_REQUIRE_EQUAL(found->at("height").as_int64(), 10);
+    BC_REQUIRE_EQUAL(std::count_if(history.begin(), history.end(), duplicate), 1);
+    BC_REQUIRE_EQUAL(found->at("height").as_int64(), 10);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__duplicate__strong_instance)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__duplicate__strong_instance)
 {
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     constexpr auto request = R"({{"id":1103,"method":"blockchain.scripthash.listunspent","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, found_scripthash));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
 
     const auto& unspent = response.at("result").as_array();
     const auto duplicate = [](const auto& item) { return item.at("tx_hash").as_string() == duplicate_hash() && item.at("tx_pos").as_int64() == 0; };
     const auto found = std::find_if(unspent.begin(), unspent.end(), duplicate);
-    BOOST_REQUIRE_EQUAL(std::count_if(unspent.begin(), unspent.end(), duplicate), 1);
-    BOOST_REQUIRE_EQUAL(found->at("height").as_int64(), 10);
+    BC_REQUIRE_EQUAL(std::count_if(unspent.begin(), unspent.end(), duplicate), 1);
+    BC_REQUIRE_EQUAL(found->at("height").as_int64(), 10);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

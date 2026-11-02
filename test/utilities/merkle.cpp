@@ -18,7 +18,7 @@
  */
 #include "../test.hpp"
 
-BOOST_AUTO_TEST_SUITE(partial_merkle_tests)
+BC_AUTO_TEST_SUITE(partial_merkle_tests)
 
 using namespace system;
 
@@ -55,99 +55,99 @@ static void verify_round_trip(size_t count,
     hash_digest root{};
     hashes matched{};
     std::vector<size_t> positions{};
-    BOOST_REQUIRE(server::extract_partial_merkle(root, matched, positions, count, flags, branch));
+    BC_REQUIRE(server::extract_partial_merkle(root, matched, positions, count, flags, branch));
 
-    BOOST_REQUIRE_EQUAL(root, full_root(txids));
-    BOOST_REQUIRE_EQUAL(positions.size(), matches.size());
+    BC_REQUIRE_EQUAL(root, full_root(txids));
+    BC_REQUIRE_EQUAL(positions.size(), matches.size());
 
     for (size_t index{}; index < matches.size(); ++index)
     {
-        BOOST_REQUIRE_EQUAL(positions.at(index), matches.at(index));
-        BOOST_REQUIRE_EQUAL(matched.at(index), txids.at(matches.at(index)));
+        BC_REQUIRE_EQUAL(positions.at(index), matches.at(index));
+        BC_REQUIRE_EQUAL(matched.at(index), txids.at(matches.at(index)));
     }
 }
 
 // round trip
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(merkle__single_tx__matched__root)
+BC_AUTO_TEST_CASE(merkle__single_tx__matched__root)
 {
     verify_round_trip(1, { 0 });
 }
 
-BOOST_AUTO_TEST_CASE(merkle__seven_tx__two_matched__root_and_positions)
+BC_AUTO_TEST_CASE(merkle__seven_tx__two_matched__root_and_positions)
 {
     verify_round_trip(7, { 1, 4 });
 }
 
-BOOST_AUTO_TEST_CASE(merkle__eight_tx__interior_matched__root)
+BC_AUTO_TEST_CASE(merkle__eight_tx__interior_matched__root)
 {
     verify_round_trip(8, { 0, 3, 7 });
 }
 
-BOOST_AUTO_TEST_CASE(merkle__odd_tx__last_matched__root)
+BC_AUTO_TEST_CASE(merkle__odd_tx__last_matched__root)
 {
     verify_round_trip(5, { 4 });
 }
 
-BOOST_AUTO_TEST_CASE(merkle__large__scattered__root)
+BC_AUTO_TEST_CASE(merkle__large__scattered__root)
 {
     verify_round_trip(100, { 0, 1, 50, 98, 99 });
 }
 
 // A branch smaller than a single-tx tree extracts the leaf as the root.
-BOOST_AUTO_TEST_CASE(merkle__single_tx__is_leaf_root)
+BC_AUTO_TEST_CASE(merkle__single_tx__is_leaf_root)
 {
     const auto txids = make_txids(1);
     data_chunk flags{};
     hashes branch{};
     server::build_partial_merkle(flags, branch, txids, { true });
-    BOOST_REQUIRE_EQUAL(branch.size(), 1u);
-    BOOST_REQUIRE_EQUAL(branch.front(), txids.front());
+    BC_REQUIRE_EQUAL(branch.size(), 1u);
+    BC_REQUIRE_EQUAL(branch.front(), txids.front());
 }
 
 // malformed
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(merkle__zero_tx__false)
+BC_AUTO_TEST_CASE(merkle__zero_tx__false)
 {
     hash_digest root{};
     hashes matched{};
     std::vector<size_t> positions{};
-    BOOST_REQUIRE(!server::extract_partial_merkle(root, matched, positions, 0, { 0x00 }, { one_hash }));
+    BC_REQUIRE(!server::extract_partial_merkle(root, matched, positions, 0, { 0x00 }, { one_hash }));
 }
 
 // More branch hashes than transactions is malformed.
-BOOST_AUTO_TEST_CASE(merkle__excess_hashes__false)
+BC_AUTO_TEST_CASE(merkle__excess_hashes__false)
 {
     hash_digest root{};
     hashes matched{};
     std::vector<size_t> positions{};
-    BOOST_REQUIRE(!server::extract_partial_merkle(root, matched, positions, 1, { 0x00 }, { one_hash, one_hash }));
+    BC_REQUIRE(!server::extract_partial_merkle(root, matched, positions, 1, { 0x00 }, { one_hash, one_hash }));
 }
 
-BOOST_AUTO_TEST_CASE(merkle__insufficient_flag_bits__false)
+BC_AUTO_TEST_CASE(merkle__insufficient_flag_bits__false)
 {
     hash_digest root{};
     hashes matched{};
     std::vector<size_t> positions{};
-    BOOST_REQUIRE(!server::extract_partial_merkle(root, matched, positions, 16, { 0xff }, { one_hash, null_hash }));
+    BC_REQUIRE(!server::extract_partial_merkle(root, matched, positions, 16, { 0xff }, { one_hash, null_hash }));
 }
 
-BOOST_AUTO_TEST_CASE(merkle__insufficient_hashes__false)
+BC_AUTO_TEST_CASE(merkle__insufficient_hashes__false)
 {
     hash_digest root{};
     hashes matched{};
     std::vector<size_t> positions{};
-    BOOST_REQUIRE(!server::extract_partial_merkle(root, matched, positions, 1, { 0x00 }, {}));
+    BC_REQUIRE(!server::extract_partial_merkle(root, matched, positions, 1, { 0x00 }, {}));
 }
 
-BOOST_AUTO_TEST_CASE(merkle__duplicate_siblings__false)
+BC_AUTO_TEST_CASE(merkle__duplicate_siblings__false)
 {
     hash_digest root{};
     hashes matched{};
     std::vector<size_t> positions{};
-    BOOST_REQUIRE(!server::extract_partial_merkle(root, matched, positions, 2, { 0x07 }, { one_hash, one_hash }));
+    BC_REQUIRE(!server::extract_partial_merkle(root, matched, positions, 2, { 0x07 }, { one_hash, one_hash }));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

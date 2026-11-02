@@ -27,172 +27,172 @@ static const std::string bogus_scripthash{ "9c2c84a6cf9809e08af19557e28d38257e6f
 static const chain::script bogus{ chain::script::to_pay_key_hash_pattern({ 0x42 }) };
 static const auto bogus_script = encode_base16(bogus.to_data(false));
 
-BOOST_FIXTURE_TEST_SUITE(electrum_disabled_address_tests, electrum_disabled_address_index_setup_fixture)
+BC_FIXTURE_TEST_SUITE(electrum_disabled_address_tests, electrum_disabled_address_index_setup_fixture)
 
 // address
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     constexpr auto request = R"({{"id":901,"method":"blockchain.address.get_balance","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn"));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_history__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_get_history__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     constexpr auto request = R"({{"id":1001,"method":"blockchain.address.get_history","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn"));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     constexpr auto request = R"({{"id":1001,"method":"blockchain.address.get_mempool","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn"));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     constexpr auto request = R"({{"id":1001,"method":"blockchain.address.listunspent","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn"));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 // scripthash
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     constexpr auto request = R"({{"id":901,"method":"blockchain.scripthash.get_balance","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_scripthash));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     constexpr auto request = R"({{"id":1001,"method":"blockchain.scripthash.get_history","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_scripthash));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     constexpr auto request = R"({{"id":1001,"method":"blockchain.scripthash.get_mempool","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_scripthash));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     constexpr auto request = R"({{"id":1001,"method":"blockchain.scripthash.listunspent","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_scripthash));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     constexpr auto request = R"({{"id":1001,"method":"blockchain.address.subscribe","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_address));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     constexpr auto request = R"({{"id":1001,"method":"blockchain.scripthash.subscribe","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_scripthash));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_4_2));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_4_2));
 
     constexpr auto request = R"({{"id":1001,"method":"blockchain.scripthash.unsubscribe","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_scripthash));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     constexpr auto request = R"({{"id":1001,"method":"blockchain.scriptpubkey.subscribe","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_script));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 // scriptpubkey
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     constexpr auto request = R"({{"id":901,"method":"blockchain.scriptpubkey.get_balance","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_script));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     constexpr auto request = R"({{"id":1001,"method":"blockchain.scriptpubkey.get_history","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_script));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     constexpr auto request = R"({{"id":1001,"method":"blockchain.scriptpubkey.get_mempool","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_script));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__no_address_index__not_implemented)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__no_address_index__not_implemented)
 {
-    BOOST_REQUIRE(!query_.address_enabled());
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(!query_.address_enabled());
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     constexpr auto request = R"({{"id":1001,"method":"blockchain.scriptpubkey.listunspent","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_script));
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

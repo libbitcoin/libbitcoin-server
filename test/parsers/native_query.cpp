@@ -19,280 +19,280 @@
 #include "../test.hpp"
 #include "../mocks/blocks.hpp"
 
-BOOST_AUTO_TEST_SUITE(native_query_tests)
+BC_AUTO_TEST_SUITE(native_query_tests)
 
 using namespace network::rpc;
 using namespace network::http;
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__empty__false)
+BC_AUTO_TEST_CASE(parsers__native_query__empty__false)
 {
     request_t out{};
-    BOOST_REQUIRE(!native_query(out, {}));
+    BC_REQUIRE(!native_query(out, {}));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_params_object__false)
+BC_AUTO_TEST_CASE(parsers__native_query__no_params_object__false)
 {
     request_t out{};
-    BOOST_REQUIRE(!native_query(out, "/", {}));
+    BC_REQUIRE(!native_query(out, "/", {}));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__invalid_uri_target__false)
+BC_AUTO_TEST_CASE(parsers__native_query__invalid_uri_target__false)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(!native_query(out, "invalid uri with spaces?foo=bar", {}));
+    BC_REQUIRE(!native_query(out, "invalid uri with spaces?foo=bar", {}));
 }
 
 // valid parse doesn't require acceptable.
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_no_accepts__true)
+BC_AUTO_TEST_CASE(parsers__native_query__no_query_no_accepts__true)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(native_query(out, "/", {}));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::unknown);
+    BC_REQUIRE(native_query(out, "/", {}));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::unknown);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_accept_json__true)
+BC_AUTO_TEST_CASE(parsers__native_query__no_query_accept_json__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_json };
-    BOOST_REQUIRE(native_query(out, "/", accepts));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::application_json);
+    BC_REQUIRE(native_query(out, "/", accepts));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::application_json);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_accept_html__true)
+BC_AUTO_TEST_CASE(parsers__native_query__no_query_accept_html__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::text_html };
-    BOOST_REQUIRE(native_query(out, "/", accepts));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::text_html);
+    BC_REQUIRE(native_query(out, "/", accepts));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::text_html);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_accept_text__true)
+BC_AUTO_TEST_CASE(parsers__native_query__no_query_accept_text__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::text_plain };
-    BOOST_REQUIRE(native_query(out, "/", accepts));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::text_plain);
+    BC_REQUIRE(native_query(out, "/", accepts));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::text_plain);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_accept_data__true)
+BC_AUTO_TEST_CASE(parsers__native_query__no_query_accept_data__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_octet_stream };
-    BOOST_REQUIRE(native_query(out, "/", accepts));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::application_octet_stream);
+    BC_REQUIRE(native_query(out, "/", accepts));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::application_octet_stream);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_accept_priority_json__true)
+BC_AUTO_TEST_CASE(parsers__native_query__no_query_accept_priority_json__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::text_html, media_type::application_json };
-    BOOST_REQUIRE(native_query(out, "/", accepts));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::application_json);
+    BC_REQUIRE(native_query(out, "/", accepts));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::application_json);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_accept_priority_html__true)
+BC_AUTO_TEST_CASE(parsers__native_query__no_query_accept_priority_html__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::text_plain, media_type::text_html };
-    BOOST_REQUIRE(native_query(out, "/", accepts));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::text_html);
+    BC_REQUIRE(native_query(out, "/", accepts));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::text_html);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_accept_priority_text__true)
+BC_AUTO_TEST_CASE(parsers__native_query__no_query_accept_priority_text__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_octet_stream, media_type::text_plain };
-    BOOST_REQUIRE(native_query(out, "/", accepts));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::text_plain);
+    BC_REQUIRE(native_query(out, "/", accepts));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::text_plain);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_accept_priority_data__true)
+BC_AUTO_TEST_CASE(parsers__native_query__no_query_accept_priority_data__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_octet_stream };
-    BOOST_REQUIRE(native_query(out, "/", accepts));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::application_octet_stream);
+    BC_REQUIRE(native_query(out, "/", accepts));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::application_octet_stream);
 }
 
 // valid parse doesn't require acceptable.
-BOOST_AUTO_TEST_CASE(parsers__native_query__no_query_no_matching_accept__true)
+BC_AUTO_TEST_CASE(parsers__native_query__no_query_no_matching_accept__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::unknown };
-    BOOST_REQUIRE(native_query(out, "/", accepts));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::unknown);
+    BC_REQUIRE(native_query(out, "/", accepts));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::unknown);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__query_format_json__true)
+BC_AUTO_TEST_CASE(parsers__native_query__query_format_json__true)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(native_query(out, "/?format=json", {}));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::application_json);
+    BC_REQUIRE(native_query(out, "/?format=json", {}));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::application_json);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__query_format_html__true)
+BC_AUTO_TEST_CASE(parsers__native_query__query_format_html__true)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(native_query(out, "/?format=html", {}));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::text_html);
+    BC_REQUIRE(native_query(out, "/?format=html", {}));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::text_html);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__query_format_text__true)
+BC_AUTO_TEST_CASE(parsers__native_query__query_format_text__true)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(native_query(out, "/?format=text", {}));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::text_plain);
+    BC_REQUIRE(native_query(out, "/?format=text", {}));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::text_plain);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__query_format_data__true)
+BC_AUTO_TEST_CASE(parsers__native_query__query_format_data__true)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(native_query(out, "/?format=data", {}));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::application_octet_stream);
+    BC_REQUIRE(native_query(out, "/?format=data", {}));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::application_octet_stream);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__query_format_unknown__false)
-{
-    request_t out{};
-    out.params = object_t{};
-    const media_types accepts{ media_type::application_json };
-    BOOST_REQUIRE(!native_query(out, "/?format=foo", accepts));
-}
-
-BOOST_AUTO_TEST_CASE(parsers__native_query__query_format_xml__false)
+BC_AUTO_TEST_CASE(parsers__native_query__query_format_unknown__false)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_json };
-    BOOST_REQUIRE(!native_query(out, "/?format=xml", accepts));
+    BC_REQUIRE(!native_query(out, "/?format=foo", accepts));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__query_format_overrides_accept__true)
+BC_AUTO_TEST_CASE(parsers__native_query__query_format_xml__false)
+{
+    request_t out{};
+    out.params = object_t{};
+    const media_types accepts{ media_type::application_json };
+    BC_REQUIRE(!native_query(out, "/?format=xml", accepts));
+}
+
+BC_AUTO_TEST_CASE(parsers__native_query__query_format_overrides_accept__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::text_html };
-    BOOST_REQUIRE(native_query(out, "/?format=json", accepts));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::application_json);
+    BC_REQUIRE(native_query(out, "/?format=json", accepts));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::application_json);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__witness_false__true)
+BC_AUTO_TEST_CASE(parsers__native_query__witness_false__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_json };
-    BOOST_REQUIRE(native_query(out, "/?witness=false", accepts));
+    BC_REQUIRE(native_query(out, "/?witness=false", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
     const auto it = params.find(native::token::witness);
-    BOOST_REQUIRE(it != params.end());
-    BOOST_REQUIRE(std::holds_alternative<bool>(it->second.value()));
-    BOOST_REQUIRE(!std::get<bool>(it->second.value()));
+    BC_REQUIRE(it != params.end());
+    BC_REQUIRE(std::holds_alternative<bool>(it->second.value()));
+    BC_REQUIRE(!std::get<bool>(it->second.value()));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__witness_true__true)
+BC_AUTO_TEST_CASE(parsers__native_query__witness_true__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_json };
-    BOOST_REQUIRE(native_query(out, "/?witness=true", accepts));
+    BC_REQUIRE(native_query(out, "/?witness=true", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    BOOST_REQUIRE(params.find(native::token::witness) == params.end());
+    BC_REQUIRE(params.find(native::token::witness) == params.end());
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__turbo_false__true)
+BC_AUTO_TEST_CASE(parsers__native_query__turbo_false__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_json };
-    BOOST_REQUIRE(native_query(out, "/?turbo=false", accepts));
+    BC_REQUIRE(native_query(out, "/?turbo=false", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
     const auto it = params.find(native::token::turbo);
-    BOOST_REQUIRE(it != params.end());
-    BOOST_REQUIRE(std::holds_alternative<bool>(it->second.value()));
-    BOOST_REQUIRE(!std::get<bool>(it->second.value()));
+    BC_REQUIRE(it != params.end());
+    BC_REQUIRE(std::holds_alternative<bool>(it->second.value()));
+    BC_REQUIRE(!std::get<bool>(it->second.value()));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__turbo_true__true)
+BC_AUTO_TEST_CASE(parsers__native_query__turbo_true__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_json };
-    BOOST_REQUIRE(native_query(out, "/?turbo=true", accepts));
+    BC_REQUIRE(native_query(out, "/?turbo=true", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    BOOST_REQUIRE(params.find(native::token::turbo) == params.end());
+    BC_REQUIRE(params.find(native::token::turbo) == params.end());
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__stop_true__true)
+BC_AUTO_TEST_CASE(parsers__native_query__stop_true__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_json };
-    BOOST_REQUIRE(native_query(out, "/?stop=true", accepts));
+    BC_REQUIRE(native_query(out, "/?stop=true", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
     const auto it = params.find(native::token::stop);
-    BOOST_REQUIRE(it != params.end());
-    BOOST_REQUIRE(std::holds_alternative<bool>(it->second.value()));
-    BOOST_REQUIRE(std::get<bool>(it->second.value()));
+    BC_REQUIRE(it != params.end());
+    BC_REQUIRE(std::holds_alternative<bool>(it->second.value()));
+    BC_REQUIRE(std::get<bool>(it->second.value()));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__stop_false__true)
+BC_AUTO_TEST_CASE(parsers__native_query__stop_false__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_json };
-    BOOST_REQUIRE(native_query(out, "/?stop=false", accepts));
+    BC_REQUIRE(native_query(out, "/?stop=false", accepts));
 
     const auto& params = std::get<object_t>(out.params.value());
-    BOOST_REQUIRE(params.find(native::token::stop) == params.end());
+    BC_REQUIRE(params.find(native::token::stop) == params.end());
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__stop_invalid__false)
+BC_AUTO_TEST_CASE(parsers__native_query__stop_invalid__false)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(!native_query(out, "/?stop=foo", {}));
+    BC_REQUIRE(!native_query(out, "/?stop=foo", {}));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__multiple_params__true)
+BC_AUTO_TEST_CASE(parsers__native_query__multiple_params__true)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(native_query(out, "/?witness=false&turbo=true&stop=true&format=json", {}));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::application_json);
+    BC_REQUIRE(native_query(out, "/?witness=false&turbo=true&stop=true&format=json", {}));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::application_json);
 
     const auto& params = std::get<object_t>(out.params.value());
-    BOOST_REQUIRE(params.find("witness") != params.end());
-    BOOST_REQUIRE(params.find("stop") != params.end());
-    BOOST_REQUIRE(params.find("turbo") == params.end());
+    BC_REQUIRE(params.find("witness") != params.end());
+    BC_REQUIRE(params.find("stop") != params.end());
+    BC_REQUIRE(params.find("turbo") == params.end());
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__http_request_overload_empty__false)
+BC_AUTO_TEST_CASE(parsers__native_query__http_request_overload_empty__false)
 {
     request_t out{};
-    BOOST_REQUIRE(!native_query(out, {}));
+    BC_REQUIRE(!native_query(out, {}));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__native_query__http_request_overload_with_accept_json__true)
+BC_AUTO_TEST_CASE(parsers__native_query__http_request_overload_with_accept_json__true)
 {
     network::http::request request{};
     request.target("/");
@@ -300,75 +300,75 @@ BOOST_AUTO_TEST_CASE(parsers__native_query__http_request_overload_with_accept_js
 
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(native_query(out, request));
-    BOOST_REQUIRE_EQUAL(get_media(out), media_type::application_json);
+    BC_REQUIRE(native_query(out, request));
+    BC_REQUIRE_EQUAL(get_media(out), media_type::application_json);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__get_media__unknown_no_params__unknown)
+BC_AUTO_TEST_CASE(parsers__get_media__unknown_no_params__unknown)
 {
     request_t model{};
-    BOOST_REQUIRE_EQUAL(get_media(model), media_type::unknown);
+    BC_REQUIRE_EQUAL(get_media(model), media_type::unknown);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__get_media__unknown_no_media_key__unknown)
+BC_AUTO_TEST_CASE(parsers__get_media__unknown_no_media_key__unknown)
 {
     request_t model{};
     model.params = object_t{};
-    BOOST_REQUIRE_EQUAL(get_media(model), media_type::unknown);
+    BC_REQUIRE_EQUAL(get_media(model), media_type::unknown);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__get_media__unknown_invalid_type__unknown)
+BC_AUTO_TEST_CASE(parsers__get_media__unknown_invalid_type__unknown)
 {
     request_t model{};
     model.params = object_t{};
     auto& params = std::get<object_t>(model.params.value());
     params["media"] = value_t{ true }; // not uint8_t
-    BOOST_REQUIRE_EQUAL(get_media(model), media_type::unknown);
+    BC_REQUIRE_EQUAL(get_media(model), media_type::unknown);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__get_media__json__json)
+BC_AUTO_TEST_CASE(parsers__get_media__json__json)
 {
     request_t model{};
     model.params = object_t{};
     auto& params = std::get<object_t>(model.params.value());
     params["media"] = value_t{ static_cast<uint8_t>(media_type::application_json) };
-    BOOST_REQUIRE_EQUAL(get_media(model), media_type::application_json);
+    BC_REQUIRE_EQUAL(get_media(model), media_type::application_json);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__get_media__html__html)
+BC_AUTO_TEST_CASE(parsers__get_media__html__html)
 {
     request_t model{};
     model.params = object_t{};
     auto& params = std::get<object_t>(model.params.value());
     params["media"] = value_t{ static_cast<uint8_t>(media_type::text_html) };
-    BOOST_REQUIRE_EQUAL(get_media(model), media_type::text_html);
+    BC_REQUIRE_EQUAL(get_media(model), media_type::text_html);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__get_media__text__text)
+BC_AUTO_TEST_CASE(parsers__get_media__text__text)
 {
     request_t model{};
     model.params = object_t{};
     auto& params = std::get<object_t>(model.params.value());
     params["media"] = value_t{ static_cast<uint8_t>(media_type::text_plain) };
-    BOOST_REQUIRE_EQUAL(get_media(model), media_type::text_plain);
+    BC_REQUIRE_EQUAL(get_media(model), media_type::text_plain);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__get_media__data__data)
+BC_AUTO_TEST_CASE(parsers__get_media__data__data)
 {
     request_t model{};
     model.params = object_t{};
     auto& params = std::get<object_t>(model.params.value());
     params["media"] = value_t{ static_cast<uint8_t>(media_type::application_octet_stream) };
-    BOOST_REQUIRE_EQUAL(get_media(model), media_type::application_octet_stream);
+    BC_REQUIRE_EQUAL(get_media(model), media_type::application_octet_stream);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__get_media__unknown_value__unknown)
+BC_AUTO_TEST_CASE(parsers__get_media__unknown_value__unknown)
 {
     request_t model{};
     model.params = object_t{};
     auto& params = std::get<object_t>(model.params.value());
     params["media"] = value_t{ 99_u8 };
-    BOOST_REQUIRE_EQUAL(get_media(model), media_type::unknown);
+    BC_REQUIRE_EQUAL(get_media(model), media_type::unknown);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

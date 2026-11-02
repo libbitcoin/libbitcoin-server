@@ -92,8 +92,10 @@ void protocol_btcd::start() NOEXCEPT
     // The bitcoind interface subgroups are independently attached.
     SUBSCRIBE_CHANNEL(post, handle_receive_post, _1, _2);
 
-    using unknown = network::http::method::unknown;
-    SUBSCRIBE_CHANNEL(unknown, handle_receive_unknown, _1, _2);
+    using websocket = network::http::method::websocket;
+    using stream = network::http::method::stream;
+    SUBSCRIBE_CHANNEL(websocket, handle_receive_websocket, _1, _2);
+    SUBSCRIBE_CHANNEL(stream, handle_receive_stream, _1, _2);
     network::protocol::start();
 }
 

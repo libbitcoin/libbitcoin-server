@@ -204,7 +204,7 @@ private:
     ////template <class Derived, typename Method, typename... Args>
     ////inline auto notify(Method&& method, Args&&... args) NOEXCEPT
     ////{
-    ////    return boost::asio::post(notification_strand_,
+    ////    return network::io::post(notification_strand_,
     ////        BIND_SAFE(BIND_SHARED(method, args)));
     ////}
 
@@ -266,7 +266,7 @@ private:
         const std::optional<system::hash_cptr>& hash) NOEXCEPT;
 
     // These are thread safe, strand uses network threadpool.
-    network::asio::strand notification_strand_;
+    network::io::strand notification_strand_;
     const bool turbo_;
 
     // These are thread safe.

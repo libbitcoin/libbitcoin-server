@@ -22,7 +22,7 @@
 using namespace system;
 using zmtp_stream = network::zmtp::stream;
 using zmq_protocol = protocol_bitcoind_zmq;
-using peer_socket = boost::asio::ip::tcp::socket;
+using peer_socket = network::io::socket;
 
 // Test infrastructure (synchronous ZMTP subscriber peer).
 // ----------------------------------------------------------------------------
@@ -67,8 +67,8 @@ static data_chunk ready(const std::string& type)
 // Synchronously write the whole buffer to the peer socket.
 static void peer_write(peer_socket& peer, const data_chunk& data)
 {
-    const boost::asio::const_buffer out{ data.data(), data.size() };
-    boost::asio::write(peer, out);
+    const network::io::const_buffer out{ data.data(), data.size() };
+    test::write(peer, out);
 }
 
 // Synchronously read one frame (flags and body) from the peer socket.
@@ -76,23 +76,23 @@ static void peer_read_frame(peer_socket& peer, uint8_t& flags,
     data_chunk& body)
 {
     uint8_t head{};
-    const boost::asio::mutable_buffer in{ &head, sizeof(head) };
-    boost::asio::read(peer, in);
+    const network::io::mutable_buffer in{ &head, sizeof(head) };
+    test::read(peer, in);
     flags = head;
 
     size_t length{};
     if (is_zero(flags & zmtp_stream::flag_long))
     {
         uint8_t size{};
-        const boost::asio::mutable_buffer one{ &size, sizeof(size) };
-        boost::asio::read(peer, one);
+        const network::io::mutable_buffer one{ &size, sizeof(size) };
+        test::read(peer, one);
         length = size;
     }
     else
     {
         data_array<sizeof(uint64_t)> size{};
-        const boost::asio::mutable_buffer eight{ size.data(), size.size() };
-        boost::asio::read(peer, eight);
+        const network::io::mutable_buffer eight{ size.data(), size.size() };
+        test::read(peer, eight);
         length = possible_narrow_cast<size_t>(from_big_endian<uint64_t>(size));
     }
 
@@ -100,8 +100,8 @@ static void peer_read_frame(peer_socket& peer, uint8_t& flags,
     if (body.empty())
         return;
 
-    const boost::asio::mutable_buffer rest{ body.data(), body.size() };
-    boost::asio::read(peer, rest);
+    const network::io::mutable_buffer rest{ body.data(), body.size() };
+    test::read(peer, rest);
 }
 
 // Synchronously read one whole (multipart) message from the peer socket.
@@ -125,10 +125,10 @@ static data_stack peer_read_message(peer_socket& peer)
 static void peer_read_closed(peer_socket& peer)
 {
     uint8_t byte{};
-    network::boost_code ec{};
-    const boost::asio::mutable_buffer in{ &byte, sizeof(byte) };
-    boost::asio::read(peer, in, ec);
-    BOOST_REQUIRE(ec);
+    network::code ec{};
+    const network::io::mutable_buffer in{ &byte, sizeof(byte) };
+    network::io::read(peer, in, ec);
+    BC_REQUIRE(ec);
 }
 
 // Synchronously perform the peer (SUB) side of the ZMTP handshake.
@@ -137,18 +137,18 @@ static void peer_handshake(peer_socket& peer)
     peer_write(peer, zmtp_stream::make_greeting(false, false));
 
     data_chunk theirs(zmtp_stream::greeting_size, 0x00);
-    const boost::asio::mutable_buffer in{ theirs.data(), theirs.size() };
-    boost::asio::read(peer, in);
+    const network::io::mutable_buffer in{ theirs.data(), theirs.size() };
+    test::read(peer, in);
     uint8_t minor{};
     bool curve{};
     bool as_server{};
-    BOOST_REQUIRE(zmtp_stream::parse_greeting(theirs, minor, curve, as_server));
+    BC_REQUIRE(zmtp_stream::parse_greeting(theirs, minor, curve, as_server));
 
     peer_write(peer, ready("SUB"));
     uint8_t flags{};
     data_chunk body{};
     peer_read_frame(peer, flags, body);
-    BOOST_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
+    BC_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
 }
 
 // Subscribe to a topic (3.1 command dialect).
@@ -175,13 +175,13 @@ static void peer_ping_pong(peer_socket& peer)
     uint8_t flags{};
     data_chunk body{};
     peer_read_frame(peer, flags, body);
-    BOOST_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
+    BC_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
 
     std::string name{};
     std::span<const uint8_t> echo{};
     const std::span<const uint8_t> frame{ body };
-    BOOST_REQUIRE(zmtp_stream::command_name(name, echo, frame));
-    BOOST_REQUIRE_EQUAL(name, "PONG");
+    BC_REQUIRE(zmtp_stream::command_name(name, echo, frame));
+    BC_REQUIRE_EQUAL(name, "PONG");
 }
 
 // CURVE peer (synchronous, driven by a client cipher).
@@ -194,40 +194,40 @@ static void peer_curve_handshake(peer_socket& peer, zmtp_cipher& client)
 {
     peer_write(peer, zmtp_stream::make_greeting(false, true));
     data_chunk theirs(zmtp_stream::greeting_size, 0x00);
-    const boost::asio::mutable_buffer in{ theirs.data(), theirs.size() };
-    boost::asio::read(peer, in);
+    const network::io::mutable_buffer in{ theirs.data(), theirs.size() };
+    test::read(peer, in);
 
     uint8_t minor{};
     bool curve{};
     bool as_server{};
-    BOOST_REQUIRE(zmtp_stream::parse_greeting(theirs, minor, curve, as_server));
-    BOOST_REQUIRE(curve);
-    BOOST_REQUIRE(as_server);
+    BC_REQUIRE(zmtp_stream::parse_greeting(theirs, minor, curve, as_server));
+    BC_REQUIRE(curve);
+    BC_REQUIRE(as_server);
 
     data_chunk hello{};
-    BOOST_REQUIRE(client.hello(hello));
+    BC_REQUIRE(client.hello(hello));
     peer_write(peer, zmtp_stream::frame_encode(hello, true, false));
 
     uint8_t flags{};
     data_chunk welcome{};
     peer_read_frame(peer, flags, welcome);
-    BOOST_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
+    BC_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
 
     data_chunk initiate{};
     const auto metadata = zmtp_stream::make_property("Socket-Type", "SUB");
-    BOOST_REQUIRE(client.initiate(initiate, welcome, metadata));
+    BC_REQUIRE(client.initiate(initiate, welcome, metadata));
     peer_write(peer, zmtp_stream::frame_encode(initiate, true, false));
 
     data_chunk ready{};
     peer_read_frame(peer, flags, ready);
-    BOOST_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
+    BC_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
 
     data_chunk peer_metadata{};
-    BOOST_REQUIRE(client.complete(peer_metadata, ready));
+    BC_REQUIRE(client.complete(peer_metadata, ready));
 
     std::string type{};
-    BOOST_REQUIRE(zmtp_stream::ready_socket_type(type, peer_metadata));
-    BOOST_REQUIRE_EQUAL(type, "PUB");
+    BC_REQUIRE(zmtp_stream::ready_socket_type(type, peer_metadata));
+    BC_REQUIRE_EQUAL(type, "PUB");
 }
 
 // Box and send a SUBSCRIBE command (3.1 dialect) for the topic.
@@ -241,7 +241,7 @@ static void peer_curve_subscribe(peer_socket& peer, zmtp_cipher& client,
     body.insert(body.end(), topic.begin(), topic.end());
 
     data_chunk message{};
-    BOOST_REQUIRE(client.encode(message, zmtp_cipher::payload_command, body));
+    BC_REQUIRE(client.encode(message, zmtp_cipher::payload_command, body));
     peer_write(peer, zmtp_stream::frame_encode(message, false, false));
 }
 
@@ -259,7 +259,7 @@ static data_stack peer_curve_read_message(peer_socket& peer,
 
         uint8_t payload{};
         data_chunk body{};
-        BOOST_REQUIRE(client.decode(payload, body, message));
+        BC_REQUIRE(client.decode(payload, body, message));
         parts.push_back(body);
         more = !is_zero(payload & zmtp_cipher::payload_more);
     }
@@ -291,7 +291,7 @@ static void peer_curve_ping_pong(peer_socket& peer, zmtp_cipher& client)
     body.insert(body.end(), ping.begin(), ping.end());
 
     data_chunk message{};
-    BOOST_REQUIRE(client.encode(message, zmtp_cipher::payload_command, body));
+    BC_REQUIRE(client.encode(message, zmtp_cipher::payload_command, body));
     peer_write(peer, zmtp_stream::frame_encode(message, false, false));
 
     uint8_t flags{};
@@ -300,14 +300,14 @@ static void peer_curve_ping_pong(peer_socket& peer, zmtp_cipher& client)
 
     uint8_t payload{};
     data_chunk reply{};
-    BOOST_REQUIRE(client.decode(payload, reply, pong));
-    BOOST_REQUIRE(!is_zero(payload & zmtp_cipher::payload_command));
+    BC_REQUIRE(client.decode(payload, reply, pong));
+    BC_REQUIRE(!is_zero(payload & zmtp_cipher::payload_command));
 
     std::string echo_name{};
     std::span<const uint8_t> echo{};
     const std::span<const uint8_t> frame{ reply };
-    BOOST_REQUIRE(zmtp_stream::command_name(echo_name, echo, frame));
-    BOOST_REQUIRE_EQUAL(echo_name, "PONG");
+    BC_REQUIRE(zmtp_stream::command_name(echo_name, echo, frame));
+    BC_REQUIRE_EQUAL(echo_name, "PONG");
 }
 
 // Synchronously attempt the CURVE handshake, returning the frame following
@@ -316,16 +316,16 @@ static data_chunk peer_curve_initiate(peer_socket& peer, zmtp_cipher& client)
 {
     peer_write(peer, zmtp_stream::make_greeting(false, true));
     data_chunk theirs(zmtp_stream::greeting_size, 0x00);
-    const boost::asio::mutable_buffer in{ theirs.data(), theirs.size() };
-    boost::asio::read(peer, in);
+    const network::io::mutable_buffer in{ theirs.data(), theirs.size() };
+    test::read(peer, in);
 
     uint8_t minor{};
     bool curve{};
     bool as_server{};
-    BOOST_REQUIRE(zmtp_stream::parse_greeting(theirs, minor, curve, as_server));
+    BC_REQUIRE(zmtp_stream::parse_greeting(theirs, minor, curve, as_server));
 
     data_chunk hello{};
-    BOOST_REQUIRE(client.hello(hello));
+    BC_REQUIRE(client.hello(hello));
     peer_write(peer, zmtp_stream::frame_encode(hello, true, false));
 
     uint8_t flags{};
@@ -334,27 +334,27 @@ static data_chunk peer_curve_initiate(peer_socket& peer, zmtp_cipher& client)
 
     data_chunk initiate{};
     const auto metadata = zmtp_stream::make_property("Socket-Type", "SUB");
-    BOOST_REQUIRE(client.initiate(initiate, welcome, metadata));
+    BC_REQUIRE(client.initiate(initiate, welcome, metadata));
     peer_write(peer, zmtp_stream::frame_encode(initiate, true, false));
 
     data_chunk reply{};
     peer_read_frame(peer, flags, reply);
-    BOOST_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
+    BC_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
     return reply;
 }
 
 // Service (server with a subscribed peer).
 // ----------------------------------------------------------------------------
 
-BOOST_FIXTURE_TEST_SUITE(zmq_tests, zmq_ten_block_setup_fixture)
+BC_FIXTURE_TEST_SUITE(zmq_tests, zmq_ten_block_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(zmq__handshake__v31_peer__ready)
+BC_AUTO_TEST_CASE(zmq__handshake__v31_peer__ready)
 {
     peer_handshake(socket_);
     peer_ping_pong(socket_);
 }
 
-BOOST_AUTO_TEST_CASE(zmq__hashblock__organized__reversed_hash_and_sequence)
+BC_AUTO_TEST_CASE(zmq__hashblock__organized__reversed_hash_and_sequence)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "hashblock");
@@ -362,24 +362,24 @@ BOOST_AUTO_TEST_CASE(zmq__hashblock__organized__reversed_hash_and_sequence)
 
     const auto link = query_.to_confirmed(1);
     const auto header = query_.get_header(link);
-    BOOST_REQUIRE(header);
+    BC_REQUIRE(header);
     const auto expected = to_chunk(reverse_copy(header->hash()));
 
     notify(node::chases::organized{ link });
     const auto first = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(first.size(), 3u);
-    BOOST_REQUIRE_EQUAL(first.at(0), to_chunk(std::string{ "hashblock" }));
-    BOOST_REQUIRE_EQUAL(first.at(1), expected);
-    BOOST_REQUIRE_EQUAL(first.at(2), base16_chunk("00000000"));
+    BC_REQUIRE_EQUAL(first.size(), 3u);
+    BC_REQUIRE_EQUAL(first.at(0), to_chunk(std::string{ "hashblock" }));
+    BC_REQUIRE_EQUAL(first.at(1), expected);
+    BC_REQUIRE_EQUAL(first.at(2), base16_chunk("00000000"));
 
     // The per-topic sequence increments after each publication.
     notify(node::chases::organized{ link });
     const auto second = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(second.size(), 3u);
-    BOOST_REQUIRE_EQUAL(second.at(2), base16_chunk("01000000"));
+    BC_REQUIRE_EQUAL(second.size(), 3u);
+    BC_REQUIRE_EQUAL(second.at(2), base16_chunk("01000000"));
 }
 
-BOOST_AUTO_TEST_CASE(zmq__rawtx__wire_tx__wire_transaction_and_sequence)
+BC_AUTO_TEST_CASE(zmq__rawtx__wire_tx__wire_transaction_and_sequence)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "rawtx");
@@ -388,18 +388,18 @@ BOOST_AUTO_TEST_CASE(zmq__rawtx__wire_tx__wire_transaction_and_sequence)
     const auto expected = test::block1.transactions_ptr()->front()->to_data(true);
     broadcast(emplace_shared<const network::wire_tx>(to_tx(expected)));
     const auto first = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(first.size(), 3u);
-    BOOST_REQUIRE_EQUAL(first.at(0), to_chunk("rawtx"));
-    BOOST_REQUIRE_EQUAL(first.at(1), expected);
-    BOOST_REQUIRE_EQUAL(first.at(2), base16_chunk("00000000"));
+    BC_REQUIRE_EQUAL(first.size(), 3u);
+    BC_REQUIRE_EQUAL(first.at(0), to_chunk("rawtx"));
+    BC_REQUIRE_EQUAL(first.at(1), expected);
+    BC_REQUIRE_EQUAL(first.at(2), base16_chunk("00000000"));
 
     broadcast(emplace_shared<const network::wire_tx>(to_tx(expected)));
     const auto second = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(second.size(), 3u);
-    BOOST_REQUIRE_EQUAL(second.at(2), base16_chunk("01000000"));
+    BC_REQUIRE_EQUAL(second.size(), 3u);
+    BC_REQUIRE_EQUAL(second.at(2), base16_chunk("01000000"));
 }
 
-BOOST_AUTO_TEST_CASE(zmq__rawblock__wire_block__wire_block_and_sequence)
+BC_AUTO_TEST_CASE(zmq__rawblock__wire_block__wire_block_and_sequence)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "rawblock");
@@ -408,18 +408,18 @@ BOOST_AUTO_TEST_CASE(zmq__rawblock__wire_block__wire_block_and_sequence)
     const auto expected = test::block1.to_data(true);
     broadcast(emplace_shared<const network::wire_block>(to_block(expected), true));
     const auto first = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(first.size(), 3u);
-    BOOST_REQUIRE_EQUAL(first.at(0), to_chunk("rawblock"));
-    BOOST_REQUIRE_EQUAL(first.at(1), expected);
-    BOOST_REQUIRE_EQUAL(first.at(2), base16_chunk("00000000"));
+    BC_REQUIRE_EQUAL(first.size(), 3u);
+    BC_REQUIRE_EQUAL(first.at(0), to_chunk("rawblock"));
+    BC_REQUIRE_EQUAL(first.at(1), expected);
+    BC_REQUIRE_EQUAL(first.at(2), base16_chunk("00000000"));
 
     broadcast(emplace_shared<const network::wire_block>(to_block(expected), true));
     const auto second = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(second.size(), 3u);
-    BOOST_REQUIRE_EQUAL(second.at(2), base16_chunk("01000000"));
+    BC_REQUIRE_EQUAL(second.size(), 3u);
+    BC_REQUIRE_EQUAL(second.at(2), base16_chunk("01000000"));
 }
 
-BOOST_AUTO_TEST_CASE(zmq__rawtx__wire_block_then_wire_tx__block_transactions_then_transaction)
+BC_AUTO_TEST_CASE(zmq__rawtx__wire_block_then_wire_tx__block_transactions_then_transaction)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "rawtx");
@@ -429,18 +429,18 @@ BOOST_AUTO_TEST_CASE(zmq__rawtx__wire_block_then_wire_tx__block_transactions_the
     broadcast(emplace_shared<const network::wire_block>(to_block(test::block1.to_data(true)), true));
     broadcast(emplace_shared<const network::wire_tx>(to_tx(expected)));
     const auto first = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(first.size(), 3u);
-    BOOST_REQUIRE_EQUAL(first.at(0), to_chunk("rawtx"));
-    BOOST_REQUIRE_EQUAL(first.at(1), expected);
-    BOOST_REQUIRE_EQUAL(first.at(2), base16_chunk("00000000"));
+    BC_REQUIRE_EQUAL(first.size(), 3u);
+    BC_REQUIRE_EQUAL(first.at(0), to_chunk("rawtx"));
+    BC_REQUIRE_EQUAL(first.at(1), expected);
+    BC_REQUIRE_EQUAL(first.at(2), base16_chunk("00000000"));
 
     const auto second = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(second.size(), 3u);
-    BOOST_REQUIRE_EQUAL(second.at(0), to_chunk("rawtx"));
-    BOOST_REQUIRE_EQUAL(second.at(2), base16_chunk("01000000"));
+    BC_REQUIRE_EQUAL(second.size(), 3u);
+    BC_REQUIRE_EQUAL(second.at(0), to_chunk("rawtx"));
+    BC_REQUIRE_EQUAL(second.at(2), base16_chunk("01000000"));
 }
 
-BOOST_AUTO_TEST_CASE(zmq__rawblock__reorganized_wire_block__not_published)
+BC_AUTO_TEST_CASE(zmq__rawblock__reorganized_wire_block__not_published)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "raw");
@@ -449,67 +449,67 @@ BOOST_AUTO_TEST_CASE(zmq__rawblock__reorganized_wire_block__not_published)
     const auto expected = test::block1.to_data(true);
     broadcast(emplace_shared<const network::wire_block>(to_block(expected), false));
     broadcast(emplace_shared<const network::wire_block>(to_block(expected), true));
-    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawtx"));
-    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawtx"));
-    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawblock"));
+    BC_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawtx"));
+    BC_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawtx"));
+    BC_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawblock"));
 }
 
-BOOST_AUTO_TEST_CASE(zmq__subscribe__rawtx__wire_tx_and_block_demanded)
+BC_AUTO_TEST_CASE(zmq__subscribe__rawtx__wire_tx_and_block_demanded)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "rawtx");
     peer_ping_pong(socket_);
-    BOOST_REQUIRE(wire_tx_demanded());
-    BOOST_REQUIRE(wire_block_demanded());
+    BC_REQUIRE(wire_tx_demanded());
+    BC_REQUIRE(wire_block_demanded());
 }
 
-BOOST_AUTO_TEST_CASE(zmq__subscribe__rawblock__wire_block_demanded)
+BC_AUTO_TEST_CASE(zmq__subscribe__rawblock__wire_block_demanded)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "rawblock");
     peer_ping_pong(socket_);
-    BOOST_REQUIRE(!wire_tx_demanded());
-    BOOST_REQUIRE(wire_block_demanded());
+    BC_REQUIRE(!wire_tx_demanded());
+    BC_REQUIRE(wire_block_demanded());
 }
 
-BOOST_AUTO_TEST_CASE(zmq__subscribe__raw_prefix__wire_demanded)
+BC_AUTO_TEST_CASE(zmq__subscribe__raw_prefix__wire_demanded)
 {
-    BOOST_REQUIRE(!wire_tx_demanded());
-    BOOST_REQUIRE(!wire_block_demanded());
+    BC_REQUIRE(!wire_tx_demanded());
+    BC_REQUIRE(!wire_block_demanded());
 
     peer_handshake(socket_);
     peer_subscribe(socket_, "raw");
     peer_ping_pong(socket_);
-    BOOST_REQUIRE(wire_tx_demanded());
-    BOOST_REQUIRE(wire_block_demanded());
+    BC_REQUIRE(wire_tx_demanded());
+    BC_REQUIRE(wire_block_demanded());
 
     peer_cancel(socket_, "raw");
     peer_ping_pong(socket_);
-    BOOST_REQUIRE(!wire_tx_demanded());
-    BOOST_REQUIRE(!wire_block_demanded());
+    BC_REQUIRE(!wire_tx_demanded());
+    BC_REQUIRE(!wire_block_demanded());
 }
 
-BOOST_AUTO_TEST_CASE(zmq__subscribe__hash_prefix__wire_undemanded)
+BC_AUTO_TEST_CASE(zmq__subscribe__hash_prefix__wire_undemanded)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "hash");
     peer_ping_pong(socket_);
-    BOOST_REQUIRE(!wire_tx_demanded());
-    BOOST_REQUIRE(!wire_block_demanded());
+    BC_REQUIRE(!wire_tx_demanded());
+    BC_REQUIRE(!wire_block_demanded());
 }
 
-BOOST_AUTO_TEST_CASE(zmq__subscribe__overlapping_prefixes_cancel_one__wire_tx_undemanded)
+BC_AUTO_TEST_CASE(zmq__subscribe__overlapping_prefixes_cancel_one__wire_tx_undemanded)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "raw");
     peer_subscribe(socket_, "rawtx");
     peer_cancel(socket_, "rawtx");
     peer_ping_pong(socket_);
-    BOOST_REQUIRE(!wire_tx_demanded());
-    BOOST_REQUIRE(wire_block_demanded());
+    BC_REQUIRE(!wire_tx_demanded());
+    BC_REQUIRE(wire_block_demanded());
 }
 
-BOOST_AUTO_TEST_CASE(zmq__sequence__organized__reversed_hash_and_connected_label)
+BC_AUTO_TEST_CASE(zmq__sequence__organized__reversed_hash_and_connected_label)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "sequence");
@@ -517,18 +517,18 @@ BOOST_AUTO_TEST_CASE(zmq__sequence__organized__reversed_hash_and_connected_label
 
     const auto link = query_.to_confirmed(1);
     const auto header = query_.get_header(link);
-    BOOST_REQUIRE(header);
+    BC_REQUIRE(header);
     auto expected = to_chunk(reverse_copy(header->hash()));
     expected.push_back('C');
 
     notify(node::chases::organized{ link });
     const auto message = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(message.size(), 3u);
-    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("sequence"));
-    BOOST_REQUIRE_EQUAL(message.at(1), expected);
+    BC_REQUIRE_EQUAL(message.size(), 3u);
+    BC_REQUIRE_EQUAL(message.at(0), to_chunk("sequence"));
+    BC_REQUIRE_EQUAL(message.at(1), expected);
 }
 
-BOOST_AUTO_TEST_CASE(zmq__subscribe__empty_prefix__all_topics_published)
+BC_AUTO_TEST_CASE(zmq__subscribe__empty_prefix__all_topics_published)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "");
@@ -537,14 +537,14 @@ BOOST_AUTO_TEST_CASE(zmq__subscribe__empty_prefix__all_topics_published)
     // The empty prefix matches every topic, published in this order.
     notify(node::chases::organized{ query_.to_confirmed(1) });
     broadcast(emplace_shared<const network::wire_block>(to_block(test::block1.to_data(true)), true));
-    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("hashtx"));
-    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("hashblock"));
-    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("sequence"));
-    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawtx"));
-    BOOST_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawblock"));
+    BC_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("hashtx"));
+    BC_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("hashblock"));
+    BC_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("sequence"));
+    BC_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawtx"));
+    BC_REQUIRE_EQUAL(peer_read_message(socket_).at(0), to_chunk("rawblock"));
 }
 
-BOOST_AUTO_TEST_CASE(zmq__sequence__reorganized__reversed_hash_and_disconnected_label)
+BC_AUTO_TEST_CASE(zmq__sequence__reorganized__reversed_hash_and_disconnected_label)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "sequence");
@@ -552,18 +552,18 @@ BOOST_AUTO_TEST_CASE(zmq__sequence__reorganized__reversed_hash_and_disconnected_
 
     const auto link = query_.to_confirmed(1);
     const auto header = query_.get_header(link);
-    BOOST_REQUIRE(header);
+    BC_REQUIRE(header);
     auto expected = to_chunk(reverse_copy(header->hash()));
     expected.push_back('D');
 
     notify(node::chases::reorganized{ link });
     const auto message = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(message.size(), 3u);
-    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("sequence"));
-    BOOST_REQUIRE_EQUAL(message.at(1), expected);
+    BC_REQUIRE_EQUAL(message.size(), 3u);
+    BC_REQUIRE_EQUAL(message.at(0), to_chunk("sequence"));
+    BC_REQUIRE_EQUAL(message.at(1), expected);
 }
 
-BOOST_AUTO_TEST_CASE(zmq__maximum_subscriptions__third_subscription__channel_closed)
+BC_AUTO_TEST_CASE(zmq__maximum_subscriptions__third_subscription__channel_closed)
 {
     peer_handshake(socket_);
 
@@ -574,7 +574,7 @@ BOOST_AUTO_TEST_CASE(zmq__maximum_subscriptions__third_subscription__channel_clo
     peer_read_closed(socket_);
 }
 
-BOOST_AUTO_TEST_CASE(zmq__maximum_subscriptions__cancelled__subscription_released)
+BC_AUTO_TEST_CASE(zmq__maximum_subscriptions__cancelled__subscription_released)
 {
     peer_handshake(socket_);
 
@@ -589,11 +589,11 @@ BOOST_AUTO_TEST_CASE(zmq__maximum_subscriptions__cancelled__subscription_release
     // The cancelled topics precede hashblock but are no longer published.
     notify(node::chases::organized{ query_.to_confirmed(1) });
     const auto message = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(message.size(), 3u);
-    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("hashblock"));
+    BC_REQUIRE_EQUAL(message.size(), 3u);
+    BC_REQUIRE_EQUAL(message.at(0), to_chunk("hashblock"));
 }
 
-BOOST_AUTO_TEST_CASE(zmq__hashtx__transaction__reversed_hash_and_sequence)
+BC_AUTO_TEST_CASE(zmq__hashtx__transaction__reversed_hash_and_sequence)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "hashtx");
@@ -602,13 +602,13 @@ BOOST_AUTO_TEST_CASE(zmq__hashtx__transaction__reversed_hash_and_sequence)
     const auto hash = test::block1.transactions_ptr()->front()->hash(false);
     notify(node::chases::transaction{ query_.to_tx(hash).value });
     const auto message = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(message.size(), 3u);
-    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("hashtx"));
-    BOOST_REQUIRE_EQUAL(message.at(1), to_chunk(reverse_copy(hash)));
-    BOOST_REQUIRE_EQUAL(message.at(2), base16_chunk("00000000"));
+    BC_REQUIRE_EQUAL(message.size(), 3u);
+    BC_REQUIRE_EQUAL(message.at(0), to_chunk("hashtx"));
+    BC_REQUIRE_EQUAL(message.at(1), to_chunk(reverse_copy(hash)));
+    BC_REQUIRE_EQUAL(message.at(2), base16_chunk("00000000"));
 }
 
-BOOST_AUTO_TEST_CASE(zmq__sequence__transaction__reversed_hash_and_accepted_label)
+BC_AUTO_TEST_CASE(zmq__sequence__transaction__reversed_hash_and_accepted_label)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "sequence");
@@ -620,51 +620,51 @@ BOOST_AUTO_TEST_CASE(zmq__sequence__transaction__reversed_hash_and_accepted_labe
 
     notify(node::chases::transaction{ query_.to_tx(hash).value });
     const auto message = peer_read_message(socket_);
-    BOOST_REQUIRE_EQUAL(message.size(), 3u);
-    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("sequence"));
-    BOOST_REQUIRE_EQUAL(message.at(1).size(), 41u);
-    BOOST_REQUIRE_EQUAL(data_chunk(message.at(1).begin(), std::next(message.at(1).begin(), 33)), expected);
+    BC_REQUIRE_EQUAL(message.size(), 3u);
+    BC_REQUIRE_EQUAL(message.at(0), to_chunk("sequence"));
+    BC_REQUIRE_EQUAL(message.at(1).size(), 41u);
+    BC_REQUIRE_EQUAL(data_chunk(message.at(1).begin(), std::next(message.at(1).begin(), 33)), expected);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
 // CURVE mechanism.
 // ----------------------------------------------------------------------------
 
-BOOST_FIXTURE_TEST_SUITE(zmq_curve_tests, zmq_curve_ten_block_setup_fixture)
+BC_FIXTURE_TEST_SUITE(zmq_curve_tests, zmq_curve_ten_block_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(zmq_curve__handshake__alice_peer__ready)
+BC_AUTO_TEST_CASE(zmq_curve__handshake__alice_peer__ready)
 {
     auto client = curve_client();
     peer_curve_handshake(socket_, client);
 }
 
-BOOST_AUTO_TEST_CASE(zmq_curve__handshake__null_peer__error_command)
+BC_AUTO_TEST_CASE(zmq_curve__handshake__null_peer__error_command)
 {
     peer_write(socket_, zmtp_stream::make_greeting(false, false));
     data_chunk theirs(zmtp_stream::greeting_size, 0x00);
-    const boost::asio::mutable_buffer in{ theirs.data(), theirs.size() };
-    boost::asio::read(socket_, in);
+    const network::io::mutable_buffer in{ theirs.data(), theirs.size() };
+    test::read(socket_, in);
 
     uint8_t minor{};
     bool curve{};
     bool as_server{};
-    BOOST_REQUIRE(zmtp_stream::parse_greeting(theirs, minor, curve, as_server));
-    BOOST_REQUIRE(curve);
+    BC_REQUIRE(zmtp_stream::parse_greeting(theirs, minor, curve, as_server));
+    BC_REQUIRE(curve);
 
     uint8_t flags{};
     data_chunk body{};
     peer_read_frame(socket_, flags, body);
-    BOOST_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
+    BC_REQUIRE(!is_zero(flags & zmtp_stream::flag_command));
 
     std::string name{};
     std::span<const uint8_t> reason{};
     const std::span<const uint8_t> frame{ body };
-    BOOST_REQUIRE(zmtp_stream::command_name(name, reason, frame));
-    BOOST_REQUIRE_EQUAL(name, "ERROR");
+    BC_REQUIRE(zmtp_stream::command_name(name, reason, frame));
+    BC_REQUIRE_EQUAL(name, "ERROR");
 }
 
-BOOST_AUTO_TEST_CASE(zmq_curve__hashblock__organized__boxed_notification)
+BC_AUTO_TEST_CASE(zmq_curve__hashblock__organized__boxed_notification)
 {
     auto client = curve_client();
     peer_curve_handshake(socket_, client);
@@ -673,18 +673,18 @@ BOOST_AUTO_TEST_CASE(zmq_curve__hashblock__organized__boxed_notification)
 
     const auto link = query_.to_confirmed(1);
     const auto header = query_.get_header(link);
-    BOOST_REQUIRE(header);
+    BC_REQUIRE(header);
     notify(node::chases::organized{ link });
 
     const auto message = peer_curve_read_message(socket_, client);
-    BOOST_REQUIRE_EQUAL(message.size(), 3u);
-    BOOST_REQUIRE_EQUAL(message.at(0), to_chunk("hashblock"));
-    BOOST_REQUIRE_EQUAL(message.at(1), to_chunk(reverse_copy(header->hash())));
-    BOOST_REQUIRE_EQUAL(message.at(2), base16_chunk("00000000"));
+    BC_REQUIRE_EQUAL(message.size(), 3u);
+    BC_REQUIRE_EQUAL(message.at(0), to_chunk("hashblock"));
+    BC_REQUIRE_EQUAL(message.at(1), to_chunk(reverse_copy(header->hash())));
+    BC_REQUIRE_EQUAL(message.at(2), base16_chunk("00000000"));
 }
 
 
-BOOST_AUTO_TEST_CASE(zmq_curve__handshake__unauthorized_client__error_400)
+BC_AUTO_TEST_CASE(zmq_curve__handshake__unauthorized_client__error_400)
 {
     zmtp_cipher::key secret{};
     zmtp_cipher::key public_key{};
@@ -695,9 +695,9 @@ BOOST_AUTO_TEST_CASE(zmq_curve__handshake__unauthorized_client__error_400)
     std::string name{};
     std::span<const uint8_t> reason{};
     const std::span<const uint8_t> frame{ reply };
-    BOOST_REQUIRE(zmtp_stream::command_name(name, reason, frame));
-    BOOST_REQUIRE_EQUAL(name, "ERROR");
-    BOOST_REQUIRE_EQUAL(std::string(std::next(reason.begin()), reason.end()), "400");
+    BC_REQUIRE(zmtp_stream::command_name(name, reason, frame));
+    BC_REQUIRE_EQUAL(name, "ERROR");
+    BC_REQUIRE_EQUAL(std::string(std::next(reason.begin()), reason.end()), "400");
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

@@ -75,10 +75,10 @@ struct electrum_setup_fixture
     rpc_client::status options_status(std::string_view target);
 
     // Upgrade the connection to websocket (no further http requests).
-    network::boost_code ws_upgrade();
+    network::code ws_upgrade();
 
     // As ws_upgrade(), with basic authorization on the upgrade request.
-    network::boost_code ws_upgrade(const std::string& username,
+    network::code ws_upgrade(const std::string& username,
         const std::string& password);
 
     // json-rpc over the upgraded websocket connection.

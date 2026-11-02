@@ -26,11 +26,9 @@
 #define ADMIN_TEST_CREDENTIAL "user:pass:event_subscribe"
 #define ADMIN_TEST_AUTHORIZATION "Basic dXNlcjpwYXNz"
 
-// TODO: admin is http so use boost::beast.
-
 struct admin_setup_fixture
 {
-    using status = boost::beast::http::status;
+    using status = network::http::status;
     using initializer = std::function<bool(test::query_t&)>;
     using configurator = std::function<void(server::configuration&)>;
 
@@ -41,14 +39,14 @@ struct admin_setup_fixture
 
     bool expect_dropped(std::string_view target);
     status get_status(std::string_view target);
-    status get_status(std::string_view target, boost::beast::http::field name,
+    status get_status(std::string_view target, network::http::field name,
         std::string_view value);
 
     std::string get_text(std::string_view target);
     system::data_chunk get_data(std::string_view target);
     system::json::value get_json(std::string_view target);
 
-    network::boost_code ws_upgrade();
+    network::code ws_upgrade();
     void ws_send(std::string_view message);
     system::data_chunk ws_receive();
     std::string ws_receive_text();
@@ -69,16 +67,18 @@ protected:
 
 private:
     using string_body = network::http::string_body;
-    using string_request = boost::beast::http::request<string_body>;
+    using string_request = network::http::message<true, string_body>;
     static string_request create_request(std::string_view target);
 
-    using tcp_stream = boost::beast::tcp_stream;
-    using websocket_stream = boost::beast::websocket::stream<tcp_stream&>;
+    using tcp_stream = network::io::socket;
+    using websocket_stream = network::ws::client<network::io::socket>;
+
+    void teardown();
 
     network::logger log_;
     server::server_node server_;
-    boost::asio::io_context io{};
-    boost::beast::tcp_stream socket_{ io.get_executor() };
+    network::io::context io{};
+    network::io::socket socket_{ io };
     std::optional<websocket_stream> websocket_{};
 };
 

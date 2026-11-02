@@ -19,230 +19,230 @@
 #include "../test.hpp"
 #include "../mocks/blocks.hpp"
 
-BOOST_AUTO_TEST_SUITE(admin_query_tests)
+BC_AUTO_TEST_SUITE(admin_query_tests)
 
 using namespace network::rpc;
 using namespace network::http;
 
 // parse failures
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__empty__false)
+BC_AUTO_TEST_CASE(parsers__admin_query__empty__false)
 {
     request_t out{};
-    BOOST_REQUIRE(!admin_query(out, {}));
+    BC_REQUIRE(!admin_query(out, {}));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__no_params_object__false)
+BC_AUTO_TEST_CASE(parsers__admin_query__no_params_object__false)
 {
     request_t out{};
-    BOOST_REQUIRE(!admin_query(out, "/", {}));
+    BC_REQUIRE(!admin_query(out, "/", {}));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__invalid_uri_target__false)
+BC_AUTO_TEST_CASE(parsers__admin_query__invalid_uri_target__false)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(!admin_query(out, "invalid uri with spaces?foo=bar", {}));
+    BC_REQUIRE(!admin_query(out, "invalid uri with spaces?foo=bar", {}));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__no_supported_media__unknown)
+BC_AUTO_TEST_CASE(parsers__admin_query__no_supported_media__unknown)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::text_plain };
-    BOOST_REQUIRE(admin_query(out, "/", accepts));
-    BOOST_REQUIRE_EQUAL(strip_media(out), media_type::unknown);
+    BC_REQUIRE(admin_query(out, "/", accepts));
+    BC_REQUIRE_EQUAL(strip_media(out), media_type::unknown);
 }
 
 // strip_media
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__no_query_no_accepts__unknown)
+BC_AUTO_TEST_CASE(parsers__admin_query__no_query_no_accepts__unknown)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(admin_query(out, "/", {}));
-    BOOST_REQUIRE_EQUAL(strip_media(out), media_type::unknown);
+    BC_REQUIRE(admin_query(out, "/", {}));
+    BC_REQUIRE_EQUAL(strip_media(out), media_type::unknown);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__no_query_accept_json__json)
+BC_AUTO_TEST_CASE(parsers__admin_query__no_query_accept_json__json)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_json };
-    BOOST_REQUIRE(admin_query(out, "/", accepts));
-    BOOST_REQUIRE_EQUAL(strip_media(out), media_type::application_json);
+    BC_REQUIRE(admin_query(out, "/", accepts));
+    BC_REQUIRE_EQUAL(strip_media(out), media_type::application_json);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__no_query_accept_html__html)
+BC_AUTO_TEST_CASE(parsers__admin_query__no_query_accept_html__html)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::text_html };
-    BOOST_REQUIRE(admin_query(out, "/", accepts));
-    BOOST_REQUIRE_EQUAL(strip_media(out), media_type::text_html);
+    BC_REQUIRE(admin_query(out, "/", accepts));
+    BC_REQUIRE_EQUAL(strip_media(out), media_type::text_html);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__no_query_accept_priority_json__json)
+BC_AUTO_TEST_CASE(parsers__admin_query__no_query_accept_priority_json__json)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::text_html, media_type::application_json };
-    BOOST_REQUIRE(admin_query(out, "/", accepts));
-    BOOST_REQUIRE_EQUAL(strip_media(out), media_type::application_json);
+    BC_REQUIRE(admin_query(out, "/", accepts));
+    BC_REQUIRE_EQUAL(strip_media(out), media_type::application_json);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__query_format_json__json)
+BC_AUTO_TEST_CASE(parsers__admin_query__query_format_json__json)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(admin_query(out, "/?format=json", {}));
-    BOOST_REQUIRE_EQUAL(strip_media(out), media_type::application_json);
+    BC_REQUIRE(admin_query(out, "/?format=json", {}));
+    BC_REQUIRE_EQUAL(strip_media(out), media_type::application_json);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__query_format_html__html)
+BC_AUTO_TEST_CASE(parsers__admin_query__query_format_html__html)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(admin_query(out, "/?format=html", {}));
-    BOOST_REQUIRE_EQUAL(strip_media(out), media_type::text_html);
+    BC_REQUIRE(admin_query(out, "/?format=html", {}));
+    BC_REQUIRE_EQUAL(strip_media(out), media_type::text_html);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__query_format_text__false)
+BC_AUTO_TEST_CASE(parsers__admin_query__query_format_text__false)
 {
     // Text is not a supported admin format.
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_json };
-    BOOST_REQUIRE(!admin_query(out, "/?format=text", accepts));
+    BC_REQUIRE(!admin_query(out, "/?format=text", accepts));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__query_format_data__false)
+BC_AUTO_TEST_CASE(parsers__admin_query__query_format_data__false)
 {
     // Data is not a supported admin format.
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_json };
-    BOOST_REQUIRE(!admin_query(out, "/?format=data", accepts));
+    BC_REQUIRE(!admin_query(out, "/?format=data", accepts));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__query_format_unknown__false)
+BC_AUTO_TEST_CASE(parsers__admin_query__query_format_unknown__false)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_json };
-    BOOST_REQUIRE(!admin_query(out, "/?format=foo", accepts));
+    BC_REQUIRE(!admin_query(out, "/?format=foo", accepts));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__query_format_overrides_accept__true)
+BC_AUTO_TEST_CASE(parsers__admin_query__query_format_overrides_accept__true)
 {
     request_t out{};
     out.params = object_t{};
     const media_types accepts{ media_type::application_json };
-    BOOST_REQUIRE(admin_query(out, "/?format=html", accepts));
-    BOOST_REQUIRE_EQUAL(strip_media(out), media_type::text_html);
+    BC_REQUIRE(admin_query(out, "/?format=html", accepts));
+    BC_REQUIRE_EQUAL(strip_media(out), media_type::text_html);
 }
 
 // filter
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__filter_omitted__no_param)
+BC_AUTO_TEST_CASE(parsers__admin_query__filter_omitted__no_param)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(admin_query(out, "/?format=json", {}));
+    BC_REQUIRE(admin_query(out, "/?format=json", {}));
 
     const auto& params = std::get<object_t>(out.params.value());
-    BOOST_REQUIRE(params.find(admin::token::filter) == params.end());
+    BC_REQUIRE(params.find(admin::token::filter) == params.end());
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__filter_zero__expected)
+BC_AUTO_TEST_CASE(parsers__admin_query__filter_zero__expected)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(admin_query(out, "/?filter=0&format=json", {}));
-
-    const auto& params = std::get<object_t>(out.params.value());
-    const auto it = params.find(admin::token::filter);
-    BOOST_REQUIRE(it != params.end());
-    BOOST_REQUIRE(std::holds_alternative<uint64_t>(it->second.value()));
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(it->second.value()), 0u);
-}
-
-BOOST_AUTO_TEST_CASE(parsers__admin_query__filter_value__expected)
-{
-    request_t out{};
-    out.params = object_t{};
-    BOOST_REQUIRE(admin_query(out, "/?filter=123&format=json", {}));
+    BC_REQUIRE(admin_query(out, "/?filter=0&format=json", {}));
 
     const auto& params = std::get<object_t>(out.params.value());
     const auto it = params.find(admin::token::filter);
-    BOOST_REQUIRE(it != params.end());
-    BOOST_REQUIRE(std::holds_alternative<uint64_t>(it->second.value()));
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(it->second.value()), 123u);
+    BC_REQUIRE(it != params.end());
+    BC_REQUIRE(std::holds_alternative<uint64_t>(it->second.value()));
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(it->second.value()), 0u);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__filter_maximum__expected)
+BC_AUTO_TEST_CASE(parsers__admin_query__filter_value__expected)
+{
+    request_t out{};
+    out.params = object_t{};
+    BC_REQUIRE(admin_query(out, "/?filter=123&format=json", {}));
+
+    const auto& params = std::get<object_t>(out.params.value());
+    const auto it = params.find(admin::token::filter);
+    BC_REQUIRE(it != params.end());
+    BC_REQUIRE(std::holds_alternative<uint64_t>(it->second.value()));
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(it->second.value()), 123u);
+}
+
+BC_AUTO_TEST_CASE(parsers__admin_query__filter_maximum__expected)
 {
     // 2^53 - 1 is the maximum exact json number.
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(admin_query(out, "/?filter=9007199254740991&format=json", {}));
+    BC_REQUIRE(admin_query(out, "/?filter=9007199254740991&format=json", {}));
 
     const auto& params = std::get<object_t>(out.params.value());
     const auto it = params.find(admin::token::filter);
-    BOOST_REQUIRE(it != params.end());
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(it->second.value()), 9007199254740991u);
+    BC_REQUIRE(it != params.end());
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(it->second.value()), 9007199254740991u);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__filter_excess__false)
+BC_AUTO_TEST_CASE(parsers__admin_query__filter_excess__false)
 {
     // 2^53 exceeds the maximum exact json number.
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(!admin_query(out, "/?filter=9007199254740992&format=json", {}));
+    BC_REQUIRE(!admin_query(out, "/?filter=9007199254740992&format=json", {}));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__filter_non_numeric__false)
+BC_AUTO_TEST_CASE(parsers__admin_query__filter_non_numeric__false)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(!admin_query(out, "/?filter=abc&format=json", {}));
+    BC_REQUIRE(!admin_query(out, "/?filter=abc&format=json", {}));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__filter_leading_zero__false)
+BC_AUTO_TEST_CASE(parsers__admin_query__filter_leading_zero__false)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(!admin_query(out, "/?filter=01&format=json", {}));
+    BC_REQUIRE(!admin_query(out, "/?filter=01&format=json", {}));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__filter_empty__false)
+BC_AUTO_TEST_CASE(parsers__admin_query__filter_empty__false)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(!admin_query(out, "/?filter=&format=json", {}));
+    BC_REQUIRE(!admin_query(out, "/?filter=&format=json", {}));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__filter_negative__false)
+BC_AUTO_TEST_CASE(parsers__admin_query__filter_negative__false)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(!admin_query(out, "/?filter=-1&format=json", {}));
+    BC_REQUIRE(!admin_query(out, "/?filter=-1&format=json", {}));
 }
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__multiple_params__true)
+BC_AUTO_TEST_CASE(parsers__admin_query__multiple_params__true)
 {
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(admin_query(out, "/?filter=7&format=json", {}));
-    BOOST_REQUIRE_EQUAL(strip_media(out), media_type::application_json);
+    BC_REQUIRE(admin_query(out, "/?filter=7&format=json", {}));
+    BC_REQUIRE_EQUAL(strip_media(out), media_type::application_json);
 
     const auto& params = std::get<object_t>(out.params.value());
-    BOOST_REQUIRE(params.find(admin::token::filter) != params.end());
+    BC_REQUIRE(params.find(admin::token::filter) != params.end());
 }
 
 // http request overload
 
-BOOST_AUTO_TEST_CASE(parsers__admin_query__http_request_overload_with_accept_json__json)
+BC_AUTO_TEST_CASE(parsers__admin_query__http_request_overload_with_accept_json__json)
 {
     network::http::request request{};
     request.target("/?filter=1");
@@ -250,75 +250,75 @@ BOOST_AUTO_TEST_CASE(parsers__admin_query__http_request_overload_with_accept_jso
 
     request_t out{};
     out.params = object_t{};
-    BOOST_REQUIRE(admin_query(out, request));
-    BOOST_REQUIRE_EQUAL(strip_media(out), media_type::application_json);
+    BC_REQUIRE(admin_query(out, request));
+    BC_REQUIRE_EQUAL(strip_media(out), media_type::application_json);
 }
 
 // strip_media
 
-BOOST_AUTO_TEST_CASE(parsers__strip_media__no_params__unknown)
+BC_AUTO_TEST_CASE(parsers__strip_media__no_params__unknown)
 {
     request_t model{};
-    BOOST_REQUIRE_EQUAL(strip_media(model), media_type::unknown);
+    BC_REQUIRE_EQUAL(strip_media(model), media_type::unknown);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__strip_media__no_media_key__unknown)
+BC_AUTO_TEST_CASE(parsers__strip_media__no_media_key__unknown)
 {
     request_t model{};
     model.params = object_t{};
-    BOOST_REQUIRE_EQUAL(strip_media(model), media_type::unknown);
+    BC_REQUIRE_EQUAL(strip_media(model), media_type::unknown);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__strip_media__invalid_type__unknown)
+BC_AUTO_TEST_CASE(parsers__strip_media__invalid_type__unknown)
 {
     request_t model{};
     model.params = object_t{};
     auto& params = std::get<object_t>(model.params.value());
     params["media"] = value_t{ true }; // not uint8_t
-    BOOST_REQUIRE_EQUAL(strip_media(model), media_type::unknown);
+    BC_REQUIRE_EQUAL(strip_media(model), media_type::unknown);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__strip_media__json__json_and_erased)
+BC_AUTO_TEST_CASE(parsers__strip_media__json__json_and_erased)
 {
     request_t model{};
     model.params = object_t{};
     auto& params = std::get<object_t>(model.params.value());
     params["media"] = value_t{ static_cast<uint8_t>(media_type::application_json) };
-    BOOST_REQUIRE_EQUAL(strip_media(model), media_type::application_json);
+    BC_REQUIRE_EQUAL(strip_media(model), media_type::application_json);
 
     // The media param is stripped from the model (undeclared in interface).
-    BOOST_REQUIRE(params.find("media") == params.cend());
-    BOOST_REQUIRE_EQUAL(strip_media(model), media_type::unknown);
+    BC_REQUIRE(params.find("media") == params.cend());
+    BC_REQUIRE_EQUAL(strip_media(model), media_type::unknown);
 }
 
-BOOST_AUTO_TEST_CASE(parsers__strip_media__html__html_and_erased)
+BC_AUTO_TEST_CASE(parsers__strip_media__html__html_and_erased)
 {
     request_t model{};
     model.params = object_t{};
     auto& params = std::get<object_t>(model.params.value());
     params["media"] = value_t{ static_cast<uint8_t>(media_type::text_html) };
-    BOOST_REQUIRE_EQUAL(strip_media(model), media_type::text_html);
-    BOOST_REQUIRE(params.find("media") == params.cend());
+    BC_REQUIRE_EQUAL(strip_media(model), media_type::text_html);
+    BC_REQUIRE(params.find("media") == params.cend());
 }
 
-BOOST_AUTO_TEST_CASE(parsers__strip_media__unsupported_value__unknown_not_erased)
+BC_AUTO_TEST_CASE(parsers__strip_media__unsupported_value__unknown_not_erased)
 {
     // Unsupported media is not stripped (dispatch rejection preserved).
     request_t model{};
     model.params = object_t{};
     auto& params = std::get<object_t>(model.params.value());
     params["media"] = value_t{ static_cast<uint8_t>(media_type::text_plain) };
-    BOOST_REQUIRE_EQUAL(strip_media(model), media_type::unknown);
-    BOOST_REQUIRE(params.find("media") != params.cend());
+    BC_REQUIRE_EQUAL(strip_media(model), media_type::unknown);
+    BC_REQUIRE(params.find("media") != params.cend());
 }
 
-BOOST_AUTO_TEST_CASE(parsers__strip_media__unknown_value__unknown)
+BC_AUTO_TEST_CASE(parsers__strip_media__unknown_value__unknown)
 {
     request_t model{};
     model.params = object_t{};
     auto& params = std::get<object_t>(model.params.value());
     params["media"] = value_t{ 99_u8 };
-    BOOST_REQUIRE_EQUAL(strip_media(model), media_type::unknown);
+    BC_REQUIRE_EQUAL(strip_media(model), media_type::unknown);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

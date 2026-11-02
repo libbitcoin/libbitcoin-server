@@ -23,111 +23,111 @@ using namespace system;
 static const code not_implemented{ server::error::electrum::method_not_found };
 static const code bad_request{ server::error::electrum::bad_request };
 
-BOOST_FIXTURE_TEST_SUITE(sparrow_tests, sparrow_ten_block_setup_fixture)
+BC_FIXTURE_TEST_SUITE(sparrow_tests, sparrow_ten_block_setup_fixture)
 
 // inherited electrum interface
 
-BOOST_AUTO_TEST_CASE(sparrow__handshake__electrum_version__negotiated)
+BC_AUTO_TEST_CASE(sparrow__handshake__electrum_version__negotiated)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 }
 
-BOOST_AUTO_TEST_CASE(sparrow__blockchain_numblocks_subscribe__ten_block_store__returns_9)
+BC_AUTO_TEST_CASE(sparrow__blockchain_numblocks_subscribe__ten_block_store__returns_9)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":900,"method":"blockchain.numblocks.subscribe","params":[]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 }
 
-BOOST_AUTO_TEST_CASE(sparrow__unknown_method__electrum_terminal__method_not_found)
+BC_AUTO_TEST_CASE(sparrow__unknown_method__electrum_terminal__method_not_found)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto result = get_error(R"({"id":901,"method":"server.bogus","params":[]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
 // server.features
 
-BOOST_AUTO_TEST_CASE(sparrow__server_features__silent_payments__advertised)
+BC_AUTO_TEST_CASE(sparrow__server_features__silent_payments__advertised)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto response = get(R"({"id":902,"method":"server.features","params":[]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
     REQUIRE_NO_THROW_TRUE(result.at("silent_payments").is_array());
 
     const auto& versions = result.at("silent_payments").as_array();
-    BOOST_REQUIRE_EQUAL(versions.size(), one);
-    BOOST_REQUIRE_EQUAL(versions.at(0).as_int64(), server::protocol_sparrow::silent_payments_version);
-    BOOST_REQUIRE_EQUAL(result.at("server_version").as_string(), "server_name");
+    BC_REQUIRE_EQUAL(versions.size(), one);
+    BC_REQUIRE_EQUAL(versions.at(0).as_int64(), server::protocol_sparrow::silent_payments_version);
+    BC_REQUIRE_EQUAL(result.at("server_version").as_string(), "server_name");
 }
 
 // sparrow interface
 
-BOOST_AUTO_TEST_CASE(sparrow__blockchain_block_stats__stub__method_not_found)
+BC_AUTO_TEST_CASE(sparrow__blockchain_block_stats__stub__method_not_found)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto result = get_error(R"({"id":903,"method":"blockchain.block.stats","params":[5]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(sparrow__blockchain_block_stats__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(sparrow__blockchain_block_stats__missing_arguments__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto response = get(R"({"id":903,"method":"blockchain.block.stats","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__not_indexed__method_not_found)
+BC_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__not_indexed__method_not_found)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto request = R"({"id":904,"method":"blockchain.silentpayments.subscribe","params":["0000000000000000000000000000000000000000000000000000000000000001","020000000000000000000000000000000000000000000000000000000000000002"]})" "\n";
-    BOOST_REQUIRE_EQUAL(get_error(request), not_implemented.value());
+    BC_REQUIRE_EQUAL(get_error(request), not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_unsubscribe__not_subscribed__null)
+BC_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_unsubscribe__not_subscribed__null)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto response = get(R"({"id":905,"method":"blockchain.silentpayments.unsubscribe","params":["0000000000000000000000000000000000000000000000000000000000000001","020000000000000000000000000000000000000000000000000000000000000002"]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
-BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_unsubscribe__invalid_scan_key__bad_request)
+BC_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_unsubscribe__invalid_scan_key__bad_request)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto request = R"({"id":906,"method":"blockchain.silentpayments.unsubscribe","params":["0000000000000000000000000000000000000000000000000000000000000000","020000000000000000000000000000000000000000000000000000000000000002"]})" "\n";
-    BOOST_REQUIRE_EQUAL(get_error(request), bad_request.value());
+    BC_REQUIRE_EQUAL(get_error(request), bad_request.value());
 }
 
-BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_unsubscribe__pipelined_request__own_ids)
+BC_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_unsubscribe__pipelined_request__own_ids)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto request = R"({"id":909,"method":"blockchain.silentpayments.unsubscribe","params":["0000000000000000000000000000000000000000000000000000000000000001","020000000000000000000000000000000000000000000000000000000000000002"]})" "\n" R"({"id":910,"method":"server.ping","params":[]})" "\n";
     const auto response1 = get(request);
     const auto response2 = receive();
-    BOOST_REQUIRE_MESSAGE(response1.is_object() && response1.as_object().contains("result"), serialize(response1));
-    BOOST_REQUIRE_MESSAGE(response2.is_object() && response2.as_object().contains("result"), serialize(response2));
-    BOOST_REQUIRE_EQUAL(response1.at("id").as_int64(), 909);
-    BOOST_REQUIRE_EQUAL(response2.at("id").as_int64(), 910);
+    BC_REQUIRE_MESSAGE(response1.is_object() && response1.as_object().contains("result"), serialize(response1));
+    BC_REQUIRE_MESSAGE(response2.is_object() && response2.as_object().contains("result"), serialize(response2));
+    BC_REQUIRE_EQUAL(response1.at("id").as_int64(), 909);
+    BC_REQUIRE_EQUAL(response2.at("id").as_int64(), 910);
     REQUIRE_NO_THROW_TRUE(response1.at("result").is_null());
     REQUIRE_NO_THROW_TRUE(response2.at("result").is_null());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
 // sparrow silent payments (indexed)
 
@@ -187,40 +187,40 @@ struct sparrow_silent_setup_fixture
     }
 };
 
-BOOST_FIXTURE_TEST_SUITE(sparrow_silent_tests, sparrow_silent_setup_fixture)
+BC_FIXTURE_TEST_SUITE(sparrow_silent_tests, sparrow_silent_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__indexed__result_then_history)
+BC_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__indexed__result_then_history)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto response = get(R"({"id":908,"method":"blockchain.silentpayments.subscribe","params":["0f694e068028a717f8af6b9411f9a133dd3565258714cc226594b34db90c1f2c","025cc9856d6f8375350e123978daac200c260cb5b5ae83106cab90484dcd8fcf36"]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     const auto& result = response.at("result").as_object();
-    BOOST_REQUIRE_EQUAL(result.at("address").as_string(), "sp1qqgste7k9hx0qftg6qmwlkqtwuy6cycyavzmzj85c6qdfhjdpdjtdgqjuexzk6murw56suy3e0rd2cgqvycxttddwsvgxe2usfpxumr70xc9pkqwv");
-    BOOST_REQUIRE_EQUAL(result.at("start_height").to_number<uint64_t>(), 0u);
-    BOOST_REQUIRE_EQUAL(result.at("labels").as_array().size(), 1u);
+    BC_REQUIRE_EQUAL(result.at("address").as_string(), "sp1qqgste7k9hx0qftg6qmwlkqtwuy6cycyavzmzj85c6qdfhjdpdjtdgqjuexzk6murw56suy3e0rd2cgqvycxttddwsvgxe2usfpxumr70xc9pkqwv");
+    BC_REQUIRE_EQUAL(result.at("start_height").to_number<uint64_t>(), 0u);
+    BC_REQUIRE_EQUAL(result.at("labels").as_array().size(), 1u);
 
     const auto notification = receive();
     REQUIRE_NO_THROW_TRUE(notification.at("method").is_string());
-    BOOST_REQUIRE_EQUAL(notification.at("method").as_string(), "blockchain.silentpayments.subscribe");
+    BC_REQUIRE_EQUAL(notification.at("method").as_string(), "blockchain.silentpayments.subscribe");
 
     const auto& params = notification.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params.size(), 3u);
-    BOOST_REQUIRE_EQUAL(params.at(0).as_object().at("address").as_string(), result.at("address").as_string());
-    BOOST_REQUIRE_EQUAL(params.at(1).to_number<double>(), 1.0);
+    BC_REQUIRE_EQUAL(params.size(), 3u);
+    BC_REQUIRE_EQUAL(params.at(0).as_object().at("address").as_string(), result.at("address").as_string());
+    BC_REQUIRE_EQUAL(params.at(1).to_number<double>(), 1.0);
 
     const auto& history = params.at(2).as_array();
-    BOOST_REQUIRE_EQUAL(history.size(), 1u);
+    BC_REQUIRE_EQUAL(history.size(), 1u);
 
     const auto& entry = history.at(0).as_object();
-    BOOST_REQUIRE_EQUAL(entry.at("height").to_number<uint64_t>(), 0u);
-    BOOST_REQUIRE_EQUAL(entry.at("tx_hash").as_string(), encode_hash(simple_send.hash(false)));
-    BOOST_REQUIRE_EQUAL(entry.at("tweak_key").as_string(), "024ac253c216532e961988e2a8ce266a447c894c781e52ef6cee902361db960004");
+    BC_REQUIRE_EQUAL(entry.at("height").to_number<uint64_t>(), 0u);
+    BC_REQUIRE_EQUAL(entry.at("tx_hash").as_string(), encode_hash(simple_send.hash(false)));
+    BC_REQUIRE_EQUAL(entry.at("tweak_key").as_string(), "024ac253c216532e961988e2a8ce266a447c894c781e52ef6cee902361db960004");
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
 /// The simple send indexed against the block five coinbase (tx link 5), so
 /// the row starts the scan of blocks at or above five, with every block
@@ -252,102 +252,102 @@ struct sparrow_silent_mapped_setup_fixture
     }
 };
 
-BOOST_FIXTURE_TEST_SUITE(sparrow_silent_mapped_tests, sparrow_silent_mapped_setup_fixture)
+BC_FIXTURE_TEST_SUITE(sparrow_silent_mapped_tests, sparrow_silent_mapped_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__mapped_height_start__scans_from_start)
+BC_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__mapped_height_start__scans_from_start)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto response = get(R"({"id":908,"method":"blockchain.silentpayments.subscribe","params":["0f694e068028a717f8af6b9411f9a133dd3565258714cc226594b34db90c1f2c","025cc9856d6f8375350e123978daac200c260cb5b5ae83106cab90484dcd8fcf36",9]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    BOOST_REQUIRE_EQUAL(response.at("result").as_object().at("start_height").to_number<uint64_t>(), 9u);
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(response.at("result").as_object().at("start_height").to_number<uint64_t>(), 9u);
 
     const auto notification = receive();
     const auto& params = notification.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params.at(1).to_number<double>(), 1.0);
-    BOOST_REQUIRE_EQUAL(params.at(2).as_array().size(), 0u);
+    BC_REQUIRE_EQUAL(params.at(1).to_number<double>(), 1.0);
+    BC_REQUIRE_EQUAL(params.at(2).as_array().size(), 0u);
 }
 
-BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__height_start_below_row__scans_row)
+BC_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__height_start_below_row__scans_row)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto response = get(R"({"id":908,"method":"blockchain.silentpayments.subscribe","params":["0f694e068028a717f8af6b9411f9a133dd3565258714cc226594b34db90c1f2c","025cc9856d6f8375350e123978daac200c260cb5b5ae83106cab90484dcd8fcf36",4]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
 
     const auto notification = receive();
     const auto& params = notification.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params.at(2).as_array().size(), 1u);
+    BC_REQUIRE_EQUAL(params.at(2).as_array().size(), 1u);
 }
 
-BOOST_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__time_start__scans_from_mtp_floor)
+BC_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__time_start__scans_from_mtp_floor)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto response = get(R"({"id":908,"method":"blockchain.silentpayments.subscribe","params":["0f694e068028a717f8af6b9411f9a133dd3565258714cc226594b34db90c1f2c","025cc9856d6f8375350e123978daac200c260cb5b5ae83106cab90484dcd8fcf36",1231470988]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
 
     const auto notification = receive();
     const auto& params = notification.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params.at(2).as_array().size(), 0u);
+    BC_REQUIRE_EQUAL(params.at(2).as_array().size(), 0u);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
 // electrum does not serve the sparrow interface
 
-BOOST_FIXTURE_TEST_SUITE(sparrow_electrum_tests, electrum_ten_block_setup_fixture)
+BC_FIXTURE_TEST_SUITE(sparrow_electrum_tests, electrum_ten_block_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_block_stats__not_sparrow__method_not_found)
+BC_AUTO_TEST_CASE(electrum__blockchain_block_stats__not_sparrow__method_not_found)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto result = get_error(R"({"id":906,"method":"blockchain.block.stats","params":[5]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, not_implemented.value());
+    BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__server_features__not_sparrow__no_silent_payments)
+BC_AUTO_TEST_CASE(electrum__server_features__not_sparrow__no_silent_payments)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto response = get(R"({"id":907,"method":"server.features","params":[]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
-    BOOST_REQUIRE(!response.at("result").as_object().contains("silent_payments"));
+    BC_REQUIRE(!response.at("result").as_object().contains("silent_payments"));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
-BOOST_FIXTURE_TEST_SUITE(sparrow_transport_tests, sparrow_ten_block_setup_fixture)
+BC_FIXTURE_TEST_SUITE(sparrow_transport_tests, sparrow_ten_block_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(sparrow__post__handshake__negotiated)
+BC_AUTO_TEST_CASE(sparrow__post__handshake__negotiated)
 {
-    BOOST_REQUIRE(post_handshake(electrum::version::v1_4));
+    BC_REQUIRE(post_handshake(electrum::version::v1_4));
 }
 
-BOOST_AUTO_TEST_CASE(sparrow__ws__handshake__negotiated)
+BC_AUTO_TEST_CASE(sparrow__ws__handshake__negotiated)
 {
-    BOOST_REQUIRE(!ws_upgrade());
-    BOOST_REQUIRE(ws_handshake(electrum::version::v1_4));
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(ws_handshake(electrum::version::v1_4));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
-BOOST_FIXTURE_TEST_SUITE(sparrow_scoped_credential_tests, sparrow_scoped_credential_setup_fixture)
+BC_FIXTURE_TEST_SUITE(sparrow_scoped_credential_tests, sparrow_scoped_credential_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(sparrow__post__scoped_credential_unlisted_method__forbidden)
+BC_AUTO_TEST_CASE(sparrow__post__scoped_credential_unlisted_method__forbidden)
 {
     const auto response = post_authorized(R"({"id":900,"method":"server.version","params":["test","1.4"]})", ELECTRUM_TEST_USERNAME, ELECTRUM_TEST_PASSWORD);
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
     const auto status = post_status_authorized(R"({"id":901,"method":"server.banner","params":[]})", ELECTRUM_TEST_USERNAME, ELECTRUM_TEST_PASSWORD);
-    BOOST_REQUIRE_EQUAL(status, rpc_client::status::forbidden);
+    BC_REQUIRE_EQUAL(status, rpc_client::status::forbidden);
 }
 
-BOOST_AUTO_TEST_CASE(sparrow__tcp__credentials_configured__dropped)
+BC_AUTO_TEST_CASE(sparrow__tcp__credentials_configured__dropped)
 {
     const auto response = get(R"({"id":903,"method":"server.version","params":["test","1.4"]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

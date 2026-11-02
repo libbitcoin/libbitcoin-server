@@ -259,7 +259,7 @@ bool protocol_bitcoind_control::handle_get_rpc_info(const code& ec,
     send_result(object_t
     {
         { "active_commands", array_t{} },
-        { "logpath", server_config().log.log_file1().string() }
+        { "logpath", from_path(server_config().log.log_file1()) }
     });
     return true;
 }

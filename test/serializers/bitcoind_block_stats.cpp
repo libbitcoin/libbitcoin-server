@@ -18,7 +18,7 @@
  */
 #include "../test.hpp"
 
-BOOST_AUTO_TEST_SUITE(bitcoind_block_stats_tests)
+BC_AUTO_TEST_SUITE(bitcoind_block_stats_tests)
 
 using namespace system;
 using namespace system::chain;
@@ -46,62 +46,62 @@ static block make_block(transactions&& txs) NOEXCEPT
         std::move(txs) };
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_block_stats__coinbase_only__no_fees)
+BC_AUTO_TEST_CASE(bitcoind_block_stats__coinbase_only__no_fees)
 {
     const auto block = make_block({ make_coinbase() });
     const auto stats = server::block_stats(block, 1, 40, test_subsidy);
 
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("txs").value()), 1u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("ins").value()), 0u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("outs").value()), 1u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("totalfee").value()), 0u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("minfee").value()), 0u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("subsidy").value()), test_subsidy);
-    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(stats.at("mediantime").value()), 40u);
-    BOOST_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase").value()), 1);
-    BOOST_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase_actual").value()), 1);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("txs").value()), 1u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("ins").value()), 0u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("outs").value()), 1u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("totalfee").value()), 0u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("minfee").value()), 0u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("subsidy").value()), test_subsidy);
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(stats.at("mediantime").value()), 40u);
+    BC_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase").value()), 1);
+    BC_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase_actual").value()), 1);
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_block_stats__two_paying__fee_statistics)
+BC_AUTO_TEST_CASE(bitcoind_block_stats__two_paying__fee_statistics)
 {
     const auto block = make_block({ make_coinbase(),
         make_paying(100'000, 90'000), make_paying(50'000, 48'000) });
     const auto stats = server::block_stats(block, 2, 40, test_subsidy);
 
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("txs").value()), 3u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("ins").value()), 2u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("outs").value()), 3u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("totalfee").value()), 12'000u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("minfee").value()), 2'000u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("maxfee").value()), 10'000u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("avgfee").value()), 6'000u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("medianfee").value()), 6'000u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("total_out").value()), 138'000u);
-    BOOST_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase").value()), 1);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("txs").value()), 3u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("ins").value()), 2u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("outs").value()), 3u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("totalfee").value()), 12'000u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("minfee").value()), 2'000u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("maxfee").value()), 10'000u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("avgfee").value()), 6'000u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("medianfee").value()), 6'000u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("total_out").value()), 138'000u);
+    BC_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase").value()), 1);
 
     // Both paying txs are identical in size/weight.
     const auto weight = block.transactions_ptr()->back()->weight();
     const auto rate = (4u * 10'000u) / weight;
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("maxfeerate").value()), rate);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("maxfeerate").value()), rate);
 
     // The top percentile is the maximum feerate.
     const auto& rates = std::get<network::rpc::array_t>(stats.at("feerate_percentiles").value());
-    BOOST_REQUIRE_EQUAL(rates.size(), 5u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(rates.back().value()), rate);
+    BC_REQUIRE_EQUAL(rates.size(), 5u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(rates.back().value()), rate);
 }
 
 // Unspendable outputs are excluded from the actual utxo statistics.
-BOOST_AUTO_TEST_CASE(bitcoind_block_stats__unspendable_output__excluded_from_actual)
+BC_AUTO_TEST_CASE(bitcoind_block_stats__unspendable_output__excluded_from_actual)
 {
     const script unspendable{ operations{ operation{ opcode::op_return } } };
     const auto block = make_block({ make_coinbase(unspendable) });
     const auto stats = server::block_stats(block, 1, 40, test_subsidy);
 
-    BOOST_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase").value()), 1);
-    BOOST_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase_actual").value()), 0);
+    BC_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase").value()), 1);
+    BC_REQUIRE_EQUAL(std::get<int64_t>(stats.at("utxo_increase_actual").value()), 0);
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_block_stats__segregated_paying__witness_statistics)
+BC_AUTO_TEST_CASE(bitcoind_block_stats__segregated_paying__witness_statistics)
 {
     transaction segregated{ 1, inputs{ { point{ one_hash, 0 }, script{}, witness{ "[242424]" }, 0 } }, outputs{ { 90'000, script{} } }, 0 };
     segregated.inputs_ptr()->front()->prevout = to_shared<output>(100'000, script{});
@@ -109,11 +109,11 @@ BOOST_AUTO_TEST_CASE(bitcoind_block_stats__segregated_paying__witness_statistics
     const auto stats = server::block_stats(block, 2, 40, test_subsidy);
 
     const auto& tx = *block.transactions_ptr()->back();
-    BOOST_REQUIRE(tx.is_segregated());
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("swtxs").value()), 1u);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("swtotal_size").value()), tx.serialized_size(true));
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("swtotal_weight").value()), tx.weight());
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("totalfee").value()), 12'000u);
+    BC_REQUIRE(tx.is_segregated());
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("swtxs").value()), 1u);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("swtotal_size").value()), tx.serialized_size(true));
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("swtotal_weight").value()), tx.weight());
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(stats.at("totalfee").value()), 12'000u);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

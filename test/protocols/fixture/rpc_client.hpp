@@ -30,18 +30,17 @@
 class rpc_client
 {
 public:
-    using status = boost::beast::http::status;
-    using error_code = libbitcoin::network::boost_code;
-    using request = boost::beast::http::request<
-        boost::beast::http::string_body>;
+    using status = network::http::status;
+    using error_code = libbitcoin::network::code;
+    using request = network::http::message<true, network::http::string_body>;
 
     DELETE_COPY_MOVE(rpc_client);
 
-    explicit rpc_client(boost::asio::io_context& service);
+    explicit rpc_client(network::io::context& service);
     ~rpc_client();
 
     /// Connect and disconnect (websocket closed first if upgraded).
-    void connect(const boost::asio::ip::tcp::endpoint& endpoint);
+    void connect(const network::io::endpoint& endpoint);
     void close();
 
     /// Raw tcp, newline delimited (the server detects and downgrades).
@@ -63,9 +62,9 @@ public:
         std::string_view body);
 
     /// http GET (returns the response for the caller to interpret).
-    boost::beast::http::response<boost::beast::http::string_body> get(
+    network::http::message<false, network::http::string_body> get(
         std::string_view target);
-    boost::beast::http::response<boost::beast::http::string_body>
+    network::http::message<false, network::http::string_body>
         get_authorized(std::string_view target, const std::string& username,
             const std::string& password);
 
@@ -84,11 +83,11 @@ public:
     void write_frame(std::string_view text);
 
     /// The underlying stream (for a transport this does not cover).
-    boost::beast::tcp_stream& stream();
+    network::io::socket& stream();
 
 private:
-    using tcp_stream = boost::beast::tcp_stream;
-    using websocket_stream = boost::beast::websocket::stream<tcp_stream&>;
+    using tcp_stream = network::io::socket;
+    using websocket_stream = network::ws::client<network::io::socket>;
 
     static system::json::value dropped();
 

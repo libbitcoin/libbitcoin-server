@@ -19,7 +19,7 @@
 #include "../../test.hpp"
 #include "electrum_setup_fixture.hpp"
 
-BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_estimate_setup_fixture)
+BC_FIXTURE_TEST_SUITE(electrum_tests, electrum_estimate_setup_fixture)
 
 using namespace system;
 static const code wrong_version{ server::error::electrum::bad_request };
@@ -28,122 +28,122 @@ static const code invalid_argument{ server::error::electrum::bad_request };
 
 // blockchain.estimatefee
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__no_number__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__no_number__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__float_number__invalid_argument)
+BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__float_number__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto result = get_error(R"({"id":801,"method":"blockchain.estimatefee","params":[42.42]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+    BC_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__mode_invalid_version__invalid_argument)
+BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__mode_invalid_version__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto result = get_error(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"basic"]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+    BC_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__nvalid_mode__invalid_argument)
+BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__nvalid_mode__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4));
+    BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto result = get_error(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"bogus"]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+    BC_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__invalid_mode_v1_6__invalid_argument)
+BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__invalid_mode_v1_6__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto result = get_error(R"({"id":801,"method":"blockchain.estimatefee","params":[42,"bogus"]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+    BC_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__uninitialized__negative_one)
+BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__uninitialized__negative_one)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"basic"]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__geometric_uninitialized__negative_one)
+BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__geometric_uninitialized__negative_one)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"geometric"]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__economical_uninitialized__negative_one)
+BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__economical_uninitialized__negative_one)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"economical"]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__conservative_uninitialized__negative_one)
+BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__conservative_uninitialized__negative_one)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"conservative"]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__zero_basic__negative_one)
+BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__zero_basic__negative_one)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BC_REQUIRE(handshake(electrum::version::v1_6));
 
     // Trigger node chaser event to initialize fee estimator.
     notify(node::chases::block{ 9 });
 
     const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"basic"]})" "\n");
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
 
     // None of the first 10 blocks have fees, so no estimate is obtained.
-    BOOST_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
 }
 
 // blockchain.relayfee
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_relay_fee__default__expected)
+BC_AUTO_TEST_CASE(electrum__blockchain_relay_fee__default__expected)
 {
     config_.node.minimum_fee_rate = 42.42;
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":90,"method":"blockchain.relayfee","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("id").is_int64());
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_double());
-    BOOST_REQUIRE_EQUAL(response.at("id").as_int64(), 90);
-    BOOST_REQUIRE_EQUAL(response.at("result").as_double(), config_.node.minimum_fee_rate);
+    BC_REQUIRE_EQUAL(response.at("id").as_int64(), 90);
+    BC_REQUIRE_EQUAL(response.at("result").as_double(), config_.node.minimum_fee_rate);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_relay_fee__obsoleted__wrong_version)
+BC_AUTO_TEST_CASE(electrum__blockchain_relay_fee__obsoleted__wrong_version)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto result = get_error(R"({"id":801,"method":"blockchain.relayfee","params":[]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+    BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

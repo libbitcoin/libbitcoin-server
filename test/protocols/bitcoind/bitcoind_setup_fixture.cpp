@@ -22,7 +22,8 @@
 #include <future>
 #include <sstream>
 
-using namespace boost::beast;
+namespace http = network::http;
+namespace ws = network::ws;
 
 bool setup_candidate_store(test::query_t& query, bool associated) NOEXCEPT
 {
@@ -133,12 +134,12 @@ bitcoind_setup_fixture::rpc_status(std::string_view method,
         password);
 }
 
-network::boost_code bitcoind_setup_fixture::ws_upgrade()
+network::code bitcoind_setup_fixture::ws_upgrade()
 {
     return client_.upgrade();
 }
 
-network::boost_code bitcoind_setup_fixture::ws_upgrade(
+network::code bitcoind_setup_fixture::ws_upgrade(
     const std::string& username, const std::string& password)
 {
     return client_.upgrade(username, password);
@@ -166,17 +167,17 @@ system::json::value bitcoind_setup_fixture::ws_read()
     return client_.read_frame(true);
 }
 
-static bitcoind_setup_fixture::status status_of(tcp_stream& socket,
-    const rpc_client::request& request)
+static bitcoind_setup_fixture::status status_of(network::io::socket& socket,
+    rpc_client::request request)
 {
-    network::boost_code ec{};
+    network::code ec{};
     http::write(socket, request, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
-    flat_buffer buffer{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    http::message<false, http::string_body> response{};
     http::read(socket, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
     return response.result();
 }
 
@@ -223,14 +224,14 @@ bitcoind_setup_fixture::options_status(std::string_view target)
 system::json::value bitcoind_setup_fixture::rest_json(std::string_view target)
 {
     const auto response = client_.get(target);
-    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
+    BC_CHECK_EQUAL(response.result(), http::status::ok);
     return test::parse_json(response.body());
 }
 
 std::string bitcoind_setup_fixture::rest_text(std::string_view target)
 {
     const auto response = client_.get(target);
-    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
+    BC_CHECK_EQUAL(response.result(), http::status::ok);
     return response.body();
 }
 
@@ -238,13 +239,13 @@ std::string bitcoind_setup_fixture::rest_text(std::string_view target)
 system::data_chunk bitcoind_setup_fixture::rest_data(std::string_view target)
 {
     auto& socket = client_.stream();
-    http::write(socket, rpc_client::create_get(target));
+    test::write_http(socket, rpc_client::create_get(target));
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<network::http::chunk_body> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::chunk_body> response{};
     http::read(socket, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
-    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
+    BC_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_EQUAL(response.result(), http::status::ok);
     return system::to_chunk(response.body());
 }

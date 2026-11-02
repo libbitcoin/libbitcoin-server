@@ -22,7 +22,8 @@
 #include <future>
 
 using namespace system;
-using namespace boost::beast;
+namespace http = network::http;
+namespace ws = network::ws;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
@@ -58,61 +59,69 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup,
     query_{ store_ }, log_{},
     server_{ query_, config_, log_ }
 {
-    test::clear(test::directory);
-    config_.database.interval_depth = 2;
-    const auto& esplora = config_.server.esplora;
-
-    // Create and populate the store.
-    auto ec = store_.create([](auto, auto) {});
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-
-    // Settings files are read and derived values packed, as by the executor.
-    ec = config_.initialize();
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-
-    BOOST_REQUIRE(setup(query_));
-
-    // The node (chasers and address pool), bypassed by default.
-    if (start)
+    try
     {
-        std::promise<code> started{};
-        server_.start([&](const code& ec) NOEXCEPT
+        test::clear(test::directory);
+        config_.database.interval_depth = 2;
+        const auto& esplora = config_.server.esplora;
+
+        // Create and populate the store.
+        auto ec = store_.create([](auto, auto) {});
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+
+        // Settings files are read and derived values packed, as by the executor.
+        ec = config_.initialize();
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+
+        BC_REQUIRE(setup(query_));
+
+        // The node (chasers and address pool), bypassed by default.
+        if (start)
         {
-            started.set_value(ec);
+            std::promise<code> started{};
+            server_.start([&](const code& ec) NOEXCEPT
+            {
+                started.set_value(ec);
+            });
+
+            ec = started.get_future().get();
+            BC_REQUIRE_MESSAGE(!ec, ec.message());
+        }
+
+        // Run the server.
+        std::promise<code> running{};
+        server_.run([&](const code& ec) NOEXCEPT
+        {
+            running.set_value(ec);
         });
 
-        ec = started.get_future().get();
-        BOOST_REQUIRE_MESSAGE(!ec, ec.message());
+        // Block until server is running.
+        ec = running.get_future().get();
+        BC_REQUIRE_MESSAGE(!ec, ec.message());
+        REQUIRE_SUCCESS(socket_, connect, esplora.binds.back().to_endpoint());
     }
-
-    // Run the server.
-    std::promise<code> running{};
-    server_.run([&](const code& ec) NOEXCEPT
+    catch (...)
     {
-        running.set_value(ec);
-    });
-
-    // Block until server is running.
-    ec = running.get_future().get();
-    BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-    socket_.connect(esplora.binds.back().to_endpoint());
+        teardown();
+        throw;
+    }
 }
 
 esplora_setup_fixture::~esplora_setup_fixture()
 {
-    network::boost_code ec{};
+    network::code ec{};
     if (websocket_.has_value())
     {
-        websocket_.value().close(websocket::close_code::normal, ec);
+        ec = websocket_.value().close(network::ws::close_code::normal);
 
         // Expected and harmless during fixture teardown:
-        // beast::websocket::error::closed : normal (graceful handshake).
-        // asio::error::operation_aborted  : hard (invalid request test).
+        // websocket_closed   : normal (graceful handshake).
+        // peer_disconnect    : dropped by the server (invalid request test).
         if (ec &&
-            ec != boost::beast::websocket::error::closed &&
-            ec != boost::asio::error::operation_aborted)
+            ec != network::error::websocket_closed &&
+            ec != network::error::peer_disconnect)
         {
-            BOOST_WARN_MESSAGE(false, ec.message());
+            BC_WARN_MESSAGE(false, ec.message());
         }
     }
     else
@@ -120,9 +129,14 @@ esplora_setup_fixture::~esplora_setup_fixture()
         socket_.close();
     }
 
+    teardown();
+}
+
+void esplora_setup_fixture::teardown()
+{
     server_.close();
-    ec = store_.close([](auto, auto){});
-    BOOST_WARN_MESSAGE(!ec, ec.message());
+    const auto ec = store_.close([](auto, auto){});
+    BC_WARN_MESSAGE(!ec, ec.message());
     test::clear(test::directory);
 }
 
@@ -131,20 +145,20 @@ esplora_setup_fixture::create_request(std::string_view target)
 {
     string_request request{ http::verb::get, target, network::http::version_1_1 };
     request.set(http::field::host, "localhost");
-    request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    request.set(http::field::user_agent, "libbitcoin");
     request.keep_alive(true);
     return request;
 }
 
 http::status esplora_setup_fixture::get_status(std::string_view target)
 {
-    http::write(socket_, create_request(target));
+    test::write_http(socket_, create_request(target));
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response.result();
 }
@@ -154,41 +168,41 @@ http::status esplora_setup_fixture::get_status(std::string_view target,
 {
     auto request = create_request(target);
     request.set(name, value);
-    http::write(socket_, request);
+    test::write_http(socket_, request);
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response.result();
 }
 
 std::string esplora_setup_fixture::get_text(std::string_view target)
 {
-    http::write(socket_, create_request(target));
+    test::write_http(socket_, create_request(target));
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<network::http::string_body> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
-    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
+    BC_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_EQUAL(response.result(), http::status::ok);
 
     return response.body();
 }
 
 system::data_chunk esplora_setup_fixture::get_data(std::string_view target)
 {
-    http::write(socket_, create_request(target));
+    test::write_http(socket_, create_request(target));
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<network::http::chunk_body> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::chunk_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
-    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
+    BC_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_EQUAL(response.result(), http::status::ok);
 
     return system::data_chunk(response.body().cbegin(), response.body().cend());
 }
@@ -198,14 +212,14 @@ system::data_chunk esplora_setup_fixture::get_data(std::string_view target)
 // streaming. So instead just use a string buffer and parse explicitly.
 system::json::value esplora_setup_fixture::get_json(std::string_view target)
 {
-    http::write(socket_, create_request(target));
+    test::write_http(socket_, create_request(target));
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
-    BOOST_CHECK_EQUAL(response.result(), http::status::ok);
+    BC_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_EQUAL(response.result(), http::status::ok);
 
     return test::parse_json(response.body());
 }
@@ -216,7 +230,7 @@ esplora_setup_fixture::create_post(std::string_view target,
 {
     string_request request{ http::verb::post, target, network::http::version_1_1 };
     request.set(http::field::host, "localhost");
-    request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    request.set(http::field::user_agent, "libbitcoin");
     request.set(http::field::content_type, "text/plain");
     request.body() = std::string{ body };
     request.prepare_payload();
@@ -227,13 +241,13 @@ esplora_setup_fixture::create_post(std::string_view target,
 http::status esplora_setup_fixture::post_status(std::string_view target,
     std::string_view body)
 {
-    http::write(socket_, create_post(target, body));
+    test::write_http(socket_, create_post(target, body));
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response.result();
 }
@@ -243,13 +257,13 @@ http::status esplora_setup_fixture::post_status(std::string_view target,
 {
     auto request = create_post(target, body);
     request.set(name, value);
-    http::write(socket_, request);
+    test::write_http(socket_, request);
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response.result();
 }
@@ -257,36 +271,35 @@ http::status esplora_setup_fixture::post_status(std::string_view target,
 std::string esplora_setup_fixture::post_text(std::string_view target,
     std::string_view body)
 {
-    http::write(socket_, create_post(target, body));
+    test::write_http(socket_, create_post(target, body));
 
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    http::response<http::string_body> response{};
+    http::flat_buffer buffer{};
+    network::code ec{};
+    http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return response.body();
 }
 
-network::boost_code esplora_setup_fixture::ws_upgrade()
+network::code esplora_setup_fixture::ws_upgrade()
 {
-    network::boost_code ec{};
-    BOOST_CHECK(!websocket_.has_value());
+    network::code ec{};
+    BC_CHECK(!websocket_.has_value());
 
     websocket_.emplace(socket_);
-    websocket_.value().text(true);
-    websocket_.value().handshake("localhost", "/", ec);
+    ec = websocket_.value().handshake("localhost", "/");
     return ec;
 }
 
 data_chunk esplora_setup_fixture::ws_receive()
 {
-    flat_buffer buffer{};
-    network::boost_code ec{};
-    BOOST_CHECK(websocket_.has_value());
+    http::flat_buffer buffer{};
+    network::code ec{};
+    BC_CHECK(websocket_.has_value());
 
-    websocket_.value().read(buffer, ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    ec = websocket_.value().read(buffer);
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     const auto data = pointer_cast<uint8_t>(buffer.data().data());
     return { data, std::next(data, buffer.data().size()) };
@@ -294,24 +307,24 @@ data_chunk esplora_setup_fixture::ws_receive()
 
 bool esplora_setup_fixture::ws_dropped(std::string_view message)
 {
-    network::boost_code ec{};
-    BOOST_CHECK(websocket_.has_value());
+    network::code ec{};
+    BC_CHECK(websocket_.has_value());
 
-    websocket_.value().write(net::buffer(message), ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    ec = websocket_.value().write(message);
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
-    flat_buffer buffer{};
-    websocket_.value().read(buffer, ec);
-    return ec == websocket::error::closed;
+    http::flat_buffer buffer{};
+    ec = websocket_.value().read(buffer);
+    return ec == network::error::websocket_closed;
 }
 
 std::string esplora_setup_fixture::ws_get_text(std::string_view message)
 {
-    network::boost_code ec{};
-    BOOST_CHECK(websocket_.has_value());
+    network::code ec{};
+    BC_CHECK(websocket_.has_value());
 
-    websocket_.value().write(net::buffer(message), ec);
-    BOOST_CHECK_MESSAGE(!ec, ec.message());
+    ec = websocket_.value().write(message);
+    BC_CHECK_MESSAGE(!ec, ec.message());
 
     return to_string(ws_receive());
 }

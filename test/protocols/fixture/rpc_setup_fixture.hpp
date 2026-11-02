@@ -48,9 +48,11 @@ protected:
     configuration config_;
     test::store_t store_;
     test::query_t query_;
-    boost::asio::io_context io_{};
+    network::io::context io_{};
 
 private:
+    void teardown();
+
     network::logger log_;
     server::server_node server_;
 };

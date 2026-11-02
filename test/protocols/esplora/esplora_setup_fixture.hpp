@@ -28,7 +28,7 @@
 
 struct esplora_setup_fixture
 {
-    using status = boost::beast::http::status;
+    using status = network::http::status;
     using initializer = std::function<bool(test::query_t&)>;
     using configurator = std::function<void(server::configuration&)>;
 
@@ -39,16 +39,16 @@ struct esplora_setup_fixture
 
     status get_status(std::string_view target);
     status get_status(std::string_view target,
-        boost::beast::http::field name, std::string_view value);
+        network::http::field name, std::string_view value);
     std::string get_text(std::string_view target);
     system::data_chunk get_data(std::string_view target);
     system::json::value get_json(std::string_view target);
     status post_status(std::string_view target, std::string_view body);
     status post_status(std::string_view target, std::string_view body,
-        boost::beast::http::field name, std::string_view value);
+        network::http::field name, std::string_view value);
     std::string post_text(std::string_view target, std::string_view body);
 
-    network::boost_code ws_upgrade();
+    network::code ws_upgrade();
     system::data_chunk ws_receive();
     bool ws_dropped(std::string_view message);
     std::string ws_get_text(std::string_view message);
@@ -61,18 +61,20 @@ protected:
 
 private:
     using string_body = network::http::string_body;
-    using string_request = boost::beast::http::request<string_body>;
+    using string_request = network::http::message<true, string_body>;
     static string_request create_request(std::string_view target);
     static string_request create_post(std::string_view target,
         std::string_view body);
 
-    using tcp_stream = boost::beast::tcp_stream;
-    using websocket_stream = boost::beast::websocket::stream<tcp_stream&>;
+    using tcp_stream = network::io::socket;
+    using websocket_stream = network::ws::client<network::io::socket>;
+
+    void teardown();
 
     network::logger log_;
     server::server_node server_;
-    boost::asio::io_context io{};
-    boost::beast::tcp_stream socket_{ io.get_executor() };
+    network::io::context io{};
+    network::io::socket socket_{ io };
     std::optional<websocket_stream> websocket_{};
 };
 

@@ -33,63 +33,63 @@ static const chain::script found{ chain::script::to_pay_key_hash_pattern({ 0x02 
 static const auto bogus_script = encode_base16(bogus.to_data(false));
 static const auto found_script = encode_base16(found.to_data(false));
 
-BOOST_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
+BC_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
 // blockchain.address.subscribe
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__obsolete_version__wrong_version)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__obsolete_version__wrong_version)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_3));
+    BC_REQUIRE(handshake(electrum::version::v1_3));
 
     constexpr auto request = R"({{"id":1101,"method":"blockchain.address.subscribe","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_address));
-    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+    BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__missing_arguments__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":1102,"method":"blockchain.address.subscribe","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__invalid_hash__invalid_argument)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__invalid_hash__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto result = get_error(R"({"id":1103,"method":"blockchain.address.subscribe","params":["not_a_hash"]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+    BC_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__extra_argument__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__extra_argument__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":1104,"method":"blockchain.address.subscribe","params":["%1%",42]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__bogus_p2pkh__null)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__bogus_p2pkh__null)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     constexpr auto request = R"({{"id":1101,"method":"blockchain.address.subscribe","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, bogus_address));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__initialization__expected_status)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__initialization__expected_status)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     // This validates the hash accumulator copy in get_scripthash_history() and incorporates
     // confirmed, rooted and unrooted transactions, duplicates, and sort.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
@@ -103,20 +103,20 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__initialization__exp
 
     constexpr auto request = R"({{"id":1101,"method":"blockchain.address.subscribe","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, found_address));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), expected_initial);
+    BC_REQUIRE_EQUAL(response.at("result").as_string(), expected_initial);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__repeat_call__idempotent)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__repeat_call__idempotent)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
@@ -131,34 +131,34 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__repeat_call__idempo
     constexpr auto request = R"({{"id":1101,"method":"blockchain.address.subscribe","params":["{}"]}})" "\n";
     const auto response1 = get(std::format(request, found_address));
     REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_initial);
+    BC_REQUIRE_EQUAL(response1.at("result").as_string(), expected_initial);
 
     const auto response2 = get(std::format(request, found_address));
     REQUIRE_NO_THROW_TRUE(response2.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response2.at("result").as_string(), expected_initial);
+    BC_REQUIRE_EQUAL(response2.at("result").as_string(), expected_initial);
 
     // Testing below a third subscription to ensure that duplicates are merged.
-    BOOST_REQUIRE_LE(config_.server.electrum.maximum_subscriptions, 2u);
+    BC_REQUIRE_LE(config_.server.electrum.maximum_subscriptions, 2u);
 
     const auto response3 = get(std::format(request, found_address));
     REQUIRE_NO_THROW_TRUE(response3.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response3.at("result").as_string(), expected_initial);
+    BC_REQUIRE_EQUAL(response3.at("result").as_string(), expected_initial);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive__expected)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
 
     // Confirming block 10 also makes block 11 to rooted.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
     const auto expected_confirm10 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -169,10 +169,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive__expect
     constexpr auto request = R"({{"id":1101,"method":"blockchain.address.subscribe","params":["{}"]}})" "\n";
     const auto response1 = get(std::format(request, found_address));
     REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
+    BC_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
 
     // Confirming block 11 also makes block 12 rooted.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
     const auto expected_confirm11 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -182,10 +182,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive__expect
 
     const auto response2 = get(std::format(request, found_address));
     REQUIRE_NO_THROW_TRUE(response2.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response2.at("result").as_string(), expected_confirm11);
+    BC_REQUIRE_EQUAL(response2.at("result").as_string(), expected_confirm11);
 
     // Confirming block 12 only makes block 12 confirmed.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
     const auto expected_confirm12 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -195,23 +195,23 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive__expect
 
     const auto response3 = get(std::format(request, found_address));
     REQUIRE_NO_THROW_TRUE(response3.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response3.at("result").as_string(), expected_confirm12);
+    BC_REQUIRE_EQUAL(response3.at("result").as_string(), expected_confirm12);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify__expected)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
 
     // Confirming block 10 also makes block 11 to rooted.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
     const auto expected_confirm10 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -222,10 +222,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify_
     constexpr auto request = R"({{"id":1101,"method":"blockchain.address.subscribe","params":["{}"]}})" "\n";
     const auto response1 = get(std::format(request, found_address));
     REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
+    BC_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
 
     // Confirming block 11 also makes block 12 rooted.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
     const auto expected_confirm11 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -239,17 +239,17 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify_
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
     REQUIRE_NO_THROW_TRUE(notification1.at("params").is_array());
-    BOOST_REQUIRE_EQUAL(notification1.at("method").as_string(), "blockchain.address.subscribe");
+    BC_REQUIRE_EQUAL(notification1.at("method").as_string(), "blockchain.address.subscribe");
 
     const auto& params1 = notification1.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params1.size(), 2u);
-    BOOST_REQUIRE(params1.at(0).is_string());
-    BOOST_REQUIRE(params1.at(1).is_string());
-    BOOST_REQUIRE_EQUAL(params1.at(0).as_string(), found_scripthash);
-    BOOST_REQUIRE_EQUAL(params1.at(1).as_string(), expected_confirm11);
+    BC_REQUIRE_EQUAL(params1.size(), 2u);
+    BC_REQUIRE(params1.at(0).is_string());
+    BC_REQUIRE(params1.at(1).is_string());
+    BC_REQUIRE_EQUAL(params1.at(0).as_string(), found_scripthash);
+    BC_REQUIRE_EQUAL(params1.at(1).as_string(), expected_confirm11);
 
     // Confirming block 12 only makes block 12 confirmed.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
     const auto expected_confirm12 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -263,72 +263,72 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__progressive_notify_
     const auto notification2 = receive();
     REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
     REQUIRE_NO_THROW_TRUE(notification2.at("params").is_array());
-    BOOST_REQUIRE_EQUAL(notification2.at("method").as_string(), "blockchain.address.subscribe");
+    BC_REQUIRE_EQUAL(notification2.at("method").as_string(), "blockchain.address.subscribe");
 
     const auto& params2 = notification2.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params2.size(), 2u);
-    BOOST_REQUIRE(params2.at(0).is_string());
-    BOOST_REQUIRE(params2.at(1).is_string());
-    BOOST_REQUIRE_EQUAL(params2.at(0).as_string(), found_scripthash);
-    BOOST_REQUIRE_EQUAL(params2.at(1).as_string(), expected_confirm12);
+    BC_REQUIRE_EQUAL(params2.size(), 2u);
+    BC_REQUIRE(params2.at(0).is_string());
+    BC_REQUIRE(params2.at(1).is_string());
+    BC_REQUIRE_EQUAL(params2.at(0).as_string(), found_scripthash);
+    BC_REQUIRE_EQUAL(params2.at(1).as_string(), expected_confirm12);
 }
 
 // blockchain.scripthash.subscribe
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__insufficient_version__wrong_version)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__insufficient_version__wrong_version)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scripthash.subscribe","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_scripthash));
-    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+    BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__missing_arguments__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":1102,"method":"blockchain.scripthash.subscribe","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__invalid_hash__invalid_argument)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__invalid_hash__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto result = get_error(R"({"id":1103,"method":"blockchain.scripthash.subscribe","params":["not_a_hash"]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+    BC_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__extra_argument__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__extra_argument__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     constexpr auto request = R"({{"id":1104,"method":"blockchain.scripthash.subscribe","params":["{}",42]}})" "\n";
     const auto response = get(std::format(request, bogus_scripthash));
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__bogus_scripthash__null)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__bogus_scripthash__null)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scripthash.subscribe","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, bogus_scripthash));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__initialization__expected_status)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__initialization__expected_status)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     // This validates the hash accumulator copy in get_scripthash_history() and incorporates
     // confirmed, rooted and unrooted transactions, duplicates, and sort.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
@@ -342,20 +342,20 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__initialization__
 
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scripthash.subscribe","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, found_scripthash));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), expected_initial);
+    BC_REQUIRE_EQUAL(response.at("result").as_string(), expected_initial);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__repeat_call__idempotent)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__repeat_call__idempotent)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
@@ -370,34 +370,34 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__repeat_call__ide
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scripthash.subscribe","params":["{}"]}})" "\n";
     const auto response1 = get(std::format(request, found_scripthash));
     REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_initial);
+    BC_REQUIRE_EQUAL(response1.at("result").as_string(), expected_initial);
 
     const auto response2 = get(std::format(request, found_scripthash));
     REQUIRE_NO_THROW_TRUE(response2.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response2.at("result").as_string(), expected_initial);
+    BC_REQUIRE_EQUAL(response2.at("result").as_string(), expected_initial);
 
     // Testing below a third subscription to ensure that duplicates are merged.
-    BOOST_REQUIRE_LE(config_.server.electrum.maximum_subscriptions, 2u);
+    BC_REQUIRE_LE(config_.server.electrum.maximum_subscriptions, 2u);
 
     const auto response3 = get(std::format(request, found_scripthash));
     REQUIRE_NO_THROW_TRUE(response3.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response3.at("result").as_string(), expected_initial);
+    BC_REQUIRE_EQUAL(response3.at("result").as_string(), expected_initial);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive__expected)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
 
     // Confirming block 10 also makes block 11 to rooted.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
     const auto expected_confirm10 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -408,10 +408,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive__exp
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scripthash.subscribe","params":["{}"]}})" "\n";
     const auto response1 = get(std::format(request, found_scripthash));
     REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
+    BC_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
 
     // Confirming block 11 also makes block 12 rooted.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
     const auto expected_confirm11 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -421,10 +421,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive__exp
 
     const auto response2 = get(std::format(request, found_scripthash));
     REQUIRE_NO_THROW_TRUE(response2.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response2.at("result").as_string(), expected_confirm11);
+    BC_REQUIRE_EQUAL(response2.at("result").as_string(), expected_confirm11);
 
     // Confirming block 12 only makes block 12 confirmed.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
     const auto expected_confirm12 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -434,23 +434,23 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive__exp
 
     const auto response3 = get(std::format(request, found_scripthash));
     REQUIRE_NO_THROW_TRUE(response3.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response3.at("result").as_string(), expected_confirm12);
+    BC_REQUIRE_EQUAL(response3.at("result").as_string(), expected_confirm12);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_notify__expected)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_notify__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
 
     // Confirming block 10 also makes block 11 to rooted.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
     const auto expected_confirm10 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -461,10 +461,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_noti
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scripthash.subscribe","params":["{}"]}})" "\n";
     const auto response1 = get(std::format(request, found_scripthash));
     REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
+    BC_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
 
     // Confirming block 11 also makes block 12 rooted.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
     const auto expected_confirm11 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -478,17 +478,17 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_noti
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
     REQUIRE_NO_THROW_TRUE(notification1.at("params").is_array());
-    BOOST_REQUIRE_EQUAL(notification1.at("method").as_string(), "blockchain.scripthash.subscribe");
+    BC_REQUIRE_EQUAL(notification1.at("method").as_string(), "blockchain.scripthash.subscribe");
 
     const auto& params1 = notification1.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params1.size(), 2u);
-    BOOST_REQUIRE(params1.at(0).is_string());
-    BOOST_REQUIRE(params1.at(1).is_string());
-    BOOST_REQUIRE_EQUAL(params1.at(0).as_string(), found_scripthash);
-    BOOST_REQUIRE_EQUAL(params1.at(1).as_string(), expected_confirm11);
+    BC_REQUIRE_EQUAL(params1.size(), 2u);
+    BC_REQUIRE(params1.at(0).is_string());
+    BC_REQUIRE(params1.at(1).is_string());
+    BC_REQUIRE_EQUAL(params1.at(0).as_string(), found_scripthash);
+    BC_REQUIRE_EQUAL(params1.at(1).as_string(), expected_confirm11);
 
     // Confirming block 12 only makes block 12 confirmed.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
     const auto expected_confirm12 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -502,22 +502,22 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__progressive_noti
     const auto notification2 = receive();
     REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
     REQUIRE_NO_THROW_TRUE(notification2.at("params").is_array());
-    BOOST_REQUIRE_EQUAL(notification2.at("method").as_string(), "blockchain.scripthash.subscribe");
+    BC_REQUIRE_EQUAL(notification2.at("method").as_string(), "blockchain.scripthash.subscribe");
 
     const auto& params2 = notification2.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params2.size(), 2u);
-    BOOST_REQUIRE(params2.at(0).is_string());
-    BOOST_REQUIRE(params2.at(1).is_string());
-    BOOST_REQUIRE_EQUAL(params2.at(0).as_string(), found_scripthash);
-    BOOST_REQUIRE_EQUAL(params2.at(1).as_string(), expected_confirm12);
+    BC_REQUIRE_EQUAL(params2.size(), 2u);
+    BC_REQUIRE(params2.at(0).is_string());
+    BC_REQUIRE(params2.at(1).is_string());
+    BC_REQUIRE_EQUAL(params2.at(0).as_string(), found_scripthash);
+    BC_REQUIRE_EQUAL(params2.at(1).as_string(), expected_confirm12);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__transaction_notify__expected)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__transaction_notify__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto expected_initial = encode_base16(sha256_hash(encode_hash(hash10) + ":10:"));
@@ -525,9 +525,9 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__transaction_noti
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scripthash.subscribe","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, found_scripthash));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), expected_initial);
+    BC_REQUIRE_EQUAL(response.at("result").as_string(), expected_initial);
 
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
     const auto expected_rooted11 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -539,80 +539,80 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__transaction_noti
     const auto notification = receive();
     REQUIRE_NO_THROW_TRUE(notification.at("method").is_string());
     REQUIRE_NO_THROW_TRUE(notification.at("params").is_array());
-    BOOST_REQUIRE_EQUAL(notification.at("method").as_string(), "blockchain.scripthash.subscribe");
+    BC_REQUIRE_EQUAL(notification.at("method").as_string(), "blockchain.scripthash.subscribe");
 
     const auto& params = notification.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params.size(), 2u);
-    BOOST_REQUIRE(params.at(0).is_string());
-    BOOST_REQUIRE(params.at(1).is_string());
-    BOOST_REQUIRE_EQUAL(params.at(0).as_string(), found_scripthash);
-    BOOST_REQUIRE_EQUAL(params.at(1).as_string(), expected_rooted11);
+    BC_REQUIRE_EQUAL(params.size(), 2u);
+    BC_REQUIRE(params.at(0).is_string());
+    BC_REQUIRE(params.at(1).is_string());
+    BC_REQUIRE_EQUAL(params.at(0).as_string(), found_scripthash);
+    BC_REQUIRE_EQUAL(params.at(1).as_string(), expected_rooted11);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__history_exceeds_maximum__excessive_history)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__history_exceeds_maximum__excessive_history)
 {
     config_.server.electrum.maximum_history = 1;
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scripthash.subscribe","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, found_scripthash));
-    BOOST_REQUIRE_EQUAL(result, excessive_history.value());
+    BC_REQUIRE_EQUAL(result, excessive_history.value());
 }
 
 // blockchain.scripthash.unsubscribe
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__insufficient_version__wrong_version)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__insufficient_version__wrong_version)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4_1));
+    BC_REQUIRE(handshake(electrum::version::v1_4_1));
 
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scripthash.unsubscribe","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_scripthash));
-    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+    BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__missing_arguments__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4_2));
+    BC_REQUIRE(handshake(electrum::version::v1_4_2));
 
     const auto response = get(R"({"id":1102,"method":"blockchain.scripthash.unsubscribe","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__invalid_hash__invalid_argument)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__invalid_hash__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4_2));
+    BC_REQUIRE(handshake(electrum::version::v1_4_2));
 
     const auto result = get_error(R"({"id":1103,"method":"blockchain.scripthash.unsubscribe","params":["4242"]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+    BC_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__extra_argument__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__extra_argument__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4_2));
+    BC_REQUIRE(handshake(electrum::version::v1_4_2));
 
     constexpr auto request = R"({{"id":1104,"method":"blockchain.scripthash.unsubscribe","params":["{}",-1]}})" "\n";
     const auto response = get(std::format(request, bogus_scripthash));
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__unsubscribed__false)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__unsubscribed__false)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4_2));
+    BC_REQUIRE(handshake(electrum::version::v1_4_2));
 
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scripthash.unsubscribe","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, bogus_scripthash));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_bool());
-    BOOST_REQUIRE(!response.at("result").as_bool());
+    BC_REQUIRE(!response.at("result").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__subscribed__true)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__subscribed__true)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4_2));
+    BC_REQUIRE(handshake(electrum::version::v1_4_2));
 
     constexpr auto request1 = R"({{"id":1101,"method":"blockchain.scripthash.subscribe","params":["{}"]}})" "\n";
     const auto response1 = get(std::format(request1, found_scripthash));
@@ -623,77 +623,77 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__subscribed__tr
     REQUIRE_NO_THROW_TRUE(response2.at("result").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__pipelined_request__own_ids)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__pipelined_request__own_ids)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_4_2));
+    BC_REQUIRE(handshake(electrum::version::v1_4_2));
 
     constexpr auto request = R"({{"id":1110,"method":"blockchain.scripthash.unsubscribe","params":["{}"]}})" "\n" R"({{"id":1111,"method":"server.ping","params":[]}})" "\n";
     const auto response1 = get(std::format(request, bogus_scripthash));
     const auto response2 = receive();
-    BOOST_REQUIRE_MESSAGE(response1.is_object() && response1.as_object().contains("result"), serialize(response1));
-    BOOST_REQUIRE_MESSAGE(response2.is_object() && response2.as_object().contains("result"), serialize(response2));
-    BOOST_REQUIRE_EQUAL(response1.at("id").as_int64(), 1110);
-    BOOST_REQUIRE_EQUAL(response2.at("id").as_int64(), 1111);
+    BC_REQUIRE_MESSAGE(response1.is_object() && response1.as_object().contains("result"), serialize(response1));
+    BC_REQUIRE_MESSAGE(response2.is_object() && response2.as_object().contains("result"), serialize(response2));
+    BC_REQUIRE_EQUAL(response1.at("id").as_int64(), 1110);
+    BC_REQUIRE_EQUAL(response2.at("id").as_int64(), 1111);
     REQUIRE_NO_THROW_TRUE(response1.at("result").is_bool());
     REQUIRE_NO_THROW_TRUE(response2.at("result").is_null());
 }
 
 // blockchain.scriptpubkey.subscribe
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__insufficient_version__wrong_version)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__insufficient_version__wrong_version)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BC_REQUIRE(handshake(electrum::version::v1_6));
 
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scriptpubkey.subscribe","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_script));
-    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+    BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__missing_arguments__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":1102,"method":"blockchain.scriptpubkey.subscribe","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__invalid_script_encoding__invalid_argument)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__invalid_script_encoding__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto result = get_error(R"({"id":1103,"method":"blockchain.scriptpubkey.subscribe","params":["not_hex"]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+    BC_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__extra_argument__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__extra_argument__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     constexpr auto request = R"({{"id":1104,"method":"blockchain.scriptpubkey.subscribe","params":["{}",42]}})" "\n";
     const auto response = get(std::format(request, bogus_scripthash));
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__bogus_script__null)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__bogus_script__null)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_0));
+    BC_REQUIRE(handshake(electrum::version::v1_0));
 
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scriptpubkey.subscribe","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, bogus_script));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__initialization__expected_status)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__initialization__expected_status)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     // This validates the hash accumulator copy in get_scripthash_history() and incorporates
     // confirmed, rooted and unrooted transactions, duplicates, and sort.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
@@ -707,20 +707,20 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__initialization
 
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scriptpubkey.subscribe","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, found_script));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response.at("result").as_string(), expected_initial);
+    BC_REQUIRE_EQUAL(response.at("result").as_string(), expected_initial);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__repeat_call__idempotent)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__repeat_call__idempotent)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
 
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
@@ -735,34 +735,34 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__repeat_call__i
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scriptpubkey.subscribe","params":["{}"]}})" "\n";
     const auto response1 = get(std::format(request, found_script));
     REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_initial);
+    BC_REQUIRE_EQUAL(response1.at("result").as_string(), expected_initial);
 
     const auto response2 = get(std::format(request, found_script));
     REQUIRE_NO_THROW_TRUE(response2.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response2.at("result").as_string(), expected_initial);
+    BC_REQUIRE_EQUAL(response2.at("result").as_string(), expected_initial);
 
     // Testing below a third subscription to ensure that duplicates are merged.
-    BOOST_REQUIRE_LE(config_.server.electrum.maximum_subscriptions, 2u);
+    BC_REQUIRE_LE(config_.server.electrum.maximum_subscriptions, 2u);
 
     const auto response3 = get(std::format(request, found_script));
     REQUIRE_NO_THROW_TRUE(response3.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response3.at("result").as_string(), expected_initial);
+    BC_REQUIRE_EQUAL(response3.at("result").as_string(), expected_initial);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive__expected)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
 
     // Confirming block 10 also makes block 11 to rooted.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
     const auto expected_confirm10 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -773,10 +773,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive__e
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scriptpubkey.subscribe","params":["{}"]}})" "\n";
     const auto response1 = get(std::format(request, found_script));
     REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
+    BC_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
 
     // Confirming block 11 also makes block 12 rooted.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
     const auto expected_confirm11 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -786,10 +786,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive__e
 
     const auto response2 = get(std::format(request, found_script));
     REQUIRE_NO_THROW_TRUE(response2.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response2.at("result").as_string(), expected_confirm11);
+    BC_REQUIRE_EQUAL(response2.at("result").as_string(), expected_confirm11);
 
     // Confirming block 12 only makes block 12 confirmed.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
     const auto expected_confirm12 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -799,23 +799,23 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive__e
 
     const auto response3 = get(std::format(request, found_script));
     REQUIRE_NO_THROW_TRUE(response3.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response3.at("result").as_string(), expected_confirm12);
+    BC_REQUIRE_EQUAL(response3.at("result").as_string(), expected_confirm12);
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_notify__expected)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_notify__expected)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     // This validates cursor/midstate consistency.
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
 
     // Confirming block 10 also makes block 11 to rooted.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
     const auto expected_confirm10 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -826,10 +826,10 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_no
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scriptpubkey.subscribe","params":["{}"]}})" "\n";
     const auto response1 = get(std::format(request, found_script));
     REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
+    BC_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirm10);
 
     // Confirming block 11 also makes block 12 rooted.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
     const auto expected_confirm11 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -843,17 +843,17 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_no
     const auto notification1 = receive();
     REQUIRE_NO_THROW_TRUE(notification1.at("method").is_string());
     REQUIRE_NO_THROW_TRUE(notification1.at("params").is_array());
-    BOOST_REQUIRE_EQUAL(notification1.at("method").as_string(), "blockchain.scriptpubkey.subscribe");
+    BC_REQUIRE_EQUAL(notification1.at("method").as_string(), "blockchain.scriptpubkey.subscribe");
 
     const auto& params1 = notification1.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params1.size(), 2u);
-    BOOST_REQUIRE(params1.at(0).is_string());
-    BOOST_REQUIRE(params1.at(1).is_string());
-    BOOST_REQUIRE_EQUAL(params1.at(0).as_string(), found_scripthash);
-    BOOST_REQUIRE_EQUAL(params1.at(1).as_string(), expected_confirm11);
+    BC_REQUIRE_EQUAL(params1.size(), 2u);
+    BC_REQUIRE(params1.at(0).is_string());
+    BC_REQUIRE(params1.at(1).is_string());
+    BC_REQUIRE_EQUAL(params1.at(0).as_string(), found_scripthash);
+    BC_REQUIRE_EQUAL(params1.at(1).as_string(), expected_confirm11);
 
     // Confirming block 12 only makes block 12 confirmed.
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
     const auto expected_confirm12 = encode_base16(sha256_hash
     (
         encode_hash(hash10) + ":10:" +
@@ -867,66 +867,66 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__progressive_no
     const auto notification2 = receive();
     REQUIRE_NO_THROW_TRUE(notification2.at("method").is_string());
     REQUIRE_NO_THROW_TRUE(notification2.at("params").is_array());
-    BOOST_REQUIRE_EQUAL(notification2.at("method").as_string(), "blockchain.scriptpubkey.subscribe");
+    BC_REQUIRE_EQUAL(notification2.at("method").as_string(), "blockchain.scriptpubkey.subscribe");
 
     const auto& params2 = notification2.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params2.size(), 2u);
-    BOOST_REQUIRE(params2.at(0).is_string());
-    BOOST_REQUIRE(params2.at(1).is_string());
-    BOOST_REQUIRE_EQUAL(params2.at(0).as_string(), found_scripthash);
-    BOOST_REQUIRE_EQUAL(params2.at(1).as_string(), expected_confirm12);
+    BC_REQUIRE_EQUAL(params2.size(), 2u);
+    BC_REQUIRE(params2.at(0).is_string());
+    BC_REQUIRE(params2.at(1).is_string());
+    BC_REQUIRE_EQUAL(params2.at(0).as_string(), found_scripthash);
+    BC_REQUIRE_EQUAL(params2.at(1).as_string(), expected_confirm12);
 }
 
 // blockchain.scriptpubkey.unsubscribe
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__insufficient_version__wrong_version)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__insufficient_version__wrong_version)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_6));
+    BC_REQUIRE(handshake(electrum::version::v1_6));
 
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scriptpubkey.unsubscribe","params":["{}"]}})" "\n";
     const auto result = get_error(std::format(request, bogus_script));
-    BOOST_REQUIRE_EQUAL(result, wrong_version.value());
+    BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__missing_arguments__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":1102,"method":"blockchain.scriptpubkey.unsubscribe","params":[]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__invalid_script_encoding__invalid_argument)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__invalid_script_encoding__invalid_argument)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto result = get_error(R"({"id":1103,"method":"blockchain.scriptpubkey.unsubscribe","params":["not_hex"]})" "\n");
-    BOOST_REQUIRE_EQUAL(result, invalid_argument.value());
+    BC_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__extra_argument__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__extra_argument__dropped)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     constexpr auto request = R"({{"id":1104,"method":"blockchain.scriptpubkey.unsubscribe","params":["{}",-1]}})" "\n";
     const auto response = get(std::format(request, bogus_scripthash));
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__unsubscribed__false)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__unsubscribed__false)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scriptpubkey.unsubscribe","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, bogus_script));
-    BOOST_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_bool());
-    BOOST_REQUIRE(!response.at("result").as_bool());
+    BC_REQUIRE(!response.at("result").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__subscribed__true)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__subscribed__true)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_7));
+    BC_REQUIRE(handshake(electrum::version::v1_7));
 
     constexpr auto request1 = R"({{"id":1101,"method":"blockchain.scriptpubkey.subscribe","params":["{}"]}})" "\n";
     const auto response1 = get(std::format(request1, found_script));
@@ -937,20 +937,20 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__subscribed__
     REQUIRE_NO_THROW_TRUE(response2.at("result").as_bool());
 }
 
-BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__reorganized_notify__status_recomputed_clean)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__reorganized_notify__status_recomputed_clean)
 {
-    BOOST_REQUIRE(handshake(electrum::version::v1_1));
+    BC_REQUIRE(handshake(electrum::version::v1_1));
 
-    BOOST_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BOOST_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
     const auto hash10 = test::mock_block10.transactions_ptr()->at(1)->hash(false);
     const auto hash11 = test::mock_block11.transactions_ptr()->at(0)->hash(false);
     const auto hash12 = test::mock_block12.transactions_ptr()->at(0)->hash(false);
 
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
-    BOOST_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block12.hash()), true));
 
     const auto expected_confirmed = encode_base16(sha256_hash
     (
@@ -962,7 +962,7 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__reorganized_noti
     constexpr auto request = R"({{"id":1101,"method":"blockchain.scripthash.subscribe","params":["{}"]}})" "\n";
     const auto response1 = get(std::format(request, found_scripthash));
     REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
-    BOOST_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirmed);
+    BC_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirmed);
 
     // Reorg resets the accumulator and clears the cursor; the following organized
     // event re-folds the unchanged history and must reproduce the same status.
@@ -972,13 +972,13 @@ BOOST_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__reorganized_noti
     const auto notification = receive();
     REQUIRE_NO_THROW_TRUE(notification.at("method").is_string());
     REQUIRE_NO_THROW_TRUE(notification.at("params").is_array());
-    BOOST_REQUIRE_EQUAL(notification.at("method").as_string(), "blockchain.scripthash.subscribe");
+    BC_REQUIRE_EQUAL(notification.at("method").as_string(), "blockchain.scripthash.subscribe");
 
     const auto& params = notification.at("params").as_array();
-    BOOST_REQUIRE_EQUAL(params.size(), 2u);
-    BOOST_REQUIRE(params.at(0).is_string());
-    BOOST_REQUIRE(params.at(1).is_string());
-    BOOST_REQUIRE_EQUAL(params.at(1).as_string(), expected_confirmed);
+    BC_REQUIRE_EQUAL(params.size(), 2u);
+    BC_REQUIRE(params.at(0).is_string());
+    BC_REQUIRE(params.at(1).is_string());
+    BC_REQUIRE_EQUAL(params.at(1).as_string(), expected_confirmed);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

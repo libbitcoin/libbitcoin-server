@@ -35,7 +35,7 @@ namespace server {
 using namespace bc::system;
 using namespace bc::system::config;
 namespace table = bc::database::table;
-using namespace boost::program_options;
+using namespace bc::system::options;
 
 // Initialize configuration using defaults of the given context.
 parser::parser(system::chain::selection context,
@@ -2169,7 +2169,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "node.compact_missing_percent",
-        setting<uint16_t>(&configured.node.compact_missing_percent),
+        setting<uint8_t>(&configured.node.compact_missing_percent),
         "Maximum percent of a compact block not pooled to fill it, defaults to {}."
     )
     (
@@ -2216,7 +2216,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "database.interval_depth",
-        setting<uint16_t>(&configured.database.interval_depth),
+        setting<uint8_t>(&configured.database.interval_depth),
         "The interval depth for merkle proof optimization, defaults to {}."
     )
 
@@ -2724,9 +2724,8 @@ BC_POP_WARNING()
         if (!file)
             configured.file = {};
     }
-    catch (const boost::program_options::error& e)
+    catch (const option_exception& e)
     {
-        // This is obtained from boost, which circumvents our localization.
         error << format_invalid_parameter(e.what()) << std::endl;
         return false;
     }

@@ -30,26 +30,26 @@ static std::string as_text(const system::json::value& value) NOEXCEPT
 // ----------------------------------------------------------------------------
 // The serializer moved to system, this guards the fields consumed by rpc.
 
-BOOST_AUTO_TEST_SUITE(bitcoind_header_to_bitcoind_tests)
+BC_AUTO_TEST_SUITE(bitcoind_header_to_bitcoind_tests)
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__header_to_bitcoind__block1_header__maps_fields)
+BC_AUTO_TEST_CASE(bitcoind_json__header_to_bitcoind__block1_header__maps_fields)
 {
     const auto& header = test::block1.header();
     const auto out = system::json::value_from(bitcoind(header)).as_object();
 
-    BOOST_REQUIRE_EQUAL(as_text(out.at("hash")), encode_hash(header.hash()));
-    BOOST_REQUIRE_EQUAL(out.at("version").to_number<int64_t>(), header.version());
-    BOOST_REQUIRE_EQUAL(as_text(out.at("versionHex")), encode_base16(to_big_endian(header.version())));
-    BOOST_REQUIRE_EQUAL(as_text(out.at("merkleroot")), encode_hash(header.merkle_root()));
-    BOOST_REQUIRE_EQUAL(out.at("time").to_number<uint64_t>(), header.timestamp());
-    BOOST_REQUIRE_EQUAL(out.at("nonce").to_number<uint64_t>(), header.nonce());
-    BOOST_REQUIRE_EQUAL(as_text(out.at("bits")), encode_base16(to_big_endian(header.bits())));
-    BOOST_REQUIRE(out.at("difficulty").is_number());
-    BOOST_REQUIRE(!out.contains("height"));
-    BOOST_REQUIRE(!out.contains("confirmations"));
+    BC_REQUIRE_EQUAL(as_text(out.at("hash")), encode_hash(header.hash()));
+    BC_REQUIRE_EQUAL(out.at("version").to_number<int64_t>(), header.version());
+    BC_REQUIRE_EQUAL(as_text(out.at("versionHex")), encode_base16(to_big_endian(header.version())));
+    BC_REQUIRE_EQUAL(as_text(out.at("merkleroot")), encode_hash(header.merkle_root()));
+    BC_REQUIRE_EQUAL(out.at("time").to_number<uint64_t>(), header.timestamp());
+    BC_REQUIRE_EQUAL(out.at("nonce").to_number<uint64_t>(), header.nonce());
+    BC_REQUIRE_EQUAL(as_text(out.at("bits")), encode_base16(to_big_endian(header.bits())));
+    BC_REQUIRE(out.at("difficulty").is_number());
+    BC_REQUIRE(!out.contains("height"));
+    BC_REQUIRE(!out.contains("confirmations"));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
 // ----------------------------------------------------------------------------
 
@@ -75,100 +75,113 @@ struct bitcoind_json_setup_fixture
         },
         query_{ store_ }
     {
-        BOOST_REQUIRE_MESSAGE(test::clear(test::directory), "json setup");
-        config_.database.interval_depth = 2;
+        try
+        {
+            BC_REQUIRE_MESSAGE(test::clear(test::directory), "json setup");
+            config_.database.interval_depth = 2;
 
-        const auto ec = store_.create([](auto, auto) {});
-        BOOST_REQUIRE_MESSAGE(!ec, ec.message());
-        BOOST_REQUIRE_MESSAGE(test::setup_ten_block_store(query_),
-            "json initialize");
+            const auto ec = store_.create([](auto, auto) {});
+            BC_REQUIRE_MESSAGE(!ec, ec.message());
+            BC_REQUIRE_MESSAGE(test::setup_ten_block_store(query_), "json initialize");
+        }
+        catch (...)
+        {
+            teardown();
+            throw;
+        }
     }
 
     ~bitcoind_json_setup_fixture()
     {
-        const auto ec = store_.close([](auto, auto) {});
-        BOOST_WARN_MESSAGE(!ec, ec.message());
-        BOOST_WARN_MESSAGE(test::clear(test::directory), "json cleanup");
+        teardown();
     }
 
     configuration config_;
     test::store_t store_;
     test::query_t query_;
+
+private:
+    void teardown()
+    {
+        const auto ec = store_.close([](auto, auto) {});
+        BC_WARN_MESSAGE(!ec, ec.message());
+        BC_WARN_MESSAGE(test::clear(test::directory), "json cleanup");
+    }
 };
 
-BOOST_FIXTURE_TEST_SUITE(bitcoind_json_tests, bitcoind_json_setup_fixture)
+BC_FIXTURE_TEST_SUITE(bitcoind_json_tests, bitcoind_json_setup_fixture)
 
 // chain_name
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__chain_name__mainnet_genesis__main)
+BC_AUTO_TEST_CASE(bitcoind_json__chain_name__mainnet_genesis__main)
 {
-    BOOST_REQUIRE_EQUAL(chain_name(query_), "main");
+    BC_REQUIRE_EQUAL(chain_name(query_), "main");
 }
 
 // median_time
 
 // The median of mainnet block 0..5 timestamps (self-inclusive, as bitcoind).
-BOOST_AUTO_TEST_CASE(bitcoind_json__median_time__self_inclusive_window)
+BC_AUTO_TEST_CASE(bitcoind_json__median_time__self_inclusive_window)
 {
     const system::settings settings{ chain::selection::mainnet };
     const auto link = query_.to_header(test::block5_hash);
-    BOOST_REQUIRE_EQUAL(median_time(query_, settings, link), 1231470173u);
+    BC_REQUIRE_EQUAL(median_time(query_, settings, link), 1231470173u);
 }
 
 // inject_block_context
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__middle__height_confirmations_siblings)
+BC_AUTO_TEST_CASE(bitcoind_json__inject_block_context__middle__height_confirmations_siblings)
 {
     const system::settings settings{ chain::selection::mainnet };
     const auto link = query_.to_header(test::block5_hash);
     const auto header = query_.get_header(link);
-    BOOST_REQUIRE(header);
+    BC_REQUIRE(header);
 
     system::json::object out{};
     inject_block_context(out, query_, settings, link, *header);
 
-    BOOST_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 5u);
-    BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 5);
-    BOOST_REQUIRE_EQUAL(out.at("mediantime").to_number<uint32_t>(), 1231470173u);
-    BOOST_REQUIRE_EQUAL(as_text(out.at("previousblockhash")), encode_hash(test::block4_hash));
-    BOOST_REQUIRE_EQUAL(as_text(out.at("nextblockhash")), encode_hash(test::block6_hash));
+    BC_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 5u);
+    BC_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 5);
+    BC_REQUIRE_EQUAL(out.at("mediantime").to_number<uint32_t>(), 1231470173u);
+    BC_REQUIRE_EQUAL(as_text(out.at("previousblockhash")), encode_hash(test::block4_hash));
+    BC_REQUIRE_EQUAL(as_text(out.at("nextblockhash")), encode_hash(test::block6_hash));
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__genesis__no_previous)
+BC_AUTO_TEST_CASE(bitcoind_json__inject_block_context__genesis__no_previous)
 {
     const system::settings settings{ chain::selection::mainnet };
     const auto link = query_.to_header(test::block0_hash);
     const auto header = query_.get_header(link);
-    BOOST_REQUIRE(header);
+    BC_REQUIRE(header);
 
     system::json::object out{};
     inject_block_context(out, query_, settings, link, *header);
 
-    BOOST_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 0u);
-    BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 10);
-    BOOST_REQUIRE(!out.contains("previousblockhash"));
-    BOOST_REQUIRE_EQUAL(as_text(out.at("nextblockhash")), encode_hash(test::block1_hash));
+    BC_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 0u);
+    BC_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 10);
+    BC_REQUIRE(!out.contains("previousblockhash"));
+    BC_REQUIRE_EQUAL(as_text(out.at("nextblockhash")), encode_hash(test::block1_hash));
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__top__no_next)
+BC_AUTO_TEST_CASE(bitcoind_json__inject_block_context__top__no_next)
 {
     const system::settings settings{ chain::selection::mainnet };
     const auto link = query_.to_header(test::block9_hash);
     const auto header = query_.get_header(link);
-    BOOST_REQUIRE(header);
+    BC_REQUIRE(header);
 
     system::json::object out{};
     inject_block_context(out, query_, settings, link, *header);
 
-    BOOST_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 9u);
-    BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 1);
-    BOOST_REQUIRE_EQUAL(as_text(out.at("previousblockhash")), encode_hash(test::block8_hash));
-    BOOST_REQUIRE(!out.contains("nextblockhash"));
+    BC_REQUIRE_EQUAL(out.at("height").to_number<uint64_t>(), 9u);
+    BC_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 1);
+    BC_REQUIRE_EQUAL(as_text(out.at("previousblockhash")), encode_hash(test::block8_hash));
+    BC_REQUIRE(!out.contains("nextblockhash"));
 }
 
 // inject_tx_context
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__inject_tx_context__confirmed_coinbase__block_context)
+BC_AUTO_TEST_CASE(bitcoind_json__inject_tx_context__confirmed_coinbase__block_context)
 {
     const auto txid = test::block1.transactions_ptr()->front()->hash(false);
     const auto link = query_.to_tx(txid);
@@ -176,60 +189,60 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_tx_context__confirmed_coinbase__block
     system::json::object out{};
     inject_tx_context(out, query_, link);
 
-    BOOST_REQUIRE(out.at("in_active_chain").as_bool());
-    BOOST_REQUIRE_EQUAL(as_text(out.at("blockhash")), encode_hash(test::block1_hash));
-    BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 9);
-    BOOST_REQUIRE_EQUAL(out.at("blocktime").to_number<uint64_t>(), test::block1.header().timestamp());
+    BC_REQUIRE(out.at("in_active_chain").as_bool());
+    BC_REQUIRE_EQUAL(as_text(out.at("blockhash")), encode_hash(test::block1_hash));
+    BC_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 9);
+    BC_REQUIRE_EQUAL(out.at("blocktime").to_number<uint64_t>(), test::block1.header().timestamp());
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__inject_tx_context__unknown__zero_confirmations)
+BC_AUTO_TEST_CASE(bitcoind_json__inject_tx_context__unknown__zero_confirmations)
 {
     const auto link = query_.to_tx(null_hash);
 
     system::json::object out{};
     inject_tx_context(out, query_, link);
 
-    BOOST_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 0);
-    BOOST_REQUIRE(!out.contains("blockhash"));
-    BOOST_REQUIRE(!out.contains("in_active_chain"));
+    BC_REQUIRE_EQUAL(out.at("confirmations").to_number<int64_t>(), 0);
+    BC_REQUIRE(!out.contains("blockhash"));
+    BC_REQUIRE(!out.contains("in_active_chain"));
 }
 
 // inject_block_context (unknown)
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__inject_block_context__unknown__unchanged)
+BC_AUTO_TEST_CASE(bitcoind_json__inject_block_context__unknown__unchanged)
 {
     const system::settings settings{ chain::selection::mainnet };
     system::json::object out{};
     inject_block_context(out, query_, settings, database::header_link{}, test::block1.header());
-    BOOST_REQUIRE(out.empty());
+    BC_REQUIRE(out.empty());
 }
 
 // chain_states_entry
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__chain_states_entry__top__expected)
+BC_AUTO_TEST_CASE(bitcoind_json__chain_states_entry__top__expected)
 {
     const auto link = query_.to_header(test::block9_hash);
     const auto out = chain_states_entry(query_, link, 1.0, true);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(out.at("blocks").value()), 9u);
-    BOOST_REQUIRE_EQUAL(std::get<network::rpc::string_t>(out.at("bestblockhash").value()), encode_hash(test::block9_hash));
-    BOOST_REQUIRE_EQUAL(std::get<network::rpc::string_t>(out.at("bits").value()), "1d00ffff");
-    BOOST_REQUIRE(std::get<bool>(out.at("validated").value()));
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(out.at("blocks").value()), 9u);
+    BC_REQUIRE_EQUAL(std::get<network::rpc::string_t>(out.at("bestblockhash").value()), encode_hash(test::block9_hash));
+    BC_REQUIRE_EQUAL(std::get<network::rpc::string_t>(out.at("bits").value()), "1d00ffff");
+    BC_REQUIRE(std::get<bool>(out.at("validated").value()));
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__chain_states_entry__unknown__empty)
+BC_AUTO_TEST_CASE(bitcoind_json__chain_states_entry__unknown__empty)
 {
-    BOOST_REQUIRE(chain_states_entry(query_, database::header_link{}, 1.0, true).empty());
+    BC_REQUIRE(chain_states_entry(query_, database::header_link{}, 1.0, true).empty());
 }
 
 // inject_activity
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__inject_activity__watched_output__receive_and_spend)
+BC_AUTO_TEST_CASE(bitcoind_json__inject_activity__watched_output__receive_and_spend)
 {
     using namespace network::rpc;
-    BOOST_REQUIRE(query_.set(test::mock_block13, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.set(test::mock_block13, database::context{ 0, 10, 0 }, {}, false, false));
     const auto block = query_.get_block(query_.to_header(test::mock_block13.hash()), false);
-    BOOST_REQUIRE(block);
-    BOOST_REQUIRE(query_.populate_without_metadata(*block));
+    BC_REQUIRE(block);
+    BC_REQUIRE(query_.populate_without_metadata(*block));
 
     const auto& txs = *test::mock_block13.transactions_ptr();
     const auto blockhash = encode_hash(test::mock_block13.hash());
@@ -238,35 +251,35 @@ BOOST_AUTO_TEST_CASE(bitcoind_json__inject_activity__watched_output__receive_and
 
     array_t out{};
     inject_activity(out, *block, 10, blockhash, watch, 0x00, 0x05, "bc", 0);
-    BOOST_REQUIRE_EQUAL(out.size(), 2u);
+    BC_REQUIRE_EQUAL(out.size(), 2u);
 
     const auto& receive = std::get<object_t>(out.at(0).value());
-    BOOST_REQUIRE_EQUAL(std::get<string_t>(receive.at("type").value()), "receive");
-    BOOST_REQUIRE_EQUAL(std::get<number_t>(receive.at("amount").value()), 9 / 100'000'000.0);
-    BOOST_REQUIRE_EQUAL(std::get<string_t>(receive.at("blockhash").value()), blockhash);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(receive.at("height").value()), 10u);
-    BOOST_REQUIRE_EQUAL(std::get<string_t>(receive.at("txid").value()), encode_hash(test::mock_tx13.hash(false)));
-    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(receive.at("vout").value()), 0u);
+    BC_REQUIRE_EQUAL(std::get<string_t>(receive.at("type").value()), "receive");
+    BC_REQUIRE_EQUAL(std::get<number_t>(receive.at("amount").value()), 9 / 100'000'000.0);
+    BC_REQUIRE_EQUAL(std::get<string_t>(receive.at("blockhash").value()), blockhash);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(receive.at("height").value()), 10u);
+    BC_REQUIRE_EQUAL(std::get<string_t>(receive.at("txid").value()), encode_hash(test::mock_tx13.hash(false)));
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(receive.at("vout").value()), 0u);
 
     const auto& spend = std::get<object_t>(out.at(1).value());
-    BOOST_REQUIRE_EQUAL(std::get<string_t>(spend.at("type").value()), "spend");
-    BOOST_REQUIRE_EQUAL(std::get<number_t>(spend.at("amount").value()), 9 / 100'000'000.0);
-    BOOST_REQUIRE_EQUAL(std::get<string_t>(spend.at("blockhash").value()), blockhash);
-    BOOST_REQUIRE_EQUAL(std::get<uint64_t>(spend.at("height").value()), 10u);
-    BOOST_REQUIRE_EQUAL(std::get<string_t>(spend.at("spend_txid").value()), encode_hash(txs.back()->hash(false)));
-    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(spend.at("spend_vin").value()), 0u);
-    BOOST_REQUIRE_EQUAL(std::get<string_t>(spend.at("prevout_txid").value()), encode_hash(test::mock_tx13.hash(false)));
-    BOOST_REQUIRE_EQUAL(std::get<uint32_t>(spend.at("prevout_vout").value()), 0u);
+    BC_REQUIRE_EQUAL(std::get<string_t>(spend.at("type").value()), "spend");
+    BC_REQUIRE_EQUAL(std::get<number_t>(spend.at("amount").value()), 9 / 100'000'000.0);
+    BC_REQUIRE_EQUAL(std::get<string_t>(spend.at("blockhash").value()), blockhash);
+    BC_REQUIRE_EQUAL(std::get<uint64_t>(spend.at("height").value()), 10u);
+    BC_REQUIRE_EQUAL(std::get<string_t>(spend.at("spend_txid").value()), encode_hash(txs.back()->hash(false)));
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(spend.at("spend_vin").value()), 0u);
+    BC_REQUIRE_EQUAL(std::get<string_t>(spend.at("prevout_txid").value()), encode_hash(test::mock_tx13.hash(false)));
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(spend.at("prevout_vout").value()), 0u);
 
     const auto& prevout_spk = std::get<json_t>(spend.at("prevout_spk").value());
-    BOOST_REQUIRE_EQUAL(as_text(prevout_spk.at("address")), "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM");
+    BC_REQUIRE_EQUAL(as_text(prevout_spk.at("address")), "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM");
 }
 
-BOOST_AUTO_TEST_CASE(bitcoind_json__inject_activity__unwatched__empty)
+BC_AUTO_TEST_CASE(bitcoind_json__inject_activity__unwatched__empty)
 {
     network::rpc::array_t out{};
     inject_activity(out, test::block1, 1, encode_hash(test::block1_hash), {}, 0x00, 0x05, "bc", 0);
-    BOOST_REQUIRE(out.empty());
+    BC_REQUIRE(out.empty());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()

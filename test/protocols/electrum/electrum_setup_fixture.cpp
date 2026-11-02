@@ -184,12 +184,12 @@ rpc_client::status electrum_setup_fixture::options_status(
 // websocket.
 // ----------------------------------------------------------------------------
 
-network::boost_code electrum_setup_fixture::ws_upgrade()
+network::code electrum_setup_fixture::ws_upgrade()
 {
     return client_.upgrade();
 }
 
-network::boost_code electrum_setup_fixture::ws_upgrade(
+network::code electrum_setup_fixture::ws_upgrade(
     const std::string& username, const std::string& password)
 {
     return client_.upgrade(username, password);

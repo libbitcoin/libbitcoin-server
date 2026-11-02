@@ -21,269 +21,270 @@
 #include "esplora_setup_fixture.hpp"
 
 using namespace system;
-using namespace boost::beast;
+namespace http = network::http;
+namespace ws = network::ws;
 
-BOOST_FIXTURE_TEST_SUITE(esplora_tests, esplora_ten_block_setup_fixture)
+BC_FIXTURE_TEST_SUITE(esplora_tests, esplora_ten_block_setup_fixture)
 
 // tip
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__tip_height__text__expected)
+BC_AUTO_TEST_CASE(esplora__tip_height__text__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_text("/blocks/tip/height"), "9");
+    BC_REQUIRE_EQUAL(get_text("/blocks/tip/height"), "9");
 }
 
-BOOST_AUTO_TEST_CASE(esplora__tip_hash__text__expected)
+BC_AUTO_TEST_CASE(esplora__tip_hash__text__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_text("/blocks/tip/hash"), encode_hash(test::block9.hash()));
+    BC_REQUIRE_EQUAL(get_text("/blocks/tip/hash"), encode_hash(test::block9.hash()));
 }
 
 // block-height
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__block_height__genesis__expected)
+BC_AUTO_TEST_CASE(esplora__block_height__genesis__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_text("/block-height/0"), encode_hash(test::genesis.hash()));
+    BC_REQUIRE_EQUAL(get_text("/block-height/0"), encode_hash(test::genesis.hash()));
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block_height__top__expected)
+BC_AUTO_TEST_CASE(esplora__block_height__top__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_text("/block-height/9"), encode_hash(test::block9.hash()));
+    BC_REQUIRE_EQUAL(get_text("/block-height/9"), encode_hash(test::block9.hash()));
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block_height__above_top__not_found)
+BC_AUTO_TEST_CASE(esplora__block_height__above_top__not_found)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/block-height/10"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/block-height/10"), http::status::not_found);
 }
 
 // block
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__block__by_hash__expected)
+BC_AUTO_TEST_CASE(esplora__block__by_hash__expected)
 {
     const auto hash = encode_hash(test::block1.hash());
     const auto response = get_json("/block/" + hash);
-    BOOST_REQUIRE(response.is_object());
+    BC_REQUIRE(response.is_object());
 
     const auto& object = response.as_object();
-    BOOST_REQUIRE_EQUAL(object.at("id").as_string(), hash);
-    BOOST_REQUIRE_EQUAL(object.at("height").as_int64(), 1);
-    BOOST_REQUIRE_EQUAL(object.at("tx_count").as_int64(), 1);
-    BOOST_REQUIRE_EQUAL(object.at("version").as_int64(), test::block1.header().version());
-    BOOST_REQUIRE_EQUAL(object.at("timestamp").as_int64(), test::block1.header().timestamp());
-    BOOST_REQUIRE_EQUAL(object.at("bits").as_int64(), test::block1.header().bits());
-    BOOST_REQUIRE_EQUAL(object.at("nonce").as_int64(), test::block1.header().nonce());
-    BOOST_REQUIRE_EQUAL(object.at("merkle_root").as_string(), encode_hash(test::block1.header().merkle_root()));
-    BOOST_REQUIRE_EQUAL(object.at("previousblockhash").as_string(), encode_hash(test::genesis.hash()));
+    BC_REQUIRE_EQUAL(object.at("id").as_string(), hash);
+    BC_REQUIRE_EQUAL(object.at("height").as_int64(), 1);
+    BC_REQUIRE_EQUAL(object.at("tx_count").as_int64(), 1);
+    BC_REQUIRE_EQUAL(object.at("version").as_int64(), test::block1.header().version());
+    BC_REQUIRE_EQUAL(object.at("timestamp").as_int64(), test::block1.header().timestamp());
+    BC_REQUIRE_EQUAL(object.at("bits").as_int64(), test::block1.header().bits());
+    BC_REQUIRE_EQUAL(object.at("nonce").as_int64(), test::block1.header().nonce());
+    BC_REQUIRE_EQUAL(object.at("merkle_root").as_string(), encode_hash(test::block1.header().merkle_root()));
+    BC_REQUIRE_EQUAL(object.at("previousblockhash").as_string(), encode_hash(test::genesis.hash()));
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block__genesis__no_previous)
+BC_AUTO_TEST_CASE(esplora__block__genesis__no_previous)
 {
     const auto response = get_json("/block/" + encode_hash(test::genesis.hash()));
-    BOOST_REQUIRE(response.is_object());
-    BOOST_REQUIRE_EQUAL(response.as_object().at("height").as_int64(), 0);
-    BOOST_REQUIRE(!response.as_object().contains("previousblockhash"));
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE_EQUAL(response.as_object().at("height").as_int64(), 0);
+    BC_REQUIRE(!response.as_object().contains("previousblockhash"));
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block__unknown_hash__not_found)
+BC_AUTO_TEST_CASE(esplora__block__unknown_hash__not_found)
 {
     const auto response = get_status("/block/" + encode_hash(test::mock_block10.hash()));
-    BOOST_REQUIRE_EQUAL(response, http::status::not_found);
+    BC_REQUIRE_EQUAL(response, http::status::not_found);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block_raw__data__matches_size)
+BC_AUTO_TEST_CASE(esplora__block_raw__data__matches_size)
 {
     const auto hash = encode_hash(test::block1.hash());
     const auto response = get_json("/block/" + hash);
     const auto body = get_data("/block/" + hash + "/raw");
-    BOOST_REQUIRE_EQUAL(to_signed(body.size()), response.as_object().at("size").as_int64());
+    BC_REQUIRE_EQUAL(to_signed(body.size()), response.as_object().at("size").as_int64());
 }
 
 // block/header
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__block_header__text__expected)
+BC_AUTO_TEST_CASE(esplora__block_header__text__expected)
 {
     const auto body = get_text("/block/" + encode_hash(test::block1.hash()) + "/header");
-    BOOST_REQUIRE_EQUAL(body, encode_base16(test::block1.header().to_data()));
+    BC_REQUIRE_EQUAL(body, encode_base16(test::block1.header().to_data()));
 }
 
 // block/status
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__block_status__confirmed__next_best)
+BC_AUTO_TEST_CASE(esplora__block_status__confirmed__next_best)
 {
     const auto response = get_json("/block/" + encode_hash(test::block1.hash()) + "/status");
-    BOOST_REQUIRE(response.is_object());
+    BC_REQUIRE(response.is_object());
 
     const auto& object = response.as_object();
-    BOOST_REQUIRE(object.at("in_best_chain").as_bool());
-    BOOST_REQUIRE_EQUAL(object.at("next_best").as_string(), encode_hash(test::block2.hash()));
+    BC_REQUIRE(object.at("in_best_chain").as_bool());
+    BC_REQUIRE_EQUAL(object.at("next_best").as_string(), encode_hash(test::block2.hash()));
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block_status__top__no_next_best)
+BC_AUTO_TEST_CASE(esplora__block_status__top__no_next_best)
 {
     const auto response = get_json("/block/" + encode_hash(test::block9.hash()) + "/status");
-    BOOST_REQUIRE(response.is_object());
-    BOOST_REQUIRE(response.as_object().at("in_best_chain").as_bool());
-    BOOST_REQUIRE(!response.as_object().contains("next_best"));
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE(response.as_object().at("in_best_chain").as_bool());
+    BC_REQUIRE(!response.as_object().contains("next_best"));
 }
 
 // block/txids
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__block_txids__json__expected)
+BC_AUTO_TEST_CASE(esplora__block_txids__json__expected)
 {
     const auto response = get_json("/block/" + encode_hash(test::block1.hash()) + "/txids");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE_EQUAL(response.as_array().size(), 1u);
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block_txid__index_zero__matches_txids)
+BC_AUTO_TEST_CASE(esplora__block_txid__index_zero__matches_txids)
 {
     const auto hash = encode_hash(test::block1.hash());
     const auto response = get_json("/block/" + hash + "/txids");
     const auto body = get_text("/block/" + hash + "/txid/0");
-    BOOST_REQUIRE_EQUAL(body, response.as_array().front().as_string());
+    BC_REQUIRE_EQUAL(body, response.as_array().front().as_string());
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block_txid__above_count__not_found)
+BC_AUTO_TEST_CASE(esplora__block_txid__above_count__not_found)
 {
     const auto status = get_status("/block/" + encode_hash(test::block1.hash()) + "/txid/1");
-    BOOST_REQUIRE_EQUAL(status, http::status::not_found);
+    BC_REQUIRE_EQUAL(status, http::status::not_found);
 }
 
 // blocks
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__blocks__from_tip__ten_descending)
+BC_AUTO_TEST_CASE(esplora__blocks__from_tip__ten_descending)
 {
     const auto response = get_json("/blocks");
-    BOOST_REQUIRE(response.is_array());
+    BC_REQUIRE(response.is_array());
 
     const auto& array = response.as_array();
-    BOOST_REQUIRE_EQUAL(array.size(), 10u);
-    BOOST_REQUIRE_EQUAL(array.front().as_object().at("height").as_int64(), 9);
-    BOOST_REQUIRE_EQUAL(array.back().as_object().at("height").as_int64(), 0);
+    BC_REQUIRE_EQUAL(array.size(), 10u);
+    BC_REQUIRE_EQUAL(array.front().as_object().at("height").as_int64(), 9);
+    BC_REQUIRE_EQUAL(array.back().as_object().at("height").as_int64(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__blocks__from_height__truncated_at_genesis)
+BC_AUTO_TEST_CASE(esplora__blocks__from_height__truncated_at_genesis)
 {
     const auto response = get_json("/blocks/5");
-    BOOST_REQUIRE(response.is_array());
+    BC_REQUIRE(response.is_array());
 
     const auto& array = response.as_array();
-    BOOST_REQUIRE_EQUAL(array.size(), 6u);
-    BOOST_REQUIRE_EQUAL(array.front().as_object().at("height").as_int64(), 5);
-    BOOST_REQUIRE_EQUAL(array.back().as_object().at("height").as_int64(), 0);
+    BC_REQUIRE_EQUAL(array.size(), 6u);
+    BC_REQUIRE_EQUAL(array.front().as_object().at("height").as_int64(), 5);
+    BC_REQUIRE_EQUAL(array.back().as_object().at("height").as_int64(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__blocks__above_top__not_found)
+BC_AUTO_TEST_CASE(esplora__blocks__above_top__not_found)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/blocks/10"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/blocks/10"), http::status::not_found);
 }
 
 // unknown block
 // ----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(esplora__block_raw__unknown_hash__not_found)
+BC_AUTO_TEST_CASE(esplora__block_raw__unknown_hash__not_found)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/block/" + encode_hash(null_hash) + "/raw"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(null_hash) + "/raw"), http::status::not_found);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block_header__unknown_hash__not_found)
+BC_AUTO_TEST_CASE(esplora__block_header__unknown_hash__not_found)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/block/" + encode_hash(null_hash) + "/header"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(null_hash) + "/header"), http::status::not_found);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block_status__unknown_hash__not_found)
+BC_AUTO_TEST_CASE(esplora__block_status__unknown_hash__not_found)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/block/" + encode_hash(null_hash) + "/status"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(null_hash) + "/status"), http::status::not_found);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block_txids__unknown_hash__not_found)
+BC_AUTO_TEST_CASE(esplora__block_txids__unknown_hash__not_found)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/block/" + encode_hash(null_hash) + "/txids"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(null_hash) + "/txids"), http::status::not_found);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
 // unassociated block
 // ----------------------------------------------------------------------------
 
-BOOST_FIXTURE_TEST_SUITE(esplora_header_tests, esplora_header_setup_fixture)
+BC_FIXTURE_TEST_SUITE(esplora_header_tests, esplora_header_setup_fixture)
 
 static std::string block10_hash() NOEXCEPT
 {
     return encode_hash(test::mock_block10.hash());
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block__unassociated__not_found)
+BC_AUTO_TEST_CASE(esplora__block__unassociated__not_found)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/block/" + block10_hash()), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/block/" + block10_hash()), http::status::not_found);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block_raw__unassociated__not_found)
+BC_AUTO_TEST_CASE(esplora__block_raw__unassociated__not_found)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/block/" + block10_hash() + "/raw"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/block/" + block10_hash() + "/raw"), http::status::not_found);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block_header__unassociated__expected)
+BC_AUTO_TEST_CASE(esplora__block_header__unassociated__expected)
 {
-    BOOST_REQUIRE_EQUAL(get_text("/block/" + block10_hash() + "/header"), encode_base16(test::mock_block10.header().to_data()));
+    BC_REQUIRE_EQUAL(get_text("/block/" + block10_hash() + "/header"), encode_base16(test::mock_block10.header().to_data()));
 }
 
-BOOST_AUTO_TEST_CASE(esplora__block_status__unconfirmed__not_in_best_chain)
+BC_AUTO_TEST_CASE(esplora__block_status__unconfirmed__not_in_best_chain)
 {
     const auto response = get_json("/block/" + block10_hash() + "/status");
-    BOOST_REQUIRE(response.is_object());
-    BOOST_REQUIRE(!response.as_object().at("in_best_chain").as_bool());
-    BOOST_REQUIRE(!response.as_object().contains("next_best"));
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE(!response.as_object().at("in_best_chain").as_bool());
+    BC_REQUIRE(!response.as_object().contains("next_best"));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
 // faulted stores
 // ----------------------------------------------------------------------------
 
-BOOST_FIXTURE_TEST_SUITE(esplora_unassociated_tests, esplora_unassociated_setup_fixture)
+BC_FIXTURE_TEST_SUITE(esplora_unassociated_tests, esplora_unassociated_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(esplora__blocks__unassociated__empty)
+BC_AUTO_TEST_CASE(esplora__blocks__unassociated__empty)
 {
     const auto response = get_json("/blocks");
-    BOOST_REQUIRE(response.is_array());
-    BOOST_REQUIRE(response.as_array().empty());
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE(response.as_array().empty());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
-BOOST_FIXTURE_TEST_SUITE(esplora_misheighted_tests, esplora_misheighted_setup_fixture)
+BC_FIXTURE_TEST_SUITE(esplora_misheighted_tests, esplora_misheighted_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(esplora__block__misheighted__zero_mediantime)
+BC_AUTO_TEST_CASE(esplora__block__misheighted__zero_mediantime)
 {
     const auto response = get_json("/block/" + encode_hash(test::block3_hash));
-    BOOST_REQUIRE(response.is_object());
-    BOOST_REQUIRE_EQUAL(response.as_object().at("height").as_int64(), 9);
-    BOOST_REQUIRE_EQUAL(response.as_object().at("mediantime").as_int64(), 0);
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE_EQUAL(response.as_object().at("height").as_int64(), 9);
+    BC_REQUIRE_EQUAL(response.as_object().at("mediantime").as_int64(), 0);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
 
-BOOST_FIXTURE_TEST_SUITE(esplora_scoped_credential_tests, esplora_scoped_credential_setup_fixture)
+BC_FIXTURE_TEST_SUITE(esplora_scoped_credential_tests, esplora_scoped_credential_setup_fixture)
 
-BOOST_AUTO_TEST_CASE(esplora__tip_height__scoped_credential__ok)
+BC_AUTO_TEST_CASE(esplora__tip_height__scoped_credential__ok)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/blocks/tip/height", http::field::authorization, ESPLORA_TEST_AUTHORIZATION), http::status::ok);
+    BC_REQUIRE_EQUAL(get_status("/blocks/tip/height", http::field::authorization, ESPLORA_TEST_AUTHORIZATION), http::status::ok);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__tip_hash__scoped_credential_unlisted_method__forbidden)
+BC_AUTO_TEST_CASE(esplora__tip_hash__scoped_credential_unlisted_method__forbidden)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/blocks/tip/hash", http::field::authorization, ESPLORA_TEST_AUTHORIZATION), http::status::forbidden);
+    BC_REQUIRE_EQUAL(get_status("/blocks/tip/hash", http::field::authorization, ESPLORA_TEST_AUTHORIZATION), http::status::forbidden);
 }
 
-BOOST_AUTO_TEST_CASE(esplora__tip_height__no_credential__unauthorized)
+BC_AUTO_TEST_CASE(esplora__tip_height__no_credential__unauthorized)
 {
-    BOOST_REQUIRE_EQUAL(get_status("/blocks/tip/height"), http::status::unauthorized);
+    BC_REQUIRE_EQUAL(get_status("/blocks/tip/height"), http::status::unauthorized);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BC_AUTO_TEST_SUITE_END()
