@@ -27,17 +27,17 @@ namespace server {
 namespace electrum {
 
 /// The numeric form of a defined version (0.0 if undefined).
-system::config::version version_to_number(version value) NOEXCEPT;
+BCS_API system::config::version version_to_number(version value) NOEXCEPT;
 
 /// Serialized form of a defined version ("0.0" if undefined).
-std::string version_to_string(version value) NOEXCEPT;
+BCS_API std::string version_to_string(version value) NOEXCEPT;
 
 /// Parse any dotted numeric version, defined or not (false if malformed).
-bool version_from_string(system::config::version& out,
+BCS_API bool version_from_string(system::config::version& out,
     const std::string_view& value) NOEXCEPT;
 
 /// The greatest defined version not exceeding value (v0_0 if none).
-version version_floor(const system::config::version& value) NOEXCEPT;
+BCS_API version version_floor(const system::config::version& value) NOEXCEPT;
 
 /// Parse a requested version (string, or [min, max] array) to its range.
 bool version_range(system::config::version& min, system::config::version& max,
