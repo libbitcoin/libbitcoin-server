@@ -98,12 +98,12 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-sha3=ON -Denable-sha=ON -Denable-aes=ON"
+            options: "-Denable-sha3=ON -Denable-sha2=ON -Denable-aes=ON"
             cc: "clang"
             cxx: "clang++"
             image: macos-latest
             deployment_target: "13.3"
-            flags: "-mcpu=apple-m1"
+            flags: "-mtune=apple-m1"
 
           - basename: "bs-macos-x64"
             configuration: release
@@ -174,23 +174,23 @@ jobs:
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-sha=ON"
+            options: "-Denable-sha2=ON -Denable-aes=ON"
             cc: "gcc-14"
             cxx: "g++-14"
             linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-24.04-arm
-            flags: "-march=armv8-a+crypto -mtune=generic"
+            flags: "-mtune=generic"
 
           - basename: "bs-linux-arm64-sha3"
             configuration: release
             link: static
             toolchain: cmake
-            options: "-Denable-sha=ON -Denable-sha3=ON"
+            options: "-Denable-sha2=ON -Denable-sha3=ON -Denable-aes=ON"
             cc: "gcc-14"
             cxx: "g++-14"
             linkflags: "-static-libstdc++ -static-libgcc"
             image: ubuntu-24.04-arm
-            flags: "-march=armv8.2-a+crypto+sha3 -mtune=generic"
+            flags: "-mtune=generic"
 
           - basename: "bs-musl-x64"
             configuration: release
@@ -240,41 +240,6 @@ jobs:
             container: alpine:3.22.6@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8
             flags: "-march=x86-64-v3 -mtune=generic"
 
-          - basename: "bs-musl-arm64"
-            configuration: release
-            link: static
-            toolchain: cmake
-            cc: "gcc"
-            cxx: "g++"
-            linkflags: "--static -static-libstdc++ -static-libgcc"
-            image: ubuntu-24.04-arm
-            container: alpine:3.22.6@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8
-            flags: "-march=armv8-a -mtune=generic"
-
-          - basename: "bs-musl-arm64-crypto"
-            configuration: release
-            link: static
-            toolchain: cmake
-            options: "-Denable-sha=ON"
-            cc: "gcc"
-            cxx: "g++"
-            linkflags: "--static -static-libstdc++ -static-libgcc"
-            image: ubuntu-24.04-arm
-            container: alpine:3.22.6@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8
-            flags: "-march=armv8-a+crypto -mtune=generic"
-
-          - basename: "bs-musl-arm64-sha3"
-            configuration: release
-            link: static
-            toolchain: cmake
-            options: "-Denable-sha=ON -Denable-sha3=ON"
-            cc: "gcc"
-            cxx: "g++"
-            linkflags: "--static -static-libstdc++ -static-libgcc"
-            image: ubuntu-24.04-arm
-            container: alpine:3.22.6@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8
-            flags: "-march=armv8.2-a+crypto+sha3 -mtune=generic"
-
           - basename: "bs-windows-x64"
             configuration: StaticRelease
             toolchain: msbuild
@@ -322,7 +287,7 @@ jobs:
           - basename: "bs-windows-arm64-crypto"
             configuration: StaticRelease
             toolchain: msbuild
-            options: "--enable-sha"
+            options: "--enable-sha2 --enable-aes"
             platform: "ARM64"
             toolset: "v145"
             version: "vs2026"
@@ -331,7 +296,7 @@ jobs:
           - basename: "bs-windows-arm64-sha3"
             configuration: StaticRelease
             toolchain: msbuild
-            options: "--enable-sha --enable-sha3"
+            options: "--enable-sha2 --enable-sha3 --enable-aes"
             platform: "ARM64"
             toolset: "v145"
             version: "vs2026"
@@ -410,16 +375,8 @@ jobs:
       CC: ${{ matrix.target.cc }}
       CXX: ${{ matrix.target.cxx }}
       TZ: ${{ matrix.builder.timezone }}
-      SOURCE: ${{ matrix.builder.root == '.' && github.workspace || format('{0}/{1}', github.workspace, matrix.builder.root) }}
 
     steps:
-      - name: Prepare Alpine arm64 for actions
-        if: ${{ matrix.target.container && runner.arch == 'ARM64' }}
-        shell: sh
-        run: |
-          apk add --no-cache gcompat libstdc++
-          sed -i "s/^ID=alpine$/ID=gcompat/" /etc/os-release
-
       - name: Checkout libbitcoin-server
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -487,7 +444,7 @@ jobs:
         id: binary
         uses: ./.definition/.github/actions/build-binary
         with:
-          source: ${{ matrix.builder.root == '.' && github.workspace || format(runner.os == 'Windows' && '{0}\{1}' || '{0}/{1}', github.workspace, matrix.builder.root) }}
+          root: ${{ matrix.builder.root }}
           toolchain: ${{ matrix.target.toolchain }}
           basename: ${{ matrix.target.basename }}
           project: ${{ matrix.target.project || 'libbitcoin-server' }}
@@ -578,7 +535,7 @@ jobs:
           {
             echo "image: ${ImageOS} ${ImageVersion}"
             if [[ -n "${CXX}" ]]; then echo "compiler: $(${CXX} --version | head -1)"; fi
-            echo "source: ${SOURCE}"
+            echo "source: ${BUILD_SOURCE}"
             echo "timezone: ${TZ}"
             echo "umask: $(umask)"
           } | tee output/toolchain.txt
@@ -634,7 +591,7 @@ jobs:
           echo "| --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
           DIFFER=""
           MISSING=""
-          for NAME in bs-macos-arm64 bs-macos-x64 bs-linux-x64 bs-linux-x64-shani bs-linux-x64-avxifma bs-linux-x64-avx512ifma bs-linux-arm64 bs-linux-arm64-crypto bs-linux-arm64-sha3 bs-musl-x64 bs-musl-x64-shani bs-musl-x64-avxifma bs-musl-x64-avx512ifma bs-musl-arm64 bs-musl-arm64-crypto bs-musl-arm64-sha3 bs-windows-x64 bs-windows-x64-shani bs-windows-x64-avxifma bs-windows-x64-avx512ifma bs-windows-arm64 bs-windows-arm64-crypto bs-windows-arm64-sha3 selector-linux-x64 selector-linux-arm64 selector-macos-arm64 selector-macos-x64 selector-windows-x64 selector-windows-arm64; do
+          for NAME in bs-macos-arm64 bs-macos-x64 bs-linux-x64 bs-linux-x64-shani bs-linux-x64-avxifma bs-linux-x64-avx512ifma bs-linux-arm64 bs-linux-arm64-crypto bs-linux-arm64-sha3 bs-musl-x64 bs-musl-x64-shani bs-musl-x64-avxifma bs-musl-x64-avx512ifma bs-windows-x64 bs-windows-x64-shani bs-windows-x64-avxifma bs-windows-x64-avx512ifma bs-windows-arm64 bs-windows-arm64-crypto bs-windows-arm64-sha3 selector-linux-x64 selector-linux-arm64 selector-macos-arm64 selector-macos-x64 selector-windows-x64 selector-windows-arm64; do
             A="double-${NAME}-a"
             B="double-${NAME}-b"
             if [[ ! -f "${A}/SHA256SUMS" || ! -f "${B}/SHA256SUMS" ]]; then
