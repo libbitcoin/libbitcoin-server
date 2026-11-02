@@ -216,7 +216,7 @@ options_metadata parser::load_options() THROWS
         alias(make_variable, 'm').c_str(),
         value<bool>(&configured.make)->
             default_value(false)->zero_tokens(),
-        "Create new store in configured directory."
+        "Make new store in configured directory."
     )
     (
         alias(backup_variable, 'b').c_str(),
