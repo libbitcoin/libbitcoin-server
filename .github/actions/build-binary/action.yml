@@ -162,7 +162,7 @@ runs:
       if: ${{ inputs.toolchain == 'msbuild' }}
       shell: bash
       run: |
-        echo "CL=/Brepro /experimental:deterministic /pathmap:${{ inputs.source }}=." >> $GITHUB_ENV
+        echo "CL=/Brepro /experimental:deterministic /cgthreads1 /pathmap:${{ inputs.source }}=." >> $GITHUB_ENV
         echo "_LINK_=/Brepro /PDBALTPATH:${{ inputs.program }}.pdb" >> $GITHUB_ENV
 
     - name: Display Compiler
