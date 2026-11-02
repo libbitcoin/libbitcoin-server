@@ -494,6 +494,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\parsers\parsers.hpp">
       <Filter>include\bitcoin\server\parsers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\preprocessor.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>

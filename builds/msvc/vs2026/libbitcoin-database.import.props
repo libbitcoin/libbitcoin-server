@@ -31,6 +31,8 @@
         $(ProjectDir)..\..\..\..\..\libbitcoin-database\bin\$(PlatformName)\Release\$(PlatformToolset)\$(Linkage-libbitcoin-database)\;
         $(ProjectDir)..\..\..\..\..\libbitcoin-database\obj\libbitcoin-database\$(PlatformName)\Release\$(PlatformToolset)\$(Linkage-libbitcoin-database)\;%(AdditionalLibraryDirectories)
       </AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(Linkage-libbitcoin-database)' == 'dynamic' And $(Configuration.IndexOf('Debug')) != -1">$(ProjectDir)..\..\..\..\..\bin\$(PlatformName)\Debug\$(PlatformToolset)\dynamic\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(Linkage-libbitcoin-database)' == 'dynamic' And $(Configuration.IndexOf('Release')) != -1">$(ProjectDir)..\..\..\..\..\bin\$(PlatformName)\Release\$(PlatformToolset)\dynamic\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
 </Project>

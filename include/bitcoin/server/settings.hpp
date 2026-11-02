@@ -73,7 +73,7 @@ public:
     static constexpr auto bitcoin_network = "bitcoin.network";
 
     /// References to process embeded resources for html_server.
-    struct embedded_pages
+    struct BCS_API embedded_pages
     {
         DEFAULT_COPY_MOVE_DESTRUCT(embedded_pages);
         embedded_pages() = default;
@@ -90,7 +90,7 @@ public:
 
     /// Electrum is served over tcp/s (json-rpc downgrade), http/s and ws/s,
     /// so the http settings apply only to the http/ws transports.
-    struct electrum_server
+    struct BCS_API electrum_server
       : public network::settings::websocket_server
     {
         using base = network::settings::websocket_server;
@@ -138,14 +138,14 @@ public:
 
     /// sparrow interface settings, independent of electrum. Sparrow adds no
     /// settings to electrum, but derives them as it serves that interface.
-    struct sparrow_server
+    struct BCS_API sparrow_server
       : public electrum_server
     {
         using base = electrum_server;
         using base::base;
     };
 
-    struct esplora_server
+    struct BCS_API esplora_server
       : public network::settings::websocket_server
     {
         using base = network::settings::websocket_server;
@@ -157,7 +157,7 @@ public:
 
     /// html (http/s) document server settings (has directory/default).
     /// This is for web servers that expose a local file system directory.
-    struct html_server
+    struct BCS_API html_server
       : public network::settings::websocket_server
     {
         // tls_server and embedded_pages reference preclude copy.
@@ -181,7 +181,7 @@ public:
     };
 
     /// Address encoding, implied by coin and network (not by forks).
-    struct wallet_settings
+    struct BCS_API wallet_settings
     {
         DEFAULT_COPY_MOVE_DESTRUCT(wallet_settings);
 
@@ -200,7 +200,7 @@ public:
         system::wallet::context to_context() const NOEXCEPT;
     };
 
-    struct bitcoind_server
+    struct BCS_API bitcoind_server
       : public network::settings::http_server
     {
         using base = network::settings::http_server;
@@ -211,7 +211,7 @@ public:
         std::string subversion{ "/libbitcoin:server/" };
     };
 
-    struct btcd_server
+    struct BCS_API btcd_server
       : public bitcoind_server
     {
         using base = bitcoind_server;
@@ -224,7 +224,7 @@ public:
         uint32_t maximum_history{ 1'000'000 };
     };
 
-    struct bitcoind_zmq_server
+    struct BCS_API bitcoind_zmq_server
       : public network::settings::zmtp_server
     {
         using base = network::settings::zmtp_server;

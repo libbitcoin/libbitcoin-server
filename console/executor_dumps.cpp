@@ -42,7 +42,7 @@ void executor::dump_version(bool stored) const
 
     logger(std::format(BS_VERSION_HEADER));
     logger(std::format("secp256k1............ {}", system::secp256k1_library()));
-    logger(std::format("openssl (tls)........ {}", network::tls_library()));
+    logger(std::format("tls.................. {}", network::tls_library()));
     logger(std::format("libbitcoin-system.... {}", thumb(system::build_version())));
     logger(std::format("libbitcoin-database.. {}", thumb(database::build_version())));
     logger(std::format("libbitcoin-network... {}", thumb(network::build_version())));

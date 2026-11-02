@@ -19,7 +19,7 @@
 #ifndef LIBBITCOIN_SERVER_ERROR_ERROR_T_HPP
 #define LIBBITCOIN_SERVER_ERROR_ERROR_T_HPP
 
-#include <bitcoin/system.hpp>
+#include <bitcoin/server/preprocessor.hpp>
 #include <bitcoin/server/version.hpp>
 
 namespace libbitcoin {
@@ -72,7 +72,7 @@ enum error_t : uint8_t
 };
 
 // No current need for error_code equivalence mapping.
-DECLARE_ERROR_T_CODE_CATEGORY(error);
+DECLARE_ERROR_T_CODE_CATEGORY(error, BCS_API);
 
 } // namespace error
 } // namespace server

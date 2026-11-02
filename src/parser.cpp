@@ -216,7 +216,7 @@ options_metadata parser::load_options() THROWS
         alias(make_variable, 'm').c_str(),
         value<bool>(&configured.make)->
             default_value(false)->zero_tokens(),
-        "Create new store in configured directory."
+        "Make new store in configured directory."
     )
     (
         alias(backup_variable, 'b').c_str(),
@@ -527,16 +527,6 @@ options_metadata parser::load_settings() THROWS
         "bitcoin.bip66_freeze",
         setting<size_t>(&configured.bitcoin.bip90_bip66_height),
         "The block height to freeze the bip66 softfork for bip90, defaults to {}."
-    )
-    (
-        "bitcoin.bip30_reactivate_height",
-        setting<size_t>(&configured.bitcoin.bip30_reactivate_height),
-        "The height for bip30 reactivation, defaults to {}."
-    )
-    (
-        "bitcoin.bip30_deactivate_checkpoint",
-        setting<chain::checkpoint>(&configured.bitcoin.bip30_deactivate_checkpoint),
-        "The hash:height checkpoint for bip30 deactivation, defaults to {}."
     )
     (
         "bitcoin.bip9_bit0_active_checkpoint",

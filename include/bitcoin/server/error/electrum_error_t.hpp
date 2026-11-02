@@ -54,13 +54,13 @@ enum error_t : int32_t
 };
 
 // No current need for error_code equivalence mapping.
-DECLARE_ERROR_T_CODE_CATEGORY(error);
+DECLARE_ERROR_T_CODE_CATEGORY(error, BCS_API);
 
 /// Map a foreign category code to the electrum code space, where a depth
 /// limit is excessive history, any other store fault is a daemon error, and
 /// any other failure is reported as the given code. A code of this category
 /// passes through unchanged.
-BC_API code translate(const code& ec, error_t failure) NOEXCEPT;
+BCS_API code translate(const code& ec, error_t failure) NOEXCEPT;
 
 } // namespace electrum
 } // namespace error
