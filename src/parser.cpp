@@ -405,6 +405,11 @@ options_metadata parser::load_settings() THROWS
         "Validation of taproot script, defaults to {} (soft fork)."
     )
     (
+        "forks.bip54_timewarp",
+        setting<bool>(&configured.bitcoin.forks.bip54_timewarp),
+        "Limit timestamp regression on retarget blocks, defaults to {} (soft fork)."
+    )
+    (
         "forks.time_warp_patch",
         setting<bool>(&configured.bitcoin.forks.time_warp_patch),
         "Assume time_warp_patch activation if enabled, defaults to {} (testnet4)."
@@ -622,6 +627,31 @@ options_metadata parser::load_settings() THROWS
         "bitcoin.bip9_bit2_speedy_trial",
         setting<bool>(&configured.bitcoin.bip9_bit2_deployment.speedy),
         "Check the bip9 bit2 threshold before timeout (speedy trial), defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timewarp_start",
+        setting<uint32_t>(&configured.bitcoin.bip54_timewarp_deployment.start),
+        "The median time past to start bip54 timewarp signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timewarp_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip54_timewarp_deployment.timeout),
+        "The median time past to time out bip54 timewarp signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timewarp_threshold",
+        setting<size_t>(&configured.bitcoin.bip54_timewarp_deployment.threshold),
+        "The signaling blocks per period to lock in bip54 timewarp, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timewarp_activation_height",
+        setting<size_t>(&configured.bitcoin.bip54_timewarp_deployment.activation_height),
+        "The minimum bip54 timewarp activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timewarp_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip54_timewarp_deployment.speedy),
+        "Check the bip54 timewarp threshold before timeout (speedy trial), defaults to {}."
     )
     (
         settings::milestone,
