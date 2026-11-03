@@ -432,6 +432,14 @@ if ( with-console )
     file( GLOB bitcoin_server_RESOURCES CONFIGURE_DEPENDS
       "${CMAKE_CURRENT_SOURCE_DIR}/../../builds/msvc/*.rc" )
     target_sources( bitcoin-server PRIVATE ${bitcoin_server_RESOURCES} )
+    target_include_directories( bitcoin-server
+      PRIVATE
+        $<TARGET_PROPERTY:bitcoin-server-objects,INCLUDE_DIRECTORIES>
+    )
+    target_compile_options( bitcoin-server
+      PRIVATE
+        $<$<COMPILE_LANGUAGE:RC>:-c65001>
+    )
   endif()
 
   target_link_libraries( bitcoin-server
