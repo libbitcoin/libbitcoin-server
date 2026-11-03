@@ -410,6 +410,11 @@ options_metadata parser::load_settings() THROWS
         "Limit timestamp regression on retarget blocks, defaults to {} (soft fork)."
     )
     (
+        "forks.bip54_timespan",
+        setting<bool>(&configured.bitcoin.forks.bip54_timespan),
+        "Require non-negative retarget timespans, defaults to {} (soft fork)."
+    )
+    (
         "forks.time_warp_patch",
         setting<bool>(&configured.bitcoin.forks.time_warp_patch),
         "Assume time_warp_patch activation if enabled, defaults to {} (testnet4)."
@@ -652,6 +657,31 @@ options_metadata parser::load_settings() THROWS
         "bitcoin.bip54_timewarp_speedy_trial",
         setting<bool>(&configured.bitcoin.bip54_timewarp_deployment.speedy),
         "Check the bip54 timewarp threshold before timeout (speedy trial), defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timespan_start",
+        setting<uint32_t>(&configured.bitcoin.bip54_timespan_deployment.start),
+        "The median time past to start bip54 timespan signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timespan_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip54_timespan_deployment.timeout),
+        "The median time past to time out bip54 timespan signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timespan_threshold",
+        setting<size_t>(&configured.bitcoin.bip54_timespan_deployment.threshold),
+        "The signaling blocks per period to lock in bip54 timespan, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timespan_activation_height",
+        setting<size_t>(&configured.bitcoin.bip54_timespan_deployment.activation_height),
+        "The minimum bip54 timespan activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timespan_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip54_timespan_deployment.speedy),
+        "Check the bip54 timespan threshold before timeout (speedy trial), defaults to {}."
     )
     (
         settings::milestone,
