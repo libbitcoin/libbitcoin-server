@@ -425,6 +425,11 @@ options_metadata parser::load_settings() THROWS
         "Disallow 64 byte witness-stripped transactions, defaults to {} (soft fork)."
     )
     (
+        "forks.bip54_coinbase",
+        setting<bool>(&configured.bitcoin.forks.bip54_coinbase),
+        "Require coinbase locktime of parent height and non-final sequence, defaults to {} (soft fork)."
+    )
+    (
         "forks.time_warp_patch",
         setting<bool>(&configured.bitcoin.forks.time_warp_patch),
         "Assume time_warp_patch activation if enabled, defaults to {} (testnet4)."
@@ -742,6 +747,31 @@ options_metadata parser::load_settings() THROWS
         "bitcoin.bip54_txsize_speedy_trial",
         setting<bool>(&configured.bitcoin.bip54_txsize_deployment.speedy),
         "Check the bip54 txsize threshold before timeout (speedy trial), defaults to {}."
+    )
+    (
+        "bitcoin.bip54_coinbase_start",
+        setting<uint32_t>(&configured.bitcoin.bip54_coinbase_deployment.start),
+        "The median time past to start bip54 coinbase signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_coinbase_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip54_coinbase_deployment.timeout),
+        "The median time past to time out bip54 coinbase signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_coinbase_threshold",
+        setting<size_t>(&configured.bitcoin.bip54_coinbase_deployment.threshold),
+        "The signaling blocks per period to lock in bip54 coinbase, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_coinbase_activation_height",
+        setting<size_t>(&configured.bitcoin.bip54_coinbase_deployment.activation_height),
+        "The minimum bip54 coinbase activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_coinbase_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip54_coinbase_deployment.speedy),
+        "Check the bip54 coinbase threshold before timeout (speedy trial), defaults to {}."
     )
     (
         settings::milestone,
