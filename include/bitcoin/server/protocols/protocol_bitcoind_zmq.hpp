@@ -64,8 +64,8 @@ public:
         const options_t& options) NOEXCEPT
       : server::protocol(session, channel),
         network::protocol_rpc<channel_bitcoind_zmq>(session, channel, options),
-        options_(options),
-        network::tracker<protocol_bitcoind_zmq>(session->log)
+        network::tracker<protocol_bitcoind_zmq>(session->log),
+        options_(options)
     {
     }
 

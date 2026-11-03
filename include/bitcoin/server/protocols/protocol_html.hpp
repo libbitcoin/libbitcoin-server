@@ -41,8 +41,8 @@ protected:
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : server::protocol_http(session, channel, options),
-        options_(options),
-        network::tracker<protocol_html>(session->log)
+        network::tracker<protocol_html>(session->log),
+        options_(options)
     {
     }
 

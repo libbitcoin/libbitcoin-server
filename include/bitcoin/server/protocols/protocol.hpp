@@ -46,8 +46,8 @@ public:
     inline protocol(const auto& session,
         const network::channel::ptr& channel) NOEXCEPT
       : node::protocol(session, channel),
-        config_(session->server_config()),
         network::tracker<protocol>(session->log),
+        config_(session->server_config()),
         session_(session),
         channel_(channel)
     {

@@ -60,8 +60,8 @@ public:
         const configuration& config, const options_t& options) NOEXCEPT
       : server::session(node, config),
         network::session_server((network::net&)node, identifier, options),
-        options_(options),
-        network::tracker<session_server<Protocols...>>(node)
+        network::tracker<session_server<Protocols...>>(node),
+        options_(options)
     {
     }
 

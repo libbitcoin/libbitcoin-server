@@ -46,9 +46,9 @@ public:
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : protocol_html(session, channel, options),
-        turbo_(session->database_settings().turbo),
+        network::tracker<protocol_native>(session->log),
         notification_strand_(channel->service().get_executor()),
-        network::tracker<protocol_native>(session->log)
+        turbo_(session->database_settings().turbo)
     {
     }
 

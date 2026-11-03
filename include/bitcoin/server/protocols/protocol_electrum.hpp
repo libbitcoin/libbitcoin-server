@@ -45,17 +45,17 @@ public:
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : protocol_rpc<interface::electrum>(session, channel, options),
+        network::tracker<protocol_electrum>(session->log),
         options_(options),
         turbo_(session->database_settings().turbo),
         p2kh_(session->server_settings().wallet.p2kh_prefix),
         p2sh_(session->server_settings().wallet.p2sh_prefix),
         flags_(session->system_settings().flags()),
         witness_(session->server_settings().wallet.witness_prefix),
-        channel_(std::dynamic_pointer_cast<channel_t>(channel)),
-        notification_strand_(channel_->service().get_executor()),
         ping_timer_(std::make_shared<network::deadline>(session->log,
             channel->strand())),
-        network::tracker<protocol_electrum>(session->log)
+        channel_(std::dynamic_pointer_cast<channel_t>(channel)),
+        notification_strand_(channel_->service().get_executor())
     {
     }
 
