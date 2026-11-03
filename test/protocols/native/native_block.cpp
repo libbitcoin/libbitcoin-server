@@ -406,11 +406,16 @@ BC_AUTO_TEST_CASE(native__block_header_context__json__expected)
     BC_REQUIRE(!state.at("unconfirmable").as_bool());
 
     const auto& forks = object.at("forks").as_object();
-    BC_REQUIRE_EQUAL(forks.size(), 14u);
+    BC_REQUIRE_EQUAL(forks.size(), 19u);
     BC_REQUIRE(!forks.at("bip30").as_bool());
     BC_REQUIRE(!forks.at("bip34").as_bool());
     BC_REQUIRE(!forks.at("bip141").as_bool());
     BC_REQUIRE(!forks.at("bip342").as_bool());
+    BC_REQUIRE(!forks.at("bip54_timewarp").as_bool());
+    BC_REQUIRE(!forks.at("bip54_timespan").as_bool());
+    BC_REQUIRE(!forks.at("bip54_sigops").as_bool());
+    BC_REQUIRE(!forks.at("bip54_txsize").as_bool());
+    BC_REQUIRE(!forks.at("bip54_coinbase").as_bool());
 }
 
 BC_AUTO_TEST_CASE(native__block_header_context__text__not_acceptable)
