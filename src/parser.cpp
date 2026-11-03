@@ -415,6 +415,11 @@ options_metadata parser::load_settings() THROWS
         "Require non-negative retarget timespans, defaults to {} (soft fork)."
     )
     (
+        "forks.bip54_sigops",
+        setting<bool>(&configured.bitcoin.forks.bip54_sigops),
+        "Limit legacy signature operations per transaction, defaults to {} (soft fork)."
+    )
+    (
         "forks.time_warp_patch",
         setting<bool>(&configured.bitcoin.forks.time_warp_patch),
         "Assume time_warp_patch activation if enabled, defaults to {} (testnet4)."
@@ -682,6 +687,31 @@ options_metadata parser::load_settings() THROWS
         "bitcoin.bip54_timespan_speedy_trial",
         setting<bool>(&configured.bitcoin.bip54_timespan_deployment.speedy),
         "Check the bip54 timespan threshold before timeout (speedy trial), defaults to {}."
+    )
+    (
+        "bitcoin.bip54_sigops_start",
+        setting<uint32_t>(&configured.bitcoin.bip54_sigops_deployment.start),
+        "The median time past to start bip54 sigops signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_sigops_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip54_sigops_deployment.timeout),
+        "The median time past to time out bip54 sigops signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_sigops_threshold",
+        setting<size_t>(&configured.bitcoin.bip54_sigops_deployment.threshold),
+        "The signaling blocks per period to lock in bip54 sigops, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_sigops_activation_height",
+        setting<size_t>(&configured.bitcoin.bip54_sigops_deployment.activation_height),
+        "The minimum bip54 sigops activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_sigops_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip54_sigops_deployment.speedy),
+        "Check the bip54 sigops threshold before timeout (speedy trial), defaults to {}."
     )
     (
         settings::milestone,

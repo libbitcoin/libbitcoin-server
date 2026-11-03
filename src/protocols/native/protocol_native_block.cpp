@@ -266,7 +266,8 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
         { "bip341", context.is_enabled(chain::flags::bip341_rule) },
         { "bip342", context.is_enabled(chain::flags::bip342_rule) },
         { "bip54_timewarp", context.is_enabled(chain::flags::bip54_timewarp_rule) },
-        { "bip54_timespan", context.is_enabled(chain::flags::bip54_timespan_rule) }
+        { "bip54_timespan", context.is_enabled(chain::flags::bip54_timespan_rule) },
+        { "bip54_sigops", context.is_enabled(chain::flags::bip54_sigops_rule) }
     };
 
     send_json(std::move(object), 256);
