@@ -405,6 +405,31 @@ options_metadata parser::load_settings() THROWS
         "Validation of taproot script, defaults to {} (soft fork)."
     )
     (
+        "forks.bip54_timewarp",
+        setting<bool>(&configured.bitcoin.forks.bip54_timewarp),
+        "Limit timestamp regression on retarget blocks, defaults to {} (soft fork)."
+    )
+    (
+        "forks.bip54_timespan",
+        setting<bool>(&configured.bitcoin.forks.bip54_timespan),
+        "Require non-negative retarget timespans, defaults to {} (soft fork)."
+    )
+    (
+        "forks.bip54_sigops",
+        setting<bool>(&configured.bitcoin.forks.bip54_sigops),
+        "Limit legacy signature operations per transaction, defaults to {} (soft fork)."
+    )
+    (
+        "forks.bip54_txsize",
+        setting<bool>(&configured.bitcoin.forks.bip54_txsize),
+        "Disallow 64 byte witness-stripped transactions, defaults to {} (soft fork)."
+    )
+    (
+        "forks.bip54_coinbase",
+        setting<bool>(&configured.bitcoin.forks.bip54_coinbase),
+        "Require coinbase locktime of parent height and non-final sequence, defaults to {} (soft fork)."
+    )
+    (
         "forks.time_warp_patch",
         setting<bool>(&configured.bitcoin.forks.time_warp_patch),
         "Assume time_warp_patch activation if enabled, defaults to {} (testnet4)."
@@ -542,6 +567,211 @@ options_metadata parser::load_settings() THROWS
         "bitcoin.bip9_bit2_active_checkpoint",
         setting<chain::checkpoint>(&configured.bitcoin.bip9_bit2_active_checkpoint),
         "The hash:height checkpoint for bip9 bit2 activation, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_activation_period",
+        setting<size_t>(&configured.bitcoin.bip9_activation_period),
+        "The number of blocks in a bip9 signaling period, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit0_start",
+        setting<uint32_t>(&configured.bitcoin.bip9_bit0_deployment.start),
+        "The median time past to start bip9 bit0 signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit0_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip9_bit0_deployment.timeout),
+        "The median time past to time out bip9 bit0 signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit0_threshold",
+        setting<size_t>(&configured.bitcoin.bip9_bit0_deployment.threshold),
+        "The signaling blocks per period to lock in bip9 bit0, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit0_activation_height",
+        setting<size_t>(&configured.bitcoin.bip9_bit0_deployment.activation_height),
+        "The minimum bip9 bit0 activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit0_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip9_bit0_deployment.speedy),
+        "Check the bip9 bit0 threshold before timeout (speedy trial), defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit1_start",
+        setting<uint32_t>(&configured.bitcoin.bip9_bit1_deployment.start),
+        "The median time past to start bip9 bit1 signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit1_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip9_bit1_deployment.timeout),
+        "The median time past to time out bip9 bit1 signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit1_threshold",
+        setting<size_t>(&configured.bitcoin.bip9_bit1_deployment.threshold),
+        "The signaling blocks per period to lock in bip9 bit1, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit1_activation_height",
+        setting<size_t>(&configured.bitcoin.bip9_bit1_deployment.activation_height),
+        "The minimum bip9 bit1 activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit1_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip9_bit1_deployment.speedy),
+        "Check the bip9 bit1 threshold before timeout (speedy trial), defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit2_start",
+        setting<uint32_t>(&configured.bitcoin.bip9_bit2_deployment.start),
+        "The median time past to start bip9 bit2 signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit2_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip9_bit2_deployment.timeout),
+        "The median time past to time out bip9 bit2 signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit2_threshold",
+        setting<size_t>(&configured.bitcoin.bip9_bit2_deployment.threshold),
+        "The signaling blocks per period to lock in bip9 bit2, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit2_activation_height",
+        setting<size_t>(&configured.bitcoin.bip9_bit2_deployment.activation_height),
+        "The minimum bip9 bit2 activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit2_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip9_bit2_deployment.speedy),
+        "Check the bip9 bit2 threshold before timeout (speedy trial), defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timewarp_start",
+        setting<uint32_t>(&configured.bitcoin.bip54_timewarp_deployment.start),
+        "The median time past to start bip54 timewarp signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timewarp_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip54_timewarp_deployment.timeout),
+        "The median time past to time out bip54 timewarp signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timewarp_threshold",
+        setting<size_t>(&configured.bitcoin.bip54_timewarp_deployment.threshold),
+        "The signaling blocks per period to lock in bip54 timewarp, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timewarp_activation_height",
+        setting<size_t>(&configured.bitcoin.bip54_timewarp_deployment.activation_height),
+        "The minimum bip54 timewarp activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timewarp_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip54_timewarp_deployment.speedy),
+        "Check the bip54 timewarp threshold before timeout (speedy trial), defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timespan_start",
+        setting<uint32_t>(&configured.bitcoin.bip54_timespan_deployment.start),
+        "The median time past to start bip54 timespan signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timespan_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip54_timespan_deployment.timeout),
+        "The median time past to time out bip54 timespan signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timespan_threshold",
+        setting<size_t>(&configured.bitcoin.bip54_timespan_deployment.threshold),
+        "The signaling blocks per period to lock in bip54 timespan, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timespan_activation_height",
+        setting<size_t>(&configured.bitcoin.bip54_timespan_deployment.activation_height),
+        "The minimum bip54 timespan activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_timespan_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip54_timespan_deployment.speedy),
+        "Check the bip54 timespan threshold before timeout (speedy trial), defaults to {}."
+    )
+    (
+        "bitcoin.bip54_sigops_start",
+        setting<uint32_t>(&configured.bitcoin.bip54_sigops_deployment.start),
+        "The median time past to start bip54 sigops signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_sigops_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip54_sigops_deployment.timeout),
+        "The median time past to time out bip54 sigops signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_sigops_threshold",
+        setting<size_t>(&configured.bitcoin.bip54_sigops_deployment.threshold),
+        "The signaling blocks per period to lock in bip54 sigops, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_sigops_activation_height",
+        setting<size_t>(&configured.bitcoin.bip54_sigops_deployment.activation_height),
+        "The minimum bip54 sigops activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_sigops_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip54_sigops_deployment.speedy),
+        "Check the bip54 sigops threshold before timeout (speedy trial), defaults to {}."
+    )
+    (
+        "bitcoin.bip54_txsize_start",
+        setting<uint32_t>(&configured.bitcoin.bip54_txsize_deployment.start),
+        "The median time past to start bip54 txsize signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_txsize_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip54_txsize_deployment.timeout),
+        "The median time past to time out bip54 txsize signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_txsize_threshold",
+        setting<size_t>(&configured.bitcoin.bip54_txsize_deployment.threshold),
+        "The signaling blocks per period to lock in bip54 txsize, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_txsize_activation_height",
+        setting<size_t>(&configured.bitcoin.bip54_txsize_deployment.activation_height),
+        "The minimum bip54 txsize activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_txsize_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip54_txsize_deployment.speedy),
+        "Check the bip54 txsize threshold before timeout (speedy trial), defaults to {}."
+    )
+    (
+        "bitcoin.bip54_coinbase_start",
+        setting<uint32_t>(&configured.bitcoin.bip54_coinbase_deployment.start),
+        "The median time past to start bip54 coinbase signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_coinbase_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip54_coinbase_deployment.timeout),
+        "The median time past to time out bip54 coinbase signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_coinbase_threshold",
+        setting<size_t>(&configured.bitcoin.bip54_coinbase_deployment.threshold),
+        "The signaling blocks per period to lock in bip54 coinbase, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_coinbase_activation_height",
+        setting<size_t>(&configured.bitcoin.bip54_coinbase_deployment.activation_height),
+        "The minimum bip54 coinbase activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip54_coinbase_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip54_coinbase_deployment.speedy),
+        "Check the bip54 coinbase threshold before timeout (speedy trial), defaults to {}."
     )
     (
         settings::milestone,

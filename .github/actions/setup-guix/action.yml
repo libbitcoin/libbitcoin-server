@@ -1,0 +1,57 @@
+###############################################################################
+#  Copyright (c) 2014-2026 libbitcoin-server developers (see COPYING).
+###############################################################################
+
+name: Setup Guix
+description: Install the pinned Guix release and import an exported store closure.
+
+inputs:
+  cache:
+    description: "Directory holding an exported store closure, relative to the workspace."
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Hide system git configuration from Guix builds
+      shell: bash
+      run: |
+        if [[ -f /etc/gitconfig ]]; then
+          sudo mv /etc/gitconfig "${RUNNER_TEMP}/gitconfig"
+        fi
+
+    - name: Install Guix
+      shell: bash
+      run: |
+        case "$(uname -m)" in
+          x86_64) SUM="aa41025489c5061543e9c48873eaa829b900b2da75d40f9648913622f5f47817" ;;
+          aarch64) SUM="a5d58b1d0294cad6adb1f2aff627d37feb5db763fdffbceb8551f2b12123cf39" ;;
+          *) echo "Unsupported runner '$(uname -m)'."; exit 1 ;;
+        esac
+        ARCHIVE="guix-binary-1.5.0.$(uname -m)-linux.tar.xz"
+        INSTALLER="https://codeberg.org/guix/guix/raw/commit/8d4a79cb31cf72f15eb4cbc6fb19468713121f24/etc/guix-install.sh"
+        cd "${RUNNER_TEMP}"
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends uidmap zstd
+        sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+        curl -fsSL -o "${ARCHIVE}" "https://ftp.gnu.org/gnu/guix/${ARCHIVE}"
+        curl -fsSL -o guix-install.sh "${INSTALLER}"
+        sha256sum -c <<EOF
+        ${SUM}  ${ARCHIVE}
+        5d3a2617d48dfbd2bd8f544fae1c6c626729fcb8e6903b092aecf56ed428de26  guix-install.sh
+        EOF
+        sudo GUIX_BINARY_FILE_NAME="${RUNNER_TEMP}/${ARCHIVE}" bash guix-install.sh < <(yes "")
+        guix --version | head -1
+
+    - name: Import store closure
+      if: ${{ inputs.cache != '' }}
+      shell: bash
+      run: |
+        CACHE="${GITHUB_WORKSPACE}/${{ inputs.cache }}"
+        INFERIORS="/var/guix/profiles/per-user/${USER}/inferiors"
+        sudo guix archive --authorize < "${CACHE}/signing-key.pub"
+        zstd -dc "${CACHE}/store.nar.zst" | guix archive --import
+        sudo mkdir -p "${INFERIORS}"
+        sudo chown "${USER}" "${INFERIORS}"
+        ln -sfn "$(cat "${CACHE}/inferior")" "${INFERIORS}/$(cat "${CACHE}/inferior-key")"
