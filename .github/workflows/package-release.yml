@@ -56,8 +56,8 @@ jobs:
             selector: "selector-linux-arm64"
             baseline: "bs-linux-arm64"
             baseline_requires: ""
-            optimized: "bs-linux-arm64-crypto"
-            optimized_requires: "aes sha"
+            optimized: "bs-linux-arm64-sha2"
+            optimized_requires: "aes sha2"
 
     env:
       VERSION: ${{ needs.version.outputs.version }}
@@ -213,8 +213,8 @@ jobs:
             selector: "selector-windows-arm64.exe"
             baseline: "bs-windows-arm64.exe"
             baseline_requires: ""
-            optimized: "bs-windows-arm64-crypto.exe"
-            optimized_requires: "aes sha"
+            optimized: "bs-windows-arm64-sha2.exe"
+            optimized_requires: "aes sha2"
 
     env:
       VERSION: ${{ needs.version.outputs.version }}

@@ -170,7 +170,7 @@ jobs:
             image: ubuntu-24.04-arm
             flags: "-march=armv8-a -mtune=generic"
 
-          - basename: "bs-linux-arm64-crypto"
+          - basename: "bs-linux-arm64-sha2"
             configuration: release
             link: static
             toolchain: cmake
@@ -284,7 +284,7 @@ jobs:
             version: "vs2026"
             image: windows-11-vs2026-arm
 
-          - basename: "bs-windows-arm64-crypto"
+          - basename: "bs-windows-arm64-sha2"
             configuration: StaticRelease
             toolchain: msbuild
             options: "--enable-sha2 --enable-aes"
@@ -591,7 +591,7 @@ jobs:
           echo "| --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
           DIFFER=""
           MISSING=""
-          for NAME in bs-macos-arm64 bs-macos-x64 bs-linux-x64 bs-linux-x64-shani bs-linux-x64-avxifma bs-linux-x64-avx512ifma bs-linux-arm64 bs-linux-arm64-crypto bs-linux-arm64-sha3 bs-musl-x64 bs-musl-x64-shani bs-musl-x64-avxifma bs-musl-x64-avx512ifma bs-windows-x64 bs-windows-x64-shani bs-windows-x64-avxifma bs-windows-x64-avx512ifma bs-windows-arm64 bs-windows-arm64-crypto bs-windows-arm64-sha3 selector-linux-x64 selector-linux-arm64 selector-macos-arm64 selector-macos-x64 selector-windows-x64 selector-windows-arm64; do
+          for NAME in bs-macos-arm64 bs-macos-x64 bs-linux-x64 bs-linux-x64-shani bs-linux-x64-avxifma bs-linux-x64-avx512ifma bs-linux-arm64 bs-linux-arm64-sha2 bs-linux-arm64-sha3 bs-musl-x64 bs-musl-x64-shani bs-musl-x64-avxifma bs-musl-x64-avx512ifma bs-windows-x64 bs-windows-x64-shani bs-windows-x64-avxifma bs-windows-x64-avx512ifma bs-windows-arm64 bs-windows-arm64-sha2 bs-windows-arm64-sha3 selector-linux-x64 selector-linux-arm64 selector-macos-arm64 selector-macos-x64 selector-windows-x64 selector-windows-arm64; do
             A="double-${NAME}-a"
             B="double-${NAME}-b"
             if [[ ! -f "${A}/SHA256SUMS" || ! -f "${B}/SHA256SUMS" ]]; then
