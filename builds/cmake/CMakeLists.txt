@@ -436,10 +436,6 @@ if ( with-console )
       PRIVATE
         $<TARGET_PROPERTY:bitcoin-server-objects,INCLUDE_DIRECTORIES>
     )
-    target_compile_options( bitcoin-server
-      PRIVATE
-        $<$<COMPILE_LANGUAGE:RC>:-c65001>
-    )
   endif()
 
   target_link_libraries( bitcoin-server
