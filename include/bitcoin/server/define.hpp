@@ -22,9 +22,9 @@
 #include <bitcoin/node.hpp>
 #include <bitcoin/server/error/error.hpp>
 
-/// Augment limited xcode placeholder defines (10 vs. common 20).
+/// Augment limited libc++ placeholder defines (10 vs. common 20).
 /// ---------------------------------------------------------------------------
-#if defined (HAVE_XCODE)
+#if defined (HAVE_LIBCPP)
 
 /// Define custom placeholder types in the global namespace to avoid conflicts.
 struct placeholder_11 {};
@@ -50,7 +50,7 @@ namespace std::placeholders
     inline constexpr ::placeholder_13 _13{};
 }
 
-#endif // HAVE_XCODE
+#endif // HAVE_LIBCPP
 /// ---------------------------------------------------------------------------
 
 #endif
