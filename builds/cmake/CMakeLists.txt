@@ -428,6 +428,12 @@ if ( with-console )
   file( CONFIGURE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/bitcoin-server.cpp" CONTENT "" )
   add_executable( bitcoin-server "${CMAKE_CURRENT_BINARY_DIR}/bitcoin-server.cpp" )
 
+  if ( WIN32 )
+    file( GLOB bitcoin_server_RESOURCES CONFIGURE_DEPENDS
+      "${CMAKE_CURRENT_SOURCE_DIR}/../../builds/msvc/*.rc" )
+    target_sources( bitcoin-server PRIVATE ${bitcoin_server_RESOURCES} )
+  endif()
+
   target_link_libraries( bitcoin-server
     PRIVATE
       $<LINK_LIBRARY:WHOLE_ARCHIVE,bitcoin-server-objects>
