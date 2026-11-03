@@ -109,7 +109,10 @@ class BtcdConnection:
         self._next_id += 1
 
         if os.getenv("BTCD_DEBUG"):
-            print(">>>", json.dumps(payload, indent=2), flush=True)
+            shown = dict(payload)
+            if method == "authenticate":
+                shown["params"] = ["<redacted>"]
+            print(">>>", json.dumps(shown, indent=2), flush=True)
 
         self.ws.send_text(json.dumps(payload))
         raw = self.ws.recv_message(timeout_s)
