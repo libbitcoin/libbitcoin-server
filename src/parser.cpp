@@ -544,6 +544,86 @@ options_metadata parser::load_settings() THROWS
         "The hash:height checkpoint for bip9 bit2 activation, defaults to {}."
     )
     (
+        "bitcoin.bip9_activation_period",
+        setting<size_t>(&configured.bitcoin.bip9_activation_period),
+        "The number of blocks in a bip9 signaling period, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit0_start",
+        setting<uint32_t>(&configured.bitcoin.bip9_bit0_deployment.start),
+        "The median time past to start bip9 bit0 signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit0_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip9_bit0_deployment.timeout),
+        "The median time past to time out bip9 bit0 signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit0_threshold",
+        setting<size_t>(&configured.bitcoin.bip9_bit0_deployment.threshold),
+        "The signaling blocks per period to lock in bip9 bit0, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit0_activation_height",
+        setting<size_t>(&configured.bitcoin.bip9_bit0_deployment.activation_height),
+        "The minimum bip9 bit0 activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit0_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip9_bit0_deployment.speedy),
+        "Check the bip9 bit0 threshold before timeout (speedy trial), defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit1_start",
+        setting<uint32_t>(&configured.bitcoin.bip9_bit1_deployment.start),
+        "The median time past to start bip9 bit1 signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit1_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip9_bit1_deployment.timeout),
+        "The median time past to time out bip9 bit1 signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit1_threshold",
+        setting<size_t>(&configured.bitcoin.bip9_bit1_deployment.threshold),
+        "The signaling blocks per period to lock in bip9 bit1, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit1_activation_height",
+        setting<size_t>(&configured.bitcoin.bip9_bit1_deployment.activation_height),
+        "The minimum bip9 bit1 activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit1_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip9_bit1_deployment.speedy),
+        "Check the bip9 bit1 threshold before timeout (speedy trial), defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit2_start",
+        setting<uint32_t>(&configured.bitcoin.bip9_bit2_deployment.start),
+        "The median time past to start bip9 bit2 signaling, 4294967295 for always active, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit2_timeout",
+        setting<uint32_t>(&configured.bitcoin.bip9_bit2_deployment.timeout),
+        "The median time past to time out bip9 bit2 signaling, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit2_threshold",
+        setting<size_t>(&configured.bitcoin.bip9_bit2_deployment.threshold),
+        "The signaling blocks per period to lock in bip9 bit2, zero to disable, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit2_activation_height",
+        setting<size_t>(&configured.bitcoin.bip9_bit2_deployment.activation_height),
+        "The minimum bip9 bit2 activation height, defaults to {}."
+    )
+    (
+        "bitcoin.bip9_bit2_speedy_trial",
+        setting<bool>(&configured.bitcoin.bip9_bit2_deployment.speedy),
+        "Check the bip9 bit2 threshold before timeout (speedy trial), defaults to {}."
+    )
+    (
         settings::milestone,
         setting<chain::checkpoint>(&configured.bitcoin.milestone),
         "A block presumed to be valid but not required to be present, defaults to {}."
