@@ -42,8 +42,8 @@ public:
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
       : channel_rpc(log, socket, identifier, config, options),
-        options_(options),
-        network::tracker<channel_electrum>(log)
+        network::tracker<channel_electrum>(log),
+        options_(options)
     {
     }
 

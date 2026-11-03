@@ -44,9 +44,9 @@ public:
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : protocol_rpc<interface::electrum_handshake>(session, channel, options),
+        network::tracker<protocol_electrum_version>(session->log),
         options_(options),
-        channel_(std::dynamic_pointer_cast<channel_t>(channel)),
-        network::tracker<protocol_electrum_version>(session->log)
+        channel_(std::dynamic_pointer_cast<channel_t>(channel))
     {
     }
 

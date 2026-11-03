@@ -45,10 +45,10 @@ public:
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
       : server::channel(log, socket, identifier, config),
-        options_(options),
         network::channel_rpc<interface::bitcoind_zmq>(log, socket, identifier,
             config.network, options),
-        network::tracker<channel_bitcoind_zmq>(log)
+        network::tracker<channel_bitcoind_zmq>(log),
+        options_(options)
     {
     }
 

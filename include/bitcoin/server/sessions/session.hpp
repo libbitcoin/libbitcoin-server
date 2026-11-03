@@ -38,8 +38,9 @@ public:
 
     /// Construct an instance (network should be started).
     inline session(server_node& node, const configuration& config) NOEXCEPT
-      : node::session((node::full_node&)node), config_(config),
-        network::tracker<session>((network::net&)node), node_(node)
+      : node::session((node::full_node&)node),
+        network::tracker<session>((network::net&)node), config_(config),
+        node_(node)
     {
     }
 
