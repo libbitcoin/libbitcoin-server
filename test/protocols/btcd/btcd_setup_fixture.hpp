@@ -176,9 +176,11 @@ struct btcd_taproot_active_setup_fixture
     inline btcd_taproot_active_setup_fixture()
       : btcd_setup_fixture([](test::query_t& query)
         {
-            return test::setup_ten_block_store(query,
-                system::chain::flags::bip341_rule |
-                system::chain::flags::bip342_rule);
+            constexpr auto taproot = system::chain::flags::bip341_rule |
+                system::chain::flags::bip342_rule;
+            const auto stored = test::setup_ten_block_store(query, taproot);
+            const auto link = query.to_header(test::block9_hash);
+            return stored && query.set_activation(taproot, link);
         })
     {
     }

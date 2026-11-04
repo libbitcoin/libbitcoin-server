@@ -2056,18 +2056,16 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__gettxoutproof__txid_not_in_block__invalid_addres
     BC_REQUIRE(has_code(rpc("gettxoutproof", "[[\"" + txid + "\"], \"" + block5 + "\"]"), -5));
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__ten_block_store__top_frozen)
+BC_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__ten_block_store__top_unactivated)
 {
     const auto response = rpc("getdeploymentinfo");
     const auto& result = response.at("result");
     BC_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
     BC_REQUIRE_EQUAL(as_text(result.at("hash")), block9);
     BC_REQUIRE_EQUAL(as_text(result.at("deployments").at("bip34").at("type")), "buried");
-    BC_REQUIRE_EQUAL(result.at("deployments").at("bip34").at("height").as_int64(), 227931);
-    BC_REQUIRE_EQUAL(result.at("deployments").at("bip66").at("height").as_int64(), 363725);
-    BC_REQUIRE_EQUAL(result.at("deployments").at("bip65").at("height").as_int64(), 388381);
-    BC_REQUIRE_EQUAL(result.at("deployments").at("csv").at("height").as_int64(), 419328);
-    BC_REQUIRE_EQUAL(result.at("deployments").at("segwit").at("height").as_int64(), 481824);
+    BC_REQUIRE(!result.at("deployments").at("bip34").as_object().contains("height"));
+    BC_REQUIRE(!result.at("deployments").at("csv").as_object().contains("height"));
+    BC_REQUIRE(!result.at("deployments").at("segwit").as_object().contains("height"));
 }
 
 // bitcoind buried taproot and no longer reports it as a deployment.
@@ -2077,7 +2075,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__taproot__absent)
     BC_REQUIRE(!response.at("result").at("deployments").as_object().contains("taproot"));
 }
 
-// Mainnet activations are all above the ten block store, so none are active.
+// No fork activates within the ten block store, so none are active.
 BC_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__below_activation__inactive)
 {
     const auto response = rpc("getdeploymentinfo");
@@ -4380,7 +4378,49 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__activ
     const auto& result = response.at("result");
     BC_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
     BC_REQUIRE_EQUAL(as_text(result.at("bip9_softforks").at("taproot").at("status")), "active");
-    BC_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 709632);
+    BC_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 9);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+// csv active
+// ----------------------------------------------------------------------------
+// Csv is flagged in the top header context and activated there.
+
+BC_FIXTURE_TEST_SUITE(bitcoind_csv_active_tests, bitcoind_csv_active_setup_fixture)
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__csv_activated__top_height)
+{
+    const auto response = rpc("getdeploymentinfo");
+    const auto& csv = response.at("result").at("deployments").at("csv");
+    BC_REQUIRE_EQUAL(as_text(csv.at("type")), "buried");
+    BC_REQUIRE(csv.at("active").as_bool());
+    BC_REQUIRE_EQUAL(csv.at("height").as_int64(), 9);
+    BC_REQUIRE(!response.at("result").at("deployments").at("segwit").as_object().contains("height"));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__csv_activated_above_block__inactive)
+{
+    const auto response = rpc("getdeploymentinfo", hash_param(test::block5_hash));
+    const auto& csv = response.at("result").at("deployments").at("csv");
+    BC_REQUIRE(!csv.at("active").as_bool());
+    BC_REQUIRE_EQUAL(csv.at("height").as_int64(), 9);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+// csv unconfirmed
+// ----------------------------------------------------------------------------
+// Csv is activated at a height whose confirmed header is not flagged.
+
+BC_FIXTURE_TEST_SUITE(bitcoind_csv_unconfirmed_tests, bitcoind_csv_unconfirmed_setup_fixture)
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__csv_activation_unflagged__no_height)
+{
+    const auto response = rpc("getdeploymentinfo");
+    const auto& csv = response.at("result").at("deployments").at("csv");
+    BC_REQUIRE(!csv.at("active").as_bool());
+    BC_REQUIRE(!csv.as_object().contains("height"));
 }
 
 BC_AUTO_TEST_SUITE_END()

@@ -1340,7 +1340,7 @@ BC_AUTO_TEST_CASE(btcd_rpc__getblockchaininfo__bip9_softforks_taproot__active__p
     const auto& result = response.at("result");
     BC_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
     BC_REQUIRE_EQUAL(as_text(result.at("bip9_softforks").at("taproot").at("status")), "active");
-    BC_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 709632);
+    BC_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 9);
 }
 
 BC_AUTO_TEST_SUITE_END()

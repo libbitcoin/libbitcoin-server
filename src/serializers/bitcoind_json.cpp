@@ -328,15 +328,20 @@ bool chain_info(network::rpc::object_t& out,
     if (context.is_enabled(chain::flags::bip341_rule) &&
         context.is_enabled(chain::flags::bip342_rule))
     {
-        soft_forks.emplace("taproot", network::rpc::object_t
+        network::rpc::object_t taproot
         {
             { "status", std::string{ "active" } },
             { "bit", 2 },
             { "startTime", -1 },
             { "timeout", -1 },
-            { "since", to64(settings.bip9_bit2_active_checkpoint.height()) },
             { "min_activation_height", 0 }
-        });
+        };
+
+        size_t since{};
+        if (query.get_activation(since, chain::flags::bip341_rule))
+            taproot.emplace("since", to64(since));
+
+        soft_forks.emplace("taproot", std::move(taproot));
     }
 
     out.emplace("bip9_softforks", std::move(soft_forks));

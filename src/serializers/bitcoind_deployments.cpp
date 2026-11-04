@@ -28,14 +28,27 @@ using namespace network::rpc;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-// A frozen activation (bitcoind's "buried" type, which assumes depth).
+// An activation reported as bitcoind's "buried" type, which assumes depth.
 // bitcoind reports it as active from one block below the activation height
 // (the rules are enforced for the block that follows).
-static void push_frozen(object_t& out, const std::string& name, bool enabled,
-    size_t activation, size_t height) NOEXCEPT
+static void push_buried(object_t& out, const node::query& query,
+    const std::string& name, bool enabled, chain::flags flag,
+    size_t height) NOEXCEPT
 {
     if (!enabled)
         return;
+
+    size_t activation{};
+    if (!query.get_activation(activation, flag))
+    {
+        out.emplace(name, object_t
+        {
+            { "type", std::string{ "buried" } },
+            { "active", false }
+        });
+
+        return;
+    }
 
     out.emplace(name, object_t
     {
@@ -54,16 +67,16 @@ object_t deployment_info(const node::query& query,
 {
     const auto& forks = settings.forks;
     object_t deployments{};
-    push_frozen(deployments, "bip34", forks.bip34,
-        settings.bip90_bip34_height, height);
-    push_frozen(deployments, "bip66", forks.bip66,
-        settings.bip90_bip66_height, height);
-    push_frozen(deployments, "bip65", forks.bip65,
-        settings.bip90_bip65_height, height);
-    push_frozen(deployments, "csv", forks.bip68 && forks.bip112 &&
-        forks.bip113, settings.bip9_bit0_active_checkpoint.height(), height);
-    push_frozen(deployments, "segwit", forks.bip141 && forks.bip143 &&
-        forks.bip147, settings.bip9_bit1_active_checkpoint.height(), height);
+    push_buried(deployments, query, "bip34", forks.bip34,
+        chain::flags::bip34_rule, height);
+    push_buried(deployments, query, "bip66", forks.bip66,
+        chain::flags::bip66_rule, height);
+    push_buried(deployments, query, "bip65", forks.bip65,
+        chain::flags::bip65_rule, height);
+    push_buried(deployments, query, "csv", forks.bip68 && forks.bip112 &&
+        forks.bip113, chain::flags::bip68_rule, height);
+    push_buried(deployments, query, "segwit", forks.bip141 && forks.bip143 &&
+        forks.bip147, chain::flags::bip141_rule, height);
 
     return object_t
     {
