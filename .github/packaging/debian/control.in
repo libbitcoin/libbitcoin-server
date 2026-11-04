@@ -1,6 +1,7 @@
 Package: libbitcoin-server
 Version: @VERSION@
 Architecture: @ARCHITECTURE@
+Installed-Size: @INSTALLED_SIZE@
 Maintainer: libbitcoin developers <eric@voskuil.org>
 Section: net
 Priority: optional
