@@ -362,7 +362,7 @@ options_metadata parser::load_settings() THROWS
     (
         "forks.bip90",
         setting<bool>(&configured.bitcoin.forks.bip90),
-        "Assume bip34, bip65, and bip66 activation if enabled, defaults to {} (hard fork)."
+        "Freeze bip34, bip65, and bip66 activation at the bip90 heights, defaults to {} (hard fork)."
     )
     (
         "forks.bip68",
