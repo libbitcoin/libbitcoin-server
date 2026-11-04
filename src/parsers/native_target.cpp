@@ -18,6 +18,7 @@
  */
 #include <bitcoin/server/parsers/native_target.hpp>
 
+#include <charconv>
 #include <ranges>
 #include <optional>
 #include <bitcoin/server/define.hpp>
@@ -34,8 +35,12 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 template <typename Number>
 static bool to_number(Number& out, const std::string_view& token) NOEXCEPT
 {
-    return !token.empty() && is_ascii_numeric(token) && (is_one(token.size()) ||
-        token.front() != '0') && deserialize(out, token);
+    if (token.empty() || (token.size() > one && token.starts_with('0')))
+        return false;
+
+    const auto end = std::next(token.data(), token.size());
+    const auto result = std::from_chars(token.data(), end, out);
+    return result.ec == std::errc{} && result.ptr == end;
 }
 
 static hash_cptr to_hash(const std::string_view& token) NOEXCEPT
