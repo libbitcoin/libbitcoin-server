@@ -122,16 +122,19 @@ jobs:
       fail-fast: false
 
       matrix:
-        runner: [ "ubuntu-24.04", "ubuntu-24.04-arm" ]
-        toolchain:
-          - name: "x86_64-linux-gnu"
-            host: "x86_64-linux-gnu"
-          - name: "aarch64-linux-gnu"
-            host: "aarch64-linux-gnu"
-          - name: "darwin"
-            host: "x86_64-apple-darwin"
-          - name: "windows"
-            host: "x86_64-pc-windows-msvc"
+        include:
+          - runner: "ubuntu-24.04"
+            toolchain: { name: "x86_64-linux-gnu", host: "x86_64-linux-gnu" }
+          - runner: "ubuntu-24.04-arm"
+            toolchain: { name: "x86_64-linux-gnu", host: "x86_64-linux-gnu" }
+          - runner: "ubuntu-24.04"
+            toolchain: { name: "aarch64-linux-gnu", host: "aarch64-linux-gnu" }
+          - runner: "ubuntu-24.04-arm"
+            toolchain: { name: "aarch64-linux-gnu", host: "aarch64-linux-gnu" }
+          - runner: "ubuntu-24.04"
+            toolchain: { name: "darwin", host: "x86_64-apple-darwin" }
+          - runner: "ubuntu-24.04"
+            toolchain: { name: "windows", host: "x86_64-pc-windows-msvc" }
 
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 360
@@ -204,16 +207,13 @@ jobs:
       fail-fast: false
 
       matrix:
-        builder:
-          - name: "a"
-            image: "ubuntu-24.04"
-          - name: "b"
-            image: "ubuntu-24.04-arm"
+        builder: [ "a", "b" ]
 
         target:
           - basename: "bs-linux-x64"
             host: "x86_64-linux-gnu"
             toolchain: "x86_64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
             options: "-Denable-avx2=ON -Denable-sse41=ON"
             linkflags: "-static-libstdc++ -static-libgcc"
             flags: "-march=x86-64-v3 -mtune=generic"
@@ -221,6 +221,7 @@ jobs:
           - basename: "bs-linux-x64-shani"
             host: "x86_64-linux-gnu"
             toolchain: "x86_64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
             options: "-Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
             linkflags: "-static-libstdc++ -static-libgcc"
             flags: "-march=x86-64-v3 -mtune=generic"
@@ -228,6 +229,7 @@ jobs:
           - basename: "bs-linux-x64-avxifma"
             host: "x86_64-linux-gnu"
             toolchain: "x86_64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
             options: "-Denable-avxifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
             linkflags: "-static-libstdc++ -static-libgcc"
             flags: "-march=x86-64-v3 -mtune=generic"
@@ -235,6 +237,7 @@ jobs:
           - basename: "bs-linux-x64-avx512ifma"
             host: "x86_64-linux-gnu"
             toolchain: "x86_64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
             options: "-Denable-avx512ifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
             linkflags: "-static-libstdc++ -static-libgcc"
             flags: "-march=x86-64-v3 -mtune=generic"
@@ -242,12 +245,14 @@ jobs:
           - basename: "bs-linux-arm64"
             host: "aarch64-linux-gnu"
             toolchain: "aarch64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
             linkflags: "-static-libstdc++ -static-libgcc"
             flags: "-march=armv8-a -mtune=generic"
 
           - basename: "bs-linux-arm64-sha2"
             host: "aarch64-linux-gnu"
             toolchain: "aarch64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
             options: "-Denable-sha2=ON -Denable-aes=ON"
             linkflags: "-static-libstdc++ -static-libgcc"
             flags: "-mtune=generic"
@@ -255,6 +260,7 @@ jobs:
           - basename: "bs-linux-arm64-sha3"
             host: "aarch64-linux-gnu"
             toolchain: "aarch64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
             options: "-Denable-sha2=ON -Denable-sha3=ON -Denable-aes=ON"
             linkflags: "-static-libstdc++ -static-libgcc"
             flags: "-mtune=generic"
@@ -262,6 +268,7 @@ jobs:
           - basename: "bs-macos-x64"
             host: "x86_64-apple-darwin"
             toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "apple"
             deployment_target: "13.3"
             options: "-Denable-avx2=ON -Denable-sse41=ON -Denable-aesni=ON"
@@ -270,6 +277,7 @@ jobs:
           - basename: "bs-macos-arm64"
             host: "arm64-apple-darwin"
             toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "apple"
             deployment_target: "13.3"
             options: "-Denable-sha3=ON -Denable-sha2=ON -Denable-aes=ON"
@@ -278,47 +286,55 @@ jobs:
           - basename: "bs-windows-x64"
             host: "x86_64-pc-windows-msvc"
             toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
             options: "-Denable-avx2=ON -Denable-sse41=ON"
 
           - basename: "bs-windows-x64-shani"
             host: "x86_64-pc-windows-msvc"
             toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
             options: "-Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
 
           - basename: "bs-windows-x64-avxifma"
             host: "x86_64-pc-windows-msvc"
             toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
             options: "-Denable-avxifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
 
           - basename: "bs-windows-x64-avx512ifma"
             host: "x86_64-pc-windows-msvc"
             toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
             options: "-Denable-avx512ifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
 
           - basename: "bs-windows-arm64"
             host: "aarch64-pc-windows-msvc"
             toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
 
           - basename: "bs-windows-arm64-sha2"
             host: "aarch64-pc-windows-msvc"
             toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
             options: "-Denable-sha2=ON -Denable-aes=ON"
 
           - basename: "bs-windows-arm64-sha3"
             host: "aarch64-pc-windows-msvc"
             toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
             options: "-Denable-sha2=ON -Denable-sha3=ON -Denable-aes=ON"
 
           - basename: "selector-linux-x64"
             host: "x86_64-linux-gnu"
             toolchain: "x86_64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
             project: "libbitcoin-system"
             program: "selector"
             linkflags: "-static-libstdc++ -static-libgcc"
@@ -326,6 +342,7 @@ jobs:
           - basename: "selector-linux-arm64"
             host: "aarch64-linux-gnu"
             toolchain: "aarch64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
             project: "libbitcoin-system"
             program: "selector"
             linkflags: "-static-libstdc++ -static-libgcc"
@@ -333,6 +350,7 @@ jobs:
           - basename: "selector-macos-x64"
             host: "x86_64-apple-darwin"
             toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "apple"
             deployment_target: "13.3"
             project: "libbitcoin-system"
@@ -341,6 +359,7 @@ jobs:
           - basename: "selector-macos-arm64"
             host: "arm64-apple-darwin"
             toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "apple"
             deployment_target: "13.3"
             project: "libbitcoin-system"
@@ -349,6 +368,7 @@ jobs:
           - basename: "selector-windows-x64"
             host: "x86_64-pc-windows-msvc"
             toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
             project: "libbitcoin-system"
             program: "selector"
@@ -356,12 +376,13 @@ jobs:
           - basename: "selector-windows-arm64"
             host: "aarch64-pc-windows-msvc"
             toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
             project: "libbitcoin-system"
             program: "selector"
 
 
-    runs-on: ${{ matrix.builder.image }}
+    runs-on: ${{ matrix.target.images[matrix.builder] }}
 
     steps:
       - name: Checkout libbitcoin-server
@@ -497,12 +518,12 @@ jobs:
       - name: Upload build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: double-${{ matrix.target.basename }}-${{ matrix.builder.name }}
+          name: double-${{ matrix.target.basename }}-${{ matrix.builder }}
           path: output
           retention-days: 7
 
       - name: Upload artifacts
-        if: ${{ matrix.builder.name == 'a' }}
+        if: ${{ matrix.builder == 'a' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ matrix.target.basename }}
@@ -511,7 +532,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload symbols
-        if: ${{ matrix.builder.name == 'a' }}
+        if: ${{ matrix.builder == 'a' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: symbols-${{ matrix.target.basename }}
