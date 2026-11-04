@@ -362,7 +362,7 @@ options_metadata parser::load_settings() THROWS
     (
         "forks.bip90",
         setting<bool>(&configured.bitcoin.forks.bip90),
-        "Assume bip34, bip65, and bip66 activation if enabled, defaults to {} (hard fork)."
+        "Freeze bip34, bip65, and bip66 activation at the bip90 heights, defaults to {} (hard fork)."
     )
     (
         "forks.bip68",
@@ -552,21 +552,6 @@ options_metadata parser::load_settings() THROWS
         "bitcoin.bip66_freeze",
         setting<size_t>(&configured.bitcoin.bip90_bip66_height),
         "The block height to freeze the bip66 softfork for bip90, defaults to {}."
-    )
-    (
-        "bitcoin.bip9_bit0_active_checkpoint",
-        setting<chain::checkpoint>(&configured.bitcoin.bip9_bit0_active_checkpoint),
-        "The hash:height checkpoint for bip9 bit0 activation, defaults to {}."
-    )
-    (
-        "bitcoin.bip9_bit1_active_checkpoint",
-        setting<chain::checkpoint>(&configured.bitcoin.bip9_bit1_active_checkpoint),
-        "The hash:height checkpoint for bip9 bit1 activation, defaults to {}."
-    )
-    (
-        "bitcoin.bip9_bit2_active_checkpoint",
-        setting<chain::checkpoint>(&configured.bitcoin.bip9_bit2_active_checkpoint),
-        "The hash:height checkpoint for bip9 bit2 activation, defaults to {}."
     )
     (
         "bitcoin.bip9_activation_period",

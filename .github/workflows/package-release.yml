@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag whose signed binaries are packaged."
+        description: "Published release tag whose signed binaries are packaged."
         required: true
         type: string
 
@@ -35,10 +35,6 @@ jobs:
   debian:
     needs: version
     runs-on: ubuntu-latest
-
-    # Draft release assets are visible only with write access.
-    permissions:
-      contents: write
 
     strategy:
       fail-fast: false
@@ -94,6 +90,7 @@ jobs:
 
           sed -e "s|@VERSION@|${VERSION}|" \
               -e "s|@ARCHITECTURE@|${{ matrix.architecture }}|" \
+              -e "s|@INSTALLED_SIZE@|$(du -sk package/usr | cut -f1)|" \
               "${PACKAGING}/control.in" > package/DEBIAN/control
 
           sed -e "s|@BASELINE@|${{ matrix.baseline }}|" \
@@ -191,10 +188,6 @@ jobs:
     needs: version
     runs-on: windows-latest
 
-    # Draft release assets are visible only with write access.
-    permissions:
-      contents: write
-
     strategy:
       fail-fast: false
 
@@ -271,10 +264,6 @@ jobs:
   manifests:
     needs: [ version, windows, docker ]
     runs-on: ubuntu-latest
-
-    # Draft release assets are visible only with write access.
-    permissions:
-      contents: write
 
     env:
       VERSION: ${{ needs.version.outputs.version }}

@@ -329,6 +329,39 @@ struct bitcoind_closed_setup_fixture
     }
 };
 
+// Configured with csv flagged in the top header context and activated there.
+struct bitcoind_csv_active_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_csv_active_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            constexpr auto csv = system::chain::flags::bip68_rule |
+                system::chain::flags::bip112_rule |
+                system::chain::flags::bip113_rule;
+            const auto stored = test::setup_ten_block_store(query, csv);
+            const auto link = query.to_header(test::block9_hash);
+            return stored && query.set_activation(csv, link);
+        })
+    {
+    }
+};
+
+// Configured with csv activated at a height whose header is not flagged.
+struct bitcoind_csv_unconfirmed_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_csv_unconfirmed_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            const auto stored = test::setup_ten_block_store(query);
+            const auto link = query.to_header(test::block9_hash);
+            return stored && query.set_activation(system::chain::flags::bip68_rule, link);
+        })
+    {
+    }
+};
+
 // Configured with taproot flagged in the top header context.
 struct bitcoind_taproot_active_setup_fixture
   : bitcoind_setup_fixture
@@ -336,9 +369,11 @@ struct bitcoind_taproot_active_setup_fixture
     inline bitcoind_taproot_active_setup_fixture()
       : bitcoind_setup_fixture([](test::query_t& query)
         {
-            return test::setup_ten_block_store(query,
-                system::chain::flags::bip341_rule |
-                system::chain::flags::bip342_rule);
+            constexpr auto taproot = system::chain::flags::bip341_rule |
+                system::chain::flags::bip342_rule;
+            const auto stored = test::setup_ten_block_store(query, taproot);
+            const auto link = query.to_header(test::block9_hash);
+            return stored && query.set_activation(taproot, link);
         })
     {
     }

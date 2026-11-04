@@ -1,0 +1,220 @@
+###############################################################################
+#  Copyright (c) 2014-2026 libbitcoin-server developers (see COPYING).
+#
+###############################################################################
+
+name: Distribute Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Published release tag whose packages are distributed."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+
+  version:
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Compute version
+        id: version
+        shell: bash
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+  apt:
+    needs: version
+    environment: release
+    runs-on: ubuntu-latest
+
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: 'apt'
+          repository: ${{ github.repository_owner }}/apt
+          token: ${{ secrets.DISTRIBUTE_TOKEN }}
+
+      - name: Download packages
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${{ github.event.inputs.tag }}" --repo "${{ github.repository }}" \
+            --dir packages --pattern "libbitcoin-server_${VERSION}_*.deb" --pattern packages-sha256.txt
+          cd packages
+          sha256sum --check --ignore-missing packages-sha256.txt
+
+      - name: Prepare tools
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends dpkg-dev apt-utils
+
+      - name: Import signing key
+        shell: bash
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+        run: |
+          echo "${SIGNING_KEY}" | gpg --batch --import
+
+      - name: Generate repository
+        shell: bash
+        working-directory: apt
+        env:
+          PUBLIC_KEY: ${{ vars.PUBLIC_KEY }}
+          SIGNING_PASSPHRASE: ${{ secrets.SIGNING_PASSPHRASE }}
+        run: |
+          POOL="pool/main/l/libbitcoin-server"
+          SUITE="dists/stable"
+          git rm -rq --ignore-unmatch "${POOL}" dists libbitcoin.asc
+          mkdir -p "${POOL}"
+          cp ../packages/*.deb "${POOL}/"
+
+          for ARCHITECTURE in amd64 arm64; do
+            BINARY="${SUITE}/main/binary-${ARCHITECTURE}"
+            mkdir -p "${BINARY}"
+            dpkg-scanpackages --arch "${ARCHITECTURE}" pool > "${BINARY}/Packages"
+            gzip -9nk "${BINARY}/Packages"
+          done
+
+          apt-ftparchive \
+            -o APT::FTPArchive::Release::Origin=libbitcoin \
+            -o APT::FTPArchive::Release::Label=libbitcoin \
+            -o APT::FTPArchive::Release::Suite=stable \
+            -o APT::FTPArchive::Release::Codename=stable \
+            -o APT::FTPArchive::Release::Architectures="amd64 arm64" \
+            -o APT::FTPArchive::Release::Components=main \
+            release "${SUITE}" > Release
+          mv Release "${SUITE}/Release"
+
+          SIGN=(gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0)
+          "${SIGN[@]}" --clearsign --output "${SUITE}/InRelease" "${SUITE}/Release" <<< "${SIGNING_PASSPHRASE}"
+          "${SIGN[@]}" --armor --detach-sign --output "${SUITE}/Release.gpg" "${SUITE}/Release" <<< "${SIGNING_PASSPHRASE}"
+          echo "${PUBLIC_KEY}" > libbitcoin.asc
+
+          find . -path ./.git -prune -o -type f -print | sort
+
+      - name: Publish repository
+        shell: bash
+        working-directory: apt
+        run: |
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          git checkout --orphan publication
+          git add -A
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "libbitcoin-server ${VERSION}."
+          git push --force origin "publication:${BRANCH}"
+
+  homebrew:
+    needs: version
+    runs-on: ubuntu-latest
+
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+
+    steps:
+      - name: Checkout tap
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: 'tap'
+          repository: ${{ github.repository_owner }}/homebrew-tap
+          token: ${{ secrets.DISTRIBUTE_TOKEN }}
+
+      - name: Download formula
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${{ github.event.inputs.tag }}" --repo "${{ github.repository }}" \
+            --dir packages --pattern libbitcoin-server.rb --pattern packages-sha256.txt
+          cd packages
+          sha256sum --check --ignore-missing packages-sha256.txt
+
+      - name: Commit formula
+        shell: bash
+        working-directory: tap
+        run: |
+          mkdir -p Formula
+          cp ../packages/libbitcoin-server.rb Formula/
+          git add Formula/libbitcoin-server.rb
+          if git diff --cached --quiet; then
+            echo "The tap already has this formula."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "libbitcoin-server ${VERSION}."
+          git push
+
+  winget:
+    needs: version
+    runs-on: windows-latest
+
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+
+    steps:
+      - name: Download manifests
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${{ github.event.inputs.tag }}" --repo "${{ github.repository }}" \
+            --dir packages --pattern "Libbitcoin.Server*.yaml" --pattern packages-sha256.txt
+          cd packages
+          sha256sum --check --ignore-missing packages-sha256.txt
+          mkdir ../manifests
+          mv Libbitcoin.Server*.yaml ../manifests/
+
+      - name: Submit manifests
+        shell: pwsh
+        env:
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        run: |
+          Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+          .\wingetcreate.exe submit `
+            --prtitle "New version: Libbitcoin.Server version $env:VERSION" `
+            --token $env:WINGET_TOKEN `
+            manifests
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  docker:
+    needs: version
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/libbitcoin-server
+
+    steps:
+      - name: Log in to the container registry
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Tag latest
+        shell: bash
+        run: |
+          docker buildx imagetools create --tag "${IMAGE}:latest" \
+            "${IMAGE}:${{ needs.version.outputs.version }}"
+          docker buildx imagetools inspect "${IMAGE}:latest"
