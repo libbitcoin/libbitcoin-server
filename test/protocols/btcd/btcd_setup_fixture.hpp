@@ -66,6 +66,10 @@ struct btcd_setup_fixture
     system::json::value http_rpc(std::string_view method,
         std::string_view params = "[]", bool checked=true);
 
+    // As http_rpc(), returning only the http status.
+    network::http::status http_rpc_status(std::string_view method,
+        std::string_view params="[]");
+
     // As http_rpc(), with basic authorization.
     system::json::value http_rpc(std::string_view method,
         std::string_view params, const std::string& username,

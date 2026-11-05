@@ -2182,6 +2182,44 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__batch__empty__dropped)
     REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
 }
 
+// http status
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__status__v1_success__ok)
+{
+    BC_REQUIRE_EQUAL(rpc_body_status(R"({"id":1,"method":"getblockcount","params":[]})"), status::ok);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__status__v1_method_not_found__not_found)
+{
+    BC_REQUIRE_EQUAL(rpc_body_status(R"({"id":1,"method":"nosuchmethod","params":[]})"), status::not_found);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__status__v1_method_not_found__error_body)
+{
+    BC_REQUIRE(has_code(rpc_body(R"({"id":1,"method":"nosuchmethod","params":[]})"), -32601));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__status__v1_application_error__internal_server_error)
+{
+    BC_REQUIRE_EQUAL(rpc_body_status(R"({"id":1,"method":"getblockhash","params":[10]})"), status::internal_server_error);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__status__v1_application_error__error_body)
+{
+    BC_REQUIRE(has_code(rpc_body(R"({"id":1,"method":"getblockhash","params":[10]})"), -8));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__status__v2_method_not_found__ok)
+{
+    BC_REQUIRE_EQUAL(rpc_body_status(R"({"jsonrpc":"2.0","id":1,"method":"nosuchmethod","params":[]})"), status::ok);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__status__v2_application_error__ok)
+{
+    BC_REQUIRE_EQUAL(rpc_body_status(R"({"jsonrpc":"2.0","id":1,"method":"getblockhash","params":[10]})"), status::ok);
+}
+
 // notifications
 // ----------------------------------------------------------------------------
 

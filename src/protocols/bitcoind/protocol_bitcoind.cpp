@@ -326,6 +326,22 @@ void protocol_bitcoind::send_result(value_option&& result) NOEXCEPT
     });
 }
 
+static http::status to_status(const response_t& model) NOEXCEPT
+{
+    if (!model.error.has_value() || (model.jsonrpc != rpc::version::v1))
+        return http::status::ok;
+
+    switch (model.error->code)
+    {
+        case error::bitcoind::invalid_request:
+            return http::status::bad_request;
+        case error::bitcoind::method_not_found:
+            return http::status::not_found;
+        default:
+            return http::status::internal_server_error;
+    }
+}
+
 // private
 void protocol_bitcoind::send_rpc(response_t&& model) NOEXCEPT
 {
@@ -378,7 +394,10 @@ void protocol_bitcoind::send_rpc(response_t&& model,
         return;
     }
 
-    http::response message{ status::ok, request->version() };
+    const auto batched = body.batch || body.changed;
+    const auto statused = options().error_status && !batched;
+    const auto result = statused ? to_status(model) : status::ok;
+    http::response message{ result, request->version() };
     add_common_headers(message, *request);
     add_access_control_headers(message, *request);
     message.set(field::content_type, json);
