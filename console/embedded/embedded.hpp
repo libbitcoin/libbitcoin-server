@@ -35,7 +35,7 @@ struct container : public shared_pages \
     DECLARE_EMBEDDED_PAGE(ecma); \
 }
 
-#if defined(WITH_EMBEDDED)
+#if defined(HAVE_WEB)
 #define DEFINE_EMBEDDED_PAGE(container, type, name, ...) \
 span_value container::name() const NOEXCEPT \
 { \
@@ -54,7 +54,7 @@ span_value container::name() const NOEXCEPT \
 namespace libbitcoin {
 namespace server {
 
-#if defined(WITH_EMBEDDED)
+#if defined(HAVE_WEB)
 
 // Assets common to the embedded sites, embedded once. A site overrides one by
 // redeclaring it in its own container, making this the default.

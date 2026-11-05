@@ -100,7 +100,7 @@ include(CheckCXXSourceCompiles)
 #------------------------------------------------------------------------------
 option( with-tests "Compile with unit tests." ON )
 option( with-console "Compile with console application." ON )
-option( with-embedded "Compile web pages into the console application." ON )
+option( with-web "Compile web pages into the console application." ON )
 
 #------------------------------------------------------------------------------
 # Dependencies.
@@ -391,7 +391,7 @@ if ( with-console )
 
   target_compile_definitions( bitcoin-server-objects
     PRIVATE
-      $<$<BOOL:${with-embedded}>:WITH_EMBEDDED>
+      $<$<BOOL:${with-web}>:WITH_WEB>
   )
 
   file( GLOB_RECURSE bitcoin_server_objects_HEADERS CONFIGURE_DEPENDS

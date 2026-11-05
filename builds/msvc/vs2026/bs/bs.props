@@ -20,7 +20,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(RepoRoot)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnablePREfast>false</EnablePREfast>
-      <PreprocessorDefinitions Condition="'$(Option-embedded)' == 'true'">WITH_EMBEDDED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Option-web)' == 'true'">WITH_WEB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(RepoRoot)build\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -69,13 +69,13 @@
   <!-- Options -->
 
   <PropertyGroup>
-    <Option-embedded Condition="'$(Option-embedded)' == ''">true</Option-embedded>
+    <Option-web Condition="'$(Option-web)' == ''">true</Option-web>
   </PropertyGroup>
 
   <!-- Messages -->
 
   <Target Name="OptionInfo" BeforeTargets="PrepareForBuild">
-    <Message Text="Option-embedded   : $(Option-embedded)" Importance="high"/>
+    <Message Text="Option-web        : $(Option-web)" Importance="high"/>
   </Target>
 
   <Target Name="LinkageInfo" BeforeTargets="PrepareForBuild">

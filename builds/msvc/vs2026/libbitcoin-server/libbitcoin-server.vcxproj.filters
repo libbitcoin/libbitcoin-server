@@ -392,6 +392,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\error\error_t.hpp">
       <Filter>include\bitcoin\server\error</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\have.hpp">
+      <Filter>include\bitcoin\server</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\admin.hpp">
       <Filter>include\bitcoin\server\interfaces</Filter>
     </ClInclude>
