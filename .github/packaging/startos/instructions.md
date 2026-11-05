@@ -19,5 +19,5 @@ The **Peer** interface accepts incoming connections from the bitcoin network.
 
 ## Documentation
 
-- [Configuration](https://libbitcoin.info/configuration/index.html)
+- [Configuration](https://libbitcoin.org/configuration/index.html)
 - [Source](https://github.com/libbitcoin/libbitcoin-server)

@@ -13,10 +13,10 @@ description: >-
   management console, and its block explorer is served on port 8187.
 
 
-  Powered by Libbitcoin Server: https://libbitcoin.info
+  Powered by Libbitcoin Server: https://libbitcoin.org
 releaseNotes: ""
 developer: libbitcoin
-website: https://libbitcoin.info
+website: https://libbitcoin.org
 dependencies: []
 repo: https://github.com/libbitcoin/libbitcoin-server
 support: https://github.com/libbitcoin/libbitcoin-server/issues

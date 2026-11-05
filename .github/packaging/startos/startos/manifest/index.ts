@@ -7,7 +7,7 @@ export const manifest = setupManifest({
   license: 'AGPL-3.0',
   packageRepo: 'https://github.com/libbitcoin/libbitcoin-server',
   upstreamRepo: 'https://github.com/libbitcoin/libbitcoin-server',
-  marketingUrl: 'https://libbitcoin.info',
+  marketingUrl: 'https://libbitcoin.org',
   donationUrl: null,
   description: { short, long },
   volumes: ['main'],
