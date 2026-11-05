@@ -68,6 +68,9 @@ protected:
 
     // This is protected by strand.
     rpc_dispatcher rpc_dispatcher_{};
+
+private:
+    static bool is_ignored(const network::rpc::request_t& message) NOEXCEPT;
 };
 
 } // namespace server
