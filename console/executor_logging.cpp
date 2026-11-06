@@ -58,26 +58,35 @@ database::file::stream::out::rotator executor::create_log_sink() const
     };
 }
 
+network::logger::interest::ptr executor::create_log_interest() const
+{
+    using namespace system;
+    using namespace network;
+
+    const auto& config = metadata_.configured.log;
+    uint64_t mask{};
+    set_right_into(mask, levels::application, config.application);
+    set_right_into(mask, levels::news, config.news);
+    set_right_into(mask, levels::session, config.session);
+    set_right_into(mask, levels::protocol, config.protocol);
+    set_right_into(mask, levels::proxy, config.proxy);
+    set_right_into(mask, levels::remote, config.remote);
+    set_right_into(mask, levels::fault, config.fault);
+    set_right_into(mask, levels::quitting, config.quitting);
+    set_right_into(mask, levels::objects, config.objects);
+    set_right_into(mask, levels::verbose, config.verbose);
+    return emplace_shared<network::logger::interest>(log_, mask);
+}
+
 void executor::subscribe_log(std::ostream& sink)
 {
     using namespace system;
 
     log_.subscribe_messages
     (
+        log_interest_,
         [&](const code& ec, uint8_t level, time_t time, const std::string& message)
         {
-            if (level >= toggle_.size())
-            {
-                sink    << "Invalid log [" << serialize(level) << "] : " << message;
-                output_ << "Invalid log [" << serialize(level) << "] : " << message;
-                output_.flush();
-                return true;
-            }
-
-            // Write only selected logs.
-            if (!ec && !toggle_.at(level))
-                return true;
-
             const auto prefix = format_zulu_time(time) + "." +
                 serialize(level) + " ";
 
@@ -119,10 +128,15 @@ void executor::log_stopping()
     if (signal == signal_none)
         return;
 
+    using namespace system;
+    using namespace network;
+
+    constexpr auto protocol = bit_right<uint64_t>(levels::protocol);
+    constexpr auto verbose = bit_right<uint64_t>(levels::verbose);
+    constexpr auto proxy = bit_right<uint64_t>(levels::proxy);
+
     // A high level of consolve logging can obscure and delay stop.
-    toggle_.at(network::levels::protocol) = false;
-    toggle_.at(network::levels::verbose) = false;
-    toggle_.at(network::levels::proxy) = false;
+    log_interest_->disable(bit_or(bit_or(protocol, verbose), proxy));
 
     logger(std::format(BS_NODE_INTERRUPTED, signal));
     logger(BS_NETWORK_STOPPING);

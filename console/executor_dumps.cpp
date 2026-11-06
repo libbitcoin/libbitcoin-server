@@ -114,16 +114,16 @@ void executor::dump_options() const
     using namespace network;
 
     logger(BS_LOG_TABLE_HEADER);
-    logger(std::format("[a]pplication.. " BS_LOG_TABLE, levels::application_defined, toggle_.at(levels::application).load()));
-    logger(std::format("[n]ews......... " BS_LOG_TABLE, levels::news_defined, toggle_.at(levels::news).load()));
-    logger(std::format("[s]ession...... " BS_LOG_TABLE, levels::session_defined, toggle_.at(levels::session).load()));
-    logger(std::format("[p]rotocol..... " BS_LOG_TABLE, levels::protocol_defined, toggle_.at(levels::protocol).load()));
-    logger(std::format("[x]proxy....... " BS_LOG_TABLE, levels::proxy_defined, toggle_.at(levels::proxy).load()));
-    logger(std::format("[r]emote....... " BS_LOG_TABLE, levels::remote_defined, toggle_.at(levels::remote).load()));
-    logger(std::format("[f]ault........ " BS_LOG_TABLE, levels::fault_defined, toggle_.at(levels::fault).load()));
-    logger(std::format("[q]uitting..... " BS_LOG_TABLE, levels::quitting_defined, toggle_.at(levels::quitting).load()));
-    logger(std::format("[o]bjects...... " BS_LOG_TABLE, levels::objects_defined, toggle_.at(levels::objects).load()));
-    logger(std::format("[v]erbose...... " BS_LOG_TABLE, levels::verbose_defined, toggle_.at(levels::verbose).load()));
+    logger(std::format("[a]pplication.. " BS_LOG_TABLE, levels::application_defined, log_interest_->contains(levels::application)));
+    logger(std::format("[n]ews......... " BS_LOG_TABLE, levels::news_defined, log_interest_->contains(levels::news)));
+    logger(std::format("[s]ession...... " BS_LOG_TABLE, levels::session_defined, log_interest_->contains(levels::session)));
+    logger(std::format("[p]rotocol..... " BS_LOG_TABLE, levels::protocol_defined, log_interest_->contains(levels::protocol)));
+    logger(std::format("[x]proxy....... " BS_LOG_TABLE, levels::proxy_defined, log_interest_->contains(levels::proxy)));
+    logger(std::format("[r]emote....... " BS_LOG_TABLE, levels::remote_defined, log_interest_->contains(levels::remote)));
+    logger(std::format("[f]ault........ " BS_LOG_TABLE, levels::fault_defined, log_interest_->contains(levels::fault)));
+    logger(std::format("[q]uitting..... " BS_LOG_TABLE, levels::quitting_defined, log_interest_->contains(levels::quitting)));
+    logger(std::format("[o]bjects...... " BS_LOG_TABLE, levels::objects_defined, log_interest_->contains(levels::objects)));
+    logger(std::format("[v]erbose...... " BS_LOG_TABLE, levels::verbose_defined, log_interest_->contains(levels::verbose)));
 }
 
 // query_ not valid unless store is loaded.

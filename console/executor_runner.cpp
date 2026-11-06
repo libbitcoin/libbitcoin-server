@@ -32,14 +32,14 @@ using namespace std::placeholders;
 
 void executor::stopper(const std::string& message)
 {
-    // Stop capturing console evens and join its thread.
-    capture_.stop();
-
     // Stop log, causing final message to be buffered by handler.
     log_.stop(message, levels::application);
 
     // Suspend process termination until final message is buffered.
     stopped_.get_future().wait();
+
+    // Stop capturing console evens and join its thread.
+    capture_.stop();
 }
 
 void executor::subscribe_connect()

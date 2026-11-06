@@ -44,7 +44,8 @@ public:
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : protocol_html(session, channel, options),
-        network::tracker<protocol_admin>(session->log)
+        network::tracker<protocol_admin>(session->log),
+        log_interest_(system::emplace_shared<interest_t>(session->log))
     {
     }
 
@@ -89,6 +90,7 @@ protected:
 
 private:
     using filter_t = std::atomic<uint64_t>;
+    using interest_t = network::logger::interest;
 
     // Utils.
     static uint64_t to_zulu(const network::logger::time& point) NOEXCEPT;
@@ -98,11 +100,12 @@ private:
         filter_t& filter) NOEXCEPT;
 
     // These are thread safe.
-    filter_t log_state_{};
+    const interest_t::ptr log_interest_;
     filter_t event_state_{};
 
-    // This is protected by strand.
+    // These are protected by strand.
     dispatcher dispatcher_{};
+    bool log_subscribed_{};
 };
 
 } // namespace server

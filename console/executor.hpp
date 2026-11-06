@@ -151,6 +151,7 @@ private:
     // Logging.
     database::file::stream::out::rotator create_log_sink() const;
     system::ofstream create_event_sink() const;
+    network::logger::interest::ptr create_log_interest() const;
     void subscribe_log(std::ostream& sink);
     void subscribe_events(std::ostream& sink);
     void logger(const std::string& message) const;
@@ -189,7 +190,7 @@ private:
     std::ostream& output_;
     network::logger log_{};
     network::capture capture_{ input_, close_ };
-    std_array<std::atomic_bool, add1(network::levels::verbose)> toggle_;
+    const network::logger::interest::ptr log_interest_;
 
     // Shutdown.
     // ------------------------------------------------------------------------

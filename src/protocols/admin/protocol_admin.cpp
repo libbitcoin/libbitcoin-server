@@ -61,6 +61,7 @@ void protocol_admin::start() NOEXCEPT
 void protocol_admin::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
+    log_interest_->set(zero);
     dispatcher_.stop(ec);
     protocol_html::stopping(ec);
 }
@@ -179,9 +180,13 @@ bool protocol_admin::handle_get_log_subscribe(const code& ec,
         return false;
 
     // log outlives node, so cannot hold shared_ptr to the protocol.
-    uint64_t previous{};
-    if (update_filter(previous, filter, log_state_))
-        log.subscribe_messages(BIND_WEAK(handle_log, _1, _2, _3, _4));
+    const auto previous = log_interest_->set(filter);
+    if (!is_zero(filter) && !log_subscribed_)
+    {
+        auto handler = BIND_WEAK(handle_log, _1, _2, _3, _4);
+        log.subscribe_messages(log_interest_, std::move(handler));
+        log_subscribed_ = true;
+    }
 
     send_json({ { "previous", previous } }, 42);
     return true;
@@ -210,14 +215,14 @@ bool protocol_admin::handle_get_event_subscribe(const code& ec,
 bool protocol_admin::handle_log(const code& ec, uint8_t level, time_t zulu,
     const std::string& message) NOEXCEPT
 {
-    bool filtered{};
-    if (stopped(ec) || !get_filter(filtered, level, log_state_))
+    if (stopped(ec))
         return false;
 
-    if (!filtered || !websocket())
-        return true;
+    if (websocket())
+    {
+        POST(do_log, level, zulu * 1'000_u64, message);
+    }
 
-    POST(do_log, level, zulu * 1'000_u64, message);
     return true;
 }
 
