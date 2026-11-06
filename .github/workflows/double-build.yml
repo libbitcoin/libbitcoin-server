@@ -316,6 +316,7 @@ jobs:
             toolchain: "windows"
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
+            flags: "-march=armv8-a -mtune=generic"
 
           - basename: "bs-windows-arm64-sha2"
             host: "aarch64-pc-windows-msvc"
@@ -323,6 +324,7 @@ jobs:
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
             options: "-Denable-sha2=ON -Denable-aes=ON"
+            flags: "-march=armv8-a+aes+sha2 -mtune=generic"
 
           - basename: "bs-windows-arm64-sha3"
             host: "aarch64-pc-windows-msvc"
@@ -330,6 +332,7 @@ jobs:
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
             options: "-Denable-sha2=ON -Denable-sha3=ON -Denable-aes=ON"
+            flags: "-march=armv8.2-a+aes+sha2+sha3 -mtune=generic"
 
           - basename: "selector-linux-x64"
             host: "x86_64-linux-gnu"
