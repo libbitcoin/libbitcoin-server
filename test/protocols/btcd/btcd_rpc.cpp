@@ -85,6 +85,16 @@ BC_AUTO_TEST_CASE(btcd_rpc__authenticate__http_post__method_not_found)
     BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), method_not_found.value());
 }
 
+BC_AUTO_TEST_CASE(btcd_rpc__http_post__method_not_found__ok)
+{
+    BC_REQUIRE_EQUAL(http_rpc_status("nosuchmethod"), network::http::status::ok);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__http_post__application_error__ok)
+{
+    BC_REQUIRE_EQUAL(http_rpc_status("getblockhash", "[10]"), network::http::status::ok);
+}
+
 BC_AUTO_TEST_CASE(btcd_rpc__help__default__method_list)
 {
     const auto response = rpc("help");

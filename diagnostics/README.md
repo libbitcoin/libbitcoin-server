@@ -10,7 +10,7 @@ header comment).
 1. Profile a run (both device parameters are mandatory and enumerated in the
    usage text):
 
-        ./profile-posix.sh -b ./bn -a '-c ./bn.cfg' -i 5 -D nvme0n1 -n eth0
+        ./profile-posix.sh -b ./bn -a '-c ./bn.cfg' -i 5 -D nvme0n1 -n eth0,eth1
         ./profile-posix.sh -b ./bs -a '--config ./bs.cfg' -i 5 -D disk0 -n en0
         .\profile-windows.ps1 -Binary .\bn.exe -Args '-c .\bn.cfg' -Disk '0 C:' -Nic 'Ethernet'
 

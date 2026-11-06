@@ -97,6 +97,9 @@ settings::settings(system::chain::selection context,
     // The largest btcd notification is a filtered block.
     btcd.maximum_backlog = 20 * network::megabyte;
 
+    // btcd reports json-rpc errors in the response body only.
+    btcd.error_status = false;
+
     // Raw block publications drop beyond the bound, eight blocks deep.
     bitcoind_zmq.maximum_backlog = 32 * network::megabyte;
 

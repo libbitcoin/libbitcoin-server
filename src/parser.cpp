@@ -270,7 +270,7 @@ options_metadata parser::load_options() THROWS
         "Scan and display store information."
     );
 
-#if defined(WITH_BUILTIN_TESTS)
+#if defined(HAVE_SELF_TESTS)
     description.add_options()
     // Ad-hoc Testing.
     (
@@ -2125,7 +2125,7 @@ options_metadata parser::load_settings() THROWS
         setting<bool>(&configured.server.esplora.allow_opaque_origin),
         "Allow requests from opaque origin (see CORS), defaults to {}."
     )
-#if defined(WITH_STRATUM)
+#if defined(DISABLED)
     /* [stratum_v1] */
     (
         "stratum_v1.bind",

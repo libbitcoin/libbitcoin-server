@@ -22,6 +22,7 @@
       <EnablePREfast>false</EnablePREfast>
       <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'DynamicLibrary'">BCS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'StaticLibrary'">BCS_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Option-self-tests)' == 'true'">WITH_SELF_TESTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
 
@@ -39,31 +40,37 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'dynamic'">
-    <Linkage-secp256k1 Condition="'$(Option-secp256k1)' == 'true'">dynamic</Linkage-secp256k1>
     <Linkage-libbitcoin-system>dynamic</Linkage-libbitcoin-system>
     <Linkage-libbitcoin-database>dynamic</Linkage-libbitcoin-database>
     <Linkage-libbitcoin-network>dynamic</Linkage-libbitcoin-network>
     <Linkage-libbitcoin-node>dynamic</Linkage-libbitcoin-node>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'ltcg'">
-    <Linkage-secp256k1 Condition="'$(Option-secp256k1)' == 'true'">ltcg</Linkage-secp256k1>
     <Linkage-libbitcoin-system>ltcg</Linkage-libbitcoin-system>
     <Linkage-libbitcoin-database>ltcg</Linkage-libbitcoin-database>
     <Linkage-libbitcoin-network>ltcg</Linkage-libbitcoin-network>
     <Linkage-libbitcoin-node>ltcg</Linkage-libbitcoin-node>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DefaultLinkage)' == 'static'">
-    <Linkage-secp256k1 Condition="'$(Option-secp256k1)' == 'true'">static</Linkage-secp256k1>
     <Linkage-libbitcoin-system>static</Linkage-libbitcoin-system>
     <Linkage-libbitcoin-database>static</Linkage-libbitcoin-database>
     <Linkage-libbitcoin-network>static</Linkage-libbitcoin-network>
     <Linkage-libbitcoin-node>static</Linkage-libbitcoin-node>
   </PropertyGroup>
 
+  <!-- Options -->
+
+  <PropertyGroup>
+    <Option-self-tests Condition="'$(Option-self-tests)' == ''">false</Option-self-tests>
+  </PropertyGroup>
+
   <!-- Messages -->
 
+  <Target Name="OptionInfo" BeforeTargets="PrepareForBuild">
+    <Message Text="Option-self-tests : $(Option-self-tests)" Importance="high"/>
+  </Target>
+
   <Target Name="LinkageInfo" BeforeTargets="PrepareForBuild">
-    <Message Text="Linkage-secp256k1 : $(Linkage-secp256k1)" Importance="high"/>
     <Message Text="Linkage-_system   : $(Linkage-libbitcoin-system)" Importance="high"/>
     <Message Text="Linkage-_database : $(Linkage-libbitcoin-database)" Importance="high"/>
     <Message Text="Linkage-_network  : $(Linkage-libbitcoin-network)" Importance="high"/>

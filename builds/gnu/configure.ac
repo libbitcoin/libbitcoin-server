@@ -168,14 +168,23 @@ AC_ARG_WITH([console],
 AC_MSG_RESULT([$with_console])
 AM_CONDITIONAL([WITH_CONSOLE], [test "x${with_console}" != "xno"])
 
-AC_MSG_CHECKING([--with-embedded option])
-AC_ARG_WITH([embedded],
-    AS_HELP_STRING([--with-embedded],
+AC_MSG_CHECKING([--with-self-tests option])
+AC_ARG_WITH([self-tests],
+    AS_HELP_STRING([--with-self-tests],
+        [Compile self tests. @<:@default=no@:>@]),
+    [with_self_tests=$withval],
+    [with_self_tests=no])
+AC_MSG_RESULT([$with_self_tests])
+AM_CONDITIONAL([WITH_SELF_TESTS], [test "x${with_self_tests}" != "xno"])
+
+AC_MSG_CHECKING([--with-web option])
+AC_ARG_WITH([web],
+    AS_HELP_STRING([--with-web],
         [Compile web pages into the console application. @<:@default=yes@:>@]),
-    [with_embedded=$withval],
-    [with_embedded=yes])
-AC_MSG_RESULT([$with_embedded])
-AM_CONDITIONAL([WITH_EMBEDDED], [test "x${with_embedded}" != "xno"])
+    [with_web=$withval],
+    [with_web=yes])
+AC_MSG_RESULT([$with_web])
+AM_CONDITIONAL([WITH_WEB], [test "x${with_web}" != "xno"])
 
 # Set flags.
 #==============================================================================
@@ -276,8 +285,13 @@ AC_MSG_NOTICE([libbitcoin_node_BUILD_CPPFLAGS : ${libbitcoin_node_BUILD_CPPFLAGS
 
 # Set preprocessor defines.
 #==============================================================================
-AS_IF([test "x${with_embedded}" != "xno"], [
-        AC_DEFINE([WITH_EMBEDDED])
+AS_IF([test "x${with_self_tests}" != "xno"], [
+        AC_DEFINE([WITH_SELF_TESTS])
+        AC_SUBST([self_tests], [-DWITH_SELF_TESTS])
+    ])
+
+AS_IF([test "x${with_web}" != "xno"], [
+        AC_DEFINE([WITH_WEB])
     ])
 
 AC_CONFIG_FILES([

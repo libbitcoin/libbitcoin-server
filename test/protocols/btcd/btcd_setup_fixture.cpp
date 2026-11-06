@@ -133,6 +133,12 @@ system::json::value btcd_setup_fixture::http_rpc(std::string_view method,
         checked);
 }
 
+network::http::status btcd_setup_fixture::http_rpc_status(
+    std::string_view method, std::string_view params)
+{
+    return other_.post_status(body_of(http_request_id_++, method, params));
+}
+
 system::json::value btcd_setup_fixture::http_rpc(std::string_view method,
     std::string_view params, const std::string& username,
     const std::string& password)

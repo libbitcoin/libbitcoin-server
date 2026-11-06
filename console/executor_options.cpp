@@ -37,7 +37,7 @@ enum menu : uint8_t
     hold,
     info,
     menu_,
-#if defined(WITH_BUILTIN_TESTS)
+#if defined(HAVE_SELF_TESTS)
     test,
 #endif
     work,
@@ -56,7 +56,7 @@ const std::unordered_map<std::string, uint8_t> executor::options_
     { "h", menu::hold },
     { "i", menu::info },
     { "m", menu::menu_ },
-#if defined(WITH_BUILTIN_TESTS)
+#if defined(HAVE_SELF_TESTS)
     { "t", menu::test },
 #endif
     { "w", menu::work },
@@ -72,7 +72,7 @@ const std::unordered_map<uint8_t, std::string> executor::options_menu_
     { menu::hold,    "[h]old network communication" },
     { menu::info,    "[i]nfo about store" },
     { menu::menu_,   "[m]enu of options and toggles" },
-#if defined(WITH_BUILTIN_TESTS)
+#if defined(HAVE_SELF_TESTS)
     { menu::test,    "[t]est built-in case" },
 #endif
     { menu::work,    "[w]ork distribution" },
@@ -198,7 +198,7 @@ void executor::do_menu() const
         logger(std::format("Option: {}", option.second));
 }
 
-#if defined(WITH_BUILTIN_TESTS)
+#if defined(HAVE_SELF_TESTS)
 // [t]est
 void executor::do_test() const
 {
@@ -324,7 +324,7 @@ void executor::subscribe_capture()
                         do_menu();
                         return true;
                     }
-#if defined(WITH_BUILTIN_TESTS)
+#if defined(HAVE_SELF_TESTS)
                     case menu::test:
                     {
                         do_test();

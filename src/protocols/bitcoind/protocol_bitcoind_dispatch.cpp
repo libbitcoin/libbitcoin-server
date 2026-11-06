@@ -29,6 +29,15 @@ namespace server {
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
+// A notification of a query is not executed, as its reply is empty.
+TEMPLATE
+bool CLASS::is_ignored(const network::rpc::request_t& message) NOEXCEPT
+{
+    return (message.jsonrpc == network::rpc::version::v2) &&
+        !message.id.has_value() &&
+        !network::rpc::is_command<Interface::methods>(message.method);
+}
+
 // Subscribe to the post and websocket transports of the interface.
 TEMPLATE
 void CLASS::start() NOEXCEPT
@@ -103,6 +112,12 @@ void CLASS::handle_receive_post(const code& ec,
         return;
     }
 
+    if (is_ignored(message))
+    {
+        send_result({});
+        return;
+    }
+
     // Dispatch the request to the interface dispatcher.
     if (const auto code = rpc_dispatcher_.notify(message))
         stop(code);
@@ -143,6 +158,12 @@ void CLASS::dispatch_websocket(
     if (!permitted(message.method))
     {
         stop(network::error::unauthorized);
+        return;
+    }
+
+    if (is_ignored(message))
+    {
+        send_result({});
         return;
     }
 

@@ -122,7 +122,7 @@ private:
     bool do_information();
     bool do_buckets();
     bool do_collisions();
-#if defined(WITH_BUILTIN_TESTS)
+#if defined(HAVE_SELF_TESTS)
     bool do_get(const system::hash_digest& hash);
     bool do_put(const system::hash_digest& hash);
 #endif
@@ -135,15 +135,15 @@ private:
     void do_report_work();
     void do_reload_store();
     void do_menu() const;
-#if defined(WITH_BUILTIN_TESTS)
+#if defined(HAVE_SELF_TESTS)
     void do_test() const;
 #endif
     void do_info() const;
     void do_report_condition() const;
     void subscribe_capture();
 
-#if defined(WITH_BUILTIN_TESTS)
-    // Built in tests.
+#if defined(HAVE_SELF_TESTS)
+    // Self tests.
     void read_test(const system::hash_digest& hash) const;
     void write_test(const system::hash_digest& hash);
 #endif

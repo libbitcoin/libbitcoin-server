@@ -60,6 +60,7 @@ namespace empty { constexpr auto object = network::rpc::empty::object; };
 namespace empty { constexpr auto value = network::rpc::empty::value; };
 
 constexpr auto unimplemented = network::rpc::unimplemented;
+using command = network::rpc::command;
 
 } // namespace interface
 } // namespace server

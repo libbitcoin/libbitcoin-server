@@ -11,6 +11,18 @@
     <PropertyPageSchema Include="$(MSBuildThisFileDirectory)libbitcoin-server.import.xml" />
   </ItemGroup>
 
+  <!-- Options -->
+
+  <PropertyGroup>
+    <Option-self-tests Condition="'$(Option-self-tests)' == ''">false</Option-self-tests>
+  </PropertyGroup>
+
+  <!-- Messages -->
+
+  <Target Name="ServerOptionInfo" BeforeTargets="PrepareForBuild">
+    <Message Text="Option-self-tests : $(Option-self-tests)" Importance="high"/>
+  </Target>
+
   <!-- Linkage -->
 
   <ItemDefinitionGroup>
@@ -18,6 +30,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\libbitcoin-server\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\libbitcoin-server\build\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Linkage-libbitcoin-server)' == 'static' Or '$(Linkage-libbitcoin-server)' == 'ltcg'">BCS_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Option-self-tests)' == 'true'">WITH_SELF_TESTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies Condition="'$(Linkage-libbitcoin-server)' != ''">libbitcoin-server.lib;%(AdditionalDependencies)</AdditionalDependencies>

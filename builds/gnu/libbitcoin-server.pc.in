@@ -28,7 +28,8 @@ Requires: \
     @libbitcoin_node_PKG@
 
 Cflags: \
-    -I${includedir}
+    -I${includedir} \
+    @self_tests@
 
 Libs: \
     -L${libdir} \

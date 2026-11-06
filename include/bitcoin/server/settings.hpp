@@ -209,6 +209,9 @@ public:
         /// Version identity returned by getnetworkinfo.
         system::config::version version{};
         std::string subversion{ "/libbitcoin:server/" };
+
+        /// Report an unbatched json-rpc v1 error in the http status.
+        bool error_status{ true };
     };
 
     struct BCS_API btcd_server

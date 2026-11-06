@@ -34,8 +34,8 @@ struct bitcoind_network_methods
         method<"clearbanned">{ unimplemented },
         method<"listbanned">{ unimplemented },
         method<"setban", string_t, string_t, nullopt<0.0>, nullopt<false>>{ unimplemented, "subnet", "command", "bantime", "absolute" },
-        method<"addnode", string_t, string_t, nullopt<false>>{ "node", "command", "v2transport" },
-        method<"disconnectnode", nullable<string_t>, nullable<number_t>>{ "address", "nodeid" },
+        method<"addnode", string_t, string_t, nullopt<false>, command>{ "node", "command", "v2transport" },
+        method<"disconnectnode", nullable<string_t>, nullable<number_t>, command>{ "address", "nodeid" },
         method<"exportasmap", string_t>{ "path" },
         method<"getaddednodeinfo", nullable<string_t>>{ "node" },
         method<"getaddrmaninfo">{},
@@ -44,7 +44,7 @@ struct bitcoind_network_methods
         method<"getnodeaddresses", nullopt<1.0>, nullopt<""_t>>{ "count", "network" },
         method<"getpeerinfo">{},
         method<"ping">{},
-        method<"setnetworkactive", boolean_t>{ "state" }
+        method<"setnetworkactive", boolean_t, command>{ "state" }
     };
 
     template <typename... Args>

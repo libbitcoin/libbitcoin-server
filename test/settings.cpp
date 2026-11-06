@@ -469,6 +469,8 @@ BC_AUTO_TEST_CASE(server__settings__mainnet__service_limits)
     BC_REQUIRE_EQUAL(instance.electrum.maximum_request, encoded);
     BC_REQUIRE_EQUAL(instance.sparrow.maximum_request, encoded);
     BC_REQUIRE_EQUAL(instance.esplora.maximum_request, encoded);
+    BC_REQUIRE(instance.bitcoind.error_status);
+    BC_REQUIRE(!instance.btcd.error_status);
 }
 
 BC_AUTO_TEST_CASE(server__settings__initialize_testnet4__offset_ports_testnet_wallet)

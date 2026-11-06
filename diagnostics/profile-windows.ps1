@@ -143,14 +143,14 @@ while ($true) {
     }
 
     # Network.
-    $ni = Get-CimInstance Win32_PerfFormattedData_Tcpip_NetworkInterface |
-        Where-Object { $_.Name -like "*$Nic*" } | Select-Object -First 1
-    if ($null -ne $ni) {
-        $netRxKbS = [math]::Round($ni.BytesReceivedPersec / 1000, 2)
-        $netTxKbS = [math]::Round($ni.BytesSentPersec / 1000, 2)
-    } else {
-        $netRxKbS = 0; $netTxKbS = 0
+    $nis = Get-CimInstance Win32_PerfFormattedData_Tcpip_NetworkInterface
+    $rx = 0; $tx = 0
+    foreach ($name in $Nic.Split(',')) {
+        $ni = $nis | Where-Object { $_.Name -like "*$($name.Trim())*" } | Select-Object -First 1
+        if ($null -ne $ni) { $rx += $ni.BytesReceivedPersec; $tx += $ni.BytesSentPersec }
     }
+    $netRxKbS = [math]::Round($rx / 1000, 2)
+    $netTxKbS = [math]::Round($tx / 1000, 2)
 
     # No PSI on Windows.
     $psiMemSome = 0; $psiMemFull = 0; $psiIoSome = 0; $psiIoFull = 0

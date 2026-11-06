@@ -19,6 +19,8 @@
 #ifndef LIBBITCOIN_SERVER_PREPROCESSOR_HPP
 #define LIBBITCOIN_SERVER_PREPROCESSOR_HPP
 
+#include <bitcoin/server/have.hpp>
+
 #include <bitcoin/system.hpp>
 
 /// Now we use the generic helper definitions above to define BCS_API
