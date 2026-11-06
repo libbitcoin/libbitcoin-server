@@ -32,4 +32,4 @@ backupIgnore:
   - data/bs/bitcoin
   - data/bs/log
 submitter: libbitcoin
-submission: ""
+submission: "@SUBMISSION@"
