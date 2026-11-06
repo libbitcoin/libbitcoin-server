@@ -2343,11 +2343,6 @@ options_metadata parser::load_settings() THROWS
         "Allowable underperformance standard deviation, defaults to {} (0 disables)."
     )
     (
-        "node.announcement_cache",
-        setting<uint16_t>(&configured.node.announcement_cache),
-        "Limit of per channel cached peer block and tx announcements, to avoid replay, defaults to {}."
-    )
-    (
         "node.maximum_height",
         setting<uint32_t>(&configured.node.maximum_height),
         "Maximum block height to populate, defaults to {} (unlimited)."
