@@ -38,6 +38,8 @@
 #                                 Default: --without-valgrind
 # --<enable/disable>-cuda       Use cuda (gpu) batch signature verification (inert on macOS).
 #                                 Default: --enable-cuda
+# --<with/without>-verbose      Compile verbose logging.
+#                                 Default: --without-verbose
 # --<with/without>-self-tests   Compile self tests.
 #                                 Default: --without-self-tests
 # --<with/without>-web          Compile web pages into the console application.
@@ -1017,6 +1019,8 @@ help()
     msg "                                Default: --without-valgrind"
     msg "--<enable/disable>-cuda       Use cuda (gpu) batch signature verification (inert on macOS)."
     msg "                                Default: --enable-cuda"
+    msg "--<with/without>-verbose      Compile verbose logging."
+    msg "                                Default: --without-verbose"
     msg "--<with/without>-self-tests   Compile self tests."
     msg "                                Default: --without-self-tests"
     msg "--<with/without>-web          Compile web pages into the console application."

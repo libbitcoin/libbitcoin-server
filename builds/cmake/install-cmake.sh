@@ -38,6 +38,8 @@
 #                                Default: OFF
 # -Denable-cuda=<ON/OFF>       Use cuda (gpu) batch signature verification (inert on macOS).
 #                                Default: ON
+# -Dwith-verbose=<ON/OFF>      Compile verbose logging.
+#                                Default: OFF
 # -Dwith-self-tests=<ON/OFF>   Compile self tests.
 #                                Default: OFF
 # -Dwith-web=<ON/OFF>          Compile web pages into the console application.
@@ -955,6 +957,8 @@ help()
     msg "                               Default: OFF"
     msg "-Denable-cuda=<ON/OFF>       Use cuda (gpu) batch signature verification (inert on macOS)."
     msg "                               Default: ON"
+    msg "-Dwith-verbose=<ON/OFF>      Compile verbose logging."
+    msg "                               Default: OFF"
     msg "-Dwith-self-tests=<ON/OFF>   Compile self tests."
     msg "                               Default: OFF"
     msg "-Dwith-web=<ON/OFF>          Compile web pages into the console application."
