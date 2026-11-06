@@ -36,8 +36,6 @@
 #                                 Default: --with-secp256k1
 # --<with/without>-valgrind     Use valgrind memcheck client requests.
 #                                 Default: --without-valgrind
-# --<enable/disable>-cuda       Use cuda (gpu) batch signature verification (inert on macOS).
-#                                 Default: --enable-cuda
 # --<with/without>-verbose      Compile verbose logging.
 #                                 Default: --without-verbose
 # --<with/without>-self-tests   Compile self tests.
@@ -1017,8 +1015,6 @@ help()
     msg "                                Default: --with-secp256k1"
     msg "--<with/without>-valgrind     Use valgrind memcheck client requests."
     msg "                                Default: --without-valgrind"
-    msg "--<enable/disable>-cuda       Use cuda (gpu) batch signature verification (inert on macOS)."
-    msg "                                Default: --enable-cuda"
     msg "--<with/without>-verbose      Compile verbose logging."
     msg "                                Default: --without-verbose"
     msg "--<with/without>-self-tests   Compile self tests."
