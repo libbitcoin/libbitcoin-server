@@ -255,7 +255,7 @@ jobs:
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
             options: "-Denable-sha2=ON -Denable-aes=ON"
             linkflags: "-static-libstdc++ -static-libgcc"
-            flags: "-mtune=generic"
+            flags: "-march=armv8-a+aes+sha2 -mtune=generic"
 
           - basename: "bs-linux-arm64-sha3"
             host: "aarch64-linux-gnu"
@@ -263,7 +263,7 @@ jobs:
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
             options: "-Denable-sha2=ON -Denable-sha3=ON -Denable-aes=ON"
             linkflags: "-static-libstdc++ -static-libgcc"
-            flags: "-mtune=generic"
+            flags: "-march=armv8.2-a+aes+sha2+sha3 -mtune=generic"
 
           - basename: "bs-macos-x64"
             host: "x86_64-apple-darwin"
