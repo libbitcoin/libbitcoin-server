@@ -38,8 +38,10 @@
 #                                Default: OFF
 # -Denable-cuda=<ON/OFF>       Use cuda (gpu) batch signature verification (inert on macOS).
 #                                Default: ON
+# -Dwith-self-tests=<ON/OFF>   Compile self tests.
+#                                Default: OFF
 # -Dwith-web=<ON/OFF>          Compile web pages into the console application.
-#                              ON
+#                                Default: ON
 # --build-secp256k1            Build libsecp256k1 libraries
 # --build-preset=<preset>      Specifies preset configuration to build.
 # --build-src-dir=<path>       Location for sources.
@@ -1018,8 +1020,10 @@ help()
     msg "                               Default: OFF"
     msg "-Denable-cuda=<ON/OFF>       Use cuda (gpu) batch signature verification (inert on macOS)."
     msg "                               Default: ON"
+    msg "-Dwith-self-tests=<ON/OFF>   Compile self tests."
+    msg "                               Default: OFF"
     msg "-Dwith-web=<ON/OFF>          Compile web pages into the console application."
-    msg "                             ON"
+    msg "                               Default: ON"
     msg "--build-secp256k1            Build libsecp256k1 libraries"
     msg "--build-preset=<preset>      Specifies preset configuration to build."
     msg "--build-src-dir=<path>       Location for sources."

@@ -21,6 +21,10 @@
 
 #include <bitcoin/server/version.hpp>
 
+#if defined(WITH_SELF_TESTS)
+    #define HAVE_SELF_TESTS
+#endif
+
 #if defined(WITH_WEB)
     #define HAVE_WEB
 #endif

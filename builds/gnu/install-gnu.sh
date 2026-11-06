@@ -38,8 +38,10 @@
 #                                 Default: --without-valgrind
 # --<enable/disable>-cuda       Use cuda (gpu) batch signature verification (inert on macOS).
 #                                 Default: --enable-cuda
+# --<with/without>-self-tests   Compile self tests.
+#                                 Default: --without-self-tests
 # --<with/without>-web          Compile web pages into the console application.
-#                               --with-web
+#                                 Default: --with-web
 # --build-secp256k1             Build libsecp256k1 libraries
 # --build-src-dir=<path>        Location for sources.
 #                                 Default: $(pwd)
@@ -1015,8 +1017,10 @@ help()
     msg "                                Default: --without-valgrind"
     msg "--<enable/disable>-cuda       Use cuda (gpu) batch signature verification (inert on macOS)."
     msg "                                Default: --enable-cuda"
+    msg "--<with/without>-self-tests   Compile self tests."
+    msg "                                Default: --without-self-tests"
     msg "--<with/without>-web          Compile web pages into the console application."
-    msg "                              --with-web"
+    msg "                                Default: --with-web"
     msg "--build-secp256k1             Build libsecp256k1 libraries"
     msg "--build-src-dir=<path>        Location for sources."
     msg "                                Default: $(pwd)"

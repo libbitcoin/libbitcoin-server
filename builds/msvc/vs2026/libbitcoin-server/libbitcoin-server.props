@@ -22,6 +22,7 @@
       <EnablePREfast>false</EnablePREfast>
       <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'DynamicLibrary'">BCS_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(ConfigurationType)' == 'StaticLibrary'">BCS_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Option-self-tests)' == 'true'">WITH_SELF_TESTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
 
@@ -60,7 +61,17 @@
     <Linkage-libbitcoin-node>static</Linkage-libbitcoin-node>
   </PropertyGroup>
 
+  <!-- Options -->
+
+  <PropertyGroup>
+    <Option-self-tests Condition="'$(Option-self-tests)' == ''">false</Option-self-tests>
+  </PropertyGroup>
+
   <!-- Messages -->
+
+  <Target Name="OptionInfo" BeforeTargets="PrepareForBuild">
+    <Message Text="Option-self-tests : $(Option-self-tests)" Importance="high"/>
+  </Target>
 
   <Target Name="LinkageInfo" BeforeTargets="PrepareForBuild">
     <Message Text="Linkage-secp256k1 : $(Linkage-secp256k1)" Importance="high"/>

@@ -167,7 +167,7 @@ bool executor::do_collisions()
     return close_store();
 }
 
-#if defined(WITH_BUILTIN_TESTS)
+#if defined(HAVE_SELF_TESTS)
 // --[g]et
 bool executor::do_get(const system::hash_digest& hash)
 {
@@ -240,7 +240,7 @@ bool executor::dispatch()
     if (config.version)
         return do_version();
 
-#if defined(WITH_BUILTIN_TESTS)
+#if defined(HAVE_SELF_TESTS)
     if (config.get != system::null_hash)
         return do_get(config.get);
 

@@ -270,7 +270,7 @@ options_metadata parser::load_options() THROWS
         "Scan and display store information."
     );
 
-#if defined(WITH_BUILTIN_TESTS)
+#if defined(HAVE_SELF_TESTS)
     description.add_options()
     // Ad-hoc Testing.
     (

@@ -14,4 +14,16 @@
       <EnumValue Name="ltcg" DisplayName="Static using link time compile generation (LTCG)" />
     </EnumProperty>
   </Rule>
+  <Rule Name="libbitcoin-server-options-uiextension" PageTemplate="tool" DisplayName="Bitcoin Server Options" SwitchPrefix="/" Order="1">
+    <Rule.Categories>
+      <Category Name="tests" DisplayName="tests" />
+    </Rule.Categories>
+    <Rule.DataSource>
+      <DataSource Persistence="ProjectFile" ItemType="" />
+    </Rule.DataSource>
+    <EnumProperty Name="Option-self-tests" DisplayName="Compile Self Tests" Description="Compile self tests." Category="tests">
+      <EnumValue Name="false" DisplayName="No" />
+      <EnumValue Name="true" DisplayName="Yes" />
+    </EnumProperty>
+  </Rule>
 </ProjectSchemaDefinitions>

@@ -98,6 +98,7 @@ include(CheckCXXSourceCompiles)
 #------------------------------------------------------------------------------
 # Project options.
 #------------------------------------------------------------------------------
+option( with-self-tests "Compile self tests." OFF )
 option( with-tests "Compile with unit tests." ON )
 option( with-console "Compile with console application." ON )
 option( with-web "Compile web pages into the console application." ON )
@@ -232,6 +233,11 @@ if ( NOT MSVC )
       $<$<COMPILE_LANGUAGE:CXX>:-fstack-protector-all>
   )
 endif()
+
+target_compile_definitions( libbitcoin-server
+  PUBLIC
+    $<$<BOOL:${with-self-tests}>:WITH_SELF_TESTS>
+)
 
 if ( MSVC )
   target_compile_definitions( libbitcoin-server
