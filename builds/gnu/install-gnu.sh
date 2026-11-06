@@ -85,8 +85,6 @@
 #                                 Default: --with-secp256k1
 # --<with/without>-valgrind     Use valgrind memcheck client requests.
 #                                 Default: --without-valgrind
-# --<with/without>-verbose      Compile verbose logging.
-#                                 Default: --without-verbose
 # --<with/without>-self-tests   Compile self tests.
 #                                 Default: --without-self-tests
 # --<with/without>-web          Compile web pages into the console application.
@@ -1212,8 +1210,6 @@ help()
     msg "                                Default: --with-secp256k1"
     msg "--<with/without>-valgrind     Use valgrind memcheck client requests."
     msg "                                Default: --without-valgrind"
-    msg "--<with/without>-verbose      Compile verbose logging."
-    msg "                                Default: --without-verbose"
     msg "--<with/without>-self-tests   Compile self tests."
     msg "                                Default: --without-self-tests"
     msg "--<with/without>-web          Compile web pages into the console application."

@@ -84,8 +84,6 @@
 #                                Default: ON
 # -Dwith-valgrind=<ON/OFF>     Use valgrind memcheck client requests.
 #                                Default: OFF
-# -Dwith-verbose=<ON/OFF>      Compile verbose logging.
-#                                Default: OFF
 # -Dwith-self-tests=<ON/OFF>   Compile self tests.
 #                                Default: OFF
 # -Dwith-web=<ON/OFF>          Compile web pages into the console application.
@@ -1136,8 +1134,6 @@ help()
     msg "-Dwith-secp256k1=<ON/OFF>    Use native secp256k1 interface, otherwise external library."
     msg "                               Default: ON"
     msg "-Dwith-valgrind=<ON/OFF>     Use valgrind memcheck client requests."
-    msg "                               Default: OFF"
-    msg "-Dwith-verbose=<ON/OFF>      Compile verbose logging."
     msg "                               Default: OFF"
     msg "-Dwith-self-tests=<ON/OFF>   Compile self tests."
     msg "                               Default: OFF"
