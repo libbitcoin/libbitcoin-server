@@ -37,7 +37,7 @@ usage() {
     echo "  -d: Enable debug output (default: no)"
     echo "  -l: Log binary stdout/stderr to bn.stdout.log / bn.stderr.log (default: no)"
     echo "  -D: Disk/SSD device name (mandatory, e.g., sda or disk0)"
-    echo "  -n: Network interface name (mandatory, e.g., eth0 or en0)"
+    echo "  -n: Network interface name, comma-separated for several (mandatory, e.g., eth0 or eth0,eth1)"
     echo "  -g: Enable GPU profiling (nvidia-smi; powermetrics on macOS, needs sudo)"
     echo "  -o: Output CSV file (default: profile.csv)"
     echo ""
@@ -279,14 +279,21 @@ collect_disk_Linux() {
     disk_write_kb_s=${disk_write_kb_s:-0}
 }
 
+net_bytes_Linux() {
+    awk -v list="$nic" '
+        BEGIN { split(list, names, ","); for (i in names) want[names[i]] = 1 }
+        index($0, ":") {
+            name = substr($0, 1, index($0, ":") - 1); gsub(/ /, "", name)
+            if (name in want) { split(substr($0, index($0, ":") + 1), f, " "); rx += f[1]; tx += f[9] }
+        }
+        END { printf "%.0f %.0f\n", rx, tx }' "$1"
+}
+
 collect_net_Linux() {
     cat /proc/net/dev > ./tmp/netdev.tmp
-    local prev_net_line=$(grep "${nic}:" "$prev_net" || echo "${nic}: 0 0 0 0 0 0 0 0 0 0")
-    local curr_net_line=$(grep "${nic}:" ./tmp/netdev.tmp || echo "${nic}: 0 0 0 0 0 0 0 0 0 0")
-    local prev_rx=$(echo "$prev_net_line" | awk -F' ' '{print $2}')
-    local prev_tx=$(echo "$prev_net_line" | awk -F' ' '{print $10}')
-    local curr_rx=$(echo "$curr_net_line" | awk -F' ' '{print $2}')
-    local curr_tx=$(echo "$curr_net_line" | awk -F' ' '{print $10}')
+    local prev_rx prev_tx curr_rx curr_tx
+    read prev_rx prev_tx < <(net_bytes_Linux "$prev_net")
+    read curr_rx curr_tx < <(net_bytes_Linux ./tmp/netdev.tmp)
     local rx_diff=$((curr_rx - prev_rx))
     local tx_diff=$((curr_tx - prev_tx))
     if command -v bc >/dev/null 2>&1; then
@@ -417,11 +424,12 @@ collect_disk_Darwin() {
 }
 
 collect_net_Darwin() {
-    local net_line=$(netstat -ib -I $nic 2>/dev/null | awk 'NR==2')
-    local curr_rx=$(echo "$net_line" | awk '{print $7}')
-    local curr_tx=$(echo "$net_line" | awk '{print $10}')
-    curr_rx=${curr_rx:-0}
-    curr_tx=${curr_tx:-0}
+    local curr_rx=0 curr_tx=0 name rx tx
+    for name in ${nic//,/ }; do
+        read rx tx < <(netstat -ib -I "$name" 2>/dev/null | awk 'NR==2 { print $7, $10 }')
+        curr_rx=$((curr_rx + ${rx:-0}))
+        curr_tx=$((curr_tx + ${tx:-0}))
+    done
     if [ $first_sample -eq 1 ]; then
         net_rx_kb_s="0.00"
         net_tx_kb_s="0.00"
