@@ -109,6 +109,13 @@ system::json::value bitcoind_setup_fixture::rpc(std::string_view method,
     return client_.post(body_of(method, params), "/", true);
 }
 
+network::http::message<false, network::http::string_body>
+bitcoind_setup_fixture::rpc_response(std::string_view method,
+    std::string_view params)
+{
+    return client_.post_response(body_of(method, params));
+}
+
 system::json::value bitcoind_setup_fixture::tcp_rpc(std::string_view method,
     std::string_view params)
 {

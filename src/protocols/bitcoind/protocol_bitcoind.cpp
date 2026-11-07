@@ -382,8 +382,22 @@ void protocol_bitcoind::send_rpc(response_t&& model,
     const auto statused = options().error_status && !batched;
     auto message = to_response(statused ? to_status(model) : status::ok);
     message.set(field::content_type, json);
-    message.body() = rpc::response{ {}, std::move(model) };
-    message.prepare_payload();
+
+    // Batch parts are streamed (chunked). A singleton is sized, as bitcoind
+    // does and as some of its clients (e.g. fulcrum) require.
+    if (batched)
+    {
+        message.body() = rpc::response{ {}, std::move(model) };
+        message.prepare_payload();
+    }
+    else
+    {
+        auto text = serialize(value_from(model));
+        const auto size = text.size();
+        message.body() = std::move(text);
+        message.content_length(size);
+    }
+
     SEND(std::move(message), handle_complete, _1, close_reason);
 }
 

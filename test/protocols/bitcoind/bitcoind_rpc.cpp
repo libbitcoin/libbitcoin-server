@@ -173,6 +173,35 @@ BC_FIXTURE_TEST_SUITE(bitcoind_tests, bitcoind_ten_block_setup_fixture)
 // blockchain
 // ----------------------------------------------------------------------------
 
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblockcount__http_response__content_length)
+{
+    const auto response = rpc_response("getblockcount");
+    BC_REQUIRE(response.result() == status::ok);
+    BC_REQUIRE(!response.chunked());
+    BC_REQUIRE(response.content_length().has_value());
+    BC_REQUIRE_EQUAL(response.content_length().value(), response.body().size());
+    BC_REQUIRE_EQUAL(test::parse_json(response.body()).at("result").as_int64(), 9);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__hex_http_response__content_length)
+{
+    const auto response = rpc_response("getblock", hash_param(test::block9_hash, "0"));
+    BC_REQUIRE(response.result() == status::ok);
+    BC_REQUIRE(!response.chunked());
+    BC_REQUIRE(response.content_length().has_value());
+    BC_REQUIRE_EQUAL(response.content_length().value(), response.body().size());
+    REQUIRE_NO_THROW_TRUE(test::parse_json(response.body()).at("result").is_string());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__unknown_method__http_response__content_length)
+{
+    const auto response = rpc_response("nonsense");
+    BC_REQUIRE(!response.chunked());
+    BC_REQUIRE(response.content_length().has_value());
+    BC_REQUIRE_EQUAL(response.content_length().value(), response.body().size());
+    BC_REQUIRE(has_code(test::parse_json(response.body()), -32601));
+}
+
 BC_AUTO_TEST_CASE(bitcoind_rpc__getblockcount__ten_block_store__nine)
 {
     const auto response = rpc("getblockcount");

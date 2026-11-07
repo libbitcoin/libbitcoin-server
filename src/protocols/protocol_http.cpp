@@ -200,7 +200,7 @@ void protocol_http::send_stream(size_t size, wire_writer&& writer,
         .write = std::move(writer),
         .size = size
     };
-    message.prepare_payload();
+    message.content_length(size);
     SEND(std::move(message), handle_stream, _1);
 }
 
