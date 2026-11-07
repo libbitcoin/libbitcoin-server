@@ -100,8 +100,7 @@ zmq_setup_fixture::zmq_setup_fixture(const initializer& setup,
         // Block until server is running.
         ec = running.get_future().get();
         BC_REQUIRE_MESSAGE(!ec, ec.message());
-        const auto& bound = key.empty() ? zmq.binds : zmq.safes;
-        REQUIRE_SUCCESS(socket_, connect, bound.back().to_endpoint());
+        REQUIRE_SUCCESS(socket_, connect, server_.binding());
     }
     catch (...)
     {

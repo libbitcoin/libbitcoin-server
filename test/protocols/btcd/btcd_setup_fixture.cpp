@@ -49,7 +49,7 @@ btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
                 configure(config);
         }, address_index)
 {
-    const auto endpoint = config_.server.btcd.binds.back().to_endpoint();
+    const auto endpoint = binding();
     client_.connect(endpoint);
     const auto ec = client_.upgrade();
     BC_REQUIRE_MESSAGE(!ec, ec.message());

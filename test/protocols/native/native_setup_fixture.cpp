@@ -106,7 +106,6 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
         auto& database_settings = config_.database;
         auto& network_settings = config_.network;
         auto& node_settings = config_.node;
-        const auto& native = config_.server.native;
 
         database_settings.interval_depth = 2;
         node_settings.minimum_fee_rate = 99.0;
@@ -133,7 +132,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
         // Block until server is running.
         ec = running.get_future().get();
         BC_REQUIRE_MESSAGE(!ec, ec.message());
-        REQUIRE_SUCCESS(socket_, connect, native.binds.back().to_endpoint());
+        REQUIRE_SUCCESS(socket_, connect, server_.binding());
     }
     catch (...)
     {

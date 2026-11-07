@@ -24,7 +24,7 @@
 #include "../fixture/rpc_setup_fixture.hpp"
 #include "../../mocks/blocks.hpp"
 
-#define BTCD_ENDPOINT "127.0.0.1:65004"
+#define BTCD_ENDPOINT "127.0.0.1"
 #define BTCD_TEST_USERNAME "user"
 #define BTCD_TEST_PASSWORD "pass"
 #define BTCD_TEST_SCOPED_METHOD "session"

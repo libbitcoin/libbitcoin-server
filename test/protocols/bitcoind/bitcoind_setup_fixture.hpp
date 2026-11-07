@@ -24,7 +24,7 @@
 #include "../fixture/rpc_setup_fixture.hpp"
 #include "../../mocks/blocks.hpp"
 
-#define BITCOIND_ENDPOINT "127.0.0.1:65003"
+#define BITCOIND_ENDPOINT "127.0.0.1"
 #define BITCOIND_TEST_USERNAME "user"
 #define BITCOIND_TEST_PASSWORD "pass"
 #define BITCOIND_TEST_SCOPED_METHOD "getblockcount"
@@ -209,6 +209,7 @@ struct bitcoind_limited_setup_fixture
         {
             config.network.rate_limit = 1'000;
             config.network.inbound.connections = 2;
+            config.network.inbound.binds = { { "127.0.0.1" } };
             config.network.outbound.connections = 3;
         })
     {

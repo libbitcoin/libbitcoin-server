@@ -613,7 +613,7 @@ struct bitcoind_origin_setup_fixture
     {
         namespace http = network::http;
         rpc_client client{ io_ };
-        client.connect(config_.server.bitcoind.binds.back().to_endpoint());
+        client.connect(binding());
 
         auto request = rpc_client::create_get(target);
         request.set(http::field::origin, origin);

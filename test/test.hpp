@@ -21,6 +21,7 @@
 
 #include <filesystem>
 #include <format>
+#include <future>
 #include <bitcoin/server.hpp>
 
 #define REQUIRE_NO_THROW_TRUE(expression) \
@@ -174,6 +175,37 @@ struct directory_setup_fixture
     {
         BC_REQUIRE(clear(directory));
     }
+};
+
+/// A server node that retains its service acceptors, in order of creation.
+class bound_server
+  : public server::server_node
+{
+public:
+    using server::server_node::server_node;
+
+    /// The endpoint of the indexed service acceptor (requires run).
+    network::io::endpoint binding(size_t index=zero) NOEXCEPT
+    {
+        std::promise<network::io::endpoint> bound{};
+        network::io::post(strand(), [&]() NOEXCEPT
+        {
+            bound.set_value(acceptors_.at(index)->local().to_endpoint());
+        });
+
+        return bound.get_future().get();
+    }
+
+protected:
+    network::acceptor::ptr create_service(
+        network::socket::parameters&& params) NOEXCEPT override
+    {
+        acceptors_.push_back(server_node::create_service(std::move(params)));
+        return acceptors_.back();
+    }
+
+private:
+    std::vector<network::acceptor::ptr> acceptors_{};
 };
 
 } // namespace test
