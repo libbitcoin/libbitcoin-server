@@ -73,7 +73,7 @@ bool executor::do_settings()
     printer print
     (
         metadata_.settings(),
-        defaults.settings(),
+        defaults.load_settings(),
         metadata_.variables(),
         name_,
         BS_SETTINGS_MESSAGE
