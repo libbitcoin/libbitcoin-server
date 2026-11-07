@@ -2249,6 +2249,37 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__status__v2_application_error__ok)
     BC_REQUIRE_EQUAL(rpc_body_status(R"({"jsonrpc":"2.0","id":1,"method":"getblockhash","params":[10]})"), status::ok);
 }
 
+// content type
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__content_type__application_json_rpc__json_rpc)
+{
+    const auto response = rpc_typed(R"({"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]})", "application/json-rpc");
+    BC_REQUIRE(response.is_object() && response.as_object().contains("result"));
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__content_type__text_plain__json_rpc)
+{
+    const auto response = rpc_typed(R"({"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]})", "text/plain;");
+    BC_REQUIRE(response.is_object() && response.as_object().contains("result"));
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__content_type__form_urlencoded__json_rpc)
+{
+    const auto response = rpc_typed(R"({"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]})", "application/x-www-form-urlencoded");
+    BC_REQUIRE(response.is_object() && response.as_object().contains("result"));
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__content_type__missing__json_rpc)
+{
+    const auto response = rpc_typed(R"({"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]})", "");
+    BC_REQUIRE(response.is_object() && response.as_object().contains("result"));
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
 // notifications
 // ----------------------------------------------------------------------------
 

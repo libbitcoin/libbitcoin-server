@@ -48,9 +48,11 @@ public:
     system::json::value send(const std::string& text, bool checked=false);
     system::json::value receive(bool checked=false);
 
-    /// http POST of a json body to target, and the request builders.
+    /// http POST of a body to target (empty content_type omits the field),
+    /// and the request builders.
     system::json::value post(const std::string& body,
-        const std::string& target="/", bool checked=false);
+        const std::string& target="/", bool checked=false,
+        std::string_view content_type="application/json");
     status post_status(const std::string& body,
         const std::string& target="/");
     system::json::value post_authorized(const std::string& body,
@@ -59,7 +61,8 @@ public:
         const std::string& username, const std::string& password);
     static request create_get(std::string_view target);
     static request create_post(std::string_view target,
-        std::string_view body);
+        std::string_view body,
+        std::string_view content_type="application/json");
 
     /// http GET (returns the response for the caller to interpret).
     network::http::message<false, network::http::string_body> get(

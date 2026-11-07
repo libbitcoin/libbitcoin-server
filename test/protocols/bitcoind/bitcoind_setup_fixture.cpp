@@ -126,6 +126,12 @@ bitcoind_setup_fixture::rpc_body_status(std::string_view body)
     return client_.post_status(std::string{ body });
 }
 
+system::json::value bitcoind_setup_fixture::rpc_typed(std::string_view body,
+    std::string_view content_type)
+{
+    return client_.post(std::string{ body }, "/", false, content_type);
+}
+
 bitcoind_setup_fixture::status
 bitcoind_setup_fixture::rpc_status(std::string_view method,
     const std::string& username, const std::string& password)

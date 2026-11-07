@@ -53,6 +53,10 @@ struct bitcoind_setup_fixture
     // As rpc_body(), returning only the http status.
     status rpc_body_status(std::string_view body);
 
+    // As rpc_body(), with the given content type (empty omits the field).
+    system::json::value rpc_typed(std::string_view body,
+        std::string_view content_type);
+
     // JSON-RPC 2.0 over raw tcp (no http), which downgrades the connection.
     // Returns the parsed json-rpc response object, or {"dropped":true}.
     system::json::value tcp_rpc(std::string_view method,
