@@ -162,6 +162,7 @@ jobs:
           git push
 
   winget:
+    if: false
     needs: version
     runs-on: windows-latest
 
