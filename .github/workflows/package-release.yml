@@ -32,8 +32,41 @@ jobs:
           TAG="${{ github.event.inputs.tag }}"
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
 
+  fetch:
+    runs-on: ubuntu-latest
+    environment: release
+
+    steps:
+      - name: Checkout packaging
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: 'libbitcoin-server'
+
+      - name: Download release binaries
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLIC_KEY: ${{ vars.PUBLIC_KEY }}
+        run: >
+          bash libbitcoin-server/.github/packaging/fetch.sh
+          "${{ github.event.inputs.tag }}"
+          binaries
+          selector-linux-x64 bs-linux-x64 bs-linux-x64-shani
+          selector-linux-arm64 bs-linux-arm64 bs-linux-arm64-sha2
+          selector-windows-x64.exe bs-windows-x64.exe bs-windows-x64-shani.exe
+          selector-windows-arm64.exe bs-windows-arm64.exe bs-windows-arm64-sha2.exe
+          bs-macos-arm64 bs-macos-x64
+
+      - name: Upload release binaries
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-binaries
+          path: binaries/*
+          retention-days: 1
+          if-no-files-found: error
+
   debian:
-    needs: version
+    needs: [ version, fetch ]
     runs-on: ubuntu-latest
 
     strategy:
@@ -64,18 +97,11 @@ jobs:
         with:
           path: 'libbitcoin-server'
 
-      - name: Download release binaries
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PUBLIC_KEY: ${{ vars.PUBLIC_KEY }}
-        run: >
-          bash libbitcoin-server/.github/packaging/fetch.sh
-          "${{ github.event.inputs.tag }}"
-          binaries
-          "${{ matrix.selector }}"
-          "${{ matrix.baseline }}"
-          "${{ matrix.optimized }}"
+      - name: Retrieve release binaries
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-binaries
+          path: binaries
 
       - name: Assemble package
         shell: bash
@@ -185,7 +211,7 @@ jobs:
           labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
 
   windows:
-    needs: version
+    needs: [ version, fetch ]
     runs-on: windows-latest
 
     strategy:
@@ -218,18 +244,11 @@ jobs:
         with:
           path: 'libbitcoin-server'
 
-      - name: Download release binaries
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PUBLIC_KEY: ${{ vars.PUBLIC_KEY }}
-        run: >
-          bash libbitcoin-server/.github/packaging/fetch.sh
-          "${{ github.event.inputs.tag }}"
-          binaries
-          "${{ matrix.selector }}"
-          "${{ matrix.baseline }}"
-          "${{ matrix.optimized }}"
+      - name: Retrieve release binaries
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-binaries
+          path: binaries
 
       - name: Prepare Inno Setup
         shell: pwsh
@@ -262,7 +281,7 @@ jobs:
           if-no-files-found: error
 
   manifests:
-    needs: [ version, windows, docker ]
+    needs: [ version, fetch, windows, docker ]
     runs-on: ubuntu-latest
 
     env:
@@ -276,17 +295,11 @@ jobs:
         with:
           path: 'libbitcoin-server'
 
-      - name: Download release binaries
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PUBLIC_KEY: ${{ vars.PUBLIC_KEY }}
-        run: >
-          bash libbitcoin-server/.github/packaging/fetch.sh
-          "${{ github.event.inputs.tag }}"
-          binaries
-          bs-macos-arm64
-          bs-macos-x64
+      - name: Retrieve release binaries
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-binaries
+          path: binaries
 
       - name: Retrieve installers
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
