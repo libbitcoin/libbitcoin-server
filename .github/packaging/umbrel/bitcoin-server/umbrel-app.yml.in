@@ -13,6 +13,9 @@ description: >-
   management console, and its block explorer is served on port 8187.
 
 
+  On x86-64 it requires a processor with AVX2.
+
+
   Powered by Libbitcoin Server: https://libbitcoin.org
 releaseNotes: ""
 developer: libbitcoin
@@ -29,4 +32,4 @@ backupIgnore:
   - data/bs/bitcoin
   - data/bs/log
 submitter: libbitcoin
-submission: ""
+submission: "@SUBMISSION@"

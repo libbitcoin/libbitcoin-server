@@ -335,12 +335,20 @@ jobs:
 
       - name: Generate Umbrel app
         shell: bash
+        env:
+          # URL of the getumbrel/umbrel-apps pull request that added the app.
+          SUBMISSION: ${{ vars.UMBREL_SUBMISSION }}
         run: |
           UMBREL="libbitcoin-server/.github/packaging/umbrel/bitcoin-server"
           APP="umbrel/bitcoin-server"
           mkdir -p "${APP}"
           cp -r "${UMBREL}/data" "${APP}/"
-          sed -e "s|@VERSION@|${VERSION}|" "${UMBREL}/umbrel-app.yml.in" > "${APP}/umbrel-app.yml"
+          if [ -z "${SUBMISSION}" ]; then
+            echo "::warning::UMBREL_SUBMISSION is not set; set umbrel-app.yml submission to the umbrel-apps PR URL."
+          fi
+          sed -e "s|@VERSION@|${VERSION}|" \
+              -e "s|@SUBMISSION@|${SUBMISSION}|" \
+              "${UMBREL}/umbrel-app.yml.in" > "${APP}/umbrel-app.yml"
           sed -e "s|@IMAGE@|${IMAGE}|" "${UMBREL}/docker-compose.yml.in" > "${APP}/docker-compose.yml"
           tar -czf "manifests/libbitcoin-server-${VERSION}-umbrel.tar.gz" -C umbrel bitcoin-server
 
