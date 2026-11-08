@@ -95,7 +95,7 @@ protected:
 
     /// Send a hex string result of size characters, written in place.
     using hex_writer = std::function<bool(const system::data_slab&)>;
-    bool send_hex(size_t size, const hex_writer& writer) NOEXCEPT;
+    bool send_hex(size_t size, hex_writer&& writer) NOEXCEPT;
 
     /// Cache rpc response context for serialization (requires strand).
     void set_rpc_request(network::rpc::version version,
@@ -133,8 +133,7 @@ private:
         const totals_handler& handler) NOEXCEPT;
 
     // Senders.
-    std::string text_response(size_t size, size_t& offset) const NOEXCEPT;
-    void send_text_response(std::string&& text) NOEXCEPT;
+    bool text_envelope(std::string& head) const NOEXCEPT;
     void send_rpc(network::rpc::response_t&& model) NOEXCEPT;
     void send_rpc(network::rpc::response_t&& model,
         const code& close_reason) NOEXCEPT;

@@ -176,7 +176,8 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
         }
 
         const auto turbo = database_settings().turbo;
-        if (!send_hex(two * size, [&](const data_slab& out) NOEXCEPT
+        if (!send_hex(two * size, [&query, link, turbo](
+            const data_slab& out) NOEXCEPT
         {
             return query.get_wire_block<write::base16::fast>(out, link,
                 witness, turbo);
@@ -346,7 +347,7 @@ bool protocol_bitcoind_blockchain::handle_get_block_header(const code& ec,
     if (!verbose)
     {
         constexpr auto size = two * chain::header::serialized_size();
-        if (!send_hex(size, [&](const data_slab& out) NOEXCEPT
+        if (!send_hex(size, [&query, link](const data_slab& out) NOEXCEPT
         {
             stream::out::fast sink{ out };
             write::base16::fast writer{ sink };
@@ -1054,9 +1055,11 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_proof(const code& ec,
     build_partial_merkle(merkle.flags, merkle.hashes, keys, match);
 
     const auto version = merkle_block::version_maximum;
-    if (!send_hex(two * merkle.size(version), [&](const data_slab& out) NOEXCEPT
+    const auto bytes = merkle.size(version);
+    if (!send_hex(two * bytes, [merkle = std::move(merkle), version, bytes](
+        const data_slab& out) NOEXCEPT
     {
-        data_chunk data(merkle.size(version));
+        data_chunk data(bytes);
         if (!merkle.serialize(version, data))
             return false;
 
