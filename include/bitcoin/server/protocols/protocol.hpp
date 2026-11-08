@@ -96,6 +96,12 @@ public:
         session_->demand_wire_block(demand);
     }
 
+    /// Suspend all existing and future network connections.
+    inline void fault(const code& ec) const NOEXCEPT
+    {
+        session_->fault(ec);
+    }
+
 private:
     // These are thread safe.
     const configuration& config_;

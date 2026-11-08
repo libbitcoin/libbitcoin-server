@@ -199,29 +199,23 @@ bool protocol_bitcoind_rest::handle_get_block(const code& ec,
     {
         case data:
         {
-            data_chunk out(size);
-            if (!query.get_wire_block(out, link, witness, turbo))
+            send_stream(size, [&query, link, turbo](
+                const data_slab& out) NOEXCEPT
             {
-                send_internal_server_error(database::error::integrity);
-                return true;
-            }
-
-            send_data(std::move(out));
+                return query.get_wire_block(out, link, witness, turbo);
+            }, http::media_type::application_octet_stream, *reset_request());
             return true;
         }
         case text:
         {
-            std::string out{};
-            out.reserve(add1(two * size));
-            out.resize(two * size);
-            if (!query.get_wire_block<write::base16::fast>(out, link,
-                witness, turbo))
+            send_stream(add1(two * size), [&query, link, turbo](
+                const data_slab& out) NOEXCEPT
             {
-                send_internal_server_error(database::error::integrity);
-                return true;
-            }
-
-            send_text(std::move(out));
+                const auto last = std::prev(out.end());
+                *last = '\n';
+                return query.get_wire_block<write::base16::fast>(
+                    { out.begin(), last }, link, witness, turbo);
+            }, http::media_type::text_plain, *reset_request());
             return true;
         }
         case json:
