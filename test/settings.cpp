@@ -439,8 +439,8 @@ BC_AUTO_TEST_CASE(server__settings__initialize_mainnet__service_ports)
     BC_REQUIRE_EQUAL(instance.native.safe_port, 8143u);
     BC_REQUIRE_EQUAL(instance.bitcoind.bind_port, 8280u);
     BC_REQUIRE_EQUAL(instance.bitcoind.safe_port, 8243u);
-    BC_REQUIRE_EQUAL(instance.bitcoind_zmq.bind_port, 8380u);
-    BC_REQUIRE_EQUAL(instance.bitcoind_zmq.safe_port, 8343u);
+    BC_REQUIRE_EQUAL(instance.zmq.bind_port, 8380u);
+    BC_REQUIRE_EQUAL(instance.zmq.safe_port, 8343u);
     BC_REQUIRE_EQUAL(instance.btcd.bind_port, 8480u);
     BC_REQUIRE_EQUAL(instance.btcd.safe_port, 8443u);
     BC_REQUIRE_EQUAL(instance.electrum.bind_port, 8580u);
@@ -461,9 +461,9 @@ BC_AUTO_TEST_CASE(server__settings__mainnet__service_limits)
     constexpr auto encoded = 2u * max_payload + 4u * kilobyte;
     BC_REQUIRE_EQUAL(instance.admin.maximum_backlog, 10u * megabyte);
     BC_REQUIRE_EQUAL(instance.btcd.maximum_backlog, 20u * megabyte);
-    BC_REQUIRE_EQUAL(instance.bitcoind_zmq.maximum_backlog, 32u * megabyte);
-    BC_REQUIRE_EQUAL(instance.bitcoind_zmq.inactivity_minutes, 0u);
-    BC_REQUIRE_EQUAL(instance.bitcoind_zmq.expiration_minutes, 0u);
+    BC_REQUIRE_EQUAL(instance.zmq.maximum_backlog, 32u * megabyte);
+    BC_REQUIRE_EQUAL(instance.zmq.inactivity_minutes, 0u);
+    BC_REQUIRE_EQUAL(instance.zmq.expiration_minutes, 0u);
     BC_REQUIRE_EQUAL(instance.bitcoind.maximum_request, encoded);
     BC_REQUIRE_EQUAL(instance.btcd.maximum_request, encoded);
     BC_REQUIRE_EQUAL(instance.electrum.maximum_request, encoded);
@@ -486,8 +486,8 @@ BC_AUTO_TEST_CASE(server__settings__initialize_testnet4__offset_ports_testnet_wa
     BC_REQUIRE_EQUAL(instance.native.safe_port, 48143u);
     BC_REQUIRE_EQUAL(instance.bitcoind.bind_port, 48280u);
     BC_REQUIRE_EQUAL(instance.bitcoind.safe_port, 48243u);
-    BC_REQUIRE_EQUAL(instance.bitcoind_zmq.bind_port, 48380u);
-    BC_REQUIRE_EQUAL(instance.bitcoind_zmq.safe_port, 48343u);
+    BC_REQUIRE_EQUAL(instance.zmq.bind_port, 48380u);
+    BC_REQUIRE_EQUAL(instance.zmq.safe_port, 48343u);
     BC_REQUIRE_EQUAL(instance.btcd.bind_port, 48480u);
     BC_REQUIRE_EQUAL(instance.btcd.safe_port, 48443u);
     BC_REQUIRE_EQUAL(instance.electrum.bind_port, 48580u);
@@ -513,8 +513,8 @@ BC_AUTO_TEST_CASE(server__settings__initialize_regtest_network__offset_ports)
     BC_REQUIRE_EQUAL(instance.native.safe_port, 28143u);
     BC_REQUIRE_EQUAL(instance.bitcoind.bind_port, 28280u);
     BC_REQUIRE_EQUAL(instance.bitcoind.safe_port, 28243u);
-    BC_REQUIRE_EQUAL(instance.bitcoind_zmq.bind_port, 28380u);
-    BC_REQUIRE_EQUAL(instance.bitcoind_zmq.safe_port, 28343u);
+    BC_REQUIRE_EQUAL(instance.zmq.bind_port, 28380u);
+    BC_REQUIRE_EQUAL(instance.zmq.safe_port, 28343u);
     BC_REQUIRE_EQUAL(instance.btcd.bind_port, 28480u);
     BC_REQUIRE_EQUAL(instance.btcd.safe_port, 28443u);
     BC_REQUIRE_EQUAL(instance.electrum.bind_port, 28580u);

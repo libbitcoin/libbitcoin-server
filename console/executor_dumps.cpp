@@ -72,7 +72,6 @@ void executor::dump_schema()
 void executor::dump_hardware() const
 {
     using namespace system;
-    using namespace database;
 
 #if defined(HAVE_ARM)
     logger(BS_HARDWARE_HEADER_ARM64);
@@ -97,6 +96,7 @@ void executor::dump_hardware() const
     const auto compiled = batched::compiled();
     const auto incompatible = cuda && compiled &&
         metadata_.configured.node.use_gpu && !batched::accelerated();
+
     if (incompatible)
     {
         logger(std::format("cuda........ " BS_HARDWARE_INCOMPATIBLE, cuda, compiled));
@@ -104,7 +104,9 @@ void executor::dump_hardware() const
     else
     {
         logger(std::format("cuda........ " BS_HARDWARE_COMPILED, cuda, compiled));
-        logger(std::format("cuda ecc.... " BS_HARDWARE_ENABLED, cuda_ecc(), cuda_ecc_enabled()));
+
+        if (cuda)
+            logger(std::format("cuda ecc.... " BS_HARDWARE_ENABLED, cuda_ecc(), cuda_ecc_enabled()));
     }
 }
 

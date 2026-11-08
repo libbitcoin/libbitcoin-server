@@ -227,7 +227,7 @@ public:
         uint32_t maximum_history{ 1'000'000 };
     };
 
-    struct BCS_API bitcoind_zmq_server
+    struct BCS_API zmq_server
       : public network::settings::zmtp_server
     {
         using base = network::settings::zmtp_server;
@@ -283,8 +283,8 @@ public:
     /// stratum v2 compat interface (tcp[/s], binary, auth/privacy handshake)
     network::settings::tls_server stratum_v2{ "stratum_v2" };
 
-    /// bitcoind compat zmq notifications (tcp, native zmtp publisher)
-    bitcoind_zmq_server bitcoind_zmq{ "bitcoind_zmq" };
+    /// zmq notifications, bitcoind compatible (tcp, native zmtp publisher)
+    zmq_server zmq{ "zmq" };
 };
 
 } // namespace server

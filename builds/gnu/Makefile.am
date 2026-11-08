@@ -90,7 +90,6 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_transaction.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_utility.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_wallet.cpp \
-    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_zmq.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd_filter.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd_utility.cpp \
@@ -120,6 +119,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/native/protocol_native_tx.cpp \
     ${srcdir}/../../src/protocols/sparrow/protocol_sparrow.cpp \
     ${srcdir}/../../src/protocols/stratum_v1/protocol_stratum_v1.cpp \
+    ${srcdir}/../../src/protocols/zmq/protocol_zmq.cpp \
     ${srcdir}/../../src/serializers/bitcoind_block_stats.cpp \
     ${srcdir}/../../src/serializers/bitcoind_coin.cpp \
     ${srcdir}/../../src/serializers/bitcoind_deployments.cpp \
@@ -178,7 +178,6 @@ include_bitcoin_server_channelsdir = \
 include_bitcoin_server_channels_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/channels/channel.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_bitcoind.hpp \
-    ${srcdir}/../../include/bitcoin/server/channels/channel_bitcoind_zmq.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_btcd.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_electrum.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_html.hpp \
@@ -186,6 +185,7 @@ include_bitcoin_server_channels_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/channels/channel_rpc.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_stratum_v1.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channel_stratum_v2.hpp \
+    ${srcdir}/../../include/bitcoin/server/channels/channel_zmq.hpp \
     ${srcdir}/../../include/bitcoin/server/channels/channels.hpp
 
 include_bitcoin_server_errordir = \
@@ -219,7 +219,6 @@ include_bitcoin_server_interfaces_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_transaction.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_utility.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_wallet.hpp \
-    ${srcdir}/../../include/bitcoin/server/interfaces/bitcoind_zmq.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/btcd.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/electrum.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/esplora.hpp \
@@ -228,7 +227,8 @@ include_bitcoin_server_interfaces_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/interfaces/sparrow.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/stratum_v1.hpp \
     ${srcdir}/../../include/bitcoin/server/interfaces/stratum_v2.hpp \
-    ${srcdir}/../../include/bitcoin/server/interfaces/types.hpp
+    ${srcdir}/../../include/bitcoin/server/interfaces/types.hpp \
+    ${srcdir}/../../include/bitcoin/server/interfaces/zmq.hpp
 
 include_bitcoin_server_parsersdir = \
     ${includedir}/bitcoin/server/parsers
@@ -265,7 +265,6 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_transaction.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_utility.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_wallet.hpp \
-    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_zmq.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_electrum.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_electrum_version.hpp \
@@ -277,6 +276,7 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_sparrow.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_stratum_v1.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_stratum_v2.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_zmq.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocols.hpp
 
 include_bitcoin_server_serializersdir = \

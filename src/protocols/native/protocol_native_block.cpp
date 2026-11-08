@@ -120,27 +120,21 @@ bool protocol_native::handle_get_block(const code& ec, interface::block,
     {
         case data:
         {
-            data_chunk out(size);
-            if (!query.get_wire_block(out, link, witness, turbo_))
+            send_stream(size, [&query, link, witness, turbo = turbo_](
+                const data_slab& out) NOEXCEPT
             {
-                send_internal_server_error(database::error::integrity);
-                return true;
-            }
-
-            send_chunk(std::move(out));
+                return query.get_wire_block(out, link, witness, turbo);
+            }, media_type::application_octet_stream);
             return true;
         }
         case text:
         {
-            std::string out(two * size, '\0');
-            if (!query.get_wire_block<write::base16::fast>(out, link,
-                witness, turbo_))
+            send_stream(two * size, [&query, link, witness, turbo = turbo_](
+                const data_slab& out) NOEXCEPT
             {
-                send_internal_server_error(database::error::integrity);
-                return true;
-            }
-
-            send_text(std::move(out));
+                return query.get_wire_block<write::base16::fast>(out, link,
+                    witness, turbo);
+            }, media_type::text_plain);
             return true;
         }
         case json:

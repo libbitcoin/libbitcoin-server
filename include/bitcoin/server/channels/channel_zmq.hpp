@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_BITCOIND_ZMQ_HPP
-#define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_BITCOIND_ZMQ_HPP
+#ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_ZMQ_HPP
+#define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_ZMQ_HPP
 
 #include <bitcoin/server/channels/channel.hpp>
 #include <bitcoin/server/define.hpp>
@@ -27,27 +27,27 @@
 namespace libbitcoin {
 namespace server {
 
-/// Channel for bitcoind zmq notifications (rpc over a native zmtp publisher).
-class BCS_API channel_bitcoind_zmq
+/// Channel for zmq notifications, bitcoind compatible (rpc over native zmtp).
+class BCS_API channel_zmq
   : public server::channel,
-    public network::channel_rpc<interface::bitcoind_zmq>,
-    protected network::tracker<channel_bitcoind_zmq>
+    public network::channel_rpc<interface::zmq>,
+    protected network::tracker<channel_zmq>
 {
 public:
-    typedef std::shared_ptr<channel_bitcoind_zmq> ptr;
-    using interface_t = interface::bitcoind_zmq;
-    using options_t = settings::bitcoind_zmq_server;
+    typedef std::shared_ptr<channel_zmq> ptr;
+    using interface_t = interface::zmq;
+    using options_t = settings::zmq_server;
 
     /// The socket reads subscriptions and writes topic notifications.
     static constexpr auto role{ network::zmtp::role::publisher };
 
-    inline channel_bitcoind_zmq(const network::logger& log,
+    inline channel_zmq(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
       : server::channel(log, socket, identifier, config),
-        network::channel_rpc<interface::bitcoind_zmq>(log, socket, identifier,
+        network::channel_rpc<interface::zmq>(log, socket, identifier,
             config.network, options),
-        network::tracker<channel_bitcoind_zmq>(log),
+        network::tracker<channel_zmq>(log),
         options_(options)
     {
     }

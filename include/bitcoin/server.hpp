@@ -25,7 +25,6 @@
 #include <bitcoin/server/version.hpp>
 #include <bitcoin/server/channels/channel.hpp>
 #include <bitcoin/server/channels/channel_bitcoind.hpp>
-#include <bitcoin/server/channels/channel_bitcoind_zmq.hpp>
 #include <bitcoin/server/channels/channel_btcd.hpp>
 #include <bitcoin/server/channels/channel_electrum.hpp>
 #include <bitcoin/server/channels/channel_html.hpp>
@@ -33,6 +32,7 @@
 #include <bitcoin/server/channels/channel_rpc.hpp>
 #include <bitcoin/server/channels/channel_stratum_v1.hpp>
 #include <bitcoin/server/channels/channel_stratum_v2.hpp>
+#include <bitcoin/server/channels/channel_zmq.hpp>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/error/bitcoind_error_t.hpp>
 #include <bitcoin/server/error/btcd_error_t.hpp>
@@ -50,7 +50,6 @@
 #include <bitcoin/server/interfaces/bitcoind_transaction.hpp>
 #include <bitcoin/server/interfaces/bitcoind_utility.hpp>
 #include <bitcoin/server/interfaces/bitcoind_wallet.hpp>
-#include <bitcoin/server/interfaces/bitcoind_zmq.hpp>
 #include <bitcoin/server/interfaces/btcd.hpp>
 #include <bitcoin/server/interfaces/electrum.hpp>
 #include <bitcoin/server/interfaces/esplora.hpp>
@@ -60,6 +59,7 @@
 #include <bitcoin/server/interfaces/stratum_v1.hpp>
 #include <bitcoin/server/interfaces/stratum_v2.hpp>
 #include <bitcoin/server/interfaces/types.hpp>
+#include <bitcoin/server/interfaces/zmq.hpp>
 #include <bitcoin/server/parsers/admin_query.hpp>
 #include <bitcoin/server/parsers/admin_target.hpp>
 #include <bitcoin/server/parsers/bitcoind_query.hpp>
@@ -86,7 +86,6 @@
 #include <bitcoin/server/protocols/protocol_bitcoind_transaction.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_utility.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_wallet.hpp>
-#include <bitcoin/server/protocols/protocol_bitcoind_zmq.hpp>
 #include <bitcoin/server/protocols/protocol_btcd.hpp>
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 #include <bitcoin/server/protocols/protocol_electrum_version.hpp>
@@ -98,6 +97,7 @@
 #include <bitcoin/server/protocols/protocol_sparrow.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
+#include <bitcoin/server/protocols/protocol_zmq.hpp>
 #include <bitcoin/server/protocols/protocols.hpp>
 #include <bitcoin/server/serializers/bitcoind_block_stats.hpp>
 #include <bitcoin/server/serializers/bitcoind_coin.hpp>

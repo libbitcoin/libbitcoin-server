@@ -24,8 +24,8 @@
 
 #define ZMQ_ENDPOINT "127.0.0.1"
 
-// A server with the bitcoind_zmq (zmtp publisher) service bound, and a
-// plain socket connected to it for a synchronous ZMTP subscriber peer.
+// A server with the zmq (zmtp publisher) service bound, and a plain socket
+// connected to it for a synchronous ZMTP subscriber peer.
 struct zmq_setup_fixture
 {
     DELETE_COPY_MOVE(zmq_setup_fixture);

@@ -175,7 +175,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
 
     if (level == verbosity::hexadecimal)
     {
-        if (!send_hex(two * size, [&](const data_slab& out) NOEXCEPT
+        if (!send_hex(two * size, [&query, link](const data_slab& out) NOEXCEPT
         {
             stream::out::fast sink{ out };
             write::base16::fast writer{ sink };

@@ -1,4 +1,4 @@
-"""libzmq (pyzmq) interoperability test for the bs bitcoind_zmq service.
+"""libzmq (pyzmq) interoperability test for the bs zmq service (bitcoind compatible).
 
 Starts bs on a fresh mainnet store with no peers, binds the zmq publisher
 clear (NULL) and secured (CURVE), connects one real libzmq SUB socket to
@@ -103,6 +103,7 @@ class Peer(threading.Thread):
         self.port = self.listener.getsockname()[1]
         self.released = 0
         self.announced = 0
+        self.synced = False
         self.lock = threading.Lock()
         self.connection = None
         self.shaken = threading.Event()
@@ -135,7 +136,10 @@ class Peer(threading.Thread):
             if known in self.chain[:limit + 1]:
                 start = self.chain.index(known)
                 break
-        return self.headers[start:limit]
+        headers = self.headers[start:limit]
+        self.announced = max(self.announced, start + len(headers))
+        self.synced = True
+        return headers
 
     def send_headers(self, headers):
         self.send("headers", varint(len(headers)) + b"".join(h + b"\x00" for h in headers))
@@ -172,6 +176,7 @@ class Peer(threading.Thread):
             self.connection, _ = self.listener.accept()
             self.shaken.clear()
             self.announced = 0
+            self.synced = False
             self.serve_connection()
             self.connection.close()
 
@@ -179,11 +184,13 @@ class Peer(threading.Thread):
         self.connection.settimeout(0.2)
         buffer = b""
         while True:
-            # Announce newly released headers (bs organizes and requests blocks).
+            # Announce newly released headers (bs organizes and requests blocks)
+            # once the channel's own getheaders is answered, so that a reply
+            # never trails an announcement that overlaps it.
             with self.lock:
                 limit = self.released
-            if self.shaken.is_set() and limit > self.announced:
-                self.send_headers(self.headers[:limit])
+            if self.synced and limit > self.announced:
+                self.send_headers(self.headers[self.announced:limit])
                 self.announced = limit
             try:
                 data = self.connection.recv(65536)
@@ -247,8 +254,12 @@ class Server:
                   for height, (display, _) in enumerate(BLOCKS)],
                 "[log]", "news = true", "session = true", "protocol = true",
                 "[database]", f"path = {store}",
+                # Buckets otherwise derive from installed memory (gigabytes).
+                "[table]", *[f"{table}.buckets = 1000" for table in
+                             ("header", "tx", "strong", "ins", "outs", "pool",
+                              "wtxid")],
                 "[bitcoind]", f"bind = 127.0.0.1:{rpc_port}", "connections = 4",
-                "[bitcoind_zmq]",
+                "[zmq]",
                 f"bind = 127.0.0.1:{clear_port}",
                 f"safe = 127.0.0.1:{curve_port}",
                 f"key = {server_secret}",
@@ -257,12 +268,13 @@ class Server:
         self.process = None
 
     def start(self):
-        create = subprocess.run([self.bs, "--config", self.config, "--newstore"],
+        create = subprocess.run([self.bs, "--config", self.config, "--make"],
                                 stdout=self.stdout, stderr=subprocess.STDOUT,
                                 stdin=subprocess.DEVNULL, timeout=120)
         if create.returncode != 0:
-            raise RuntimeError(f"newstore failed: {create.returncode}")
-        self.process = subprocess.Popen([self.bs, "--config", self.config],
+            raise RuntimeError(f"make failed: {create.returncode}")
+        self.process = subprocess.Popen([self.bs, "--config", self.config,
+                                         "--accept"],
                                         stdin=subprocess.PIPE,
                                         stdout=self.stdout,
                                         stderr=subprocess.STDOUT)
@@ -437,7 +449,7 @@ def main():
                     client_public.decode(), peer.port)
     context = zmq.Context()
     try:
-        print("starting bs (newstore, run)...")
+        print("starting bs (make, run)...")
         server.start()
         check(server.call("getblockcount") == 0, "fresh store at genesis")
 

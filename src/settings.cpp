@@ -101,11 +101,11 @@ settings::settings(system::chain::selection context,
     btcd.error_status = false;
 
     // Raw block publications drop beyond the bound, eight blocks deep.
-    bitcoind_zmq.maximum_backlog = 32 * network::megabyte;
+    zmq.maximum_backlog = 32 * network::megabyte;
 
     // Subscribers send nothing after subscribing, so publishers do not expire.
-    bitcoind_zmq.inactivity_minutes = 0;
-    bitcoind_zmq.expiration_minutes = 0;
+    zmq.inactivity_minutes = 0;
+    zmq.expiration_minutes = 0;
 
     // A submitted block is base16 encoded within a json envelope.
     constexpr auto encoded = 2 * network::max_payload + 4 * network::kilobyte;
@@ -145,8 +145,8 @@ code settings::initialize() NOEXCEPT
     native.safe_port = port(8143);
     bitcoind.bind_port = port(8280);
     bitcoind.safe_port = port(8243);
-    bitcoind_zmq.bind_port = port(8380);
-    bitcoind_zmq.safe_port = port(8343);
+    zmq.bind_port = port(8380);
+    zmq.safe_port = port(8343);
     btcd.bind_port = port(8480);
     btcd.safe_port = port(8443);
     electrum.bind_port = port(8580);
@@ -163,7 +163,7 @@ code settings::initialize() NOEXCEPT
     admin.default_ports();
     native.default_ports();
     bitcoind.default_ports();
-    bitcoind_zmq.default_ports();
+    zmq.default_ports();
     btcd.default_ports();
     electrum.default_ports();
     sparrow.default_ports();
@@ -189,7 +189,7 @@ code settings::initialize() NOEXCEPT
     if (const auto ec = initialize(esplora)) return ec;
     if (const auto ec = initialize(stratum_v1)) return ec;
     if (const auto ec = initialize(stratum_v2)) return ec;
-    return initialize(bitcoind_zmq);
+    return initialize(zmq);
 }
 
 // settings::wallet_settings

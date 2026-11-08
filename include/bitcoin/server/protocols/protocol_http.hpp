@@ -61,6 +61,15 @@ protected:
     /// Obtain cached request without clearing cache (requires strand).
     const network::http::request_cptr& get_request() const NOEXCEPT;
 
+    /// Send size bytes of the media type, written into the socket buffer.
+    using wire_writer = std::function<bool(const system::data_slab&)>;
+    void send_stream(size_t size, wire_writer&& writer,
+        network::http::media_type type,
+        const network::http::request& request={}) NOEXCEPT;
+
+    /// Fault the node if the writer fails, otherwise handle_complete.
+    void handle_stream(const code& ec) NOEXCEPT;
+
 private:
     // This is protected by strand.
     network::http::request_cptr request_{};

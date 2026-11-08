@@ -21,7 +21,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
-#include <bitcoin/server/protocols/protocol_bitcoind_zmq.hpp>
+#include <bitcoin/server/protocols/protocol_zmq.hpp>
 #include <bitcoin/server/serializers/serializers.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
 
@@ -76,7 +76,7 @@ static object_t zmq_notification(const network::config::authority& bind,
 static void add_zmq_notifications(array_t& notifications,
     const network::config::authorities& bindings) NOEXCEPT
 {
-    using topic = protocol_bitcoind_zmq::topic;
+    using topic = protocol_zmq::topic;
     for (const auto& bind: bindings)
     {
         notifications.push_back(zmq_notification(bind, topic::hash_block));
@@ -95,7 +95,7 @@ bool protocol_bitcoind_notifications::handle_get_zmq_notifications(
         return false;
 
     array_t notifications{};
-    const auto& zmq = server_settings().bitcoind_zmq;
+    const auto& zmq = server_settings().zmq;
     add_zmq_notifications(notifications, zmq.binds);
     add_zmq_notifications(notifications, zmq.safes);
     send_result(std::move(notifications));

@@ -96,6 +96,36 @@ const request_cptr& protocol_http::get_request() const NOEXCEPT
     return request_;
 }
 
+// Streaming response.
+// ----------------------------------------------------------------------------
+
+void protocol_http::send_stream(size_t size, wire_writer&& writer,
+    media_type type, const request& request) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    response message{ status::ok, request.version() };
+    add_common_headers(message, request);
+    add_access_control_headers(message, request);
+    message.set(field::content_type, from_media_type(type));
+    message.body() = stream_value
+    {
+        .write = std::move(writer),
+        .size = size
+    };
+    message.prepare_payload();
+    SEND(std::move(message), handle_stream, _1);
+}
+
+// A stream body write fails as unexpected only when its writer fails.
+void protocol_http::handle_stream(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (ec == network::error::unexpected_body)
+        fault(database::error::integrity);
+
+    handle_complete(ec, network::error::success);
+}
+
 BC_POP_WARNING()
 BC_POP_WARNING()
 
