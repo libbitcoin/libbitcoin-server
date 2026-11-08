@@ -1547,60 +1547,60 @@ options_metadata parser::load_settings() THROWS
         "Allow requests from opaque origin (see CORS), defaults to {}."
     )
 
-    /* [bitcoind_zmq] */
+    /* [zmq] */
     (
-        "bitcoind_zmq.bind",
-        setting<network::config::authorities>(&configured.server.bitcoind_zmq.binds),
+        "zmq.bind",
+        setting<network::config::authorities>(&configured.server.zmq.binds),
         "IP address to bind, multiple allowed, defaults to {} (disabled)."
     )
     (
-        "bitcoind_zmq.safe",
-        setting<network::config::authorities>(&configured.server.bitcoind_zmq.safes),
+        "zmq.safe",
+        setting<network::config::authorities>(&configured.server.zmq.safes),
         "IP address to secure (CurveZMQ) bind, multiple allowed, defaults to {} (disabled)."
     )
     (
-        "bitcoind_zmq.cert",
-        setting<std::vector<config::base85>>(&configured.server.bitcoind_zmq.certs),
+        "zmq.cert",
+        setting<std::vector<config::base85>>(&configured.server.zmq.certs),
         "The Z85 encoded public key of an authorized client, multiple allowed, defaults to {} (all)."
     )
     (
-        "bitcoind_zmq.connections",
-        setting<uint16_t>(&configured.server.bitcoind_zmq.connections),
+        "zmq.connections",
+        setting<uint16_t>(&configured.server.zmq.connections),
         "The required maximum number of connections, defaults to {}."
     )
     (
-        "bitcoind_zmq.rate_limit",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.rate_limit),
+        "zmq.rate_limit",
+        setting<uint32_t>(&configured.server.zmq.rate_limit),
         "The send rate limit in bytes per second, defaults to {} (network controls)."
     )
     (
-        "bitcoind_zmq.connect_timeout_seconds",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.connect_timeout_seconds),
+        "zmq.connect_timeout_seconds",
+        setting<uint32_t>(&configured.server.zmq.connect_timeout_seconds),
         "The time limit for connection establishment, defaults to {} (network controls)."
     )
     (
-        "bitcoind_zmq.minimum_buffer",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.minimum_buffer),
+        "zmq.minimum_buffer",
+        setting<uint32_t>(&configured.server.zmq.minimum_buffer),
         "The minimum retained read buffer size, defaults to {}."
     )
     (
-        "bitcoind_zmq.maximum_backlog",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_backlog),
+        "zmq.maximum_backlog",
+        setting<uint32_t>(&configured.server.zmq.maximum_backlog),
         "The maximum write backlog of a channel, defaults to {}."
     )
     (
-        "bitcoind_zmq.maximum_request",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_request),
+        "zmq.maximum_request",
+        setting<uint32_t>(&configured.server.zmq.maximum_request),
         "The maximum allowed request size, defaults to {}."
     )
     (
-        "bitcoind_zmq.maximum_subscriptions",
-        setting<uint32_t>(&configured.server.bitcoind_zmq.maximum_subscriptions),
+        "zmq.maximum_subscriptions",
+        setting<uint32_t>(&configured.server.zmq.maximum_subscriptions),
         "The maximum topic subscriptions per connection, defaults to {}."
     )
     (
-        "bitcoind_zmq.key",
-        secret<config::base85>(&configured.server.bitcoind_zmq.key),
+        "zmq.key",
+        secret<config::base85>(&configured.server.zmq.key),
         "The Z85 encoded CurveZMQ server secret key, defaults to none (unencrypted)."
     )
 

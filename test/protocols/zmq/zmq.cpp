@@ -21,7 +21,7 @@
 
 using namespace system;
 using zmtp_stream = network::zmtp::stream;
-using zmq_protocol = protocol_bitcoind_zmq;
+using zmq_protocol = protocol_zmq;
 using peer_socket = network::io::socket;
 
 // Test infrastructure (synchronous ZMTP subscriber peer).

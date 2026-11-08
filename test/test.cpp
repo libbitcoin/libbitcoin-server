@@ -217,7 +217,7 @@ void configure(server::configuration& out) NOEXCEPT
     service(services.sparrow);
     service(services.esplora);
     service(services.stratum_v1);
-    service(services.bitcoind_zmq);
+    service(services.zmq);
     service(services.stratum_v2);
 }
 

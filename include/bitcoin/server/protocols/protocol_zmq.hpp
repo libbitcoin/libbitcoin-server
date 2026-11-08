@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BITCOIND_ZMQ_HPP
-#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_BITCOIND_ZMQ_HPP
+#ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_ZMQ_HPP
+#define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_ZMQ_HPP
 
 #include <atomic>
 #include <bitcoin/server/channels/channels.hpp>
@@ -28,18 +28,18 @@
 namespace libbitcoin {
 namespace server {
 
-/// bitcoind zmq notifications over native zmtp.
+/// zmq notifications over native zmtp, bitcoind compatible.
 /// The socket frames each as [topic][body][sequence].
-class BCS_API protocol_bitcoind_zmq
+class BCS_API protocol_zmq
   : public server::protocol,
-    public network::protocol_rpc<channel_bitcoind_zmq>,
-    protected network::tracker<protocol_bitcoind_zmq>
+    public network::protocol_rpc<channel_zmq>,
+    protected network::tracker<protocol_zmq>
 {
 public:
-    typedef std::shared_ptr<protocol_bitcoind_zmq> ptr;
-    using channel_t = channel_bitcoind_zmq;
+    typedef std::shared_ptr<protocol_zmq> ptr;
+    using channel_t = channel_zmq;
     using options_t = channel_t::options_t;
-    using rpc_interface = interface::bitcoind_zmq;
+    using rpc_interface = interface::zmq;
 
     /// Sequence topic labels.
     enum class label : uint8_t
@@ -59,12 +59,12 @@ public:
         static constexpr std::string_view sequence{ "sequence" };
     };
 
-    inline protocol_bitcoind_zmq(const auto& session,
+    inline protocol_zmq(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : server::protocol(session, channel),
-        network::protocol_rpc<channel_bitcoind_zmq>(session, channel, options),
-        network::tracker<protocol_bitcoind_zmq>(session->log),
+        network::protocol_rpc<channel_zmq>(session, channel, options),
+        network::tracker<protocol_zmq>(session->log),
         options_(options)
     {
     }

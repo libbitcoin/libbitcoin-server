@@ -22,7 +22,6 @@
 #include <bitcoin/server/protocols/protocol.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_blockchain.hpp>
-#include <bitcoin/server/protocols/protocol_bitcoind_zmq.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_control.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_dispatch.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_mining.hpp>
@@ -44,6 +43,7 @@
 #include <bitcoin/server/protocols/protocol_sparrow.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
+#include <bitcoin/server/protocols/protocol_zmq.hpp>
 #include <bitcoin/server/protocols/protocol_admin.hpp>
 
 #endif
@@ -60,7 +60,7 @@ network::protocol
 ├── [server:protocol_stratum_v2]
 ├── protocol_rpc<Channel>
 │   ├── [server::protocol_stratum_v1]
-│   └── [server::protocol_bitcoind_zmq]
+│   └── [server::protocol_zmq]
 ├── protocol_http
 │   └── [server::protocol_http]
 └── protocol_peer
@@ -96,7 +96,7 @@ node::protocol
 server::protocol → node::protocol
 ├── protocol_stratum_v2                → network::protocol
 ├── protocol_stratum_v1                → network::protocol_rpc<channel_stratum_v1>
-├── protocol_bitcoind_zmq              → network::protocol_rpc<channel_bitcoind_zmq>
+├── protocol_zmq                       → network::protocol_rpc<channel_zmq>
 └── protocol_http                      → network::protocol_http
     ├── protocol_esplora
     ├── protocol_html

@@ -3606,7 +3606,7 @@ BC_AUTO_TEST_SUITE_END()
 // zmq bindings
 // ----------------------------------------------------------------------------
 
-BC_FIXTURE_TEST_SUITE(bitcoind_zmq_bound_tests, bitcoind_zmq_bound_setup_fixture)
+BC_FIXTURE_TEST_SUITE(zmq_bound_tests, zmq_bound_setup_fixture)
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getzmqnotifications__one_binding__five_publishers)
 {

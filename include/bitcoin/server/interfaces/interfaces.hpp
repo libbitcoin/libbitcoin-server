@@ -21,7 +21,6 @@
 
 #include <bitcoin/server/interfaces/admin.hpp>
 #include <bitcoin/server/interfaces/bitcoind_blockchain.hpp>
-#include <bitcoin/server/interfaces/bitcoind_zmq.hpp>
 #include <bitcoin/server/interfaces/bitcoind_control.hpp>
 #include <bitcoin/server/interfaces/bitcoind_mining.hpp>
 #include <bitcoin/server/interfaces/bitcoind_network.hpp>
@@ -39,6 +38,7 @@
 #include <bitcoin/server/interfaces/stratum_v1.hpp>
 #include <bitcoin/server/interfaces/stratum_v2.hpp>
 #include <bitcoin/server/interfaces/types.hpp>
+#include <bitcoin/server/interfaces/zmq.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -55,7 +55,6 @@ using bitcoind_test          = publish<bitcoind_test_methods>;
 using bitcoind_transaction   = publish<bitcoind_transaction_methods>;
 using bitcoind_utility       = publish<bitcoind_utility_methods>;
 using bitcoind_wallet        = publish<bitcoind_wallet_methods>;
-using bitcoind_zmq           = publish<bitcoind_zmq_methods>;
 using btcd                   = publish<btcd_methods>;
 using electrum               = publish<electrum_methods>;
 using electrum_handshake     = publish<electrum_handshake_methods>;
@@ -64,6 +63,7 @@ using native                 = publish<native_methods>;
 using sparrow                = publish<sparrow_methods>;
 using stratum_v1             = publish<stratum_v1_methods>;
 using stratum_v2             = publish<stratum_v2_methods>;
+using zmq                    = publish<zmq_methods>;
 
 } // namespace interface
 } // namespace server

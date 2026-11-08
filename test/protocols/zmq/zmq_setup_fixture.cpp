@@ -49,7 +49,7 @@ zmq_setup_fixture::zmq_setup_fixture(const initializer& setup,
 
         auto& network_settings = config_.network;
         auto& node_settings = config_.node;
-        auto& zmq = config_.server.bitcoind_zmq;
+        auto& zmq = config_.server.zmq;
 
         // The secured (CURVE) bindings are configured only with a server key.
         if (key.empty())

@@ -78,8 +78,8 @@ protected:
     virtual session_esplora::ptr attach_esplora_session() NOEXCEPT;
     virtual session_stratum_v1::ptr attach_stratum_v1_session() NOEXCEPT;
     virtual session_stratum_v2::ptr attach_stratum_v2_session() NOEXCEPT;
-    virtual session_bitcoind_zmq::ptr
-        attach_bitcoind_zmq_session() NOEXCEPT;
+    virtual session_zmq::ptr
+        attach_zmq_session() NOEXCEPT;
 
     /// Virtual handlers.
     /// -----------------------------------------------------------------------
@@ -95,8 +95,7 @@ private:
     void start_esplora(const code& ec, const result_handler& handler) NOEXCEPT;
     void start_stratum_v1(const code& ec, const result_handler& handler) NOEXCEPT;
     void start_stratum_v2(const code& ec, const result_handler& handler) NOEXCEPT;
-    void start_bitcoind_zmq(const code& ec,
-        const result_handler& handler) NOEXCEPT;
+    void start_zmq(const code& ec, const result_handler& handler) NOEXCEPT;
 
     // This is thread safe.
     const configuration& config_;

@@ -1,4 +1,4 @@
-"""libzmq (pyzmq) interoperability test for the bs bitcoind_zmq service.
+"""libzmq (pyzmq) interoperability test for the bs zmq service (bitcoind compatible).
 
 Starts bs on a fresh mainnet store with no peers, binds the zmq publisher
 clear (NULL) and secured (CURVE), connects one real libzmq SUB socket to
@@ -248,7 +248,7 @@ class Server:
                 "[log]", "news = true", "session = true", "protocol = true",
                 "[database]", f"path = {store}",
                 "[bitcoind]", f"bind = 127.0.0.1:{rpc_port}", "connections = 4",
-                "[bitcoind_zmq]",
+                "[zmq]",
                 f"bind = 127.0.0.1:{clear_port}",
                 f"safe = 127.0.0.1:{curve_port}",
                 f"key = {server_secret}",

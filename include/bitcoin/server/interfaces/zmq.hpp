@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef LIBBITCOIN_SERVER_INTERFACES_BITCOIND_ZMQ_HPP
-#define LIBBITCOIN_SERVER_INTERFACES_BITCOIND_ZMQ_HPP
+#ifndef LIBBITCOIN_SERVER_INTERFACES_ZMQ_HPP
+#define LIBBITCOIN_SERVER_INTERFACES_ZMQ_HPP
 
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/types.hpp>
@@ -26,8 +26,8 @@ namespace libbitcoin {
 namespace server {
 namespace interface {
 
-/// The subscriber side of the bitcoind zmq notification interface.
-struct bitcoind_zmq_methods
+/// The subscriber side of the zmq notification interface (bitcoind compatible).
+struct zmq_methods
 {
     static constexpr std::tuple methods
     {

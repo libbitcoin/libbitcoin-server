@@ -16,14 +16,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <bitcoin/server/protocols/protocol_bitcoind_zmq.hpp>
+#include <bitcoin/server/protocols/protocol_zmq.hpp>
 
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-#define CLASS protocol_bitcoind_zmq
+#define CLASS protocol_zmq
 
 using namespace system;
 using namespace network;
@@ -35,7 +35,7 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 // Start/stop.
 // ----------------------------------------------------------------------------
 
-void protocol_bitcoind_zmq::start() NOEXCEPT
+void protocol_zmq::start() NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -48,11 +48,11 @@ void protocol_bitcoind_zmq::start() NOEXCEPT
     SUBSCRIBE_BROADCAST(wire_block, handle_wire_block, _1, _2, _3);
 
     SUBSCRIBE_CHANNEL(void, handle_subscribe, _1, _2, _3);
-    network::protocol_rpc<channel_bitcoind_zmq>::start();
+    network::protocol_rpc<channel_zmq>::start();
 }
 
 // Events unsubscription is asynchronous, race is ok.
-void protocol_bitcoind_zmq::stopping(const code& ec) NOEXCEPT
+void protocol_zmq::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     unsubscribe_chase();
@@ -66,7 +66,7 @@ void protocol_bitcoind_zmq::stopping(const code& ec) NOEXCEPT
     if (subscribed_raw_block_.exchange(false, relaxed))
         demand_wire_block(false);
 
-    network::protocol_rpc<channel_bitcoind_zmq>::stopping(ec);
+    network::protocol_rpc<channel_zmq>::stopping(ec);
 }
 
 // Handlers.
@@ -74,7 +74,7 @@ void protocol_bitcoind_zmq::stopping(const code& ec) NOEXCEPT
 
 // A subscription is a topic prefix, so it applies to every topic that it
 // matches, and the empty prefix applies to all.
-bool protocol_bitcoind_zmq::handle_subscribe(const code& ec,
+bool protocol_zmq::handle_subscribe(const code& ec,
     const chunk_cptr& prefix, bool cancel) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -112,7 +112,7 @@ bool protocol_bitcoind_zmq::handle_subscribe(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_zmq::handle_wire_tx(const code& ec,
+bool protocol_zmq::handle_wire_tx(const code& ec,
     const wire_tx::cptr& message, uint64_t) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -129,7 +129,7 @@ bool protocol_bitcoind_zmq::handle_wire_tx(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_zmq::handle_wire_block(const code& ec,
+bool protocol_zmq::handle_wire_block(const code& ec,
     const wire_block::cptr& message, uint64_t) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -158,7 +158,7 @@ bool protocol_bitcoind_zmq::handle_wire_block(const code& ec,
 // Notifications.
 // ----------------------------------------------------------------------------
 
-bool protocol_bitcoind_zmq::handle_chase(const code&,
+bool protocol_zmq::handle_chase(const code&,
     node::event_value value) NOEXCEPT
 {
     // Do not pass ec to stopped as it is not a call status.
@@ -206,7 +206,7 @@ bool protocol_bitcoind_zmq::handle_chase(const code&,
     return true;
 }
 
-void protocol_bitcoind_zmq::do_organized(node::header_t link) NOEXCEPT
+void protocol_zmq::do_organized(node::header_t link) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -234,7 +234,7 @@ void protocol_bitcoind_zmq::do_organized(node::header_t link) NOEXCEPT
             sequence_body(label::block_connected, std::move(hash)));
 }
 
-void protocol_bitcoind_zmq::do_reorganized(node::header_t link) NOEXCEPT
+void protocol_zmq::do_reorganized(node::header_t link) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -258,7 +258,7 @@ void protocol_bitcoind_zmq::do_reorganized(node::header_t link) NOEXCEPT
             sequence_body(label::block_disconnected, std::move(hash)));
 }
 
-void protocol_bitcoind_zmq::do_transaction(node::transaction_t link) NOEXCEPT
+void protocol_zmq::do_transaction(node::transaction_t link) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -268,7 +268,7 @@ void protocol_bitcoind_zmq::do_transaction(node::transaction_t link) NOEXCEPT
     publish(link, true);
 }
 
-void protocol_bitcoind_zmq::publish(node::transaction_t link,
+void protocol_zmq::publish(node::transaction_t link,
     bool sequenced) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -290,13 +290,13 @@ void protocol_bitcoind_zmq::publish(node::transaction_t link,
                 pool_++));
 }
 
-void protocol_bitcoind_zmq::publish(const std::string_view& topic,
+void protocol_zmq::publish(const std::string_view& topic,
     uint32_t sequence, data_chunk&& body) NOEXCEPT
 {
     publish(topic, sequence, rpc::any_t{ to_shared(std::move(body)) });
 }
 
-void protocol_bitcoind_zmq::publish(const std::string_view& topic,
+void protocol_zmq::publish(const std::string_view& topic,
     uint32_t sequence, rpc::any_t&& body) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -312,24 +312,24 @@ void protocol_bitcoind_zmq::publish(const std::string_view& topic,
 // ----------------------------------------------------------------------------
 // private
 
-bool protocol_bitcoind_zmq::blocks() const NOEXCEPT
+bool protocol_zmq::blocks() const NOEXCEPT
 {
     return subscribed_hash_block_.load(relaxed) ||
         subscribed_sequence_.load(relaxed);
 }
 
-bool protocol_bitcoind_zmq::transactions() const NOEXCEPT
+bool protocol_zmq::transactions() const NOEXCEPT
 {
     return subscribed_hash_tx_.load(relaxed);
 }
 
-bool protocol_bitcoind_zmq::sequences() const NOEXCEPT
+bool protocol_zmq::sequences() const NOEXCEPT
 {
     return subscribed_sequence_.load(relaxed);
 }
 
 // static
-bool protocol_bitcoind_zmq::set_subscription(std::atomic_bool& subscribed,
+bool protocol_zmq::set_subscription(std::atomic_bool& subscribed,
     const std::string_view& topic, const std::string& prefix,
     bool cancel) NOEXCEPT
 {
@@ -338,7 +338,7 @@ bool protocol_bitcoind_zmq::set_subscription(std::atomic_bool& subscribed,
 }
 
 // static
-data_chunk protocol_bitcoind_zmq::sequence_body(label value,
+data_chunk protocol_zmq::sequence_body(label value,
     hash_digest&& hash, uint64_t pool) NOEXCEPT
 {
     const auto tx =

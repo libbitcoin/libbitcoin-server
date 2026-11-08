@@ -536,16 +536,16 @@ struct bitcoind_selfs_setup_fixture
 };
 
 // Configured with a zmq binding (no connections, so not served).
-struct bitcoind_zmq_bound_setup_fixture
+struct zmq_bound_setup_fixture
   : bitcoind_setup_fixture
 {
-    inline bitcoind_zmq_bound_setup_fixture()
+    inline zmq_bound_setup_fixture()
       : bitcoind_setup_fixture([](test::query_t& query)
         {
             return test::setup_ten_block_store(query);
         }, [](configuration& config)
         {
-            config.server.bitcoind_zmq.binds = { { "127.0.0.1:28332" } };
+            config.server.zmq.binds = { { "127.0.0.1:28332" } };
         })
     {
     }
