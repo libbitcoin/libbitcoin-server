@@ -72,7 +72,6 @@ void executor::dump_schema()
 void executor::dump_hardware() const
 {
     using namespace system;
-    using namespace database;
 
 #if defined(HAVE_ARM)
     logger(BS_HARDWARE_HEADER_ARM64);

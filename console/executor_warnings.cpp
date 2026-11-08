@@ -57,7 +57,7 @@ void executor::warn_hardware(system::string_list& out) const
 #endif
 
     const auto& node = metadata_.configured.node;
-    const auto device = database::cuda_device();
+    const auto device = system::cuda_device();
     if (device && !batched::compiled())
         out.emplace_back(BS_HARDWARE_GPU_UNCOMPILED);
 
