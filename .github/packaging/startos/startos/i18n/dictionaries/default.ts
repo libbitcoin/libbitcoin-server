@@ -5,6 +5,8 @@ const dict = {
   'Web Interface': 0,
   'The web interface is ready': 1,
   'The web interface is not ready': 2,
+  Processor: 9,
+  'This processor is not supported. Bitcoin Server requires: ${required}': 10,
 
   // interfaces.ts
   'Web UI': 3,
