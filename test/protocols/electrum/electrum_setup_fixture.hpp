@@ -24,8 +24,8 @@
 #include "../fixture/rpc_client.hpp"
 #include "../fixture/rpc_setup_fixture.hpp"
 
-#define ELECTRUM_ENDPOINT "127.0.0.1:65002"
-#define SPARROW_ENDPOINT "127.0.0.1:65003"
+#define ELECTRUM_ENDPOINT "127.0.0.1"
+#define SPARROW_ENDPOINT "127.0.0.1"
 #define ELECTRUM_TEST_USERNAME "user"
 #define ELECTRUM_TEST_PASSWORD "pass"
 #define ELECTRUM_TEST_SCOPED_METHOD "server.version"

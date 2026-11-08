@@ -83,9 +83,9 @@ std::wstring pdb_path()
 
 namespace libbitcoin {
 namespace system {
-    auto& cin = std::cin;
-    auto& cout = std::cout;
-    auto& cerr = std::cerr;
+    std::istream& cin = cin_stream();
+    std::ostream& cout = cout_stream();
+    std::ostream& cerr = cerr_stream();
     int main(int argc, char* argv[]);
 } // namespace system
 } // namespace libbitcoin

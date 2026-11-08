@@ -270,10 +270,11 @@ void executor::subscribe_capture()
                 const auto toggle = toggles_.at(token);
                 if (defined_.at(toggle))
                 {
-                    toggle_.at(toggle) = !toggle_.at(toggle);
+                    const auto mask = bit_right<uint64_t>(toggle);
+                    const auto previous = log_interest_->toggle(mask);
                     logger(std::format("CONSOLE: toggle {} logging ({}).",
                         toggles_menu_.at(toggle), 
-                        (toggle_.at(toggle) ? "+" : "-")));
+                        (get_right(previous, toggle) ? "-" : "+")));
                 }
                 else
                 {
@@ -283,6 +284,10 @@ void executor::subscribe_capture()
 
                 return true;
             }
+
+            // The node and store are closed once the log is stopped.
+            if (log_.stopped())
+                return true;
 
             // dispatch options
             if (options_.contains(token))

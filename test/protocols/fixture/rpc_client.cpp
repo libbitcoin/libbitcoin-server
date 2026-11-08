@@ -134,12 +134,14 @@ rpc_client::request rpc_client::create_get(std::string_view target)
 }
 
 rpc_client::request rpc_client::create_post(std::string_view target,
-    std::string_view body)
+    std::string_view body, std::string_view content_type)
 {
     request out{ http::verb::post, target, network::http::version_1_1 };
     out.set(http::field::host, "localhost");
     out.set(http::field::user_agent, "libbitcoin");
-    out.set(http::field::content_type, "application/json");
+    if (!content_type.empty())
+        out.set(http::field::content_type, content_type);
+
     out.body() = std::string{ body };
     out.prepare_payload();
     out.keep_alive(true);
@@ -185,10 +187,10 @@ http::message<false, http::string_body> rpc_client::get_authorized(
 }
 
 system::json::value rpc_client::post(const std::string& body,
-    const std::string& target, bool checked)
+    const std::string& target, bool checked, std::string_view content_type)
 {
     error_code ec{};
-    http::write(socket_, create_post(target, body), ec);
+    http::write(socket_, create_post(target, body, content_type), ec);
     if (checked)
         BC_CHECK_MESSAGE(!ec, ec.message());
 

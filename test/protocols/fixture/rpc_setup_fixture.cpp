@@ -111,6 +111,11 @@ void rpc_setup_fixture::teardown()
     test::clear(test::directory);
 }
 
+network::io::endpoint rpc_setup_fixture::binding()
+{
+    return server_.binding();
+}
+
 void rpc_setup_fixture::notify(node::event_value value)
 {
     server_.notify(system::error::success, value);

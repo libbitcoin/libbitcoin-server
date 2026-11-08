@@ -22,7 +22,7 @@
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
 
-#define ADMIN_ENDPOINT "127.0.0.1:65001"
+#define ADMIN_ENDPOINT "127.0.0.1"
 #define ADMIN_TEST_CREDENTIAL "user:pass:event_subscribe"
 #define ADMIN_TEST_AUTHORIZATION "Basic dXNlcjpwYXNz"
 
@@ -76,7 +76,7 @@ private:
     void teardown();
 
     network::logger log_;
-    server::server_node server_;
+    test::bound_server server_;
     network::io::context io{};
     network::io::socket socket_{ io };
     std::optional<websocket_stream> websocket_{};

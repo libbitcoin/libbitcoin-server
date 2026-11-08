@@ -55,19 +55,7 @@ executor::executor(parser& metadata, std::istream& input, std::ostream& output,
     query_(store_),
     input_(input),
     output_(output),
-    toggle_
-    {
-        metadata.configured.log.application,
-        metadata.configured.log.news,
-        metadata.configured.log.session,
-        metadata.configured.log.protocol,
-        metadata.configured.log.proxy,
-        metadata.configured.log.remote,
-        metadata.configured.log.fault,
-        metadata.configured.log.quitting,
-        metadata.configured.log.objects,
-        metadata.configured.log.verbose
-    }
+    log_interest_(create_log_interest())
 {
     initialize_stop();
 }

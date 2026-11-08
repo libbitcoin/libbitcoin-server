@@ -24,7 +24,7 @@
 #include "../fixture/rpc_setup_fixture.hpp"
 #include "../../mocks/blocks.hpp"
 
-#define BITCOIND_ENDPOINT "127.0.0.1:65003"
+#define BITCOIND_ENDPOINT "127.0.0.1"
 #define BITCOIND_TEST_USERNAME "user"
 #define BITCOIND_TEST_PASSWORD "pass"
 #define BITCOIND_TEST_SCOPED_METHOD "getblockcount"
@@ -52,6 +52,10 @@ struct bitcoind_setup_fixture
 
     // As rpc_body(), returning only the http status.
     status rpc_body_status(std::string_view body);
+
+    // As rpc_body(), with the given content type (empty omits the field).
+    system::json::value rpc_typed(std::string_view body,
+        std::string_view content_type);
 
     // JSON-RPC 2.0 over raw tcp (no http), which downgrades the connection.
     // Returns the parsed json-rpc response object, or {"dropped":true}.
@@ -205,6 +209,7 @@ struct bitcoind_limited_setup_fixture
         {
             config.network.rate_limit = 1'000;
             config.network.inbound.connections = 2;
+            config.network.inbound.binds = { { "127.0.0.1" } };
             config.network.outbound.connections = 3;
         })
     {

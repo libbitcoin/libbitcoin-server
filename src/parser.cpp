@@ -2343,11 +2343,6 @@ options_metadata parser::load_settings() THROWS
         "Allowable underperformance standard deviation, defaults to {} (0 disables)."
     )
     (
-        "node.announcement_cache",
-        setting<uint16_t>(&configured.node.announcement_cache),
-        "Limit of per channel cached peer block and tx announcements, to avoid replay, defaults to {}."
-    )
-    (
         "node.maximum_height",
         setting<uint32_t>(&configured.node.maximum_height),
         "Maximum block height to populate, defaults to {} (unlimited)."
@@ -2431,7 +2426,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.header.buckets",
         setting<uint32_t>(&configured.database.header.buckets),
-        "The number of buckets in the header table head, dynamic default."
+        "The number of buckets in the header table head, derived from expected and memory, defaults to {}."
     )
     (
         "table.header.expected",
@@ -2477,7 +2472,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.ins.buckets",
         setting<uint32_t>(&configured.database.ins.buckets),
-        "The number of buckets in the ins table head, dynamic default."
+        "The number of buckets in the ins table head, derived from expected and memory, defaults to {}."
     )
     (
         "table.ins.expected",
@@ -2499,7 +2494,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.outs.buckets",
         setting<uint32_t>(&configured.database.outs.buckets),
-        "The number of buckets in the outs table head, dynamic default (0 disables address index)."
+        "The number of buckets in the outs table head, derived from expected and memory, defaults to {} (0 disables address index)."
     )
     (
         "table.outs.expected",
@@ -2521,7 +2516,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.tx.buckets",
         setting<uint32_t>(&configured.database.tx.buckets),
-        "The number of buckets in the tx table head, dynamic default."
+        "The number of buckets in the tx table head, derived from expected and memory, defaults to {}."
     )
     (
         "table.tx.expected",
@@ -2584,7 +2579,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.strong.buckets",
         setting<uint32_t>(&configured.database.strong.buckets),
-        "The number of buckets provisioned in the strong table head, dynamic default."
+        "The number of buckets provisioned in the strong table head, derived from tx expected, defaults to {}."
     )
     (
         "table.strong.rate",
@@ -2613,7 +2608,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.wtxid.buckets",
         setting<uint32_t>(&configured.database.wtxid.buckets),
-        "The number of buckets in the wtxid table head, dynamic default (0 disables)."
+        "The number of buckets in the wtxid table head, derived from expected and memory, defaults to {} (0 disables)."
     )
     (
         "table.wtxid.expected",
@@ -2746,7 +2741,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.pool.buckets",
         setting<uint32_t>(&configured.database.pool.buckets),
-        "The number of buckets in the pool table head, dynamic default (0 disables)."
+        "The number of buckets in the pool table head, derived from expected and memory, defaults to {} (0 disables)."
     )
     (
         "table.pool.expected",

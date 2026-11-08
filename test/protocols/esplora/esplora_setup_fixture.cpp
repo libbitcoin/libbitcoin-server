@@ -63,7 +63,6 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup,
     {
         test::clear(test::directory);
         config_.database.interval_depth = 2;
-        const auto& esplora = config_.server.esplora;
 
         // Create and populate the store.
         auto ec = store_.create([](auto, auto) {});
@@ -98,7 +97,7 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup,
         // Block until server is running.
         ec = running.get_future().get();
         BC_REQUIRE_MESSAGE(!ec, ec.message());
-        REQUIRE_SUCCESS(socket_, connect, esplora.binds.back().to_endpoint());
+        REQUIRE_SUCCESS(socket_, connect, server_.binding());
     }
     catch (...)
     {

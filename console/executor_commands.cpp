@@ -57,8 +57,27 @@ bool executor::do_hardware()
 bool executor::do_settings()
 {
     log_.stop();
-    printer print(metadata_.settings(), metadata_.variables(), name_,
-        BS_SETTINGS_MESSAGE);
+    const auto& configured = metadata_.configured;
+    const auto& server = configured.server;
+    parser defaults
+    {
+        configured.node.network,
+        server.native.pages,
+        server.admin.pages
+    };
+    const char* arguments[]{ name_.c_str() };
+    if (!defaults.parse(1, arguments, output_) ||
+        defaults.configured.initialize())
+        return false;
+
+    printer print
+    (
+        metadata_.settings(),
+        defaults.load_settings(),
+        metadata_.variables(),
+        name_,
+        BS_SETTINGS_MESSAGE
+    );
     print.initialize();
     print.settings(output_);
     return true;

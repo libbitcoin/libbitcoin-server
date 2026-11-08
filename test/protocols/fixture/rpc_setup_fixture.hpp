@@ -45,6 +45,9 @@ protected:
         bool address_index=true, bool start=false);
     ~rpc_setup_fixture();
 
+    /// The endpoint to which the service is bound.
+    network::io::endpoint binding();
+
     configuration config_;
     test::store_t store_;
     test::query_t query_;
@@ -54,7 +57,7 @@ private:
     void teardown();
 
     network::logger log_;
-    server::server_node server_;
+    test::bound_server server_;
 };
 
 #endif

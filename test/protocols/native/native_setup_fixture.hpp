@@ -22,7 +22,7 @@
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
 
-#define NATIVE_ENDPOINT "127.0.0.1:65000"
+#define NATIVE_ENDPOINT "127.0.0.1"
 #define NATIVE_TEST_CREDENTIAL "user:pass:top"
 #define NATIVE_TEST_AUTHORIZATION "Basic dXNlcjpwYXNz"
 
@@ -74,7 +74,7 @@ private:
     void teardown();
 
     network::logger log_;
-    server::server_node server_;
+    test::bound_server server_;
     network::io::context io{};
     network::io::socket socket_{ io };
     std::optional<websocket_stream> websocket_{};

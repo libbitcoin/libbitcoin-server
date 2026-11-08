@@ -22,7 +22,7 @@
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
 
-#define ZMQ_ENDPOINT "127.0.0.1:65003"
+#define ZMQ_ENDPOINT "127.0.0.1"
 
 // A server with the bitcoind_zmq (zmtp publisher) service bound, and a
 // plain socket connected to it for a synchronous ZMTP subscriber peer.
@@ -55,7 +55,7 @@ private:
     void teardown();
 
     network::logger log_;
-    server::server_node server_;
+    test::bound_server server_;
 };
 
 struct zmq_ten_block_setup_fixture
