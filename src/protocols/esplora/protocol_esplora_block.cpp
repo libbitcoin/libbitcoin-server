@@ -102,14 +102,11 @@ bool protocol_esplora::handle_get_block(const code& ec, interface::block,
             return true;
         }
 
-        data_chunk out(size);
-        if (!query.get_wire_block(out, link, true, database_settings().turbo))
+        const auto turbo = database_settings().turbo;
+        send_stream(size, [&query, link, turbo](const data_slab& out) NOEXCEPT
         {
-            send_internal_server_error(database::error::integrity);
-            return true;
-        }
-
-        send_chunk(std::move(out));
+            return query.get_wire_block(out, link, true, turbo);
+        }, network::http::media_type::application_octet_stream);
         return true;
     }
 
