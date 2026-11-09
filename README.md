@@ -322,8 +322,8 @@ Options (named):
                      RAM and result in SIGKILL).                         
 -m [--make]          Create new store in configured directory.           
 -n [--net]           Specify the network                                 
-                     (mainnet|testnet3|testnet4|regtest|signet), defaults
-                     to the configured network.                          
+                     (mainnet|testnet3|testnet4|regtest|signet|testnet5),
+                     defaults to the configured network.                 
 -p [--put]           Run built-in write test and display.                
 -r [--restore]       Restore from most recent snapshot.                  
 -s [--settings]      Display all configuration settings.                 

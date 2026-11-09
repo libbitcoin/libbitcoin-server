@@ -134,6 +134,8 @@ code settings::initialize() NOEXCEPT
                 return possible_narrow_cast<uint16_t>(base + 30000_u32);
             case system::chain::selection::testnet4:
                 return possible_narrow_cast<uint16_t>(base + 40000_u32);
+            case system::chain::selection::testnet5:
+                return possible_narrow_cast<uint16_t>(base + 50000_u32);
             default:
                 return base;
         }
@@ -205,6 +207,7 @@ static const context& to_wallet_context(
     {
         case system::chain::selection::testnet3:
         case system::chain::selection::testnet4:
+        case system::chain::selection::testnet5:
         case system::chain::selection::signet:
             return ctx::btc::test;
         case system::chain::selection::regtest:

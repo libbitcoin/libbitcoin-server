@@ -61,6 +61,25 @@ BC_AUTO_TEST_CASE(parser__parse__net_testnet4__testnet4_defaults)
     BC_REQUIRE_EQUAL(configured.database.strong.buckets, 14'810'011u);
 }
 
+BC_AUTO_TEST_CASE(parser__parse__net_testnet5__testnet5_defaults)
+{
+    const char* argv[]{ "bs", "-n", "testnet5" };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(3, argv, error));
+
+    const auto& configured = instance.configured;
+    BC_REQUIRE(configured.net == selection::testnet5);
+    BC_REQUIRE(!configured.make);
+    BC_REQUIRE(configured.bitcoin.network == selection::testnet5);
+    BC_REQUIRE(configured.node.network == selection::testnet5);
+    BC_REQUIRE_EQUAL(configured.network.identifier, 1163282758u);
+    BC_REQUIRE(configured.server.network == selection::testnet5);
+    BC_REQUIRE_EQUAL(configured.database.path, "testnet5");
+    BC_REQUIRE_EQUAL(configured.database.header.expected, 10'000u);
+    BC_REQUIRE_EQUAL(configured.database.strong.buckets, 100'000u);
+}
+
 BC_AUTO_TEST_CASE(parser__parse__net_attached_signet__signet_defaults)
 {
     const char* argv[]{ "bs", "-nsignet" };
