@@ -35,6 +35,38 @@ BC_AUTO_TEST_CASE(electrum__post__handshake__negotiated)
     BC_REQUIRE(post_handshake(electrum::version::v1_4));
 }
 
+BC_AUTO_TEST_CASE(electrum__post__origin__access_control)
+{
+    const auto response = post_response(R"({"id":707,"method":"server.version","params":["test","1.4"]})", "http://example.com");
+    BC_REQUIRE_EQUAL(response.result(), rpc_client::status::ok);
+    BC_REQUIRE_EQUAL(response[network::http::field::access_control_allow_origin], "http://example.com");
+    BC_REQUIRE_EQUAL(response[network::http::field::vary], "origin");
+}
+
+BC_AUTO_TEST_CASE(electrum__post__handshaken_origin__access_control)
+{
+    BC_REQUIRE(post_handshake(electrum::version::v1_0));
+
+    const auto response = post_response(R"({"id":708,"method":"blockchain.numblocks.subscribe","params":[]})", "http://example.com");
+    BC_REQUIRE_EQUAL(response.result(), rpc_client::status::ok);
+    BC_REQUIRE_EQUAL(response[network::http::field::access_control_allow_origin], "http://example.com");
+}
+
+BC_AUTO_TEST_CASE(electrum__post__no_origin__no_access_control)
+{
+    const auto response = post_response(R"({"id":709,"method":"server.version","params":["test","1.4"]})");
+    BC_REQUIRE_EQUAL(response.result(), rpc_client::status::ok);
+    BC_REQUIRE(is_zero(response.count(network::http::field::access_control_allow_origin)));
+    BC_REQUIRE(is_zero(response.count(network::http::field::vary)));
+}
+
+BC_AUTO_TEST_CASE(electrum__post__http_1_0__version_1_0)
+{
+    const auto response = post_response(R"({"id":710,"method":"server.version","params":["test","1.4"]})", {}, network::http::version_1_0);
+    BC_REQUIRE_EQUAL(response.result(), rpc_client::status::ok);
+    BC_REQUIRE_EQUAL(response.version(), network::http::version_1_0);
+}
+
 BC_AUTO_TEST_CASE(electrum__post__numblocks_subscribe__returns_9)
 {
     BC_REQUIRE(post_handshake(electrum::version::v1_0));

@@ -123,8 +123,9 @@ void protocol_esplora::handle_receive_get(const code& ec,
         return;
     }
 
+    set_request(get);
     if (!try_dispatch_object(*get))
-        send_not_found(*get);
+        send_not_found();
 }
 
 // Dispatch.
@@ -144,19 +145,19 @@ bool protocol_esplora::try_dispatch_object(const http::request& request) NOEXCEP
 
     if (takes_body(model.method))
     {
-        send_method_not_allowed(request);
+        send_method_not_allowed();
         return true;
     }
 
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(model.method))
     {
-        send_forbidden(request);
+        send_forbidden();
         return true;
     }
 
     if (dispatcher_.notify(model))
-        send_bad_request(request);
+        send_bad_request();
 
     return true;
 }
@@ -187,22 +188,23 @@ void protocol_esplora::handle_receive_post(const code& ec,
         return;
     }
 
+    set_request(post);
     rpc::request_t model{};
     if (esplora_target(model, post->target()))
     {
-        send_not_found(*post);
+        send_not_found();
         return;
     }
 
     if (!takes_body(model.method))
     {
-        send_method_not_allowed(*post);
+        send_method_not_allowed();
         return;
     }
 
     if (!post->body().contains<http::string_value>())
     {
-        send_bad_request(*post);
+        send_bad_request();
         return;
     }
 
@@ -211,12 +213,12 @@ void protocol_esplora::handle_receive_post(const code& ec,
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(model.method))
     {
-        send_forbidden(*post);
+        send_forbidden();
         return;
     }
 
     if (dispatcher_.notify(model))
-        send_bad_request(*post);
+        send_bad_request();
 }
 
 void protocol_esplora::dispatch_websocket(const http::request& request) NOEXCEPT
@@ -310,62 +312,13 @@ void protocol_esplora::set_body(rpc::request_t& model,
 // Senders.
 // ----------------------------------------------------------------------------
 
-void protocol_esplora::send_json(value&& model, size_t size_hint,
-    const request& request) NOEXCEPT
+void protocol_esplora::send_rejected(const code& reason) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    response response{ status::ok, request.version() };
-    add_common_headers(response, request);
-    add_access_control_headers(response, request);
-    const auto media = from_media_type(media_type::application_json);
-    response.set(field::content_type, media);
-    response.body() = json_value
-    {
-        .model = std::move(model),
-        .size_hint = size_hint
-    };
-    response.prepare_payload();
-    SEND(std::move(response), handle_complete, _1, error::success);
-}
-
-void protocol_esplora::send_rejected(const code& reason,
-    const request& request) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    response response{ status::bad_request, request.version() };
-    add_common_headers(response, request);
-    add_access_control_headers(response, request);
+    auto response = to_response(status::bad_request);
     const auto media = from_media_type(media_type::text_plain);
     response.set(field::content_type, media);
     response.body() = reason.message();
-    response.prepare_payload();
-    SEND(std::move(response), handle_complete, _1, error::success);
-}
-
-void protocol_esplora::send_text(std::string&& value,
-    const request& request) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    response response{ status::ok, request.version() };
-    add_common_headers(response, request);
-    add_access_control_headers(response, request);
-    const auto media = from_media_type(media_type::text_plain);
-    response.set(field::content_type, media);
-    response.body() = std::move(value);
-    response.prepare_payload();
-    SEND(std::move(response), handle_complete, _1, error::success);
-}
-
-void protocol_esplora::send_chunk(system::data_chunk&& bytes,
-    const request& request) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    response response{ status::ok, request.version() };
-    add_common_headers(response, request);
-    add_access_control_headers(response, request);
-    const auto media = from_media_type(media_type::application_octet_stream);
-    response.set(field::content_type, media);
-    response.body() = std::move(bytes);
     response.prepare_payload();
     SEND(std::move(response), handle_complete, _1, error::success);
 }

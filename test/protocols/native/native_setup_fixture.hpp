@@ -43,6 +43,13 @@ struct native_setup_fixture
     status get_status(std::string_view target, network::http::field name,
         std::string_view value);
 
+    // The full response, with an origin field unless empty.
+    using string_response =
+        network::http::message<false, network::http::string_body>;
+    string_response get_response(std::string_view target,
+        std::string_view origin={},
+        uint32_t version=network::http::version_1_1);
+
     std::string get_text(std::string_view target);
     system::data_chunk get_data(std::string_view target);
     system::json::value get_json(std::string_view target);
@@ -242,6 +249,21 @@ struct native_hosts_setup_fixture
         }, [](server::configuration& config)
         {
             config.server.native.hosts = { { "example.com" } };
+        })
+    {
+    }
+};
+
+struct native_origins_setup_fixture
+  : native_setup_fixture
+{
+    inline native_origins_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.server.native.origins = { { "example.com" } };
         })
     {
     }

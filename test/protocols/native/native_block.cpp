@@ -283,6 +283,59 @@ BC_AUTO_TEST_CASE(native__dispatch__opaque_origin__forbidden)
     BC_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::origin, "null"), http::status::forbidden);
 }
 
+BC_AUTO_TEST_CASE(native__dispatch__origin_json__access_control)
+{
+    const auto response = get_response("/v1/top?format=json", "http://example.com");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response[http::field::access_control_allow_origin], "http://example.com");
+    BC_REQUIRE_EQUAL(response[http::field::vary], "origin");
+}
+
+BC_AUTO_TEST_CASE(native__dispatch__origin_text__access_control)
+{
+    const auto response = get_response("/v1/top?format=text", "http://example.com");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response[http::field::access_control_allow_origin], "http://example.com");
+    BC_REQUIRE_EQUAL(response[http::field::vary], "origin");
+}
+
+BC_AUTO_TEST_CASE(native__dispatch__origin_data__access_control)
+{
+    const auto response = get_response("/v1/top?format=data", "http://example.com");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response[http::field::access_control_allow_origin], "http://example.com");
+    BC_REQUIRE_EQUAL(response[http::field::vary], "origin");
+}
+
+BC_AUTO_TEST_CASE(native__dispatch__origin_stream__access_control)
+{
+    const auto response = get_response("/v1/block/height/1?format=data", "http://example.com");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response[http::field::access_control_allow_origin], "http://example.com");
+}
+
+BC_AUTO_TEST_CASE(native__dispatch__no_origin__no_access_control)
+{
+    const auto response = get_response("/v1/top?format=json");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE(is_zero(response.count(http::field::access_control_allow_origin)));
+    BC_REQUIRE(is_zero(response.count(http::field::vary)));
+}
+
+BC_AUTO_TEST_CASE(native__dispatch__http_1_0__version_1_0)
+{
+    const auto response = get_response("/v1/top?format=json", {}, network::http::version_1_0);
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response.version(), network::http::version_1_0);
+}
+
+BC_AUTO_TEST_CASE(native__dispatch__not_found_http_1_0__version_1_0)
+{
+    const auto response = get_response("/v1/block/height/10?format=data", {}, network::http::version_1_0);
+    BC_REQUIRE_EQUAL(response.result(), http::status::not_found);
+    BC_REQUIRE_EQUAL(response.version(), network::http::version_1_0);
+}
+
 // block
 // ----------------------------------------------------------------------------
 
@@ -761,6 +814,25 @@ BC_AUTO_TEST_CASE(native__hosts__unlisted_host__bad_request)
 BC_AUTO_TEST_CASE(native__hosts__listed_host__expected)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::host, "example.com"), http::status::ok);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+// origins
+// ----------------------------------------------------------------------------
+
+BC_FIXTURE_TEST_SUITE(native_origins_tests, native_origins_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__origins__unlisted_origin__forbidden)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::origin, "http://example.org"), http::status::forbidden);
+}
+
+BC_AUTO_TEST_CASE(native__origins__listed_origin__access_control)
+{
+    const auto response = get_response("/v1/top?format=json", "http://example.com");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response[http::field::access_control_allow_origin], "http://example.com");
 }
 
 BC_AUTO_TEST_SUITE_END()

@@ -66,6 +66,9 @@ void protocol_html::handle_receive_get(const code& ec,
         return;
     }
 
+    // Senders respond to the cached request.
+    set_request(get);
+
     // Always try API dispatch, false if unhandled.
     if (try_dispatch_object(*get))
         return;
@@ -85,7 +88,7 @@ void protocol_html::handle_receive_get(const code& ec,
     }
 
     // Neither site is enabled and object dispatch doesn't support.
-    send_not_implemented(*get);
+    send_not_implemented();
 }
 
 // Dispatch.
@@ -106,27 +109,27 @@ void protocol_html::dispatch_embedded(const request& request) NOEXCEPT
         media_type::text_html))
     {
         case media_type::text_html:
-            send_span(pages.html(), media, request);
+            send_span(pages.html(), media);
             break;
         case media_type::text_css:
-            send_span(pages.css(), media, request);
+            send_span(pages.css(), media);
             break;
         case media_type::application_javascript:
-            send_span(pages.ecma(), media, request);
+            send_span(pages.ecma(), media);
             break;
         case media_type::font_woff:
         case media_type::font_woff2:
-            send_span(pages.font(), media, request);
+            send_span(pages.font(), media);
             break;
         case media_type::image_png:
         case media_type::image_gif:
         case media_type::image_jpeg:
         case media_type::image_svg_xml:
         case media_type::image_x_icon:
-            send_span(pages.icon(), media, request);
+            send_span(pages.icon(), media);
             break;
         default:
-            send_not_found(request);
+            send_not_found();
     }
 }
 
@@ -140,7 +143,7 @@ void protocol_html::dispatch_file(const request& request) NOEXCEPT
     auto path = to_local_path(request.target());
     if (path.empty())
     {
-        send_bad_target({}, request);
+        send_bad_target({}, *reset_request());
         return;
     }
 
@@ -152,7 +155,7 @@ void protocol_html::dispatch_file(const request& request) NOEXCEPT
         // Default html page (e.g. index.html) is not configured.
         if (path.empty())
         {
-            send_not_implemented(request);
+            send_not_implemented();
             return;
         }
     }
@@ -161,114 +164,12 @@ void protocol_html::dispatch_file(const request& request) NOEXCEPT
     auto file = get_file_body(path);
     if (!file.is_open())
     {
-        send_not_found(request);
+        send_not_found();
         return;
     }
 
     constexpr auto octet_stream = media_type::application_octet_stream;
-    send_file(std::move(file), file_media_type(path, octet_stream), request);
-}
-
-// Senders.
-// ----------------------------------------------------------------------------
-
-constexpr auto data = media_type::application_octet_stream;
-constexpr auto json = media_type::application_json;
-constexpr auto text = media_type::text_plain;
-
-void protocol_html::send_json(system::json::value&& model, size_t size_hint,
-    const request& request) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    response response{ status::ok, request.version() };
-    add_common_headers(response, request);
-    add_access_control_headers(response, request);
-    response.set(field::content_type, from_media_type(json));
-    response.body() = json_value
-    {
-        .model = std::move(model),
-        .size_hint = size_hint
-    };
-    response.prepare_payload();
-    SEND(std::move(response), handle_complete, _1, error::success);
-}
-
-void protocol_html::send_text(std::string&& hexidecimal,
-    const request& request) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    response response{ status::ok, request.version() };
-    add_common_headers(response, request);
-    add_access_control_headers(response, request);
-    response.set(field::content_type, from_media_type(text));
-    response.body() = std::move(hexidecimal);
-    response.prepare_payload();
-    SEND(std::move(response), handle_complete, _1, error::success);
-}
-
-void protocol_html::send_chunk(system::data_chunk&& bytes,
-    const request& request) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    response response{ status::ok, request.version() };
-    add_common_headers(response, request);
-    add_access_control_headers(response, request);
-    response.set(field::content_type, from_media_type(data));
-    response.body() = std::move(bytes);
-    response.prepare_payload();
-    SEND(std::move(response), handle_complete, _1, error::success);
-}
-
-void protocol_html::send_file(file&& file, media_type type,
-    const request& request) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    BC_ASSERT_MSG(file.is_open(), "sending closed file handle");
-    response response{ status::ok, request.version() };
-    add_common_headers(response, request);
-    add_access_control_headers(response, request);
-    response.set(field::content_type, from_media_type(type));
-    response.body() = std::move(file);
-    response.prepare_payload();
-    SEND(std::move(response), handle_complete, _1, error::success);
-}
-
-void protocol_html::send_span(span_body::value_type&& span,
-    media_type type, const request& request) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    response response{ status::ok, request.version() };
-    add_common_headers(response, request);
-    add_access_control_headers(response, request);
-    response.set(field::content_type, from_media_type(type));
-    response.body() = std::move(span);
-    response.prepare_payload();
-    SEND(std::move(response), handle_complete, _1, error::success);
-}
-
-void protocol_html::send_buffer(buffer_body::value_type&& buffer,
-    media_type type, const request& request) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    response response{ status::ok, request.version() };
-    add_common_headers(response, request);
-    add_access_control_headers(response, request);
-    response.set(field::content_type, from_media_type(type));
-    response.body() = std::move(buffer);
-    response.prepare_payload();
-    SEND(std::move(response), handle_complete, _1, error::success);
-}
-
-void protocol_html::send_empty(const request& request) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    response response{ status::ok, request.version() };
-    add_common_headers(response, request);
-    add_access_control_headers(response, request);
-    ////response.set(field::content_type, media_type::text_plain);
-    response.body() = empty_value{};
-    response.prepare_payload();
-    SEND(std::move(response), handle_complete, _1, error::success);
+    send_file(std::move(file), file_media_type(path, octet_stream));
 }
 
 // Notifiers (websocket).

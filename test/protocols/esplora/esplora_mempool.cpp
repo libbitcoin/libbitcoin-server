@@ -115,6 +115,14 @@ BC_AUTO_TEST_CASE(esplora__get__opaque_origin__forbidden)
     BC_REQUIRE_EQUAL(get_status("/blocks/tip/height", http::field::origin, "null"), http::status::forbidden);
 }
 
+BC_AUTO_TEST_CASE(esplora__get__origin__access_control)
+{
+    const auto response = get_response("/blocks/tip/height", "http://example.com");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response[http::field::access_control_allow_origin], "http://example.com");
+    BC_REQUIRE_EQUAL(response[http::field::vary], "origin");
+}
+
 BC_AUTO_TEST_CASE(esplora__get__empty_host__bad_request)
 {
     BC_REQUIRE_EQUAL(get_status("/blocks/tip/height", http::field::host, ""), http::status::bad_request);

@@ -69,8 +69,9 @@ protected:
         const network::http::request& request) NOEXCEPT override;
 
     /// Senders.
+    using protocol_html::send_not_found;
     void send_not_found(
-        const network::http::request& request={}) NOEXCEPT override;
+        const network::http::request& request) NOEXCEPT override;
 
 
     /// Event handlers.

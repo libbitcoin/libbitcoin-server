@@ -61,11 +61,51 @@ protected:
     /// Obtain cached request without clearing cache (requires strand).
     const network::http::request_cptr& get_request() const NOEXCEPT;
 
+    /// Response to the cached request, with its version and the common and
+    /// access control headers, clearing the cache (requires strand).
+    network::http::response to_response(network::http::status status) NOEXCEPT;
+
+    /// Senders, responding to the cached request (requires strand).
+    void send_json(system::json::value&& model, size_t size_hint) NOEXCEPT;
+    void send_text(std::string&& text) NOEXCEPT;
+    void send_chunk(system::data_chunk&& bytes) NOEXCEPT;
+    void send_file(network::http::file&& file,
+        network::http::media_type type) NOEXCEPT;
+    void send_span(network::http::span_body::value_type&& span,
+        network::http::media_type type) NOEXCEPT;
+    void send_buffer(network::http::buffer_body::value_type&& buffer,
+        network::http::media_type type) NOEXCEPT;
+    void send_empty() NOEXCEPT;
+
     /// Send size bytes of the media type, written into the socket buffer.
     using wire_writer = std::function<bool(const system::data_slab&)>;
     void send_stream(size_t size, wire_writer&& writer,
-        network::http::media_type type,
-        const network::http::request& request={}) NOEXCEPT;
+        network::http::media_type type) NOEXCEPT;
+
+    /// Error senders, responding to the cached request (requires strand).
+    void send_bad_request() NOEXCEPT;
+    void send_not_found() NOEXCEPT;
+    void send_not_acceptable() NOEXCEPT;
+    void send_forbidden() NOEXCEPT;
+    void send_not_implemented() NOEXCEPT;
+    void send_method_not_allowed() NOEXCEPT;
+    void send_internal_server_error(const code& reason) NOEXCEPT;
+
+    /// Error senders, responding to the request.
+    void send_bad_request(
+        const network::http::request& request) NOEXCEPT override;
+    void send_not_found(
+        const network::http::request& request) NOEXCEPT override;
+    void send_not_acceptable(
+        const network::http::request& request) NOEXCEPT override;
+    void send_forbidden(
+        const network::http::request& request) NOEXCEPT override;
+    void send_not_implemented(
+        const network::http::request& request) NOEXCEPT override;
+    void send_method_not_allowed(
+        const network::http::request& request) NOEXCEPT override;
+    void send_internal_server_error(const code& reason,
+        const network::http::request& request) NOEXCEPT override;
 
     /// Fault the node if the writer fails, otherwise handle_complete.
     void handle_stream(const code& ec) NOEXCEPT;

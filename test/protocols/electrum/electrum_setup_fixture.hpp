@@ -60,6 +60,11 @@ struct electrum_setup_fixture
     // As post(), returning only the http status.
     rpc_client::status post_status(const std::string& request);
 
+    // As post(), with an origin field unless empty, returning the response.
+    rpc_client::response post_response(const std::string& request,
+        std::string_view origin={},
+        uint32_t version=network::http::version_1_1);
+
     // As post(), with basic authorization.
     system::json::value post_authorized(const std::string& request,
         const std::string& username, const std::string& password);

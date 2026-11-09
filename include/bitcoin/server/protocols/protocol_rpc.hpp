@@ -32,8 +32,8 @@ namespace server {
 /// claims each request defined by the interface, deferring all others to the
 /// protocol attached last (see handle_unclaimed). Protocols attached to one
 /// channel (e.g. a handshake) therefore publish disjoint interfaces. The
-/// senders are forwarded to the channel, so a service is served identically
-/// over tcp/s (by downgrade), http/s and ws/s (by upgrade).
+/// responses carry the request context of the channel, so a service is served
+/// identically over tcp/s (by downgrade), http/s and ws/s (by upgrade).
 template <typename Interface>
 class protocol_rpc
   : public server::protocol_http
@@ -108,6 +108,9 @@ protected:
         const auto& message =
             post->body().template get<network::rpc::request>().message;
 
+        // Senders respond to the cached request.
+        set_request(post);
+
         // Defer methods not defined by the interface.
         if (!rpc_dispatcher::contains(message.method))
         {
@@ -121,7 +124,7 @@ protected:
         // The credential may be restricted to a subset of interface methods.
         if (!permitted(message.method))
         {
-            send_forbidden(*post);
+            send_forbidden();
             return;
         }
 
@@ -298,19 +301,25 @@ protected:
     inline void send_code(const code& ec,
         network::result_handler&& handler) NOEXCEPT
     {
-        channel_->send_code(ec, std::move(handler));
+        send_error(
+        {
+            .code = ec.value(),
+            .message = ec.message()
+        }, std::move(handler));
     }
 
     inline void send_error(network::rpc::result_t&& error,
         network::result_handler&& handler) NOEXCEPT
     {
-        channel_->send_error(std::move(error), std::move(handler));
+        send_response(channel_->to_error(std::move(error)),
+            std::move(handler));
     }
 
     inline void send_result(network::rpc::value_t&& result,
         network::result_handler&& handler) NOEXCEPT
     {
-        channel_->send_result(std::move(result), std::move(handler));
+        send_response(channel_->to_result(std::move(result)),
+            std::move(handler));
     }
 
     inline void send_notification(network::rpc::string_t&& method,
@@ -327,6 +336,20 @@ private:
         network::rpc::method_names<Interface::methods>();
     static constexpr std::string_view names{ name_data.data(),
         name_data.size() };
+
+    // The socket writes the body alone on a full duplex transport (ws frame
+    // or downgraded stream), and the full http response otherwise.
+    inline void send_response(network::rpc::response_t&& model,
+        network::result_handler&& handler) NOEXCEPT
+    {
+        using namespace network::http;
+        auto message = to_response(status::ok);
+        message.set(field::content_type,
+            from_media_type(media_type::application_json));
+        message.body() = network::rpc::response{ {}, std::move(model) };
+        message.prepare_payload();
+        channel_->send(std::move(message), std::move(handler));
+    }
 
     inline network::result_handler default_handler() NOEXCEPT
     {

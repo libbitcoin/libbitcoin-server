@@ -209,6 +209,26 @@ system::json::value rpc_client::post(const std::string& body,
     return test::parse_json(response.body());
 }
 
+rpc_client::response rpc_client::post_response(const std::string& body,
+    std::string_view origin, uint32_t version)
+{
+    auto out = create_post("/", body);
+    out.version(version);
+    out.keep_alive(true);
+    if (!origin.empty())
+        out.set(http::field::origin, origin);
+
+    error_code ec{};
+    http::write(socket_, out, ec);
+    BC_CHECK_MESSAGE(!ec, ec.message());
+
+    http::flat_buffer buffer{};
+    response message{};
+    http::read(socket_, buffer, message, ec);
+    BC_CHECK_MESSAGE(!ec, ec.message());
+    return message;
+}
+
 rpc_client::status rpc_client::options_status(std::string_view target)
 {
     request out{ http::verb::options, target, network::http::version_1_1 };

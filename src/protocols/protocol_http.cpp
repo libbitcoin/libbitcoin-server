@@ -74,11 +74,12 @@ void protocol_http::set_request(const request_cptr& request) NOEXCEPT
     request_ = request;
 }
 
-// Returns default if not set, for safety (asserts correctness).
+/// Returns default if not set, as ws frames and a tcp downgrade carry no http
+// envelope (asserts correctness otherwise).
 request_cptr protocol_http::reset_request() NOEXCEPT
 {
     ////BC_ASSERT(stranded());
-    BC_ASSERT(request_);
+    BC_ASSERT(request_ || websocket() || downgraded());
 
     if (request_)
     {
@@ -96,16 +97,103 @@ const request_cptr& protocol_http::get_request() const NOEXCEPT
     return request_;
 }
 
-// Streaming response.
-// ----------------------------------------------------------------------------
-
-void protocol_http::send_stream(size_t size, wire_writer&& writer,
-    media_type type, const request& request) NOEXCEPT
+response protocol_http::to_response(status status) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    response message{ status::ok, request.version() };
-    add_common_headers(message, request);
-    add_access_control_headers(message, request);
+    const auto request = reset_request();
+    response message{ status, request->version() };
+    add_common_headers(message, *request);
+    add_access_control_headers(message, *request);
+    return message;
+}
+
+// Senders.
+// ----------------------------------------------------------------------------
+
+void protocol_http::send_json(system::json::value&& model,
+    size_t size_hint) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    auto message = to_response(status::ok);
+    message.set(field::content_type,
+        from_media_type(media_type::application_json));
+    message.body() = json_value
+    {
+        .model = std::move(model),
+        .size_hint = size_hint
+    };
+    message.prepare_payload();
+    SEND(std::move(message), handle_complete, _1, error::success);
+}
+
+void protocol_http::send_text(std::string&& text) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    auto message = to_response(status::ok);
+    message.set(field::content_type, from_media_type(media_type::text_plain));
+    message.body() = std::move(text);
+    message.prepare_payload();
+    SEND(std::move(message), handle_complete, _1, error::success);
+}
+
+void protocol_http::send_chunk(system::data_chunk&& bytes) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    auto message = to_response(status::ok);
+    message.set(field::content_type,
+        from_media_type(media_type::application_octet_stream));
+    message.body() = std::move(bytes);
+    message.prepare_payload();
+    SEND(std::move(message), handle_complete, _1, error::success);
+}
+
+void protocol_http::send_file(file&& file, media_type type) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    BC_ASSERT_MSG(file.is_open(), "sending closed file handle");
+    auto message = to_response(status::ok);
+    message.set(field::content_type, from_media_type(type));
+    message.body() = std::move(file);
+    message.prepare_payload();
+    SEND(std::move(message), handle_complete, _1, error::success);
+}
+
+void protocol_http::send_span(span_body::value_type&& span,
+    media_type type) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    auto message = to_response(status::ok);
+    message.set(field::content_type, from_media_type(type));
+    message.body() = std::move(span);
+    message.prepare_payload();
+    SEND(std::move(message), handle_complete, _1, error::success);
+}
+
+void protocol_http::send_buffer(buffer_body::value_type&& buffer,
+    media_type type) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    auto message = to_response(status::ok);
+    message.set(field::content_type, from_media_type(type));
+    message.body() = std::move(buffer);
+    message.prepare_payload();
+    SEND(std::move(message), handle_complete, _1, error::success);
+}
+
+void protocol_http::send_empty() NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    auto message = to_response(status::ok);
+    message.body() = empty_value{};
+    message.prepare_payload();
+    SEND(std::move(message), handle_complete, _1, error::success);
+}
+
+void protocol_http::send_stream(size_t size, wire_writer&& writer,
+    media_type type) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    auto message = to_response(status::ok);
     message.set(field::content_type, from_media_type(type));
     message.body() = stream_value
     {
@@ -114,6 +202,80 @@ void protocol_http::send_stream(size_t size, wire_writer&& writer,
     };
     message.prepare_payload();
     SEND(std::move(message), handle_stream, _1);
+}
+
+// Error senders.
+// ----------------------------------------------------------------------------
+
+void protocol_http::send_bad_request() NOEXCEPT
+{
+    send_bad_request(*reset_request());
+}
+
+void protocol_http::send_not_found() NOEXCEPT
+{
+    send_not_found(*reset_request());
+}
+
+void protocol_http::send_not_acceptable() NOEXCEPT
+{
+    send_not_acceptable(*reset_request());
+}
+
+void protocol_http::send_forbidden() NOEXCEPT
+{
+    send_forbidden(*reset_request());
+}
+
+void protocol_http::send_not_implemented() NOEXCEPT
+{
+    send_not_implemented(*reset_request());
+}
+
+void protocol_http::send_method_not_allowed() NOEXCEPT
+{
+    send_method_not_allowed(*reset_request());
+}
+
+void protocol_http::send_internal_server_error(const code& reason) NOEXCEPT
+{
+    send_internal_server_error(reason, *reset_request());
+}
+
+void protocol_http::send_bad_request(const request& request) NOEXCEPT
+{
+    network::protocol_http::send_bad_request(request);
+}
+
+void protocol_http::send_not_found(const request& request) NOEXCEPT
+{
+    network::protocol_http::send_not_found(request);
+}
+
+void protocol_http::send_not_acceptable(const request& request) NOEXCEPT
+{
+    network::protocol_http::send_not_acceptable(request);
+}
+
+void protocol_http::send_forbidden(const request& request) NOEXCEPT
+{
+    network::protocol_http::send_forbidden(request);
+}
+
+void protocol_http::send_not_implemented(const request& request) NOEXCEPT
+{
+    network::protocol_http::send_not_implemented(request);
+}
+
+void protocol_http::send_method_not_allowed(const request& request) NOEXCEPT
+{
+    network::protocol_http::send_method_not_allowed(request);
+}
+
+void protocol_http::send_internal_server_error(const code& reason,
+    const request& request) NOEXCEPT
+{
+    network::protocol_http::send_internal_server_error(reason, request);
 }
 
 // A stream body write fails as unexpected only when its writer fails.

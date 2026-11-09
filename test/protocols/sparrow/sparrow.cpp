@@ -325,6 +325,13 @@ BC_AUTO_TEST_CASE(sparrow__post__handshake__negotiated)
     BC_REQUIRE(post_handshake(electrum::version::v1_4));
 }
 
+BC_AUTO_TEST_CASE(sparrow__post__origin__access_control)
+{
+    const auto response = post_response(R"({"id":711,"method":"server.version","params":["test","1.4"]})", "http://example.com");
+    BC_REQUIRE_EQUAL(response.result(), rpc_client::status::ok);
+    BC_REQUIRE_EQUAL(response[network::http::field::access_control_allow_origin], "http://example.com");
+}
+
 BC_AUTO_TEST_CASE(sparrow__ws__handshake__negotiated)
 {
     BC_REQUIRE(!ws_upgrade());

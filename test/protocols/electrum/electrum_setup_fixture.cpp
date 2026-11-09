@@ -156,6 +156,12 @@ rpc_client::status electrum_setup_fixture::post_status(const std::string& reques
     return client_.post_status(request);
 }
 
+rpc_client::response electrum_setup_fixture::post_response(
+    const std::string& request, std::string_view origin, uint32_t version)
+{
+    return client_.post_response(request, origin, version);
+}
+
 system::json::value electrum_setup_fixture::post_authorized(
     const std::string& request, const std::string& username,
     const std::string& password)

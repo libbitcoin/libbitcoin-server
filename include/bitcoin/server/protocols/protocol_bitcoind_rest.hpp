@@ -90,10 +90,8 @@ protected:
         rest_interface::deployment_info,
         const std::optional<system::hash_cptr>& hash) NOEXCEPT;
 
-    /// REST raw-http response senders (not json-rpc enveloped).
-    void send_data(system::data_chunk&& bytes) NOEXCEPT;
+    /// Send text with a trailing newline.
     void send_text(std::string&& text) NOEXCEPT;
-    void send_json(system::json::value&& model, size_t size_hint) NOEXCEPT;
 
 private:
     template <class Derived, typename Method, typename... Args>

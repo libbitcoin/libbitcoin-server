@@ -40,6 +40,12 @@ struct esplora_setup_fixture
     status get_status(std::string_view target);
     status get_status(std::string_view target,
         network::http::field name, std::string_view value);
+
+    // The full response, with an origin field.
+    using string_response =
+        network::http::message<false, network::http::string_body>;
+    string_response get_response(std::string_view target,
+        std::string_view origin);
     std::string get_text(std::string_view target);
     system::data_chunk get_data(std::string_view target);
     system::json::value get_json(std::string_view target);
