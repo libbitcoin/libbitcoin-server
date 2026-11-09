@@ -76,8 +76,8 @@ BC_AUTO_TEST_CASE(parser__parse__net_testnet5__testnet5_defaults)
     BC_REQUIRE_EQUAL(configured.network.identifier, 1163282758u);
     BC_REQUIRE(configured.server.network == selection::testnet5);
     BC_REQUIRE_EQUAL(configured.database.path, "testnet5");
-    BC_REQUIRE_EQUAL(configured.database.header.expected, 10'000u);
-    BC_REQUIRE_EQUAL(configured.database.strong.buckets, 100'000u);
+    BC_REQUIRE_EQUAL(configured.database.header.expected, 156'456u);
+    BC_REQUIRE_EQUAL(configured.database.strong.buckets, 14'810'011u);
 }
 
 BC_AUTO_TEST_CASE(parser__parse__net_attached_signet__signet_defaults)
