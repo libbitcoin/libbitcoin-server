@@ -59,7 +59,7 @@ export function LogView({
   );
 
   useEffect(() => {
-    // eslint-disable-next-line react-you-might-not-need-an-effect/no-pass-live-state-to-parent, react-you-might-not-need-an-effect/no-pass-data-to-parent -- Synchronize a worker query, not React parent state.
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-pass-live-state-to-parent -- Synchronize a worker query, not React parent state.
     metrics.setLogQuery({ search, filter: logFilter, offset });
   }, [metrics, search, logFilter, offset]);
 

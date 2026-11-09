@@ -548,8 +548,7 @@ export function createBlockstreamClient({ baseUrl }: BlockstreamClientOptions): 
       }
       return { medianTimePast: block.mediantime, inBestChain: status.in_best_chain };
     },
-    getBlockStats(hashOrHeight: string): Promise<BlockStats> {
-      void hashOrHeight;
+    getBlockStats(): Promise<BlockStats> {
       return Promise.resolve({});
     },
     async getBlock(hashOrHeight: string): Promise<BlockDetail> {

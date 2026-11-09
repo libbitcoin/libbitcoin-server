@@ -35,7 +35,6 @@ export function SyncStatusNotifier({
 
     // This state represents a threshold-crossing event, not a value derived
     // continuously from the current props.
-    // eslint-disable-next-line react-you-might-not-need-an-effect/no-derived-state
     setNotice(next);
     if (browserNotificationsEnabled) {
       const content = notificationContent(next);

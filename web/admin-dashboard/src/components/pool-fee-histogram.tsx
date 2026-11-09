@@ -130,6 +130,7 @@ function HistogramPlot({
       scales: {
         x: { time: false, range: () => [-0.5, binsReference.current.length - 0.5] },
         y: {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-assignment -- uPlot's ambient const enums have no runtime exports for Vite to import.
           distr: scale === 'compressed' ? 4 : 1,
           asinh: 1,
           range: (_self, _min, max) => [0, Math.max(1, max * 1.08)],
