@@ -80,6 +80,7 @@ export function TimeSeriesChart({
           auto: true,
           // Asinh is linear near zero and logarithmic for large magnitudes.
           // Keep raw data so legends, gaps, and bar baselines retain their meaning.
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-assignment -- uPlot's ambient const enums have no runtime exports for Vite to import.
           distr: scale === 'compressed' ? 4 : 1,
           asinh: 1,
           ...(zeroBased
@@ -199,6 +200,7 @@ function groupedBarPaths(seriesIndex: number, seriesCount: number) {
     size: [1, 48 / count, 0],
     disp: {
       x0: {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-assignment -- uPlot's type-only ScaleValue enum member is 1.
         unit: 1,
         values: (chart) => {
           const layout = groupedBarLayout(chart, count);
@@ -207,6 +209,7 @@ function groupedBarPaths(seriesIndex: number, seriesCount: number) {
         },
       },
       size: {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-assignment -- uPlot's type-only ScaleValue enum member is 1.
         unit: 1,
         values: (chart) => [groupedBarLayout(chart, count).barWidth],
       },

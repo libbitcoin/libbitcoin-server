@@ -160,7 +160,6 @@ function useBlockchainQuery<T>({
   const client = useBlockchainClient();
 
   // The provider client comes from context and includes methods; cache identity should track metadata.
-  // eslint-disable-next-line @tanstack/query/exhaustive-deps
   return useQuery<T>({
     queryKey: [getBlockchainQueryScope(client), ...queryKey],
     queryFn: () => queryFn(client),
