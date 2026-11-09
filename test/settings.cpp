@@ -501,6 +501,34 @@ BC_AUTO_TEST_CASE(server__settings__initialize_testnet4__offset_ports_testnet_wa
     BC_REQUIRE_EQUAL(instance.stratum_v2.bind_port, 48980u);
 }
 
+BC_AUTO_TEST_CASE(server__settings__initialize_testnet5__offset_ports_testnet_wallet)
+{
+    const server::settings::embedded_pages pages{};
+    server::settings instance{ selection::testnet5, pages, pages };
+    BC_REQUIRE(instance.network == selection::testnet5);
+    BC_REQUIRE_EQUAL(instance.wallet.witness_prefix, "tb");
+    BC_REQUIRE(!instance.initialize());
+    BC_REQUIRE_EQUAL(instance.admin.bind_port, 58080u);
+    BC_REQUIRE_EQUAL(instance.admin.safe_port, 58043u);
+    BC_REQUIRE_EQUAL(instance.native.bind_port, 58180u);
+    BC_REQUIRE_EQUAL(instance.native.safe_port, 58143u);
+    BC_REQUIRE_EQUAL(instance.bitcoind.bind_port, 58280u);
+    BC_REQUIRE_EQUAL(instance.bitcoind.safe_port, 58243u);
+    BC_REQUIRE_EQUAL(instance.zmq.bind_port, 58380u);
+    BC_REQUIRE_EQUAL(instance.zmq.safe_port, 58343u);
+    BC_REQUIRE_EQUAL(instance.btcd.bind_port, 58480u);
+    BC_REQUIRE_EQUAL(instance.btcd.safe_port, 58443u);
+    BC_REQUIRE_EQUAL(instance.electrum.bind_port, 58580u);
+    BC_REQUIRE_EQUAL(instance.electrum.safe_port, 58543u);
+    BC_REQUIRE_EQUAL(instance.sparrow.bind_port, 58680u);
+    BC_REQUIRE_EQUAL(instance.sparrow.safe_port, 58643u);
+    BC_REQUIRE_EQUAL(instance.esplora.bind_port, 58780u);
+    BC_REQUIRE_EQUAL(instance.esplora.safe_port, 58743u);
+    BC_REQUIRE_EQUAL(instance.stratum_v1.bind_port, 58880u);
+    BC_REQUIRE_EQUAL(instance.stratum_v1.safe_port, 58843u);
+    BC_REQUIRE_EQUAL(instance.stratum_v2.bind_port, 58980u);
+}
+
 BC_AUTO_TEST_CASE(server__settings__initialize_regtest_network__offset_ports)
 {
     const server::settings::embedded_pages pages{};

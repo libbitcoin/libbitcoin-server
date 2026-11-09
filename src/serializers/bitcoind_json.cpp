@@ -265,24 +265,19 @@ void inject_activity(network::rpc::array_t& out, const chain::transaction& tx,
     }
 }
 
-std::string chain_name(const node::query& query) NOEXCEPT
+std::string chain_name(const system::settings& settings) NOEXCEPT
 {
-    const auto genesis = query.get_header_key(query.to_confirmed(zero));
-
-    using selection = chain::selection;
-    static const std::vector<std::pair<hash_digest, std::string>> networks
+    switch (settings.genesis_network)
     {
-        { system::settings{ selection::mainnet }.genesis_block.hash(), "main" },
-        { system::settings{ selection::testnet3 }.genesis_block.hash(), "test" },
-        { system::settings{ selection::regtest }.genesis_block.hash(), "regtest" },
-        { system::settings{ selection::signet }.genesis_block.hash(), "signet" }
-    };
-
-    for (const auto& [hash, name]: networks)
-        if (hash == genesis)
-            return name;
-
-    return "unknown";
+        case chain::selection::mainnet: return "main";
+        case chain::selection::testnet3: return "test";
+        case chain::selection::testnet4: return "testnet4";
+        case chain::selection::regtest: return "regtest";
+        case chain::selection::signet: return "signet";
+        case chain::selection::testnet5: return "testnet5";
+        case chain::selection::none:
+        default: return "unknown";
+    }
 }
 
 // Shared by the bitcoind blockchain subgroup and the btcd endpoint, which
@@ -306,7 +301,7 @@ bool chain_info(network::rpc::object_t& out,
     out = network::rpc::object_t
     {
         // bitcoind OB1 error ("blocks" wants height).
-        { "chain", chain_name(query) },
+        { "chain", chain_name(settings) },
         { "blocks", to64(blocks) },
         { "headers", to64(headers) },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },

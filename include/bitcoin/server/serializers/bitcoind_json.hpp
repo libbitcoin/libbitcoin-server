@@ -102,8 +102,8 @@ BCS_API bool mempool_info(system::json::object& out,
     const node::query& query, const std::filesystem::path& store,
     double minimum, double relay, double increment) NOEXCEPT;
 
-/// The bitcoind chain name, resolved from the genesis block.
-BCS_API std::string chain_name(const node::query& query) NOEXCEPT;
+/// The bitcoind chain name of the genesis network.
+BCS_API std::string chain_name(const system::settings& settings) NOEXCEPT;
 
 /// The getblockchaininfo result, including bip9_softforks (required by lnd).
 /// False if the store is inconsistent, the caller sends the error.

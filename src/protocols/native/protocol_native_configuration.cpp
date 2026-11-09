@@ -42,8 +42,12 @@ bool protocol_native::handle_get_configuration(const code& ec,
         return true;
     }
 
+    using selection = system::config::selection;
+    const auto network = selection::to_word(system_settings().genesis_network);
+
     send_json(system::json::object
     {
+        { "network", std::string{ network } },
         { "address", archive().address_enabled() },
         { "filter", archive().filter_enabled() },
         { "turbo", database_settings().turbo },
