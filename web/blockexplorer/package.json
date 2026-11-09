@@ -17,7 +17,7 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-qr-code": "^2.0.18",
-    "react-router-dom": "^7.11.0",
+    "react-router-dom": "^7.18.5",
     "zod": "^4.2.1"
   },
   "devDependencies": {
