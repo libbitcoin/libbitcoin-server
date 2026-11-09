@@ -113,9 +113,52 @@ BC_FIXTURE_TEST_SUITE(bitcoind_json_tests, bitcoind_json_setup_fixture)
 
 // chain_name
 
-BC_AUTO_TEST_CASE(bitcoind_json__chain_name__mainnet_genesis__main)
+BC_AUTO_TEST_CASE(bitcoind_json__chain_name__mainnet__main)
 {
-    BC_REQUIRE_EQUAL(chain_name(query_), "main");
+    system::settings settings{ system::chain::selection::mainnet };
+    settings.initialize();
+    BC_REQUIRE_EQUAL(chain_name(settings), "main");
+}
+
+BC_AUTO_TEST_CASE(bitcoind_json__chain_name__testnet3__test)
+{
+    system::settings settings{ system::chain::selection::testnet3 };
+    settings.initialize();
+    BC_REQUIRE_EQUAL(chain_name(settings), "test");
+}
+
+BC_AUTO_TEST_CASE(bitcoind_json__chain_name__testnet4__testnet4)
+{
+    system::settings settings{ system::chain::selection::testnet4 };
+    settings.initialize();
+    BC_REQUIRE_EQUAL(chain_name(settings), "testnet4");
+}
+
+BC_AUTO_TEST_CASE(bitcoind_json__chain_name__regtest__regtest)
+{
+    system::settings settings{ system::chain::selection::regtest };
+    settings.initialize();
+    BC_REQUIRE_EQUAL(chain_name(settings), "regtest");
+}
+
+BC_AUTO_TEST_CASE(bitcoind_json__chain_name__signet__signet)
+{
+    system::settings settings{ system::chain::selection::signet };
+    settings.initialize();
+    BC_REQUIRE_EQUAL(chain_name(settings), "signet");
+}
+
+BC_AUTO_TEST_CASE(bitcoind_json__chain_name__testnet5__testnet5)
+{
+    system::settings settings{ system::chain::selection::testnet5 };
+    settings.initialize();
+    BC_REQUIRE_EQUAL(chain_name(settings), "testnet5");
+}
+
+BC_AUTO_TEST_CASE(bitcoind_json__chain_name__uninitialized__unknown)
+{
+    const system::settings settings{ system::chain::selection::mainnet };
+    BC_REQUIRE_EQUAL(chain_name(settings), "unknown");
 }
 
 // median_time

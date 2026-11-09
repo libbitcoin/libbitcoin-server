@@ -768,7 +768,7 @@ bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
 
     send_json(object
     {
-        { "chain", chain_name(query) },
+        { "chain", chain_name(system_settings()) },
         { "blocks", blocks },
         { "headers", query.get_top_candidate() },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },

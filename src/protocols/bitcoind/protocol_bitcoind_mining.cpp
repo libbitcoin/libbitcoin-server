@@ -208,7 +208,7 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
         { "networkhashps", top->difficulty() * span / period },
         { "pooledtx", to64(zero) },
         { "blockmintxfee", max_money / satoshi_per_bitcoin },
-        { "chain", chain_name(query) },
+        { "chain", chain_name(bitcoin) },
         { "next", std::move(next_block) },
         { "warnings", array_t{} }
     });
