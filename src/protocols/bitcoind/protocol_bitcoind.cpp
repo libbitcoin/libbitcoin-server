@@ -465,6 +465,21 @@ network::net::channel_notifier protocol_bitcoind::to_once() NOEXCEPT
     };
 }
 
+code protocol_bitcoind::to_parameter_error(const code& ec) const NOEXCEPT
+{
+    return error::bitcoind::parameter_error(ec);
+}
+
+void protocol_bitcoind::handle_dispatch_fault(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (const auto answer = to_parameter_error(ec))
+        send_error(answer);
+    else
+        stop(ec);
+}
+
 void protocol_bitcoind::capture_totals(totals_handler&& handler) NOEXCEPT
 {
     const auto captured = to_shared<diagnostics::rows>();

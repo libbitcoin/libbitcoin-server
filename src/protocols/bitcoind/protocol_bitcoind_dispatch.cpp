@@ -120,7 +120,7 @@ void CLASS::handle_receive_post(const code& ec,
 
     // Dispatch the request to the interface dispatcher.
     if (const auto code = rpc_dispatcher_.notify(message))
-        stop(code);
+        handle_dispatch_fault(code);
 }
 
 // The websocket transport of the interface subgroup.
@@ -169,7 +169,7 @@ void CLASS::dispatch_websocket(
 
     // Dispatch the request to the interface dispatcher.
     if (const auto code = rpc_dispatcher_.notify(message))
-        stop(code);
+        handle_dispatch_fault(code);
 }
 
 BC_POP_WARNING()

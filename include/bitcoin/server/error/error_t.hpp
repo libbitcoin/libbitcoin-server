@@ -74,6 +74,10 @@ enum error_t : uint8_t
 // No current need for error_code equivalence mapping.
 DECLARE_ERROR_T_CODE_CATEGORY(error, BCS_API);
 
+/// True if the code is a dispatch fault in binding request parameters to a
+/// method: a mistyped, null, missing, extra or unknown parameter.
+BCS_API bool is_parameter_fault(const code& ec) NOEXCEPT;
+
 } // namespace error
 } // namespace server
 } // namespace libbitcoin
