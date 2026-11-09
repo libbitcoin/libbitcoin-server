@@ -33,7 +33,8 @@ BC_AUTO_TEST_CASE(native__configuration__json__expected)
     BC_REQUIRE(response.is_object());
 
     const auto& object = response.as_object();
-    BC_REQUIRE_EQUAL(object.size(), 7u);
+    BC_REQUIRE_EQUAL(object.size(), 8u);
+    BC_REQUIRE_EQUAL(object.at("network").as_string(), "mainnet");
     BC_REQUIRE(object.at("address").as_bool());
     BC_REQUIRE(object.at("filter").as_bool());
     BC_REQUIRE(!object.at("turbo").as_bool());
