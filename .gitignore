@@ -79,3 +79,7 @@ AI agent tooling
 .claude
 AGENTS.md
 CLAUDE.md
+
+# web
+web/*/dist
+web/*/node_modules
