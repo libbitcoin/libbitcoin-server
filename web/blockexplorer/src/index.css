@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+@config '../tailwind.config.js';
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-background text-textPrimary font-sans;
+}
+
+::selection {
+  @apply bg-accent text-background;
+}

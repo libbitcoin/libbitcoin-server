@@ -1,0 +1,35 @@
+{
+  "name": "blockchain-explorer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build": "tsc && vite build"
+  },
+  "dependencies": {
+    "@heroicons/react": "^2.1.1",
+    "@noble/hashes": "^2.0.1",
+    "@scure/base": "^2.0.0",
+    "@tanstack/react-query": "^5.90.12",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-qr-code": "^2.0.18",
+    "react-router-dom": "^7.11.0",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.11",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/node": "^25.0.3",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.3.3",
+    "vite": "^7.3.0",
+    "vite-tsconfig-paths": "^6.0.3"
+  }
+}

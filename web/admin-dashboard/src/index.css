@@ -1,0 +1,33 @@
+@import 'tailwindcss';
+@config '../tailwind.config.js';
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-background text-textPrimary font-sans;
+}
+
+::selection {
+  @apply bg-accent text-background;
+}
+
+.uplot {
+  color: var(--color-textMuted);
+  font-family: var(--font-sans);
+}
+
+.uplot .u-legend {
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+}
+
+.uplot .u-legend .u-series {
+  padding: 0.2rem 0.45rem;
+}
+
+.uplot .u-select {
+  background: rgb(255 160 34 / 12%);
+  border: 1px solid rgb(255 160 34 / 35%);
+}
