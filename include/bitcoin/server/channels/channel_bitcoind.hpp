@@ -41,6 +41,13 @@ public:
         network::tracker<channel_bitcoind>(log)
     {
     }
+
+protected:
+    /// bitcoind clients send named params with json-rpc v1 (tolerated laxness).
+    inline bool lax_named() const NOEXCEPT override
+    {
+        return true;
+    }
 };
 
 } // namespace server
