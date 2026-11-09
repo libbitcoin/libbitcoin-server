@@ -58,25 +58,6 @@ protected:
     virtual void dispatch_embedded(
         const network::http::request& request) NOEXCEPT;
 
-    /// Senders.
-    virtual void send_json(system::json::value&& model, size_t size_hint,
-        const network::http::request& request={}) NOEXCEPT;
-    virtual void send_text(std::string&& hexidecimal,
-        const network::http::request& request={}) NOEXCEPT;
-    virtual void send_chunk(system::data_chunk&& bytes,
-        const network::http::request& request={}) NOEXCEPT;
-    virtual void send_file(network::http::file&& file,
-        network::http::media_type type,
-        const network::http::request& request={}) NOEXCEPT;
-    virtual void send_span(network::http::span_body::value_type&& span,
-        network::http::media_type type,
-        const network::http::request& request={}) NOEXCEPT;
-    virtual void send_buffer(network::http::buffer_body::value_type&& buffer,
-        network::http::media_type type,
-        const network::http::request& request={}) NOEXCEPT;
-    virtual void send_empty(
-        const network::http::request& request={}) NOEXCEPT;
-
     /// Notifiers (websocket).
     virtual void notify_json(system::json::value&& model, size_t size_hint,
         const network::http::request& request={}) NOEXCEPT;

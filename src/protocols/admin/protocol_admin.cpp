@@ -87,14 +87,14 @@ bool protocol_admin::try_dispatch_object(const http::request& request) NOEXCEPT
     // No media defaults injected for an http request.
     if (!admin_query(model, request))
     {
-        send_bad_request(request);
+        send_bad_request();
         return true;
     }
 
     const auto media = strip_media(model);
     if (media == media_type::unknown)
     {
-        send_not_acceptable(request);
+        send_not_acceptable();
         return true;
     }
 
@@ -105,12 +105,12 @@ bool protocol_admin::try_dispatch_object(const http::request& request) NOEXCEPT
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(model.method))
     {
-        send_forbidden(request);
+        send_forbidden();
         return true;
     }
 
     if (dispatcher_.notify(model))
-        send_bad_request(request);
+        send_bad_request();
 
     return true;
 }

@@ -138,8 +138,8 @@ private:
     void send_rpc(network::rpc::response_t&& model,
         const code& close_reason) NOEXCEPT;
 
-    // Obtain cached request and clear cache (requires strand).
-    network::http::request_cptr reset_rpc_request() NOEXCEPT;
+    // Clear the cached rpc response context (requires strand).
+    void reset_rpc_context() NOEXCEPT;
 
     // These are protected by strand.
     network::rpc::version version_{};

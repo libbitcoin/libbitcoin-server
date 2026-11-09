@@ -21,6 +21,9 @@
 #include <bitcoin/server.hpp>
 #include "embedded/embedded.hpp"
 #include "executor.hpp"
+#include "localize.hpp"
+
+BC_USE_HARDWARE_CHECK(BS_HARDWARE_REQUIRED)
 
 // This is some experimental code to explore emission of win32 stack dump.
 #ifdef HAVE_WINDOWS

@@ -81,14 +81,7 @@ protected:
         const network::http::request& request) NOEXCEPT override;
 
     /// Senders.
-    virtual void send_json(system::json::value&& model, size_t size_hint,
-        const network::http::request& request={}) NOEXCEPT;
-    virtual void send_text(std::string&& text,
-        const network::http::request& request={}) NOEXCEPT;
-    virtual void send_chunk(system::data_chunk&& bytes,
-        const network::http::request& request={}) NOEXCEPT;
-    virtual void send_rejected(const code& reason,
-        const network::http::request& request={}) NOEXCEPT;
+    virtual void send_rejected(const code& reason) NOEXCEPT;
 
     /// Interface handlers.
     /// -----------------------------------------------------------------------

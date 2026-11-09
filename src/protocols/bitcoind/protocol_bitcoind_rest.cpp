@@ -116,8 +116,8 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
         return;
     }
 
-    // The get is saved off during asynchronous handling and used in send_json
-    // to formulate response headers, isolating handlers from http semantics.
+    // The get is saved off during asynchronous handling and used by the
+    // senders to formulate response headers, isolating handlers from http.
     set_request(get);
 
     // Parse the REST url into a json-rpc model and dispatch to a handler.
@@ -131,7 +131,7 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
             (fault == error::missing_hash) ||
             (fault == error::missing_height) ||
             (fault == error::missing_target))
-            send_bad_request(*get);
+            send_bad_request();
         else
             send_not_found();
 
@@ -141,14 +141,14 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
     // Overlay query string parameters onto the parsed model.
     if (!bitcoind_query(model, target))
     {
-        send_bad_request(*get);
+        send_bad_request();
         return;
     }
 
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(model.method))
     {
-        send_forbidden(*get);
+        send_forbidden();
         return;
     }
 
@@ -156,7 +156,7 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
     if (const auto fault = rest_dispatcher_.notify(model))
     {
         if (fault == network::error::missing_parameter)
-            send_bad_request(*get);
+            send_bad_request();
         else
             send_not_found();
     }
@@ -203,7 +203,7 @@ bool protocol_bitcoind_rest::handle_get_block(const code& ec,
                 const data_slab& out) NOEXCEPT
             {
                 return query.get_wire_block(out, link, witness, turbo);
-            }, http::media_type::application_octet_stream, *reset_request());
+            }, http::media_type::application_octet_stream);
             return true;
         }
         case text:
@@ -215,7 +215,7 @@ bool protocol_bitcoind_rest::handle_get_block(const code& ec,
                 *last = '\n';
                 return query.get_wire_block<write::base16::fast>(
                     { out.begin(), last }, link, witness, turbo);
-            }, http::media_type::text_plain, *reset_request());
+            }, http::media_type::text_plain);
             return true;
         }
         case json:
@@ -262,7 +262,7 @@ bool protocol_bitcoind_rest::handle_get_tx(const code& ec,
     switch (media)
     {
         case data:
-            send_data(to_data(*tx, size, witness));
+            send_chunk(to_data(*tx, size, witness));
             return true;
         case text:
             send_text(to_text(*tx, size, witness));
@@ -299,7 +299,7 @@ bool protocol_bitcoind_rest::handle_get_block_hash(const code& ec,
     switch (media)
     {
         case data:
-            send_data(to_chunk(hash));
+            send_chunk(to_chunk(hash));
             return true;
         case text:
             send_text(encode_base16(hash));
@@ -339,7 +339,7 @@ bool protocol_bitcoind_rest::handle_get_block_txs(const code& ec,
     switch (media)
     {
         case data:
-            send_data(to_data(*block, size, witness));
+            send_chunk(to_data(*block, size, witness));
             return true;
         case text:
             send_text(to_text(*block, size, witness));
@@ -406,7 +406,7 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
                 }
             }
 
-            send_data(std::move(out));
+            send_chunk(std::move(out));
             return true;
         }
         case text:
@@ -488,7 +488,7 @@ bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
     switch (media)
     {
         case data:
-            send_data(std::move(part));
+            send_chunk(std::move(part));
             return true;
         case text:
             send_text(encode_base16(part));
@@ -567,7 +567,7 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
     {
         case data:
         {
-            send_data(std::move(wire));
+            send_chunk(std::move(wire));
             return true;
         }
         case text:
@@ -635,7 +635,7 @@ bool protocol_bitcoind_rest::handle_get_block_filter(const code& ec,
             stream::out::fast sink{ out };
             write::bytes::fast writer{ sink };
             write_filter(writer, *hash, filter);
-            send_data(std::move(out));
+            send_chunk(std::move(out));
             return true;
         }
         case text:
@@ -721,7 +721,7 @@ bool protocol_bitcoind_rest::handle_get_block_filter_headers(const code& ec,
             for (const auto& head: filter_heads)
                 out.insert(out.end(), head.begin(), head.end());
 
-            send_data(std::move(out));
+            send_chunk(std::move(out));
             return true;
         }
         case text:
@@ -878,7 +878,7 @@ bool protocol_bitcoind_rest::handle_get_utxos(const code& ec,
     {
         case data:
         {
-            send_data(std::move(wire));
+            send_chunk(std::move(wire));
             return true;
         }
         case text:
@@ -999,59 +999,14 @@ bool protocol_bitcoind_rest::handle_get_deployment_info(const code& ec,
     return true;
 }
 
-// Raw-http response senders (mirror protocol_html, not json-rpc enveloped).
+// Senders.
 // ----------------------------------------------------------------------------
-
-void protocol_bitcoind_rest::send_data(data_chunk&& bytes) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    using namespace http;
-    static const auto data = from_media_type(
-        media_type::application_octet_stream);
-    const auto request = reset_request();
-    http::response message{ status::ok, request->version() };
-    add_common_headers(message, *request);
-    add_access_control_headers(message, *request);
-    message.set(http::field::content_type, data);
-    message.body() = std::move(bytes);
-    message.prepare_payload();
-    SEND(std::move(message), handle_complete, _1, error::success);
-}
 
 void protocol_bitcoind_rest::send_text(std::string&& text) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    using namespace http;
-    static const auto plain = from_media_type(media_type::text_plain);
-    const auto request = reset_request();
-    http::response message{ status::ok, request->version() };
-    add_common_headers(message, *request);
-    add_access_control_headers(message, *request);
-    message.set(field::content_type, plain);
     text.push_back('\n');
-    message.body() = std::move(text);
-    message.prepare_payload();
-    SEND(std::move(message), handle_complete, _1, error::success);
-}
-
-void protocol_bitcoind_rest::send_json(value&& model,
-    size_t size_hint) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    using namespace http;
-    static const auto json = from_media_type(media_type::application_json);
-    const auto request = reset_request();
-    http::response message{ status::ok, request->version() };
-    add_common_headers(message, *request);
-    add_access_control_headers(message, *request);
-    message.set(field::content_type, json);
-    message.body() = json_value
-    {
-        .model = std::move(model),
-        .size_hint = size_hint
-    };
-    message.prepare_payload();
-    SEND(std::move(message), handle_complete, _1, error::success);
+    server::protocol_http::send_text(std::move(text));
 }
 
 BC_POP_WARNING()

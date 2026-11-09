@@ -29,7 +29,8 @@ namespace server {
 /// ws/s (by upgrade). Preselecting the json-rpc body is what implies the
 /// downgrade detection, so a service channel derives this to speak json-rpc
 /// on any of the three, adding only its own channel state. The channel
-/// carries the json-rpc senders (the protocol carries the dispatcher).
+/// carries the json-rpc request context (the protocol carries the dispatcher
+/// and the response senders).
 class BCS_API channel_rpc
   : public channel_http
 {
@@ -37,42 +38,35 @@ public:
     typedef std::shared_ptr<channel_rpc> ptr;
     using channel_http::channel_http;
 
-    /// Senders, rpc version and identity added to responses (requires strand).
+    /// Response models, with the rpc version and identity (requires strand).
     /// -----------------------------------------------------------------------
 
-    inline void send_code(const code& ec,
-        network::result_handler&& handler) NOEXCEPT
-    {
-        send_error(
-        {
-            .code = ec.value(),
-            .message = ec.message()
-        }, std::move(handler));
-    }
-
-    inline void send_error(network::rpc::result_t&& error,
-        network::result_handler&& handler) NOEXCEPT
+    inline network::rpc::response_t to_error(
+        network::rpc::result_t&& error) const NOEXCEPT
     {
         BC_ASSERT(stranded());
-        send_response(
+        return
         {
             .jsonrpc = version_,
             .id = identity_,
             .error = std::move(error)
-        }, std::move(handler));
+        };
     }
 
-    inline void send_result(network::rpc::value_t&& result,
-        network::result_handler&& handler) NOEXCEPT
+    inline network::rpc::response_t to_result(
+        network::rpc::value_t&& result) const NOEXCEPT
     {
         BC_ASSERT(stranded());
-        send_response(
+        return
         {
             .jsonrpc = version_,
             .id = identity_,
             .result = std::move(result)
-        }, std::move(handler));
+        };
     }
+
+    /// Senders (requires strand).
+    /// -----------------------------------------------------------------------
 
     /// A notification requires a full duplex transport (ws or downgrade).
     inline void send_notification(network::rpc::string_t&& method,
@@ -121,21 +115,6 @@ protected:
     }
 
 private:
-    // The socket writes the body alone on a full duplex transport (ws frame
-    // or downgraded stream), and the full http response otherwise.
-    inline void send_response(network::rpc::response_t&& model,
-        network::result_handler&& handler) NOEXCEPT
-    {
-        using namespace network::http;
-        response message{ status::ok, version_1_1 };
-        message.set(field::content_type,
-            from_media_type(media_type::application_json));
-        message.body() = network::rpc::response{ {}, std::move(model) };
-
-        message.prepare_payload();
-        send(std::move(message), std::move(handler));
-    }
-
     inline void send_request(network::rpc::request_t&& model,
         network::result_handler&& handler) NOEXCEPT
     {

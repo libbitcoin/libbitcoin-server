@@ -227,6 +227,25 @@ http::status native_setup_fixture::get_status(std::string_view target,
     return response.result();
 }
 
+native_setup_fixture::string_response native_setup_fixture::get_response(
+    std::string_view target, std::string_view origin, uint32_t version)
+{
+    auto request = create_request(target);
+    request.version(version);
+    request.keep_alive(true);
+    if (!origin.empty())
+        request.set(http::field::origin, origin);
+
+    test::write_http(socket_, request);
+
+    http::flat_buffer buffer{};
+    network::code ec{};
+    string_response response{};
+    http::read(socket_, buffer, response, ec);
+    BC_CHECK_MESSAGE(!ec, ec.message());
+    return response;
+}
+
 std::string native_setup_fixture::get_text(std::string_view target)
 {
     test::write_http(socket_, create_request(target));

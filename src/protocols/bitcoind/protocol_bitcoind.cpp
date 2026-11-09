@@ -132,7 +132,7 @@ void protocol_bitcoind::handle_receive_post(const code& ec,
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(message.method))
     {
-        send_forbidden(*post);
+        send_forbidden();
         return;
     }
 
@@ -259,6 +259,7 @@ bool protocol_bitcoind::send_hex(size_t size, hex_writer&& writer) NOEXCEPT
     }
 
     const auto total = head.size() + size + result_tail.size();
+    reset_rpc_context();
     send_stream(total, [head = std::move(head), size,
         writer = std::move(writer)](const data_slab& out) NOEXCEPT
     {
@@ -266,7 +267,7 @@ bool protocol_bitcoind::send_hex(size_t size, hex_writer&& writer) NOEXCEPT
         const auto end = std::next(hex, size);
         std::copy(result_tail.begin(), result_tail.end(), end);
         return writer({ hex, end });
-    }, http::media_type::application_json, *reset_rpc_request());
+    }, http::media_type::application_json);
 
     return true;
 }
@@ -349,9 +350,7 @@ void protocol_bitcoind::send_rpc(response_t&& model,
     // ws frames and a tcp downgrade carry no http envelope.
     if (websocket() || downgraded())
     {
-        id_.reset();
-        version_ = version::undefined;
-
+        reset_rpc_context();
         if (notification)
         {
             if (close_reason)
@@ -368,25 +367,20 @@ void protocol_bitcoind::send_rpc(response_t&& model,
         return;
     }
 
-    const auto request = reset_rpc_request();
-    const auto& body = request->body().get<rpc::request>();
+    const auto& body = get_request()->body().get<rpc::request>();
+    const auto batched = body.batch || body.changed;
+    reset_rpc_context();
 
     // A batched notification is answered (response parts are sequenced).
-    if (notification && !body.batch && !body.changed)
+    if (notification && !batched)
     {
-        http::response message{ status::no_content, request->version() };
-        add_common_headers(message, *request);
-        add_access_control_headers(message, *request);
+        auto message = to_response(status::no_content);
         SEND(std::move(message), handle_complete, _1, close_reason);
         return;
     }
 
-    const auto batched = body.batch || body.changed;
     const auto statused = options().error_status && !batched;
-    const auto result = statused ? to_status(model) : status::ok;
-    http::response message{ result, request->version() };
-    add_common_headers(message, *request);
-    add_access_control_headers(message, *request);
+    auto message = to_response(statused ? to_status(model) : status::ok);
     message.set(field::content_type, json);
     message.body() = rpc::response{ {}, std::move(model) };
     message.prepare_payload();
@@ -412,12 +406,11 @@ void protocol_bitcoind::set_rpc_request(const request_t& message) NOEXCEPT
 }
 
 // private
-http::request_cptr protocol_bitcoind::reset_rpc_request() NOEXCEPT
+void protocol_bitcoind::reset_rpc_context() NOEXCEPT
 {
     BC_ASSERT(stranded());
     id_.reset();
     version_ = version::undefined;
-    return reset_request();
 }
 
 // Utility (redundant with protocol_electrum).

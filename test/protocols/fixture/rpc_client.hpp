@@ -71,6 +71,12 @@ public:
         get_authorized(std::string_view target, const std::string& username,
             const std::string& password);
 
+    /// http POST to "/" with an origin field unless empty (returns the full
+    /// response).
+    using response = network::http::message<false, network::http::string_body>;
+    response post_response(const std::string& body, std::string_view origin={},
+        uint32_t version=network::http::version_1_1);
+
     /// http OPTIONS (returns only the http status).
     status options_status(std::string_view target);
 

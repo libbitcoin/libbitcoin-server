@@ -100,15 +100,14 @@ void CLASS::handle_receive_post(const code& ec,
     // Claim the request (informs the terminal responder).
     set_claimed();
 
-    // The post is saved off during asynchronous handling and used in
-    // send_json to formulate response headers, isolating handlers from
-    // http semantics.
+    // The post is saved off during asynchronous handling and used by the
+    // senders to formulate response headers, isolating handlers from http.
     set_rpc_request(message.jsonrpc, message.id, post);
 
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(message.method))
     {
-        send_forbidden(*post);
+        send_forbidden();
         return;
     }
 
