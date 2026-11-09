@@ -66,6 +66,7 @@ protected:
         const post::cptr& post) NOEXCEPT override;
     void dispatch_websocket(
         const network::http::request& request) NOEXCEPT override;
+    code to_parameter_error(const code& ec) const NOEXCEPT override;
 
     /// Handlers (administrative).
     bool handle_authenticate(const code& ec, btcd_interface::authenticate,

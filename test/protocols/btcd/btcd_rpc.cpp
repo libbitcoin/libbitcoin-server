@@ -827,14 +827,22 @@ BC_AUTO_TEST_CASE(btcd_rpc__getblockcount__downgraded_second__nine)
     BC_REQUIRE_EQUAL(tcp_rpc("getblockcount").at("result").as_int64(), 9);
 }
 
-BC_AUTO_TEST_CASE(btcd_rpc__getcfilter__downgraded_numeric_hash__dropped)
+BC_AUTO_TEST_CASE(btcd_rpc__getcfilter__downgraded_numeric_hash__invalid_params)
 {
-    REQUIRE_NO_THROW_TRUE(tcp_rpc("getcfilter", "[42,0]").at("dropped").as_bool());
+    const auto response = tcp_rpc("getcfilter", "[42,0]");
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), -32602);
 }
 
-BC_AUTO_TEST_CASE(btcd_rpc__getcfilter__http_post_numeric_hash__dropped)
+BC_AUTO_TEST_CASE(btcd_rpc__getcfilter__websocket_numeric_hash__invalid_params)
 {
-    REQUIRE_NO_THROW_TRUE(http_rpc("getcfilter", "[42,0]", false).at("dropped").as_bool());
+    BC_REQUIRE_EQUAL(rpc_error("getcfilter", "[42,0]"), -32602);
+    BC_REQUIRE_EQUAL(rpc("getblockcount").at("result").as_int64(), 9);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__getcfilter__http_post_numeric_hash__invalid_params)
+{
+    const auto response = http_rpc("getcfilter", "[42,0]", false);
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), -32602);
 }
 
 // service settings

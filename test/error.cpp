@@ -334,6 +334,27 @@ BC_AUTO_TEST_CASE(error_t__bitcoind_parameter_error__other_code__success)
     BC_REQUIRE(!parameter_error(error::not_found));
 }
 
+// btcd::parameter_error
+
+BC_AUTO_TEST_CASE(error_t__btcd_parameter_error__parameter_fault__invalid_params)
+{
+    using namespace error::btcd;
+    BC_REQUIRE(parameter_error(network::error::unexpected_type) == invalid_params);
+    BC_REQUIRE(parameter_error(network::error::unexpected_null) == invalid_params);
+    BC_REQUIRE(parameter_error(network::error::missing_array) == invalid_params);
+    BC_REQUIRE(parameter_error(network::error::missing_object) == invalid_params);
+    BC_REQUIRE(parameter_error(network::error::extra_named) == invalid_params);
+    BC_REQUIRE(parameter_error(network::error::extra_positional) == invalid_params);
+    BC_REQUIRE(parameter_error(network::error::missing_parameter) == invalid_params);
+}
+
+BC_AUTO_TEST_CASE(error_t__btcd_parameter_error__other_code__success)
+{
+    using namespace error::btcd;
+    BC_REQUIRE(!parameter_error(network::error::undefined_type));
+    BC_REQUIRE(!parameter_error(error::not_found));
+}
+
 // electrum::translate
 
 BC_AUTO_TEST_CASE(error_t__electrum_translate__success__success)
