@@ -156,8 +156,7 @@ export interface AddressDetails {
 export type AddressSummary = Omit<AddressDetails, 'transactions'>;
 
 export type BlockchainEvent =
-  | { type: 'block.new'; payload: BlockSummary }
-  | { type: 'tx.new'; payload: TransactionSummary };
+  { type: 'block.new'; payload: BlockSummary } | { type: 'tx.new'; payload: TransactionSummary };
 
 export type BlockchainEventHandler = (event: BlockchainEvent) => void;
 export type BlockchainEventTransport = 'idle' | 'connecting' | 'websocket' | 'polling';
@@ -306,13 +305,6 @@ function resolveLibbitcoinBaseUrl() {
   const window_ = (globalThis as unknown as { window?: Window }).window;
   if (window_?.location.origin) return window_.location.origin;
   return 'http://localhost:8080';
-}
-
-export function createDefaultBlockchainClient(options?: {
-  turboEnabled?: boolean;
-}): BlockchainClient {
-  const provider = import.meta.env.VITE_BLOCKCHAIN_PROVIDER ?? 'libbitcoin';
-  return createBlockchainClient(provider, options);
 }
 
 export function createBlockchainClient(

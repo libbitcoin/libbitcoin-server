@@ -1,6 +1,6 @@
 import { describeOpcode, isSuccessOpcode, type ScriptContext } from './script-opcodes';
 
-export interface ScriptToken {
+interface ScriptToken {
   offset: number;
   opcode: number;
   name: string;
@@ -207,7 +207,7 @@ export function asciiPreview(hex: string) {
   );
 }
 
-export interface WitnessItemExplanation {
+interface WitnessItemExplanation {
   index: number;
   label: string;
   description: string;

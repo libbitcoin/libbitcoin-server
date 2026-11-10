@@ -2,13 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type Query, type QueryClient, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AddressActivityItem,
-  AddressDetails,
   AddressSummary,
   AddressUtxo,
   BlockchainClient,
   BlockchainClientConfiguration,
   BlockchainEventStatus,
-  BlockDetail,
   BlockHeaderDetail,
   BlockValidation,
   BlockStats,
@@ -186,13 +184,6 @@ export function useProviderConfiguration() {
   });
 }
 
-export function useBlock(hashOrHeight: string) {
-  return useBlockchainQuery<BlockDetail>({
-    queryKey: ['block', hashOrHeight],
-    queryFn: (client) => client.getBlock(hashOrHeight),
-  });
-}
-
 export function useBlockHeader(
   hashOrHeight: string,
   options?: {
@@ -302,14 +293,6 @@ export function useTransactionOutputSpends(txid: string, outputIndices: number[]
   });
 }
 
-export function useAddress(address: string) {
-  return useBlockchainQuery<AddressDetails>({
-    queryKey: ['address', address],
-    queryFn: (client) => client.getAddress(address),
-    blockRefresh: 'always',
-  });
-}
-
 export function useAddressUtxos(address: string) {
   return useBlockchainQuery<AddressUtxo[]>({
     queryKey: ['address', address, 'utxos'],
@@ -328,7 +311,7 @@ export function useAddressTransactions(address: string, lastSeenTxid?: string) {
   });
 }
 
-export function useBlockchainEvents(subscribe: (event: BlockchainEvent) => void) {
+function useBlockchainEvents(subscribe: (event: BlockchainEvent) => void) {
   const client = useBlockchainClient();
   const subscribeRef = useRef(subscribe);
 

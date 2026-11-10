@@ -19,7 +19,7 @@ export interface TxPoint {
   index: number;
 }
 
-export interface TxInputResponse {
+interface TxInputResponse {
   point: TxPoint;
   script: string;
   witness?: string;
@@ -37,11 +37,6 @@ export interface TxResponse {
   inputs: TxInputResponse[];
   outputs: TxOutputResponse[];
   locktime: number;
-}
-
-export interface BlockResponse {
-  header: BlockHeaderResponse;
-  transactions: TxResponse[];
 }
 
 const base58c = createBase58check(sha256);

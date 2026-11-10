@@ -1,6 +1,6 @@
 import { inferAddressType } from './address';
 
-export type SearchClassificationType = 'block-height' | 'hash' | 'address' | 'outpoint' | 'unknown';
+type SearchClassificationType = 'block-height' | 'hash' | 'address' | 'outpoint' | 'unknown';
 
 export interface SearchClassification {
   type: SearchClassificationType;

@@ -16,7 +16,7 @@ export const MAX_CHART_SERIES = 8;
 export const MAX_CHART_TITLE_LENGTH = 80;
 export const CHART_RANGES = [300, 900, 3600] as const;
 export const CHART_TYPES = ['line', 'step', 'area', 'bar'] as const;
-export const CHART_SCALES = ['linear', 'compressed'] as const;
+const CHART_SCALES = ['linear', 'compressed'] as const;
 export const CHART_COLORS = [
   '#ffa022',
   '#38bdf8',
@@ -28,7 +28,6 @@ export const CHART_COLORS = [
   '#60a5fa',
 ] as const;
 
-export type ChartRange = (typeof CHART_RANGES)[number];
 export type ChartScale = (typeof CHART_SCALES)[number];
 
 const signalMeasureSchema = z.enum([
@@ -86,7 +85,7 @@ const chartLayoutSchema = z
 
 export type ChartSeriesDefinition = z.infer<typeof chartSeriesDefinitionSchema>;
 export type ChartDefinition = z.infer<typeof chartDefinitionSchema>;
-export type PoolHistogramDefinition = z.infer<typeof poolHistogramSchema>;
+type PoolHistogramDefinition = z.infer<typeof poolHistogramSchema>;
 export type DashboardChartDefinition = ChartDefinition | PoolHistogramDefinition;
 
 export function isTimeSeriesChart(chart: DashboardChartDefinition): chart is ChartDefinition {
