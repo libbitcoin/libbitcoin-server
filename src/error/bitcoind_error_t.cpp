@@ -98,6 +98,23 @@ code translate(const code& ec, error_t failure) NOEXCEPT
     return failure;
 }
 
+code parameter_error(const code& ec) NOEXCEPT
+{
+    if (!network::error::is_parameter_fault(ec))
+        return success;
+
+    if (ec == network::error::unexpected_type ||
+        ec == network::error::unexpected_null ||
+        ec == network::error::missing_array ||
+        ec == network::error::missing_object)
+        return type_error;
+
+    if (ec == network::error::extra_named)
+        return invalid_parameter;
+
+    return misc_error;
+}
+
 // bitcoind reject tokens by transaction code (mempool vocabulary).
 static const message_map<system::error::transaction_error_t>
 transaction_rejects

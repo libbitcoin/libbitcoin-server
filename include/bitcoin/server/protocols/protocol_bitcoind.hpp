@@ -112,6 +112,12 @@ protected:
     /// Retains a connected channel, and does not reconnect upon stop.
     static network::net::channel_notifier to_once() NOEXCEPT;
 
+    /// The rpc error for a dispatch parameter fault, success for other faults.
+    virtual code to_parameter_error(const code& ec) const NOEXCEPT;
+
+    /// Answer a dispatch parameter fault, stop the channel for other faults.
+    void handle_dispatch_fault(const code& ec) NOEXCEPT;
+
 private:
     // Diagnostic row capture.
     void handle_row(network::diagnostics::row&& value,

@@ -281,6 +281,59 @@ BC_AUTO_TEST_CASE(error_t__code__server_error__true_expected_message)
     BC_REQUIRE_EQUAL(ec.message(), "server_error");
 }
 
+// bitcoind::parameter_error
+
+BC_AUTO_TEST_CASE(error_t__bitcoind_parameter_error__mistyped__type_error)
+{
+    using namespace error::bitcoind;
+    BC_REQUIRE(parameter_error(network::error::unexpected_type) == type_error);
+    BC_REQUIRE(parameter_error(network::error::unexpected_null) == type_error);
+    BC_REQUIRE(parameter_error(network::error::missing_array) == type_error);
+    BC_REQUIRE(parameter_error(network::error::missing_object) == type_error);
+}
+
+BC_AUTO_TEST_CASE(error_t__bitcoind_parameter_error__unknown_name__invalid_parameter)
+{
+    using namespace error::bitcoind;
+    BC_REQUIRE(parameter_error(network::error::extra_named) == invalid_parameter);
+}
+
+BC_AUTO_TEST_CASE(error_t__bitcoind_parameter_error__missing_or_extra__misc_error)
+{
+    using namespace error::bitcoind;
+    BC_REQUIRE(parameter_error(network::error::missing_parameter) == misc_error);
+    BC_REQUIRE(parameter_error(network::error::extra_positional) == misc_error);
+}
+
+BC_AUTO_TEST_CASE(error_t__bitcoind_parameter_error__other_code__success)
+{
+    using namespace error::bitcoind;
+    BC_REQUIRE(!parameter_error(network::error::undefined_type));
+    BC_REQUIRE(!parameter_error(network::error::unexpected_method));
+    BC_REQUIRE(!parameter_error(error::not_found));
+}
+
+// btcd::parameter_error
+
+BC_AUTO_TEST_CASE(error_t__btcd_parameter_error__parameter_fault__invalid_params)
+{
+    using namespace error::btcd;
+    BC_REQUIRE(parameter_error(network::error::unexpected_type) == invalid_params);
+    BC_REQUIRE(parameter_error(network::error::unexpected_null) == invalid_params);
+    BC_REQUIRE(parameter_error(network::error::missing_array) == invalid_params);
+    BC_REQUIRE(parameter_error(network::error::missing_object) == invalid_params);
+    BC_REQUIRE(parameter_error(network::error::extra_named) == invalid_params);
+    BC_REQUIRE(parameter_error(network::error::extra_positional) == invalid_params);
+    BC_REQUIRE(parameter_error(network::error::missing_parameter) == invalid_params);
+}
+
+BC_AUTO_TEST_CASE(error_t__btcd_parameter_error__other_code__success)
+{
+    using namespace error::btcd;
+    BC_REQUIRE(!parameter_error(network::error::undefined_type));
+    BC_REQUIRE(!parameter_error(error::not_found));
+}
+
 // electrum::translate
 
 BC_AUTO_TEST_CASE(error_t__electrum_translate__success__success)

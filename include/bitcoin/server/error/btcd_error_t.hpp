@@ -84,6 +84,10 @@ DECLARE_ERROR_T_CODE_CATEGORY(error, BCS_API);
 /// A code of this category passes through unchanged.
 BCS_API code translate(const code& ec, error_t failure) NOEXCEPT;
 
+/// Map a dispatch parameter fault to invalid params, as btcd reports any.
+/// Any other code is mapped to success.
+BCS_API code parameter_error(const code& ec) NOEXCEPT;
+
 } // namespace btcd
 } // namespace error
 } // namespace server

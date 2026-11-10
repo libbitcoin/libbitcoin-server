@@ -87,6 +87,11 @@ code translate(const code& ec, error_t failure) NOEXCEPT
     return failure;
 }
 
+code parameter_error(const code& ec) NOEXCEPT
+{
+    return network::error::is_parameter_fault(ec) ? invalid_params : success;
+}
+
 } // namespace btcd
 } // namespace error
 } // namespace server

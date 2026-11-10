@@ -150,7 +150,7 @@ void protocol_btcd::handle_receive_post(const code& ec,
 
     // Dispatch the request to the interface dispatcher.
     if (const auto code = btcd_dispatcher_.notify(message))
-        stop(code);
+        handle_dispatch_fault(code);
 }
 
 void protocol_btcd::dispatch_websocket(
@@ -194,7 +194,12 @@ void protocol_btcd::dispatch_websocket(
 
     // Dispatch the request to the interface dispatcher.
     if (const auto code = btcd_dispatcher_.notify(message))
-        stop(code);
+        handle_dispatch_fault(code);
+}
+
+code protocol_btcd::to_parameter_error(const code& ec) const NOEXCEPT
+{
+    return error::btcd::parameter_error(ec);
 }
 
 // Handlers (administrative).
