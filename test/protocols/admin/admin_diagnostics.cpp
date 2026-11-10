@@ -168,16 +168,16 @@ BC_AUTO_TEST_CASE(admin__ws_log_subscribe__html__not_acceptable)
     BC_REQUIRE(ws_get_text("/v1/log/subscribe?filter=1&format=html").starts_with("Not Acceptable"));
 }
 
-BC_AUTO_TEST_CASE(admin__ws_dispatch__invalid_target__not_found)
+BC_AUTO_TEST_CASE(admin__ws_dispatch__invalid_target__bad_request)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_get_text("/v1/bogus").starts_with("Not Found"));
+    BC_REQUIRE(ws_get_text("/v1/bogus").starts_with("Bad Request"));
 }
 
-BC_AUTO_TEST_CASE(admin__ws_dispatch__missing_subcomponent__not_found)
+BC_AUTO_TEST_CASE(admin__ws_dispatch__missing_subcomponent__bad_request)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_get_text("/v1/log").starts_with("Not Found"));
+    BC_REQUIRE(ws_get_text("/v1/log").starts_with("Bad Request"));
 }
 
 // streams (websockets)

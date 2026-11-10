@@ -261,10 +261,10 @@ BC_AUTO_TEST_CASE(native__ws_dispatch__html__not_acceptable)
     BC_REQUIRE(ws_get_text("/v1/top?format=html").starts_with("Not Acceptable"));
 }
 
-BC_AUTO_TEST_CASE(native__ws_dispatch__invalid_target__empty)
+BC_AUTO_TEST_CASE(native__ws_dispatch__invalid_target__bad_request)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_get_text("/v1/bogus").empty());
+    BC_REQUIRE(ws_get_text("/v1/bogus").starts_with("Bad Request"));
 }
 
 BC_AUTO_TEST_CASE(native__ws_dispatch__unsupported_parameter__bad_request)

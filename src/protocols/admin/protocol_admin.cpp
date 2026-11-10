@@ -140,7 +140,7 @@ void protocol_admin::dispatch_websocket(const http::request& request) NOEXCEPT
     rpc::request_t model{};
     if (const auto ec = admin_target(model, target))
     {
-        send_not_found(request);
+        send_bad_target(ec, request);
         return;
     }
 
