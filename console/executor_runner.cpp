@@ -102,8 +102,8 @@ bool executor::do_run()
     if (!metadata_.configured.node.use_gpu_())
         metadata_.configured.database.gpu_scan_minimum = max_uint32;
 
-    if (!metadata_.configured.log.path.empty())
-        database::file::create_directory(metadata_.configured.log.path);
+    database::file::create_directory(metadata_.configured.log.path);
+    database::file::create_directory(metadata_.configured.network.path);
 
     // Hold sinks in scope for the length of the run.
     auto log = create_log_sink();

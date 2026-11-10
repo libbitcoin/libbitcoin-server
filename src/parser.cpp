@@ -102,13 +102,57 @@ void parser::select_network() NOEXCEPT
         configured.bitcoin.network = network;
 }
 
-// A configured path is the base of the network-named store directory.
-void parser::select_path() NOEXCEPT
+// The network-named directory, under any configured database path.
+void parser::select_root() NOEXCEPT
 {
-    auto& path = configured.database.path;
+    std::filesystem::path base{};
     if (is_configured("database.path"))
-        path = path / std::string{ config::selection::to_word(
-            configured.node.network) };
+        base = configured.database.path;
+
+    root_ = base / std::string{ config::selection::to_word(
+        configured.node.network) };
+}
+
+// The store is fixed within the root, and other paths are relative to it.
+void parser::select_paths() NOEXCEPT
+{
+    const auto relative = [this](config::path& path) NOEXCEPT
+    {
+        if (!path.empty())
+            path = root_ / path;
+    };
+
+    const auto rooted = [this](config::path& path) NOEXCEPT
+    {
+        path = path.empty() ? root_ : root_ / path;
+    };
+
+    const auto secured = [&](network::settings::tls_server& service) NOEXCEPT
+    {
+        relative(service.cert_auth);
+        relative(service.cert_path);
+        relative(service.key_path);
+    };
+
+    configured.database.path = root_ / "store";
+    rooted(configured.log.path);
+    rooted(configured.network.path);
+    relative(configured.network.inbound.key_path);
+    relative(configured.server.admin.path);
+    relative(configured.server.native.path);
+    secured(configured.server.admin);
+    secured(configured.server.native);
+    secured(configured.server.bitcoind);
+    secured(configured.server.btcd);
+    secured(configured.server.electrum);
+    secured(configured.server.sparrow);
+    secured(configured.server.esplora);
+    secured(configured.server.stratum_v1);
+    secured(configured.server.stratum_v2);
+
+#if defined (HAVE_WINDOWS)
+    relative(configured.log.symbols);
+#endif
 }
 
 // The network of an existing store governs at its path, for commands that
@@ -128,9 +172,7 @@ void parser::read_envelope() NOEXCEPT
     const auto specified = selected != chain::selection::none &&
         selected != chain::selection::mainnet;
 
-    const auto path = configured.database.path;
     reset_network(stored.network);
-    configured.database.path = path;
     derive_buckets();
 
     // A specified network is retained as configured, for override reporting.
@@ -139,8 +181,13 @@ void parser::read_envelope() NOEXCEPT
 }
 
 // Network defaults are reset, and then configured settings are reapplied.
+// Paths are retained, as they are network independent once resolved.
 void parser::reset_network(chain::selection context) NOEXCEPT
 {
+    const auto store = configured.database.path;
+    const auto peers = configured.network.path;
+    const auto key = configured.network.inbound.key_path;
+
     configured.bitcoin = system::settings{ context };
     configured.database = database::settings{ context };
     configured.network = network::settings{ context };
@@ -156,6 +203,10 @@ void parser::reset_network(chain::selection context) NOEXCEPT
             option->semantic()->notify(variables().at(name).value());
     }
     BC_POP_WARNING()
+
+    configured.database.path = store;
+    configured.network.path = peers;
+    configured.network.inbound.key_path = key;
 }
 
 // Composes a variable name with its command line shortcut.
@@ -925,7 +976,7 @@ options_metadata parser::load_settings() THROWS
     (
         "peer.path",
         setting<config::path>(&configured.network.path),
-        "The peer address cache file directory, defaults to {}."
+        "The peer address cache file directory, defaults to the network directory."
     )
 
     /* [outbound] */
@@ -2397,7 +2448,7 @@ options_metadata parser::load_settings() THROWS
     (
         "database.path",
         setting<config::path>(&configured.database.path),
-        "The base of the network-named blockchain database directory, defaults to the working directory."
+        "The base of the network-named directory, which contains the store and resolves all relative paths, defaults to the working directory."
     )
     (
         "database.turbo",
@@ -2901,7 +2952,7 @@ options_metadata parser::load_settings() THROWS
     (
         "log.path",
         setting<config::path>(&configured.log.path),
-        "The log files directory, defaults to {}."
+        "The log files directory, defaults to the network directory."
     );
 
     return description;
@@ -2927,7 +2978,8 @@ BC_POP_WARNING()
         // Update bound variables in metadata.settings.
         notify(variables_);
         select_network();
-        select_path();
+        select_root();
+        select_paths();
         derive_buckets();
 
         // Clear the config file path if it wasn't used.

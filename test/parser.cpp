@@ -35,9 +35,19 @@ static std::string write_config(const std::string& text)
     return path;
 }
 
-static system::config::path store_path(const std::string& network)
+static system::config::path root_path(const std::string& network)
 {
     return std::filesystem::path{ TEST_PATH } / network;
+}
+
+static system::config::path store_path(const std::string& network)
+{
+    return root_path(network) / "store";
+}
+
+static system::config::path default_store(const std::string& network)
+{
+    return std::filesystem::path{ network } / "store";
 }
 
 // net
@@ -56,7 +66,7 @@ BC_AUTO_TEST_CASE(parser__parse__net_testnet4__testnet4_defaults)
     BC_REQUIRE(configured.node.network == selection::testnet4);
     BC_REQUIRE_EQUAL(configured.network.identifier, 675223068u);
     BC_REQUIRE(configured.server.network == selection::testnet4);
-    BC_REQUIRE_EQUAL(configured.database.path, "testnet4");
+    BC_REQUIRE_EQUAL(configured.database.path, default_store("testnet4"));
     BC_REQUIRE_EQUAL(configured.database.header.expected, 156'456u);
     BC_REQUIRE_EQUAL(configured.database.strong.buckets, 14'810'011u);
 }
@@ -75,7 +85,7 @@ BC_AUTO_TEST_CASE(parser__parse__net_testnet5__testnet5_defaults)
     BC_REQUIRE(configured.node.network == selection::testnet5);
     BC_REQUIRE_EQUAL(configured.network.identifier, 1163282758u);
     BC_REQUIRE(configured.server.network == selection::testnet5);
-    BC_REQUIRE_EQUAL(configured.database.path, "testnet5");
+    BC_REQUIRE_EQUAL(configured.database.path, default_store("testnet5"));
     BC_REQUIRE_EQUAL(configured.database.header.expected, 156'456u);
     BC_REQUIRE_EQUAL(configured.database.strong.buckets, 14'810'011u);
 }
@@ -130,7 +140,7 @@ BC_AUTO_TEST_CASE(parser__parse__make__mainnet_defaults)
     BC_REQUIRE(configured.net == selection::none);
     BC_REQUIRE(configured.bitcoin.network == selection::mainnet);
     BC_REQUIRE_EQUAL(configured.network.identifier, 3652501241u);
-    BC_REQUIRE_EQUAL(configured.database.path, "mainnet");
+    BC_REQUIRE_EQUAL(configured.database.path, default_store("mainnet"));
     BC_REQUIRE_EQUAL(configured.database.strong.buckets, 1'359'871'695u);
 }
 
@@ -144,7 +154,7 @@ BC_AUTO_TEST_CASE(parser__parse__make_net__net_defaults)
     const auto& configured = instance.configured;
     BC_REQUIRE(configured.make);
     BC_REQUIRE(configured.bitcoin.network == selection::regtest);
-    BC_REQUIRE_EQUAL(configured.database.path, "regtest");
+    BC_REQUIRE_EQUAL(configured.database.path, default_store("regtest"));
 }
 
 // bitcoin.network
@@ -182,7 +192,7 @@ BC_AUTO_TEST_CASE(parser__parse__configured_network_unconfigured_path__network_p
     std::ostringstream error{};
     server::parser instance{ selection::mainnet, pages, pages };
     BC_REQUIRE(instance.parse(3, argv, error));
-    BC_REQUIRE_EQUAL(instance.configured.database.path, "signet");
+    BC_REQUIRE_EQUAL(instance.configured.database.path, default_store("signet"));
 }
 
 BC_AUTO_TEST_CASE(parser__parse__make_configured_network__configured_defaults)
@@ -264,6 +274,51 @@ BC_AUTO_TEST_CASE(parser__parse__configured_path_configured_network__network_und
     BC_REQUIRE_EQUAL(instance.configured.database.path, store_path("signet"));
 }
 
+BC_AUTO_TEST_CASE(parser__parse__unconfigured_paths__network_root)
+{
+    const char* argv[]{ "bs", "-n", "testnet4" };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(3, argv, error));
+
+    const auto& configured = instance.configured;
+    BC_REQUIRE_EQUAL(configured.log.path, system::config::path{ "testnet4" });
+    BC_REQUIRE_EQUAL(configured.network.path, system::config::path{ "testnet4" });
+    BC_REQUIRE(configured.server.admin.cert_path.empty());
+    BC_REQUIRE(configured.server.admin.path.empty());
+}
+
+BC_AUTO_TEST_CASE(parser__parse__relative_paths__under_root)
+{
+    const auto config = write_config("[log]\npath = logs\n[peer]\npath = peers\n[admin]\ncert_path = cert.pem\npath = web\n[electrum]\nkey_path = keys/key.pem\n");
+    const char* argv[]{ "bs", "-n", "regtest", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(5, argv, error));
+
+    const auto& configured = instance.configured;
+    const auto root = std::filesystem::path{ root_path("regtest") };
+    BC_REQUIRE_EQUAL(configured.database.path, store_path("regtest"));
+    BC_REQUIRE_EQUAL(configured.log.path, system::config::path{ root / "logs" });
+    BC_REQUIRE_EQUAL(configured.network.path, system::config::path{ root / "peers" });
+    BC_REQUIRE_EQUAL(configured.server.admin.cert_path, system::config::path{ root / "cert.pem" });
+    BC_REQUIRE_EQUAL(configured.server.admin.path, system::config::path{ root / "web" });
+    BC_REQUIRE_EQUAL(configured.server.electrum.key_path, system::config::path{ root / "keys/key.pem" });
+}
+
+BC_AUTO_TEST_CASE(parser__parse__absolute_paths__unchanged)
+{
+    const auto absolute = std::filesystem::current_path() / "logs";
+    const auto config = write_config("[log]\npath = " + absolute.string() + "\n[admin]\ncert_path = " + absolute.string() + "\n");
+    const char* argv[]{ "bs", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(3, argv, error));
+    BC_REQUIRE_EQUAL(instance.configured.log.path, system::config::path{ absolute });
+    BC_REQUIRE_EQUAL(instance.configured.server.admin.cert_path, system::config::path{ absolute });
+    BC_REQUIRE_EQUAL(instance.configured.network.path, root_path("mainnet"));
+}
+
 // read_envelope
 
 BC_AUTO_TEST_CASE(parser__read_envelope__no_store__unchanged)
@@ -307,6 +362,8 @@ BC_AUTO_TEST_CASE(parser__read_envelope__regtest_store__stored_defaults)
     BC_REQUIRE_EQUAL(configured.network.identifier, 3669344250u);
     BC_REQUIRE_EQUAL(configured.database.strong.buckets, 100'000u);
     BC_REQUIRE_EQUAL(configured.database.path, store_path("mainnet"));
+    BC_REQUIRE_EQUAL(configured.log.path, root_path("mainnet"));
+    BC_REQUIRE_EQUAL(configured.network.path, root_path("mainnet"));
 }
 
 BC_AUTO_TEST_CASE(parser__read_envelope__specified_network__stored_defaults_specified_network)

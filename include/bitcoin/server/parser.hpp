@@ -89,14 +89,20 @@ protected:
     /// Select the network and reset the defaults to it when it differs.
     virtual void select_network() NOEXCEPT;
 
-    /// Name the store directory for the network, under any configured path.
-    virtual void select_path() NOEXCEPT;
+    /// Name the root directory for the network, under any configured path.
+    virtual void select_root() NOEXCEPT;
+
+    /// Fix the store within the root and resolve other paths against it.
+    virtual void select_paths() NOEXCEPT;
 
     /// Reset the network defaults, preserving configured settings.
     virtual void reset_network(system::chain::selection context) NOEXCEPT;
 
     /// Derive each unconfigured hashmap bucket count from its expected count.
     virtual void derive_buckets() NOEXCEPT;
+
+private:
+    std::filesystem::path root_{};
 };
 
 } // namespace server
