@@ -35,20 +35,23 @@ BC_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__insufficient_version__wro
     BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__no_params_key__dropped)
+BC_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__no_params_key__invalid_request)
 {
     BC_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"id":601,"method":"mempool.get_fee_histogram"})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_request);
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
 }
 
-BC_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__extra_param__dropped)
+BC_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__extra_param__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"id":602,"method":"mempool.get_fee_histogram","params":[42]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 ////BC_AUTO_TEST_CASE(electrum__mempool_get_fee_histogram__empty_params__not_implemented)
@@ -79,20 +82,23 @@ BC_AUTO_TEST_CASE(electrum__mempool_get_info__insufficient_version__wrong_versio
     BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__mempool_get_info__no_params_key__dropped)
+BC_AUTO_TEST_CASE(electrum__mempool_get_info__no_params_key__invalid_request)
 {
     BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":701,"method":"mempool.get_info"})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_request);
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
 }
 
-BC_AUTO_TEST_CASE(electrum__mempool_get_info__extra_param__dropped)
+BC_AUTO_TEST_CASE(electrum__mempool_get_info__extra_param__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":702,"method":"mempool.get_info","params":[42]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__mempool_get_info__empty_params__expected)
@@ -124,12 +130,13 @@ BC_AUTO_TEST_CASE(electrum__mempool_recent__insufficient_version__wrong_version)
     BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__mempool_recent__extra_param__dropped)
+BC_AUTO_TEST_CASE(electrum__mempool_recent__extra_param__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":711,"method":"mempool.recent","params":[42]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__mempool_recent__empty_params__empty)

@@ -60,22 +60,24 @@ BC_AUTO_TEST_CASE(electrum__server_add_peer__v1_1__not_implemented)
 
 // server.banner
 
-BC_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_no_params__dropped)
+BC_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_no_params__invalid_request)
 {
     BC_REQUIRE(handshake(electrum::version::v1_2));
 
-    // params[] required in json 1.0, server drops connection for invalid json-rpc.
     const auto response = get(R"({"id":42,"method":"server.banner"})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_request);
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
 }
 
-BC_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_named_params__dropped)
+BC_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_named_params__invalid_request)
 {
     BC_REQUIRE(handshake(electrum::version::v1_2));
 
-    // params{} disallowed in json 1.0, server drops connection for invalid json-rpc.
     const auto response = get(R"({"id":42,"method":"server.banner","params":{}})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_request);
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
 }
 
 BC_AUTO_TEST_CASE(electrum__server_banner__jsonrpc_unspecified_empty_params__expected)
@@ -132,20 +134,23 @@ BC_AUTO_TEST_CASE(electrum__server_donation_address__jsonrpc_2__expected)
 
 // server.features
 
-BC_AUTO_TEST_CASE(electrum__server_features__no_params__expected)
+BC_AUTO_TEST_CASE(electrum__server_features__no_params__invalid_request)
 {
     BC_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"id":301,"method":"server.features"})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_request);
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
 }
 
-BC_AUTO_TEST_CASE(electrum__server_features__extra_param__dropped)
+BC_AUTO_TEST_CASE(electrum__server_features__extra_param__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"id":302,"method":"server.features","params":["extra"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__server_features__default_hosts__expected)
@@ -246,12 +251,13 @@ BC_AUTO_TEST_CASE(electrum__server_features__hosts__expected)
 
 // server.peers.subscribe
 
-BC_AUTO_TEST_CASE(electrum__server_peers_subscribe__extra_param__dropped)
+BC_AUTO_TEST_CASE(electrum__server_peers_subscribe__extra_param__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":502,"method":"server.peers.subscribe","params":["extra"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__server_peers_subscribe__empty_params__empty_array)
@@ -319,20 +325,23 @@ BC_AUTO_TEST_CASE(electrum__server_ping__v1_1__wrong_version)
     BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__server_ping__jsonrpc_unspecified_no_params__dropped)
+BC_AUTO_TEST_CASE(electrum__server_ping__jsonrpc_unspecified_no_params__invalid_request)
 {
     BC_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"id":201,"method":"server.ping"})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_request);
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
 }
 
-BC_AUTO_TEST_CASE(electrum__server_ping__extra_param__dropped)
+BC_AUTO_TEST_CASE(electrum__server_ping__extra_param__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":215,"method":"server.ping","params":[8,"12345678", 42]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__server_ping__v1_2_defaults__null)

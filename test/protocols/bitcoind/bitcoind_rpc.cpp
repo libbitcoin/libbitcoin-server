@@ -2236,34 +2236,100 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__batch__command_notification__executed_empty_elem
     BC_REQUIRE_EQUAL(batch.at(2).as_object().size(), 1u);
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__batch__v1_second_element__closed_partial_batch)
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__unversioned_second_element__invalid_request_element)
 {
-    // The batched v1 policy stop closes the open batch response (the first
-    // element was delivered and responded).
-    const auto response = rpc_body(
-        R"([{"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]},)"
-        R"({"id":2,"method":"getblockcount","params":[]}])");
-
+    const auto response = rpc_body(R"([{"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]},{"id":2,"method":"getblockcount","params":[]}])");
     BC_REQUIRE(response.is_array());
+
+    const auto& batch = response.as_array();
+    BC_REQUIRE_EQUAL(batch.size(), 2u);
+    BC_REQUIRE_EQUAL(batch.at(0).at("id").as_int64(), 1);
+    BC_REQUIRE_EQUAL(batch.at(0).at("result").as_int64(), 9);
+    BC_REQUIRE_EQUAL(batch.at(1).at("id").as_int64(), 2);
+    BC_REQUIRE_EQUAL(batch.at(1).at("error").at("code").as_int64(), network::rpc::reserved::invalid_request);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__unversioned_element__invalid_request)
+{
+    const auto response = rpc_body(R"([{"id":1,"method":"getblockcount","params":[]}])");
+    BC_REQUIRE(response.is_array());
+
     const auto& batch = response.as_array();
     BC_REQUIRE_EQUAL(batch.size(), 1u);
     BC_REQUIRE_EQUAL(batch.at(0).at("id").as_int64(), 1);
-    BC_REQUIRE_EQUAL(batch.at(0).at("result").as_int64(), 9);
+    BC_REQUIRE_EQUAL(batch.at(0).at("error").at("code").as_int64(), network::rpc::reserved::invalid_request);
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__batch__v1_element__dropped)
-{
-    // Batch participation of a v1 message (no jsonrpc field) drops (http).
-    const auto response = rpc_body(
-        R"([{"id":1,"method":"getblockcount","params":[]}])");
-
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
-}
-
-BC_AUTO_TEST_CASE(bitcoind_rpc__batch__empty__dropped)
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__empty__invalid_request)
 {
     const auto response = rpc_body("[]");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    BC_REQUIRE(response.is_array());
+
+    const auto& batch = response.as_array();
+    BC_REQUIRE_EQUAL(batch.size(), 1u);
+    BC_REQUIRE(batch.at(0).at("id").is_null());
+    BC_REQUIRE_EQUAL(batch.at(0).at("error").at("code").as_int64(), network::rpc::reserved::invalid_request);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__empty__ok)
+{
+    BC_REQUIRE_EQUAL(rpc_body_status("[]"), status::ok);
+}
+
+// protocol violations
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__malformed_json__parse_error_null_id)
+{
+    const auto response = rpc_body(R"({"id":1,"method":})");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("error"), serialize(response));
+    BC_REQUIRE(response.at("id").is_null());
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), network::rpc::reserved::parse_error);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__malformed_json__internal_server_error)
+{
+    BC_REQUIRE_EQUAL(rpc_body_status(R"({"id":1,"method":})"), status::internal_server_error);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__missing_method__invalid_request_with_id)
+{
+    const auto response = rpc_body(R"({"id":5,"params":[]})");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("error"), serialize(response));
+    BC_REQUIRE_EQUAL(response.at("id").as_int64(), 5);
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), network::rpc::reserved::invalid_request);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__missing_method__v1__bad_request)
+{
+    BC_REQUIRE_EQUAL(rpc_body_status(R"({"id":5,"params":[]})"), status::bad_request);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__missing_method__v2__ok)
+{
+    BC_REQUIRE_EQUAL(rpc_body_status(R"({"jsonrpc":"2.0","id":5,"params":[]})"), status::ok);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__websocket_malformed_json__parse_error_null_id)
+{
+    BC_REQUIRE(!ws_upgrade());
+    ws_notify(R"({"id":1,"method":})");
+
+    const auto response = ws_read();
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("error"), serialize(response));
+    BC_REQUIRE(response.at("id").is_null());
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), network::rpc::reserved::parse_error);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__websocket_missing_method__invalid_request_with_id)
+{
+    BC_REQUIRE(!ws_upgrade());
+    ws_notify(R"({"jsonrpc":"2.0","id":5,"params":[]})");
+
+    const auto response = ws_read();
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("error"), serialize(response));
+    BC_REQUIRE_EQUAL(response.at("id").as_int64(), 5);
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), network::rpc::reserved::invalid_request);
 }
 
 // http status
@@ -3835,20 +3901,22 @@ BC_AUTO_TEST_CASE(bitcoind_scoped_credential__websocket_listed_method__result)
     BC_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 }
 
-BC_AUTO_TEST_CASE(bitcoind_scoped_credential__websocket_unlisted_method__dropped)
+BC_AUTO_TEST_CASE(bitcoind_scoped_credential__websocket_unlisted_method__unauthorized)
 {
     BC_REQUIRE(!ws_upgrade(BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD));
 
-    const auto response = ws_rpc_dropped("getbestblockhash");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    const auto response = ws_rpc("getbestblockhash");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("error"), serialize(response));
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), code{ network::error::unauthorized }.value());
 }
 
-BC_AUTO_TEST_CASE(bitcoind_scoped_credential__websocket_unknown_method__dropped)
+BC_AUTO_TEST_CASE(bitcoind_scoped_credential__websocket_unknown_method__unauthorized)
 {
     BC_REQUIRE(!ws_upgrade(BITCOIND_TEST_USERNAME, BITCOIND_TEST_PASSWORD));
 
-    const auto response = ws_rpc_dropped("nosuchmethod");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    const auto response = ws_rpc("nosuchmethod");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("error"), serialize(response));
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), code{ network::error::unauthorized }.value());
 }
 
 BC_AUTO_TEST_SUITE_END()
@@ -4609,9 +4677,11 @@ BC_AUTO_TEST_SUITE_END()
 
 BC_FIXTURE_TEST_SUITE(bitcoind_credentialed_tcp_tests, bitcoind_credentialed_setup_fixture)
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__getblockcount__downgraded_credentials_configured__dropped)
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblockcount__downgraded_credentials_configured__unauthorized)
 {
-    REQUIRE_NO_THROW_TRUE(tcp_rpc("getblockcount").at("dropped").as_bool());
+    const auto response = tcp_rpc("getblockcount");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("error"), serialize(response));
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), code{ network::error::unauthorized }.value());
 }
 
 BC_AUTO_TEST_SUITE_END()

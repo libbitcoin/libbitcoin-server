@@ -110,18 +110,13 @@ response protocol_http::to_response(status status) NOEXCEPT
 // Senders.
 // ----------------------------------------------------------------------------
 
-void protocol_http::send_json(system::json::value&& model,
-    size_t size_hint) NOEXCEPT
+void protocol_http::send_json(system::json::value&& model) NOEXCEPT
 {
     BC_ASSERT(stranded());
     auto message = to_response(status::ok);
     message.set(field::content_type,
         from_media_type(media_type::application_json));
-    message.body() = json_value
-    {
-        .model = std::move(model),
-        .size_hint = size_hint
-    };
+    message.body() = json_value{ .model = std::move(model) };
     message.prepare_payload();
     SEND(std::move(message), handle_complete, _1, error::success);
 }

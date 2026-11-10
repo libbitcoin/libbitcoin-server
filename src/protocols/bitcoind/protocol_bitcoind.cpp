@@ -141,7 +141,7 @@ void protocol_bitcoind::handle_receive_post(const code& ec,
 }
 
 // The websocket transport of the interface: subgroup protocols handle claimed
-// frames, invalid frames stop the channel here.
+// frames, all others are answered here.
 void protocol_bitcoind::dispatch_websocket(
     const network::http::request& request) NOEXCEPT
 {
@@ -150,14 +150,6 @@ void protocol_bitcoind::dispatch_websocket(
     // A subgroup protocol has claimed (and responds to) the request.
     if (claimed())
         return;
-
-    // ws frames carry no headers, so ws authorization is enforced here, not
-    // by the channel (established by basic auth on the upgrade request).
-    if (!authorized())
-    {
-        stop(network::error::unauthorized);
-        return;
-    }
 
     // Websocket frames are parsed as json-rpc requests (channel body type).
     if (!request.body().contains<rpc::request>())
@@ -171,10 +163,13 @@ void protocol_bitcoind::dispatch_websocket(
     // Cache request context for response building (version + id).
     set_rpc_request(message);
 
+    // ws frames carry no headers, so ws authorization is enforced here, not
+    // by the channel (established by basic auth on the upgrade request).
     // The credential may be restricted to a subset of interface methods.
-    if (!permitted(message.method))
+    if (!authorized() || !permitted(message.method))
     {
-        stop(network::error::unauthorized);
+        const code unauthorized{ network::error::unauthorized };
+        send_error(unauthorized, unauthorized);
         return;
     }
 
@@ -314,22 +309,6 @@ void protocol_bitcoind::send_result(value_option&& result) NOEXCEPT
     });
 }
 
-static http::status to_status(const response_t& model) NOEXCEPT
-{
-    if (!model.error.has_value() || (model.jsonrpc != rpc::version::v1))
-        return http::status::ok;
-
-    switch (model.error->code)
-    {
-        case error::bitcoind::invalid_request:
-            return http::status::bad_request;
-        case error::bitcoind::method_not_found:
-            return http::status::not_found;
-        default:
-            return http::status::internal_server_error;
-    }
-}
-
 // private
 void protocol_bitcoind::send_rpc(response_t&& model) NOEXCEPT
 {
@@ -380,7 +359,8 @@ void protocol_bitcoind::send_rpc(response_t&& model,
     }
 
     const auto statused = options().error_status && !batched;
-    auto message = to_response(statused ? to_status(model) : status::ok);
+    const auto code = statused ? channel_t::to_status(model) : status::ok;
+    auto message = to_response(code);
     message.set(field::content_type, json);
     message.body() = rpc::response{ {}, std::move(model) };
     message.prepare_payload();

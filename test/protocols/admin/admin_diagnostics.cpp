@@ -156,28 +156,28 @@ BC_AUTO_TEST_CASE(admin__ws_subscribe__channels__independent)
     BC_REQUIRE_EQUAL(ack.at("previous").as_int64(), 2048);
 }
 
-BC_AUTO_TEST_CASE(admin__ws_log_subscribe__invalid_filter__closed)
+BC_AUTO_TEST_CASE(admin__ws_log_subscribe__invalid_filter__bad_request)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_dropped("/v1/log/subscribe?filter=xyz"));
+    BC_REQUIRE(ws_get_text("/v1/log/subscribe?filter=xyz").starts_with("Bad Request"));
 }
 
-BC_AUTO_TEST_CASE(admin__ws_log_subscribe__html__closed)
+BC_AUTO_TEST_CASE(admin__ws_log_subscribe__html__not_acceptable)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_dropped("/v1/log/subscribe?filter=1&format=html"));
+    BC_REQUIRE(ws_get_text("/v1/log/subscribe?filter=1&format=html").starts_with("Not Acceptable"));
 }
 
-BC_AUTO_TEST_CASE(admin__ws_dispatch__invalid_target__closed)
+BC_AUTO_TEST_CASE(admin__ws_dispatch__invalid_target__bad_request)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_dropped("/v1/bogus"));
+    BC_REQUIRE(ws_get_text("/v1/bogus").starts_with("Bad Request"));
 }
 
-BC_AUTO_TEST_CASE(admin__ws_dispatch__missing_subcomponent__closed)
+BC_AUTO_TEST_CASE(admin__ws_dispatch__missing_subcomponent__bad_request)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_dropped("/v1/log"));
+    BC_REQUIRE(ws_get_text("/v1/log").starts_with("Bad Request"));
 }
 
 // streams (websockets)

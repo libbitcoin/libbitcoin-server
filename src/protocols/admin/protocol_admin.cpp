@@ -123,14 +123,14 @@ void protocol_admin::dispatch_websocket(const http::request& request) NOEXCEPT
     // by the channel (established by basic auth on the upgrade request).
     if (!authorized())
     {
-        stop(network::error::unauthorized);
+        send_unauthorized(request);
         return;
     }
 
     // Admin websocket interface supports only string requests.
     if (!request.body().contains<http::string_value>())
     {
-        stop(network::error::not_acceptable);
+        send_not_acceptable(request);
         return;
     }
 
@@ -140,32 +140,32 @@ void protocol_admin::dispatch_websocket(const http::request& request) NOEXCEPT
     rpc::request_t model{};
     if (const auto ec = admin_target(model, target))
     {
-        stop(network::error::bad_request);
+        send_bad_target(ec, request);
         return;
     }
 
     // Default to json by simulating a json accept header (format overrides).
     if (!admin_query(model, target, { media_type::application_json }))
     {
-        stop(network::error::bad_request);
+        send_bad_request(request);
         return;
     }
 
     if (strip_media(model) != media_type::application_json)
     {
-        stop(network::error::not_acceptable);
+        send_not_acceptable(request);
         return;
     }
 
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(model.method))
     {
-        stop(network::error::unauthorized);
+        send_forbidden(request);
         return;
     }
 
     if (dispatcher_.notify(model))
-        stop(network::error::bad_request);
+        send_bad_request(request);
 }
 
 // Interface handlers.
@@ -188,7 +188,7 @@ bool protocol_admin::handle_get_log_subscribe(const code& ec,
         log_subscribed_ = true;
     }
 
-    send_json({ { "previous", previous } }, 42);
+    send_json({ { "previous", previous } });
     return true;
 }
 
@@ -205,7 +205,7 @@ bool protocol_admin::handle_get_event_subscribe(const code& ec,
     if (update_filter(previous, filter, event_state_))
         log.subscribe_events(BIND_WEAK(handle_event, _1, _2, _3, _4));
 
-    send_json({ { "previous", previous } }, 42);
+    send_json({ { "previous", previous } });
     return true;
 }
 
@@ -257,7 +257,7 @@ void protocol_admin::do_log(uint8_t level, uint64_t zulu,
         { "level", level },
         { "time", zulu },
         { "message", message }
-    }, message.size() + 64u);
+    });
 }
 
 void protocol_admin::do_event(uint8_t event_, uint64_t zulu,
@@ -273,7 +273,7 @@ void protocol_admin::do_event(uint8_t event_, uint64_t zulu,
         { "event", event_ },
         { "value", value_ },
         { "time", zulu }
-    }, 64);
+    });
 }
 
 // Utils.

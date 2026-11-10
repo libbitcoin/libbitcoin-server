@@ -54,7 +54,7 @@ bool protocol_native::handle_get_tx(const code& ec, interface::tx, uint8_t,
                 send_text(to_hex(*tx, size, witness));
                 return true;
             case json:
-                send_json(value_from(tx), two * size);
+                send_json(value_from(tx));
                 return true;
         }
     }
@@ -97,7 +97,7 @@ bool protocol_native::handle_get_tx_header(const code& ec,
         case json:
             auto model = value_from(header);
             inject(model, {}, link);
-            send_json(std::move(model), two * size);
+            send_json(std::move(model));
             return true;
     }
 
@@ -172,7 +172,7 @@ bool protocol_native::handle_get_tx_details(const code& ec,
         };
     }
 
-    send_json(std::move(object), 128);
+    send_json(std::move(object));
     return true;
 }
 
@@ -204,7 +204,7 @@ void protocol_native::do_transaction(node::transaction_t link,
             notify_text(encode_base16(hash));
             return;
         case json:
-            notify_json(value_from(encode_hash(hash)), two * hash_size);
+            notify_json(value_from(encode_hash(hash)));
             return;
     }
 }
@@ -263,7 +263,7 @@ void protocol_native::complete_get_fees(const code& ec,
         { "histogram", system::json::value_from(summary.histogram) }
     };
 
-    send_json(std::move(object), add1(summary.histogram.size()) * 64);
+    send_json(std::move(object));
 }
 
 BC_POP_WARNING()

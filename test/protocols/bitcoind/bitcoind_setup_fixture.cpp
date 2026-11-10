@@ -157,12 +157,6 @@ system::json::value bitcoind_setup_fixture::ws_rpc(std::string_view method,
     return client_.frame(body_of(method, params), true);
 }
 
-system::json::value bitcoind_setup_fixture::ws_rpc_dropped(
-    std::string_view method, std::string_view params)
-{
-    return client_.frame(body_of(method, params));
-}
-
 void bitcoind_setup_fixture::ws_notify(std::string_view body)
 {
     client_.write_frame(body);

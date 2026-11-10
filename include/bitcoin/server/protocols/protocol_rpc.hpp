@@ -129,7 +129,7 @@ protected:
         }
 
         if (const auto code = rpc_dispatcher_.notify(message))
-            stop(code);
+            handle_dispatch_fault(code);
     }
 
     /// Json-rpc is served over post (and ws/tcp), other methods are not.
@@ -209,7 +209,9 @@ protected:
         // ws frames carry no headers, so ws authorization is enforced here.
         if (!authorized())
         {
-            stop(network::error::unauthorized);
+            set_claimed();
+            send_code(network::error::unauthorized,
+                network::error::unauthorized);
             return;
         }
 
@@ -236,12 +238,13 @@ protected:
         // The credential may be restricted to a subset of interface methods.
         if (!permitted(message.method))
         {
-            stop(network::error::unauthorized);
+            send_code(network::error::unauthorized,
+                network::error::unauthorized);
             return;
         }
 
         if (const auto code = rpc_dispatcher_.notify(message))
-            stop(code);
+            handle_dispatch_fault(code);
     }
 
     /// Invoked for a request not defined by the interface, which the protocol
@@ -261,6 +264,24 @@ protected:
 
         set_claimed();
         send_method_not_allowed(request);
+    }
+
+    /// Answer a dispatch parameter fault, stop the channel for other faults.
+    virtual void handle_dispatch_fault(const code& ec) NOEXCEPT
+    {
+        BC_ASSERT(stranded());
+
+        if (!network::error::is_parameter_fault(ec))
+        {
+            stop(ec);
+            return;
+        }
+
+        send_error(
+        {
+            .code = network::rpc::reserved::invalid_params,
+            .message = ec.message()
+        });
     }
 
     /// Handler wiring (dispatcher subscription).
@@ -293,6 +314,16 @@ protected:
     {
         send_notification(std::move(method), std::move(params),
             default_handler());
+    }
+
+    /// Senders, closing upon completion (requires strand).
+    /// -----------------------------------------------------------------------
+
+    inline void send_code(const code& ec, const code& close_reason) NOEXCEPT
+    {
+        using self = protocol_rpc<Interface>;
+        send_code(ec, std::bind(&self::handle_complete,
+            shared_from_base<self>(), std::placeholders::_1, close_reason));
     }
 
     /// Senders, caller completion (requires strand).

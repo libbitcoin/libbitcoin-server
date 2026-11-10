@@ -56,6 +56,7 @@ public:
 protected:
     void handle_unclaimed(
         const network::rpc::request_t& message) NOEXCEPT override;
+    void handle_dispatch_fault(const code& ec) NOEXCEPT override;
 
     void handle_server_version(const code& ec,
         rpc_interface::server_version, const std::string& client_name,

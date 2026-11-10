@@ -231,7 +231,7 @@ private:
     void do_get_mempool_txids(const gate_t::ptr& gate) NOEXCEPT;
     void do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_mempool(const code& ec, system::json::value& out,
-        size_t size, const gate_t::ptr& gate) NOEXCEPT;
+        const gate_t::ptr& gate) NOEXCEPT;
 
     void next_estimate(size_t index) NOEXCEPT;
     void handle_estimate(const code& ec, uint64_t fee, size_t index) NOEXCEPT;

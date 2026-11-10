@@ -284,7 +284,7 @@ BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get__missing_verbose__default
     BC_REQUIRE_EQUAL(response.at("result").as_string(), encode_base16(coinbase.to_data(true)));
 }
 
-BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get__extra_param__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get__extra_param__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_0));
 
@@ -292,7 +292,8 @@ BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get__extra_param__dropped)
     const auto tx0_hash = encode_hash(coinbase.hash(false));
     constexpr auto request = R"({{"id":81,"method":"blockchain.transaction.get","params":["{}",false,"extra"]}})" "\n";
     const auto response = get(std::format(request, tx0_hash));
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get__genesis_coinbase_verbose_false__expected)
@@ -480,7 +481,7 @@ BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__mutiple_txs_block
     BC_REQUIRE_EQUAL(merkle.at(1).as_string(), encode_hash(bitcoin_hash(tx2_hash, tx2_hash)));
 }
 
-BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__missing_param__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__missing_param__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_4));
 
@@ -488,10 +489,11 @@ BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__missing_param__dr
     const auto tx_hash = encode_hash(coinbase.hash(false));
     constexpr auto request = R"({{"id":105,"method":"blockchain.transaction.get_merkle","params":["{}"]}})" "\n";
     const auto response = get(std::format(request, tx_hash));
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
-BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__extra_param__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__extra_param__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_4));
 
@@ -499,7 +501,8 @@ BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__extra_param__drop
     const auto tx_hash = encode_hash(coinbase.hash(false));
     constexpr auto request = R"({{"id":106,"method":"blockchain.transaction.get_merkle","params":["{}",0,"extra"]}})" "\n";
     const auto response = get(std::format(request, tx_hash));
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 // blockchain.transaction.id_from_pos

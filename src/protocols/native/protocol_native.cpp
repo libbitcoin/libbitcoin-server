@@ -165,14 +165,14 @@ void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
     // by the channel (established by basic auth on the upgrade request).
     if (!authorized())
     {
-        stop(network::error::unauthorized);
+        send_unauthorized(request);
         return;
     }
 
     // Native websocket interface supports only string requests.
     if (!request.body().contains<http::string_value>())
     {
-        stop(network::error::not_acceptable);
+        send_not_acceptable(request);
         return;
     }
 
@@ -182,32 +182,32 @@ void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT
     rpc::request_t model{};
     if (const auto ec = native_target(model, target))
     {
-        stop(network::error::bad_request);
+        send_bad_target(ec, request);
         return;
     }
 
     // Default to json by simulating a json accept header (format overrides).
     if (!native_query(model, target, { media_type::application_json }))
     {
-        stop(network::error::bad_request);
+        send_bad_request(request);
         return;
     }
 
     if (get_media(model) == media_type::text_html)
     {
-        stop(network::error::not_acceptable);
+        send_not_acceptable(request);
         return;
     }
 
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(model.method))
     {
-        stop(network::error::unauthorized);
+        send_forbidden(request);
         return;
     }
 
     if (dispatcher_.notify(model))
-        stop(network::error::bad_request);
+        send_bad_request(request);
 }
 
 // Senders.

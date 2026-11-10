@@ -64,7 +64,7 @@ bool protocol_native::handle_get_inputs(const code& ec, interface::inputs,
             return true;
         case json:
             // Json input serialization includes witness.
-            send_json(value_from(*inputs), two * size);
+            send_json(value_from(*inputs));
             return true;
     }
 
@@ -94,8 +94,7 @@ bool protocol_native::handle_get_input(const code& ec, interface::input,
                 return true;
             case json:
                 // Json input serialization includes witness.
-                send_json(value_from(input),
-                    two * input->serialized_size(witness));
+                send_json(value_from(input));
                 return true;
         }
     }
@@ -125,7 +124,7 @@ bool protocol_native::handle_get_input_script(const code& ec,
                 send_text(to_hex(*script, size, false));
                 return true;
             case json:
-                send_json(value_from(script), two * size);
+                send_json(value_from(script));
                 return true;
         }
     }
@@ -155,8 +154,7 @@ bool protocol_native::handle_get_input_witness(const code& ec,
                 send_text(to_hex(*witness, size, false));
                 return true;
             case json:
-                send_json(value_from(witness),
-                    two * witness->serialized_size(false));
+                send_json(value_from(witness));
                 return true;
         }
     }

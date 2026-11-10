@@ -48,7 +48,7 @@ bool protocol_native::handle_get_top(const code& ec, interface::top,
             send_text(encode_base16(to_bin(height)));
             return true;
         case json:
-            send_json(height, two * sizeof(height));
+            send_json(height);
             return true;
     }
 
@@ -89,7 +89,7 @@ void protocol_native::do_top(node::header_t link, media_type media) NOEXCEPT
             notify_text(encode_base16(to_bin(height)));
             return;
         case json:
-            notify_json(height, two * sizeof(height));
+            notify_json(height);
             return;
     }
 }
@@ -148,7 +148,7 @@ bool protocol_native::handle_get_block(const code& ec, interface::block,
 
             auto model = value_from(block);
             inject(model.at("header"), height, link);
-            send_json(std::move(model), two * size);
+            send_json(std::move(model));
             return true;
         }
     }
@@ -179,7 +179,7 @@ bool protocol_native::handle_get_block_header(const code& ec,
             case json:
                 auto model = value_from(header);
                 inject(model, height, link);
-                send_json(std::move(model), two * size);
+                send_json(std::move(model));
                 return true;
         }
     }
@@ -266,7 +266,7 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
         { "bip54_coinbase", context.is_enabled(chain::flags::bip54_coinbase_rule) }
     };
 
-    send_json(std::move(object), 256);
+    send_json(std::move(object));
     return true;
 }
 
@@ -336,7 +336,7 @@ bool protocol_native::handle_get_block_details(const code& ec,
         { "claim", claim }
     };
 
-    send_json(std::move(object), 512);
+    send_json(std::move(object));
     return true;
 }
 
@@ -371,7 +371,7 @@ bool protocol_native::handle_get_block_txs(const code& ec,
                 system::json::array out(hashes.size());
                 std::ranges::transform(hashes, out.begin(),
                     [](const auto& hash) { return encode_hash(hash); });
-                send_json(out, two * size);
+                send_json(out);
                 return true;
             }
         }
@@ -407,8 +407,7 @@ bool protocol_native::handle_get_block_filter(const code& ec,
                 send_text(encode_base16(filter));
                 return true;
             case json:
-                send_json(value_from(encode_base16(filter)),
-                    two * filter.size());
+                send_json(value_from(encode_base16(filter)));
                 return true;
         }
     }
@@ -443,8 +442,7 @@ bool protocol_native::handle_get_block_filter_hash(const code& ec,
                 send_text(encode_base16(filter_hash));
                 return true;
             case json:
-                send_json(value_from(encode_hash(filter_hash)),
-                    two * hash_size);
+                send_json(value_from(encode_hash(filter_hash)));
                 return true;
         }
     }
@@ -479,8 +477,7 @@ bool protocol_native::handle_get_block_filter_header(const code& ec,
                 send_text(encode_base16(filter_head));
                 return true;
             case json:
-                send_json(value_from(encode_hash(filter_head)),
-                    two * hash_size);
+                send_json(value_from(encode_hash(filter_head)));
                 return true;
         }
     }
@@ -510,7 +507,7 @@ bool protocol_native::handle_get_block_tx(const code& ec, interface::block_tx,
                 send_text(to_hex(*tx, size, witness));
                 return true;
             case json:
-                send_json(value_from(tx), two * size);
+                send_json(value_from(tx));
                 return true;
         }
     }
@@ -547,7 +544,7 @@ bool protocol_native::handle_get_block_subscribe(const code& ec,
                 send_text(encode_base16(hash));
                 return true;
             case json:
-                send_json(value_from(encode_hash(hash)), two * hash_size);
+                send_json(value_from(encode_hash(hash)));
                 return true;
         }
     }
@@ -571,7 +568,7 @@ void protocol_native::do_block(node::header_t link, media_type media) NOEXCEPT
             notify_text(encode_base16(hash));
             return;
         case json:
-            notify_json(value_from(encode_hash(hash)), two * hash_size);
+            notify_json(value_from(encode_hash(hash)));
             return;
     }
 }

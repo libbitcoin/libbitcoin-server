@@ -66,7 +66,7 @@ protected:
     network::http::response to_response(network::http::status status) NOEXCEPT;
 
     /// Senders, responding to the cached request (requires strand).
-    void send_json(system::json::value&& model, size_t size_hint) NOEXCEPT;
+    void send_json(system::json::value&& model) NOEXCEPT;
     void send_text(std::string&& text) NOEXCEPT;
     void send_chunk(system::data_chunk&& bytes) NOEXCEPT;
     void send_file(network::http::file&& file,

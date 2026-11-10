@@ -200,7 +200,7 @@ bool protocol_esplora::handle_get_tx(const code& ec, interface::tx,
             return true;
         }
 
-        send_json(std::move(out), 1024);
+        send_json(std::move(out));
         return true;
     }
 
@@ -244,7 +244,7 @@ bool protocol_esplora::handle_get_tx_status(const code& ec,
         return true;
     }
 
-    send_json(to_status(link), 256);
+    send_json(to_status(link));
     return true;
 }
 
@@ -350,7 +350,7 @@ bool protocol_esplora::handle_get_tx_merkle_proof(const code& ec,
         { "block_height", height },
         { "merkle", std::move(branch) },
         { "pos", position }
-    }, two * hash_size * add1(proof.size()));
+    });
     return true;
 }
 
@@ -382,7 +382,7 @@ bool protocol_esplora::handle_get_tx_outspend(const code& ec,
         return true;
     }
 
-    send_json(std::move(out), 256);
+    send_json(std::move(out));
     return true;
 }
 
@@ -421,7 +421,7 @@ bool protocol_esplora::handle_get_tx_outspends(const code& ec,
         out.emplace_back(std::move(spend));
     }
 
-    send_json(std::move(out), count * 256);
+    send_json(std::move(out));
     return true;
 }
 
@@ -546,7 +546,7 @@ void protocol_esplora::complete_submit_package(const code& ec, size_t index,
         return;
     }
 
-    send_json(std::move(out), add1(txs->size()) * 512);
+    send_json(std::move(out));
 }
 
 // The spending status of one output, false if the output does not exist.

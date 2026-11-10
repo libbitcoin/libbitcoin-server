@@ -120,12 +120,11 @@ void protocol_esplora::do_get_mempool(const gate_t::ptr& gate) NOEXCEPT
     if (!archive().get_confirmable_fees(rates))
     {
         POST(complete_get_mempool, database::error::integrity,
-            value{}, zero, gate);
+            value{}, gate);
         return;
     }
 
     const auto summary = to_fee_summary(std::move(rates), histogram_bin);
-    const auto size = add1(summary.histogram.size()) * 64;
     value out = object
     {
         { "count", summary.count },
@@ -134,7 +133,7 @@ void protocol_esplora::do_get_mempool(const gate_t::ptr& gate) NOEXCEPT
         { "fee_histogram", value_from(summary.histogram) }
     };
 
-    POST(complete_get_mempool, code{}, std::move(out), size, gate);
+    POST(complete_get_mempool, code{}, std::move(out), gate);
 }
 
 void protocol_esplora::do_get_mempool_txids(const gate_t::ptr& gate) NOEXCEPT
@@ -146,7 +145,7 @@ void protocol_esplora::do_get_mempool_txids(const gate_t::ptr& gate) NOEXCEPT
     if (query.get_confirmable_txs(links))
     {
         POST(complete_get_mempool, database::error::integrity,
-            value{}, zero, gate);
+            value{}, gate);
         return;
     }
 
@@ -155,9 +154,7 @@ void protocol_esplora::do_get_mempool_txids(const gate_t::ptr& gate) NOEXCEPT
     for (const auto& link: links)
         txids.emplace_back(encode_hash(query.get_tx_key(link)));
 
-    const auto size = add1(links.size()) * 68;
-    POST(complete_get_mempool, code{}, value{ std::move(txids) },
-        size, gate);
+    POST(complete_get_mempool, code{}, value{ std::move(txids) }, gate);
 }
 
 // The pool is ordered by entry, so the most recent are at its end.
@@ -170,7 +167,7 @@ void protocol_esplora::do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT
     if (query.get_confirmable_txs(links))
     {
         POST(complete_get_mempool, database::error::integrity,
-            value{}, zero, gate);
+            value{}, gate);
         return;
     }
 
@@ -186,7 +183,7 @@ void protocol_esplora::do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT
             !query.get_tx_spend(spend, *link))
         {
             POST(complete_get_mempool, database::error::integrity,
-                value{}, zero, gate);
+                value{}, gate);
             return;
         }
 
@@ -199,13 +196,11 @@ void protocol_esplora::do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT
         });
     }
 
-    const auto size = add1(count) * 128;
-    POST(complete_get_mempool, code{}, value{ std::move(recent) },
-        size, gate);
+    POST(complete_get_mempool, code{}, value{ std::move(recent) }, gate);
 }
 
 void protocol_esplora::complete_get_mempool(const code& ec,
-    value& out, size_t size, const gate_t::ptr&) NOEXCEPT
+    value& out, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -218,7 +213,7 @@ void protocol_esplora::complete_get_mempool(const code& ec,
         return;
     }
 
-    send_json(std::move(out), size);
+    send_json(std::move(out));
 }
 
 void protocol_esplora::next_estimate(size_t index) NOEXCEPT
@@ -227,7 +222,7 @@ void protocol_esplora::next_estimate(size_t index) NOEXCEPT
 
     if (index == targets.size())
     {
-        send_json(std::move(estimates_), 512);
+        send_json(std::move(estimates_));
         estimates_.clear();
         return;
     }
