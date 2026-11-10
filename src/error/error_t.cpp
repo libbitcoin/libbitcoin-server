@@ -63,17 +63,6 @@ DEFINE_ERROR_T_MESSAGE_MAP(error)
 
 DEFINE_ERROR_T_CATEGORY(error, "server", "server code")
 
-bool is_parameter_fault(const code& ec) NOEXCEPT
-{
-    return ec == network::error::unexpected_type
-        || ec == network::error::unexpected_null
-        || ec == network::error::missing_array
-        || ec == network::error::missing_object
-        || ec == network::error::extra_named
-        || ec == network::error::extra_positional
-        || ec == network::error::missing_parameter;
-}
-
 } // namespace error
 } // namespace server
 } // namespace libbitcoin

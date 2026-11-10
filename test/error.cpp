@@ -281,27 +281,6 @@ BC_AUTO_TEST_CASE(error_t__code__server_error__true_expected_message)
     BC_REQUIRE_EQUAL(ec.message(), "server_error");
 }
 
-// is_parameter_fault
-
-BC_AUTO_TEST_CASE(error_t__is_parameter_fault__binding_fault__true)
-{
-    BC_REQUIRE(error::is_parameter_fault(network::error::unexpected_type));
-    BC_REQUIRE(error::is_parameter_fault(network::error::unexpected_null));
-    BC_REQUIRE(error::is_parameter_fault(network::error::missing_array));
-    BC_REQUIRE(error::is_parameter_fault(network::error::missing_object));
-    BC_REQUIRE(error::is_parameter_fault(network::error::extra_named));
-    BC_REQUIRE(error::is_parameter_fault(network::error::extra_positional));
-    BC_REQUIRE(error::is_parameter_fault(network::error::missing_parameter));
-}
-
-BC_AUTO_TEST_CASE(error_t__is_parameter_fault__other_code__false)
-{
-    BC_REQUIRE(!error::is_parameter_fault(error::success));
-    BC_REQUIRE(!error::is_parameter_fault(network::error::undefined_type));
-    BC_REQUIRE(!error::is_parameter_fault(network::error::unexpected_method));
-    BC_REQUIRE(!error::is_parameter_fault(error::not_found));
-}
-
 // bitcoind::parameter_error
 
 BC_AUTO_TEST_CASE(error_t__bitcoind_parameter_error__mistyped__type_error)

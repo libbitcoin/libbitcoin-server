@@ -100,7 +100,7 @@ code translate(const code& ec, error_t failure) NOEXCEPT
 
 code parameter_error(const code& ec) NOEXCEPT
 {
-    if (!is_parameter_fault(ec))
+    if (!network::error::is_parameter_fault(ec))
         return success;
 
     if (ec == network::error::unexpected_type ||
