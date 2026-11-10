@@ -2484,6 +2484,11 @@ options_metadata parser::load_settings() THROWS
         "Allow individual non-validation queries to use all CPUs, defaults to {}."
     )
     (
+        "database.cold_reads",
+        setting<uint16_t>(&configured.database.cold_reads),
+        "Limit of concurrent prefetched block reads from disk, defaults to {} (0 unlimited)."
+    )
+    (
         "database.gpu_scan_minimum",
         setting<uint32_t>(&configured.database.gpu_scan_minimum),
         "Minimum transactions for a silent payment scan to use the GPU, defaults to {}."
