@@ -384,7 +384,7 @@ BC_AUTO_TEST_CASE(electrum__batch__failed_negotiation__closed_error_batch)
     BC_REQUIRE_EQUAL(batch.at(0).at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__batch__v1_element__invalid_request)
+BC_AUTO_TEST_CASE(electrum__batch__unversioned_element__invalid_request)
 {
     const auto response = get(R"([{"id":5,"method":"server.version","params":["a","1.4"]}])" "\n");
 

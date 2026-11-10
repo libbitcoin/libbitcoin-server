@@ -2236,7 +2236,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__batch__command_notification__executed_empty_elem
     BC_REQUIRE_EQUAL(batch.at(2).as_object().size(), 1u);
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__batch__v1_second_element__invalid_request_element)
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__unversioned_second_element__invalid_request_element)
 {
     const auto response = rpc_body(R"([{"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]},{"id":2,"method":"getblockcount","params":[]}])");
     BC_REQUIRE(response.is_array());
@@ -2249,7 +2249,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__batch__v1_second_element__invalid_request_elemen
     BC_REQUIRE_EQUAL(batch.at(1).at("error").at("code").as_int64(), network::rpc::reserved::invalid_request);
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__batch__v1_element__invalid_request)
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__unversioned_element__invalid_request)
 {
     const auto response = rpc_body(R"([{"id":1,"method":"getblockcount","params":[]}])");
     BC_REQUIRE(response.is_array());
