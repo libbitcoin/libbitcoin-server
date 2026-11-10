@@ -472,6 +472,9 @@
     <None Include="..\..\..\..\web\embed.mjs">
       <Filter>web</Filter>
     </None>
+    <None Include="..\..\..\..\web\licenses.mjs">
+      <Filter>web</Filter>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
