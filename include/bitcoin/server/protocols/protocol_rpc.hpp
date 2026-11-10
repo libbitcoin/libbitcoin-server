@@ -267,7 +267,7 @@ protected:
     }
 
     /// Answer a dispatch parameter fault, stop the channel for other faults.
-    inline void handle_dispatch_fault(const code& ec) NOEXCEPT
+    virtual void handle_dispatch_fault(const code& ec) NOEXCEPT
     {
         BC_ASSERT(stranded());
 

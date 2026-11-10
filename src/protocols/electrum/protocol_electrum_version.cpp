@@ -96,6 +96,34 @@ void protocol_electrum_version::handle_unclaimed(
     finished(error::success, error::success);
 }
 
+// A server.version parameter fault is answered and the channel closed.
+void protocol_electrum_version::handle_dispatch_fault(
+    const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (!network::error::is_parameter_fault(ec))
+    {
+        stop(ec);
+        return;
+    }
+
+    result_t fault
+    {
+        .code = reserved::invalid_params,
+        .message = ec.message()
+    };
+
+    if (handler_)
+    {
+        pause();
+        send_error(std::move(fault), BIND(finished, _1, ec));
+        return;
+    }
+
+    send_error(std::move(fault), BIND(handle_complete, _1, ec));
+}
+
 void protocol_electrum_version::handle_server_version(const code& ec,
     rpc_interface::server_version, const std::string& client_name,
     const value_t& protocol_version) NOEXCEPT

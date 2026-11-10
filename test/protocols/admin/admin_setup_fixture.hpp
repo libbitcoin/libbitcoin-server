@@ -51,7 +51,6 @@ struct admin_setup_fixture
     system::data_chunk ws_receive();
     std::string ws_receive_text();
     system::json::value ws_receive_json();
-    bool ws_dropped(std::string_view message);
     std::string ws_get_text(std::string_view message);
     system::json::value ws_get_json(std::string_view message);
     system::data_chunk ws_get_data(std::string_view message);

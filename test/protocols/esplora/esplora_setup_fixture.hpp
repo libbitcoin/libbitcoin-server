@@ -56,7 +56,6 @@ struct esplora_setup_fixture
 
     network::code ws_upgrade();
     system::data_chunk ws_receive();
-    bool ws_dropped(std::string_view message);
     std::string ws_get_text(std::string_view message);
     system::json::value ws_get_json(std::string_view message);
 

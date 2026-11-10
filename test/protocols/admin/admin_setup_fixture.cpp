@@ -269,19 +269,6 @@ system::json::value admin_setup_fixture::ws_receive_json()
     return test::parse_json(ws_receive_text());
 }
 
-bool admin_setup_fixture::ws_dropped(std::string_view message)
-{
-    network::code ec{};
-    BC_CHECK(websocket_.has_value());
-
-    ec = websocket_.value().write(message);
-    BC_CHECK_MESSAGE(!ec, ec.message());
-
-    http::flat_buffer buffer{};
-    ec = websocket_.value().read(buffer);
-    return ec == network::error::websocket_closed;
-}
-
 std::string admin_setup_fixture::ws_get_text(std::string_view message)
 {
     network::code ec{};

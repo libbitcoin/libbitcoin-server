@@ -69,6 +69,17 @@ BC_AUTO_TEST_CASE(electrum__server_version__trailing_arguments_below_1_6__invali
     const auto response = get(R"({"id":2,"method":"server.version","params":["foobar","1.4",42]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
     BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
+}
+
+BC_AUTO_TEST_CASE(electrum__server_version__repeat_trailing_arguments_below_1_6__invalid_params)
+{
+    BC_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto response = get(R"({"id":3,"method":"server.version","params":["foobar","1.0",42]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
 }
 
 BC_AUTO_TEST_CASE(electrum__server_version__named_extraneous__ignored)
