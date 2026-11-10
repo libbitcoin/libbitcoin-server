@@ -2304,6 +2304,36 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__status__v2_application_error__ok)
     BC_REQUIRE_EQUAL(rpc_body_status(R"({"jsonrpc":"2.0","id":1,"method":"getblockhash","params":[10]})"), status::ok);
 }
 
+// v1 named params
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__named_params__v1_getblockhash__expected)
+{
+    const auto response = rpc_body(R"({"jsonrpc":"1.0","id":1,"method":"getblockhash","params":{"height":1}})");
+    BC_REQUIRE(response.is_object() && response.as_object().contains("result"));
+    BC_REQUIRE_EQUAL(response.at("result").as_string(), encode_hash(test::block1_hash));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__named_params__no_version_getblockhash__expected)
+{
+    const auto response = rpc_body(R"({"id":1,"method":"getblockhash","params":{"height":1}})");
+    BC_REQUIRE(response.is_object() && response.as_object().contains("result"));
+    BC_REQUIRE_EQUAL(response.at("result").as_string(), encode_hash(test::block1_hash));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__named_params__websocket_v1_getblockhash__expected)
+{
+    BC_REQUIRE(!ws_upgrade());
+
+    ws_notify(R"({"jsonrpc":"1.0","id":1,"method":"getblockhash","params":{"height":1}})");
+    const auto response = ws_read();
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(response.at("result").as_string(), encode_hash(test::block1_hash));
+
+    const auto count = ws_rpc("getblockcount");
+    BC_REQUIRE_EQUAL(count.at("result").as_int64(), 9);
+}
+
 // content type
 // ----------------------------------------------------------------------------
 
