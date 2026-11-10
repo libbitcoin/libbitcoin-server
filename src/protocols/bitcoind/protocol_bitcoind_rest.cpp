@@ -227,7 +227,7 @@ bool protocol_bitcoind_rest::handle_get_block(const code& ec,
                 return true;
             }
 
-            send_json(value_from(bitcoind_verbose(*block)), two * size);
+            send_json(value_from(bitcoind_verbose(*block)));
             return true;
         }
     }
@@ -272,7 +272,7 @@ bool protocol_bitcoind_rest::handle_get_tx(const code& ec,
             auto model = value_from(bitcoind(*tx, flags_));
             inject_tx_context(model.as_object(), query, link);
             inject_tx_scripts(model.as_object(), *tx, p2kh_, p2sh_, witness_);
-            send_json(std::move(model), two * size);
+            send_json(std::move(model));
             return true;
         }
     }
@@ -305,8 +305,7 @@ bool protocol_bitcoind_rest::handle_get_block_hash(const code& ec,
             send_text(encode_base16(hash));
             return true;
         case json:
-            send_json(object{ { "blockhash", encode_hash(hash) } },
-                two * hash_size);
+            send_json(object{ { "blockhash", encode_hash(hash) } });
             return true;
     }
 
@@ -345,7 +344,7 @@ bool protocol_bitcoind_rest::handle_get_block_txs(const code& ec,
             send_text(to_text(*block, size, witness));
             return true;
         case json:
-            send_json(value_from(bitcoind_hashed(*block)), two * size);
+            send_json(value_from(bitcoind_hashed(*block)));
             return true;
     }
 
@@ -444,7 +443,7 @@ bool protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
                 out.push_back(value_from(bitcoind(*header)));
             }
 
-            send_json(std::move(out), links.size() * two * header_size);
+            send_json(std::move(out));
             return true;
         }
     }
@@ -593,7 +592,7 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
                 models.emplace_back(std::move(prevouts));
             }
 
-            send_json(std::move(models), two * size);
+            send_json(std::move(models));
             return true;
         }
     }
@@ -653,7 +652,7 @@ bool protocol_bitcoind_rest::handle_get_block_filter(const code& ec,
             send_json(object
             {
                 { "filter", encode_base16(filter) }
-            }, two * filter.size());
+            });
             return true;
     }
 
@@ -740,8 +739,7 @@ bool protocol_bitcoind_rest::handle_get_block_filter_headers(const code& ec,
             for (const auto& head: filter_heads)
                 models.emplace_back(encode_hash(head));
 
-            const auto size = filter_heads.size() * two * hash_size;
-            send_json(std::move(models), size);
+            send_json(std::move(models));
             return true;
         }
     }
@@ -777,7 +775,7 @@ bool protocol_bitcoind_rest::handle_get_chain_information(const code& ec,
         { "time", header->timestamp() },
         { "mediantime", median_time(query, system_settings(), link) },
         { "pruned", node_settings().limited_blocks }
-    }, 256);
+    });
     return true;
 }
 
@@ -908,7 +906,7 @@ bool protocol_bitcoind_rest::handle_get_utxos(const code& ec,
                 { "chaintipHash", encode_hash(top_hash) },
                 { "bitmap", bits },
                 { "utxos", std::move(models) }
-            }, two * size);
+            });
             return true;
         }
     }
@@ -936,7 +934,7 @@ bool protocol_bitcoind_rest::handle_get_mempool(const code& ec,
         return true;
     }
 
-    send_json(std::move(out), 1024);
+    send_json(std::move(out));
     return true;
 }
 
@@ -962,7 +960,7 @@ bool protocol_bitcoind_rest::handle_get_mempool_information(const code& ec,
         return true;
     }
 
-    send_json(std::move(out), 512);
+    send_json(std::move(out));
     return true;
 }
 
@@ -995,7 +993,7 @@ bool protocol_bitcoind_rest::handle_get_deployment_info(const code& ec,
     }
 
     const auto doc = deployment_info(query, system_settings(), link, height);
-    send_json(value_from(doc), 512);
+    send_json(value_from(doc));
     return true;
 }
 

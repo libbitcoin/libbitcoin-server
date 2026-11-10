@@ -188,7 +188,7 @@ bool protocol_admin::handle_get_log_subscribe(const code& ec,
         log_subscribed_ = true;
     }
 
-    send_json({ { "previous", previous } }, 42);
+    send_json({ { "previous", previous } });
     return true;
 }
 
@@ -205,7 +205,7 @@ bool protocol_admin::handle_get_event_subscribe(const code& ec,
     if (update_filter(previous, filter, event_state_))
         log.subscribe_events(BIND_WEAK(handle_event, _1, _2, _3, _4));
 
-    send_json({ { "previous", previous } }, 42);
+    send_json({ { "previous", previous } });
     return true;
 }
 
@@ -257,7 +257,7 @@ void protocol_admin::do_log(uint8_t level, uint64_t zulu,
         { "level", level },
         { "time", zulu },
         { "message", message }
-    }, message.size() + 64u);
+    });
 }
 
 void protocol_admin::do_event(uint8_t event_, uint64_t zulu,
@@ -273,7 +273,7 @@ void protocol_admin::do_event(uint8_t event_, uint64_t zulu,
         { "event", event_ },
         { "value", value_ },
         { "time", zulu }
-    }, 64);
+    });
 }
 
 // Utils.

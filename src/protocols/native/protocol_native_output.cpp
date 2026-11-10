@@ -63,7 +63,7 @@ bool protocol_native::handle_get_outputs(const code& ec, interface::outputs,
             send_text(to_hex_ptr_array(*outputs, size));
             return true;
         case json:
-            send_json(value_from(*outputs), two * size);
+            send_json(value_from(*outputs));
             return true;
     }
 
@@ -91,7 +91,7 @@ bool protocol_native::handle_get_output(const code& ec, interface::output,
                 send_text(to_hex(*output, size));
                 return true;
             case json:
-                send_json(value_from(output), two * size);
+                send_json(value_from(output));
                 return true;
         }
     }
@@ -121,7 +121,7 @@ bool protocol_native::handle_get_output_script(const code& ec,
                 send_text(to_hex(*script, size, false));
                 return true;
             case json:
-                send_json(value_from(script), two * size);
+                send_json(value_from(script));
                 return true;
         }
     }
@@ -156,7 +156,7 @@ bool protocol_native::handle_get_output_spender(const code& ec,
             send_text(to_hex(spender, size));
             return true;
         case json:
-            send_json(value_from(spender), two * size);
+            send_json(value_from(spender));
             return true;
     }
 
@@ -188,7 +188,7 @@ bool protocol_native::handle_get_output_spenders(const code& ec,
             send_text(to_hex_array(ins, size));
             return true;
         case json:
-            send_json(value_from(ins), two * size);
+            send_json(value_from(ins));
             return true;
     }
 

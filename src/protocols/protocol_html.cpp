@@ -175,16 +175,12 @@ void protocol_html::dispatch_file(const request& request) NOEXCEPT
 // Notifiers (websocket).
 // ----------------------------------------------------------------------------
 
-void protocol_html::notify_json(system::json::value&& model, size_t size_hint,
+void protocol_html::notify_json(system::json::value&& model,
     const request& request) NOEXCEPT
 {
     BC_ASSERT(stranded() && websocket());
     response response{ status::ok, request.version() };
-    response.body() = json_value
-    {
-        .model = std::move(model),
-        .size_hint = size_hint
-    };
+    response.body() = json_value{ .model = std::move(model) };
     NOTIFY(std::move(response), handle_complete, _1, error::success);
 }
 

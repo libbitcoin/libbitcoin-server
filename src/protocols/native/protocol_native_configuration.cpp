@@ -55,7 +55,7 @@ bool protocol_native::handle_get_configuration(const code& ec,
         { "retarget", system_settings().forks.retarget },
         { "difficult", system_settings().forks.difficult },
         { "pruned", get_pruned_height() },
-    }, 64);
+    });
     return true;
 }
 

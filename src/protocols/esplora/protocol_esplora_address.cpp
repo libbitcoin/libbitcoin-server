@@ -156,7 +156,7 @@ void protocol_esplora::complete_get_address(const code& ec,
     out["chain_stats"] = to_stats(chain, chain_txs);
     out["mempool_stats"] = to_stats(mempool, mempool_txs);
 
-    send_json(std::move(out), 512);
+    send_json(std::move(out));
 }
 
 // address/txs
@@ -317,7 +317,7 @@ void protocol_esplora::complete_get_address_txs(const code& ec,
         }
     }
 
-    send_json(std::move(out), (mempool_page + address_page) * 1024);
+    send_json(std::move(out));
 }
 
 // address/utxo
@@ -393,7 +393,7 @@ void protocol_esplora::complete_get_address_utxo(const code& ec,
         });
     }
 
-    send_json(std::move(out), add1(unspent.size()) * 256);
+    send_json(std::move(out));
 }
 
 BC_POP_WARNING()

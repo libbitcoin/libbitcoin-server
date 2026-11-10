@@ -123,7 +123,7 @@ bool protocol_esplora::handle_get_block(const code& ec, interface::block,
         return true;
     }
 
-    send_json(std::move(out), 512);
+    send_json(std::move(out));
     return true;
 }
 
@@ -170,7 +170,7 @@ bool protocol_esplora::handle_get_block_txs(const code& ec,
         out.emplace_back(std::move(tx));
     }
 
-    send_json(std::move(out), tx_page * 1024);
+    send_json(std::move(out));
     return true;
 }
 
@@ -231,7 +231,7 @@ bool protocol_esplora::handle_get_block_status(const code& ec,
         out["next_best"] = encode_hash(query.get_header_key(
             query.to_confirmed(add1(height))));
 
-    send_json(std::move(out), 128);
+    send_json(std::move(out));
     return true;
 }
 
@@ -261,7 +261,7 @@ bool protocol_esplora::handle_get_block_txids(const code& ec,
         return encode_hash(key);
     });
 
-    send_json(std::move(out), two * keys.size() * hash_size);
+    send_json(std::move(out));
     return true;
 }
 
@@ -349,7 +349,7 @@ bool protocol_esplora::handle_get_blocks(const code& ec, interface::blocks,
         --start;
     }
 
-    send_json(std::move(out), block_page * 512);
+    send_json(std::move(out));
     return true;
 }
 

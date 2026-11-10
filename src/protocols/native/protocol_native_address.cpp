@@ -94,7 +94,7 @@ void protocol_native::complete_get_address(const code& ec, uint8_t media,
             send_text(to_hex_array(set, size));
             return;
         case json:
-            send_json(value_from(set), two * size);
+            send_json(value_from(set));
             return;
     }
 
@@ -229,7 +229,7 @@ void protocol_native::complete_get_address_balance(const code& ec,
             send_text(encode_base16(to_bin(balance)));
             return;
         case json:
-            send_json(balance, two * sizeof(balance));
+            send_json(balance);
             return;
     }
 
