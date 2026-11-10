@@ -2690,8 +2690,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__block1_script__expected)
     const auto& unspent = unspents.front();
     BC_REQUIRE_EQUAL(as_text(unspent.at("txid")), txid);
     BC_REQUIRE_EQUAL(unspent.at("vout").as_int64(), 0);
-    BC_REQUIRE_EQUAL(as_text(unspent.at("scriptPubKey")),
-        encode_base16(script));
+    BC_REQUIRE_EQUAL(as_text(unspent.at("scriptPubKey")), encode_base16(script));
     BC_REQUIRE_EQUAL(as_text(unspent.at("desc")).find("pk(04"), 0u);
     BC_REQUIRE_EQUAL(unspent.at("amount").as_double(), 50.0);
     BC_REQUIRE(unspent.at("coinbase").as_bool());
