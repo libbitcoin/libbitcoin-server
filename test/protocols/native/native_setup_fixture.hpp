@@ -268,6 +268,22 @@ struct native_origins_setup_fixture
     }
 };
 
+struct native_origins_hosts_setup_fixture
+  : native_setup_fixture
+{
+    inline native_origins_hosts_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.server.native.hosts = { { "localhost" } };
+            config.server.native.origins = { { "example.com" } };
+        })
+    {
+    }
+};
+
 struct native_limited_setup_fixture
   : native_setup_fixture
 {

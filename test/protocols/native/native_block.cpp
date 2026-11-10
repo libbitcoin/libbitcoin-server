@@ -835,6 +835,35 @@ BC_AUTO_TEST_CASE(native__origins__listed_origin__access_control)
     BC_REQUIRE_EQUAL(response[http::field::access_control_allow_origin], "http://example.com");
 }
 
+BC_AUTO_TEST_CASE(native__origins__same_origin_unlisted_host__forbidden)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::origin, "http://localhost"), http::status::forbidden);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(native_origins_hosts_tests, native_origins_hosts_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__origins__same_origin__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::origin, "http://localhost"), http::status::ok);
+}
+
+BC_AUTO_TEST_CASE(native__origins__same_origin_default_port__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::origin, "http://LOCALHOST:80"), http::status::ok);
+}
+
+BC_AUTO_TEST_CASE(native__origins__same_host_other_scheme__forbidden)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::origin, "https://localhost"), http::status::forbidden);
+}
+
+BC_AUTO_TEST_CASE(native__origins__same_host_other_port__forbidden)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::origin, "http://localhost:8080"), http::status::forbidden);
+}
+
 BC_AUTO_TEST_SUITE_END()
 
 // faulted stores
