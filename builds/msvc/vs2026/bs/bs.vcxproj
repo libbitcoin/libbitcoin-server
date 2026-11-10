@@ -231,8 +231,8 @@
     <None Include="..\..\..\..\web\blockexplorer\tsconfig.json" />
     <None Include="..\..\..\..\web\blockexplorer\tsconfig.node.json" />
     <None Include="..\..\..\..\web\blockexplorer\vite.config.ts" />
-    <None Include="..\..\..\..\web\embed.mjs" />
     <None Include="..\..\..\..\web\licenses.mjs" />
+    <None Include="..\..\..\..\web\shared\favicon.svg" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

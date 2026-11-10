@@ -64,6 +64,9 @@
     <Filter Include="web\blockexplorer\src\routes">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000003}</UniqueIdentifier>
     </Filter>
+    <Filter Include="web\shared">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000004}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\console\embedded\admin_css.cpp">
@@ -469,11 +472,11 @@
     <None Include="..\..\..\..\web\blockexplorer\vite.config.ts">
       <Filter>web\blockexplorer</Filter>
     </None>
-    <None Include="..\..\..\..\web\embed.mjs">
-      <Filter>web</Filter>
-    </None>
     <None Include="..\..\..\..\web\licenses.mjs">
       <Filter>web</Filter>
+    </None>
+    <None Include="..\..\..\..\web\shared\favicon.svg">
+      <Filter>web\shared</Filter>
     </None>
     <None Include="packages.config" />
   </ItemGroup>
