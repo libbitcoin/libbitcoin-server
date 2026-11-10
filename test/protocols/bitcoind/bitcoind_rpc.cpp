@@ -2197,11 +2197,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__batch__error_element__delivered_in_order)
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__batch__parameter_fault__type_error_in_order)
 {
-    const auto response = rpc_body(
-        R"([{"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]},)"
-        R"({"jsonrpc":"2.0","id":2,"method":"getblockhash","params":["x"]},)"
-        R"({"jsonrpc":"2.0","id":3,"method":"getblockcount","params":[]}])");
-
+    const auto response = rpc_body(R"([{"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]},{"jsonrpc":"2.0","id":2,"method":"getblockhash","params":["x"]},{"jsonrpc":"2.0","id":3,"method":"getblockcount","params":[]}])");
     BC_REQUIRE(response.is_array());
     const auto& batch = response.as_array();
     BC_REQUIRE_EQUAL(batch.size(), 3u);
