@@ -43,7 +43,9 @@ settings::settings() NOEXCEPT
     quitting{ false /*levels::quitting_defined*/ },
     objects{ false /*levels::objects_defined*/ },
     verbose{ false /*levels::verbose_defined*/ },
-    maximum_size{ 1'000'000_u32 }
+    console{ true },
+    events{ true },
+    limit{ 1'000'000_u32 }
 {
 }
 

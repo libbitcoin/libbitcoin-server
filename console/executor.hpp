@@ -149,10 +149,11 @@ private:
 #endif
 
     // Logging.
-    database::file::stream::out::rotator create_log_sink() const;
-    system::ofstream create_event_sink() const;
+    std::optional<database::file::stream::out::rotator>
+        create_log_sink() const;
+    std::optional<system::ofstream> create_event_sink() const;
     network::logger::interest::ptr create_log_interest() const;
-    void subscribe_log(std::ostream& sink);
+    void subscribe_log(std::ostream* sink);
     void subscribe_events(std::ostream& sink);
     void logger(const std::string& message) const;
     void log_stopping();

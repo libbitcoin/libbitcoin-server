@@ -108,7 +108,7 @@ bool executor::do_run()
     // Hold sinks in scope for the length of the run.
     auto log = create_log_sink();
     auto events = create_event_sink();
-    if (!log || !events)
+    if ((log && !*log) || (events && !*events))
     {
         // Stop ensures console output.
         log_.stop();
@@ -117,8 +117,9 @@ bool executor::do_run()
     }
 
     // These all use std iostreams (exception risk).
-    subscribe_log(log);
-    subscribe_events(events);
+    subscribe_log(log ? &log.value() : nullptr);
+    if (events)
+        subscribe_events(events.value());
 
     // A service has no console input.
     if (!service_)

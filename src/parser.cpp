@@ -2877,9 +2877,19 @@ options_metadata parser::load_settings() THROWS
     )
 #endif
     (
-        "log.maximum_size",
-        setting<uint32_t>(&configured.log.maximum_size),
+        "log.console",
+        setting<bool>(&configured.log.console),
+        "Write the console log to a pair of rotated log files, defaults to {}."
+    )
+    (
+        "log.limit",
+        setting<uint32_t>(&configured.log.limit),
         "The maximum byte size of each pair of rotated log files, defaults to {}."
+    )
+    (
+        "log.events",
+        setting<bool>(&configured.log.events),
+        "Write events to the events log file, defaults to {}."
     )
 #if defined (HAVE_WINDOWS)
     (

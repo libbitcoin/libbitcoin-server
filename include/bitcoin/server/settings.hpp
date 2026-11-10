@@ -45,7 +45,9 @@ public:
     bool objects;
     bool verbose;
 
-    uint32_t maximum_size;
+    bool console;
+    bool events;
+    uint32_t limit;
     system::config::path path;
 
 #if defined (HAVE_WINDOWS)

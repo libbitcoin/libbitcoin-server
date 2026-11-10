@@ -47,14 +47,20 @@ const std::unordered_map<uint8_t, bool> executor::defined_
 // the writes are not wrapped in a try block (performance) but this can be
 // appplied centrally below if desired.
 
-database::file::stream::out::rotator executor::create_log_sink() const
+std::optional<database::file::stream::out::rotator>
+executor::create_log_sink() const
 {
-    return
+    const auto& config = metadata_.configured.log;
+    if (!config.console)
+        return {};
+
+    // Standard file names, within the [node].path directory.
+    return std::optional<database::file::stream::out::rotator>
     {
-        // Standard file names, within the [node].path directory.
-        metadata_.configured.log.log_file1(),
-        metadata_.configured.log.log_file2(),
-        to_half(metadata_.configured.log.maximum_size)
+        std::in_place,
+        config.log_file1(),
+        config.log_file2(),
+        to_half(config.limit)
     };
 }
 
@@ -78,23 +84,28 @@ network::logger::interest::ptr executor::create_log_interest() const
     return emplace_shared<network::logger::interest>(log_, mask);
 }
 
-void executor::subscribe_log(std::ostream& sink)
+void executor::subscribe_log(std::ostream* sink)
 {
     using namespace system;
 
     log_.subscribe_messages
     (
         log_interest_,
-        [&](const code& ec, uint8_t level, time_t time, const std::string& message)
+        [=, this](const code& ec, uint8_t level, time_t time,
+            const std::string& message)
         {
             const auto prefix = format_zulu_time(time) + "." +
                 serialize(level) + " ";
 
             if (ec)
             {
-                sink << prefix << message << std::endl;
+                if (!is_null(sink))
+                {
+                    *sink << prefix << message << std::endl;
+                    *sink << prefix << BS_NODE_FOOTER << std::endl;
+                }
+
                 output_ << prefix << message << std::endl;
-                sink << prefix << BS_NODE_FOOTER << std::endl;
                 output_ << prefix << BS_NODE_FOOTER << std::endl;
 
                 // A service has no console to await, and posix captures
@@ -112,7 +123,9 @@ void executor::subscribe_log(std::ostream& sink)
             }
             else
             {
-                sink << prefix << message;
+                if (!is_null(sink))
+                    *sink << prefix << message;
+
                 output_ << prefix << message;
                 output_.flush();
                 return true;
