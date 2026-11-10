@@ -1,13 +1,13 @@
-// Writes the console/embedded translation units from the built site assets.
-// Usage: node web/embed.mjs [--dist <built assets>] [--out <console/embedded>]
+// Writes the console/embedded translation units from the built sites.
+// Usage: node web/embed.mjs [--web <web directory>] [--out <console/embedded>]
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const here = dirname(fileURLToPath(import.meta.url));
 const options = parse(process.argv.slice(2));
-const dist = resolve(options.dist ?? join(root, 'obj', 'web'));
-const out = resolve(options.out ?? join(root, 'console', 'embedded'));
+const web = resolve(options.web ?? here);
+const out = resolve(options.out ?? join(here, '..', 'console', 'embedded'));
 
 const chunk_size = 8000;
 const row_size = 12;
@@ -38,12 +38,12 @@ const header =
 
 const assets =
 [
-    { output: 'admin_html.cpp', container: 'admin_pages', member: 'html', source: 'admin/index.html', comment: 'Simple test html for embedded page, links in css and page icon.' },
-    { output: 'admin_css.cpp', container: 'admin_pages', member: 'css', source: 'admin/style.css', comment: 'Simple test css for embedded page, links in font.' },
-    { output: 'admin_ecma.cpp', container: 'admin_pages', member: 'ecma', source: 'admin/script.js', comment: 'Simple test ecma script for embedded page.' },
-    { output: 'native_html.cpp', container: 'native_pages', member: 'html', source: 'native/index.html' },
-    { output: 'native_css.cpp', container: 'native_pages', member: 'css', source: 'native/style.css' },
-    { output: 'native_ecma.cpp', container: 'native_pages', member: 'ecma', source: 'native/script.js' },
+    { output: 'admin_html.cpp', container: 'admin_pages', member: 'html', source: 'admin-dashboard/dist/index.html', comment: 'Simple test html for embedded page, links in css and page icon.' },
+    { output: 'admin_css.cpp', container: 'admin_pages', member: 'css', source: 'admin-dashboard/dist/style.css', comment: 'Simple test css for embedded page, links in font.' },
+    { output: 'admin_ecma.cpp', container: 'admin_pages', member: 'ecma', source: 'admin-dashboard/dist/script.js', comment: 'Simple test ecma script for embedded page.' },
+    { output: 'native_html.cpp', container: 'native_pages', member: 'html', source: 'blockexplorer/dist/index.html' },
+    { output: 'native_css.cpp', container: 'native_pages', member: 'css', source: 'blockexplorer/dist/style.css' },
+    { output: 'native_ecma.cpp', container: 'native_pages', member: 'ecma', source: 'blockexplorer/dist/script.js' },
     { output: 'icon.cpp', container: 'shared_pages', member: 'icon', source: 'shared/favicon.svg', binary: true, comment: 'Icon shared by the embedded sites.' }
 ];
 
@@ -131,7 +131,7 @@ function write(path, content)
 // All units are generated before any is written, so a failure writes nothing.
 const units = assets.map((asset) =>
 {
-    const source = join(dist, asset.source);
+    const source = join(web, asset.source);
     if (!existsSync(source))
         fail(`missing built asset ${source}`);
 
