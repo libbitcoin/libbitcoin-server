@@ -214,7 +214,7 @@ jobs:
         if: steps.checkout-libbitcoin-system.outcome == 'failure'
         shell: bash
         run: |
-          rm -rf ${{ github.workspace }}/libbitcoin-system
+          rm -rf "${{ github.workspace }}/libbitcoin-system"
 
 
       - name: Checkout repository [libbitcoin-database]
@@ -232,7 +232,7 @@ jobs:
         if: steps.checkout-libbitcoin-database.outcome == 'failure'
         shell: bash
         run: |
-          rm -rf ${{ github.workspace }}/libbitcoin-database
+          rm -rf "${{ github.workspace }}/libbitcoin-database"
 
 
       - name: Checkout repository [libbitcoin-network]
@@ -250,7 +250,7 @@ jobs:
         if: steps.checkout-libbitcoin-network.outcome == 'failure'
         shell: bash
         run: |
-          rm -rf ${{ github.workspace }}/libbitcoin-network
+          rm -rf "${{ github.workspace }}/libbitcoin-network"
 
 
       - name: Checkout repository [libbitcoin-node]
@@ -268,7 +268,7 @@ jobs:
         if: steps.checkout-libbitcoin-node.outcome == 'failure'
         shell: bash
         run: |
-          rm -rf ${{ github.workspace }}/libbitcoin-node
+          rm -rf "${{ github.workspace }}/libbitcoin-node"
 
 
       - name: Checkout repository [libbitcoin-server]
@@ -489,7 +489,7 @@ jobs:
         if: steps.checkout-libbitcoin-system.outcome == 'failure'
         shell: bash
         run: |
-          rm -rf ${{ github.workspace }}/libbitcoin-system
+          rm -rf "${{ github.workspace }}/libbitcoin-system"
 
 
       - name: Checkout repository [libbitcoin-database]
@@ -507,7 +507,7 @@ jobs:
         if: steps.checkout-libbitcoin-database.outcome == 'failure'
         shell: bash
         run: |
-          rm -rf ${{ github.workspace }}/libbitcoin-database
+          rm -rf "${{ github.workspace }}/libbitcoin-database"
 
 
       - name: Checkout repository [libbitcoin-network]
@@ -525,7 +525,7 @@ jobs:
         if: steps.checkout-libbitcoin-network.outcome == 'failure'
         shell: bash
         run: |
-          rm -rf ${{ github.workspace }}/libbitcoin-network
+          rm -rf "${{ github.workspace }}/libbitcoin-network"
 
 
       - name: Checkout repository [libbitcoin-node]
@@ -543,7 +543,7 @@ jobs:
         if: steps.checkout-libbitcoin-node.outcome == 'failure'
         shell: bash
         run: |
-          rm -rf ${{ github.workspace }}/libbitcoin-node
+          rm -rf "${{ github.workspace }}/libbitcoin-node"
 
 
       - name: Checkout repository [libbitcoin-server]
@@ -756,7 +756,7 @@ jobs:
         if: steps.checkout-libbitcoin-system.outcome == 'failure'
         shell: bash
         run: |
-          rm -rf ${{ github.workspace }}/libbitcoin-system
+          rm -rf "${{ github.workspace }}/libbitcoin-system"
 
 
       - name: Checkout repository [libbitcoin-database]
@@ -774,7 +774,7 @@ jobs:
         if: steps.checkout-libbitcoin-database.outcome == 'failure'
         shell: bash
         run: |
-          rm -rf ${{ github.workspace }}/libbitcoin-database
+          rm -rf "${{ github.workspace }}/libbitcoin-database"
 
 
       - name: Checkout repository [libbitcoin-network]
@@ -792,7 +792,7 @@ jobs:
         if: steps.checkout-libbitcoin-network.outcome == 'failure'
         shell: bash
         run: |
-          rm -rf ${{ github.workspace }}/libbitcoin-network
+          rm -rf "${{ github.workspace }}/libbitcoin-network"
 
 
       - name: Checkout repository [libbitcoin-node]
@@ -810,7 +810,7 @@ jobs:
         if: steps.checkout-libbitcoin-node.outcome == 'failure'
         shell: bash
         run: |
-          rm -rf ${{ github.workspace }}/libbitcoin-node
+          rm -rf "${{ github.workspace }}/libbitcoin-node"
 
 
       - name: Checkout repository [libbitcoin-server]
