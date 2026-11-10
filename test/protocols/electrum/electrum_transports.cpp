@@ -114,12 +114,13 @@ BC_AUTO_TEST_CASE(electrum__post__repeat_version_from_1_4__bad_request)
     BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), bad_request.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__post__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__post__missing_arguments__invalid_params)
 {
     BC_REQUIRE(post_handshake(electrum::version::v1_1));
 
     const auto response = post(R"({"id":705,"method":"blockchain.scripthash.get_balance","params":[]})");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__post__non_version_opener__answered)
@@ -147,6 +148,49 @@ BC_AUTO_TEST_CASE(electrum__options__after_handshake__ok)
     BC_REQUIRE_EQUAL(options_status("/"), rpc_client::status::ok);
 }
 
+BC_AUTO_TEST_CASE(electrum__tcp__malformed_json__parse_error_null_id)
+{
+    const auto response = get(R"({"id":1,"method":})" "\n");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("error"), serialize(response));
+    BC_REQUIRE(response.at("id").is_null());
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), network::rpc::reserved::parse_error);
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
+}
+
+BC_AUTO_TEST_CASE(electrum__tcp__missing_method__invalid_request_with_id)
+{
+    const auto response = get(R"({"id":5,"params":[]})" "\n");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("error"), serialize(response));
+    BC_REQUIRE_EQUAL(response.at("id").as_int64(), 5);
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), network::rpc::reserved::invalid_request);
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
+}
+
+BC_AUTO_TEST_CASE(electrum__tcp__missing_arguments__continues)
+{
+    BC_REQUIRE(handshake(electrum::version::v1_4));
+
+    const auto response = get(R"({"id":6,"method":"blockchain.scripthash.get_balance","params":[]})" "\n");
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), network::rpc::reserved::invalid_params);
+
+    const auto banner = get(R"({"id":7,"method":"server.banner","params":[]})" "\n");
+    BC_REQUIRE_EQUAL(banner.at("id").as_int64(), 7);
+    REQUIRE_NO_THROW_TRUE(banner.at("result").is_string());
+}
+
+BC_AUTO_TEST_CASE(electrum__post__malformed_json__parse_error_null_id)
+{
+    const auto response = post(R"({"id":1,"method":})");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("error"), serialize(response));
+    BC_REQUIRE(response.at("id").is_null());
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), network::rpc::reserved::parse_error);
+}
+
+BC_AUTO_TEST_CASE(electrum__post__malformed_json__ok)
+{
+    BC_REQUIRE_EQUAL(post_status(R"({"id":1,"method":})"), rpc_client::status::ok);
+}
+
 BC_AUTO_TEST_SUITE_END()
 
 // scoped credential
@@ -162,19 +206,23 @@ BC_AUTO_TEST_CASE(electrum__post__scoped_credential_unlisted_method__forbidden)
     BC_REQUIRE_EQUAL(status, rpc_client::status::forbidden);
 }
 
-BC_AUTO_TEST_CASE(electrum__ws__scoped_credential_unlisted_method__dropped)
+BC_AUTO_TEST_CASE(electrum__ws__scoped_credential_unlisted_method__unauthorized)
 {
     BC_REQUIRE(!ws_upgrade(ELECTRUM_TEST_USERNAME, ELECTRUM_TEST_PASSWORD));
     BC_REQUIRE(ws_handshake(electrum::version::v1_4));
 
     const auto response = ws_get(R"({"id":902,"method":"server.banner","params":[]})");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), code{ network::error::unauthorized }.value());
+    REQUIRE_NO_THROW_TRUE(ws_receive().at("dropped").as_bool());
 }
 
-BC_AUTO_TEST_CASE(electrum__tcp__credentials_configured__dropped)
+BC_AUTO_TEST_CASE(electrum__tcp__credentials_configured__unauthorized)
 {
     const auto response = get(R"({"id":903,"method":"server.version","params":["test","1.4"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), code{ network::error::unauthorized }.value());
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
 }
 
 BC_AUTO_TEST_SUITE_END()
@@ -248,6 +296,30 @@ BC_AUTO_TEST_CASE(electrum__ws__subscribed_event__notified)
     REQUIRE_NO_THROW_TRUE(notification.at("method").is_string());
     BC_REQUIRE_EQUAL(notification.at("method").as_string(), "blockchain.numblocks.subscribe");
     BC_CHECK_EQUAL(notification.at("params").as_int64(), 10);
+}
+
+BC_AUTO_TEST_CASE(electrum__ws__malformed_json__parse_error_null_id)
+{
+    BC_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_get(R"({"id":1,"method":})");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("error"), serialize(response));
+    BC_REQUIRE(response.at("id").is_null());
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), network::rpc::reserved::parse_error);
+    REQUIRE_NO_THROW_TRUE(ws_receive().at("dropped").as_bool());
+}
+
+BC_AUTO_TEST_CASE(electrum__ws__missing_arguments__continues)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(ws_handshake(electrum::version::v1_4));
+
+    const auto response = ws_get(R"({"id":6,"method":"blockchain.scripthash.get_balance","params":[]})");
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), network::rpc::reserved::invalid_params);
+
+    const auto banner = ws_get(R"({"id":7,"method":"server.banner","params":[]})");
+    BC_REQUIRE_EQUAL(banner.at("id").as_int64(), 7);
+    REQUIRE_NO_THROW_TRUE(banner.at("result").is_string());
 }
 
 BC_AUTO_TEST_SUITE_END()

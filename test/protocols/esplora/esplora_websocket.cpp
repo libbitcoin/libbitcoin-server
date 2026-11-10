@@ -86,16 +86,16 @@ BC_AUTO_TEST_CASE(esplora__ws_broadcast__delimited_body__rejected)
     BC_REQUIRE(!ws_get_text("/tx\n" + tx0).empty());
 }
 
-BC_AUTO_TEST_CASE(esplora__ws_broadcast__missing_body__dropped)
+BC_AUTO_TEST_CASE(esplora__ws_broadcast__missing_body__bad_request)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_dropped("/tx"));
+    BC_REQUIRE(ws_get_text("/tx").starts_with("Bad Request"));
 }
 
-BC_AUTO_TEST_CASE(esplora__ws_invalid_target__dropped)
+BC_AUTO_TEST_CASE(esplora__ws_invalid_target__not_found)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_dropped("/bogus"));
+    BC_REQUIRE(ws_get_text("/bogus").starts_with("Not Found"));
 }
 
 BC_AUTO_TEST_SUITE_END()

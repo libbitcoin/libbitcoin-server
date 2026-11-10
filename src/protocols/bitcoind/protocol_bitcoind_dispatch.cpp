@@ -135,7 +135,7 @@ void CLASS::dispatch_websocket(
 
     // ws frames carry no headers, so ws authorization is enforced here,
     // not by the channel. Unauthorized and non-rpc frames are silently
-    // deferred to the terminal responder (which stops the channel).
+    // deferred to the terminal responder.
     if (!authorized() ||
         !request.body().template contains<network::rpc::request>())
         return;
@@ -156,7 +156,8 @@ void CLASS::dispatch_websocket(
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(message.method))
     {
-        stop(network::error::unauthorized);
+        const code unauthorized{ network::error::unauthorized };
+        send_error(unauthorized, unauthorized);
         return;
     }
 

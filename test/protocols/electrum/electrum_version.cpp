@@ -64,10 +64,11 @@ BC_AUTO_TEST_CASE(electrum__server_version__trailing_arguments__ignored)
     BC_REQUIRE_EQUAL(result.at(1).as_string(), "1.7");
 }
 
-BC_AUTO_TEST_CASE(electrum__server_version__trailing_arguments_below_1_6__dropped)
+BC_AUTO_TEST_CASE(electrum__server_version__trailing_arguments_below_1_6__invalid_params)
 {
     const auto response = get(R"({"id":2,"method":"server.version","params":["foobar","1.4",42]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__server_version__named_extraneous__ignored)
@@ -246,14 +247,16 @@ BC_AUTO_TEST_CASE(electrum__server_version__non_version_opener__restricted)
     BC_REQUIRE_EQUAL(response.at("result").as_array().at(1).as_string(), "1.4.2");
 }
 
-BC_AUTO_TEST_CASE(electrum__server_version__non_version_opener_exact_future__dropped)
+BC_AUTO_TEST_CASE(electrum__server_version__non_version_opener_exact_future__bad_request)
 {
     const auto opener = R"({"id":1,"method":"server.banner","params":[]})" "\n";
     const auto first = get(opener + std::string(R"({"id":2,"method":"server.version","params":["foobar","1.7"]})" "\n"));
     BC_REQUIRE_EQUAL(first.at("id").as_int64(), 1);
 
     const auto response = receive();
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), code{ server::error::electrum::bad_request }.value());
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
 }
 
 BC_AUTO_TEST_CASE(electrum__server_version__non_version_opener_no_version__served_at_minimum)
@@ -284,12 +287,14 @@ BC_AUTO_TEST_CASE(electrum__server_version__non_version_opener_unknown__method_n
     BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), method_not_found.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__server_version__inconsistent_repeat_below_1_4__dropped)
+BC_AUTO_TEST_CASE(electrum__server_version__inconsistent_repeat_below_1_4__bad_request)
 {
     BC_REQUIRE(handshake(electrum::version::v1_2));
 
     const auto response = get(R"({"id":44,"method":"server.version","params":["foobar","1.1"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), code{ server::error::electrum::bad_request }.value());
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
 }
 
 BC_AUTO_TEST_CASE(electrum__server_version__client_name_overflow__truncated)
@@ -368,19 +373,21 @@ BC_AUTO_TEST_CASE(electrum__batch__failed_negotiation__closed_error_batch)
     BC_REQUIRE_EQUAL(batch.at(0).at("error").as_object().at("code").as_int64(), invalid_argument.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__batch__v1_element__dropped)
+BC_AUTO_TEST_CASE(electrum__batch__v1_element__invalid_request)
 {
-    // Batch participation of a v1 message (no jsonrpc field) drops.
-    const auto response = get(
-        R"([{"id":5,"method":"server.version","params":["a","1.4"]}])" "\n");
+    const auto response = get(R"([{"id":5,"method":"server.version","params":["a","1.4"]}])" "\n");
 
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.as_array().at(0).at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.as_array().at(0).at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_request);
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
 }
 
-BC_AUTO_TEST_CASE(electrum__batch__empty__dropped)
+BC_AUTO_TEST_CASE(electrum__batch__empty__invalid_request)
 {
     const auto response = get("[]\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.as_array().at(0).at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.as_array().at(0).at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_request);
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
 }
 
 BC_AUTO_TEST_SUITE_END()

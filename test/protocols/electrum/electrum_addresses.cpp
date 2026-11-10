@@ -30,13 +30,14 @@ BC_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
 // blockchain.address.get_balance
 
-BC_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__missing_arguments__invalid_params)
 {
     BC_REQUIRE(query_.address_enabled());
     BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":901,"method":"blockchain.address.get_balance","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__obsoleted_version__wrong_version)
@@ -97,13 +98,14 @@ BC_AUTO_TEST_CASE(electrum__blockchain_address_get_balance__confirmed_and_unconf
 
 // blockchain.address.get_history
 
-BC_AUTO_TEST_CASE(electrum__blockchain_address_get_history__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_get_history__missing_arguments__invalid_params)
 {
     BC_REQUIRE(query_.address_enabled());
     BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":1002,"method":"blockchain.address.get_history","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_address_get_history__obsoleted_version__wrong_version)
@@ -177,13 +179,14 @@ BC_AUTO_TEST_CASE(electrum__blockchain_address_get_history__confirmed_and_unconf
 
 // blockchain.address.get_mempool
 
-BC_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__missing_arguments__invalid_params)
 {
     BC_REQUIRE(query_.address_enabled());
     BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":1002,"method":"blockchain.address.get_mempool","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__obsoleted_version__wrong_version)
@@ -249,13 +252,14 @@ BC_AUTO_TEST_CASE(electrum__blockchain_address_get_mempool__confirmed_and_unconf
 
 // blockchain.address.list_unspent
 
-BC_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__missing_arguments__invalid_params)
 {
     BC_REQUIRE(query_.address_enabled());
     BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":1002,"method":"blockchain.address.listunspent","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_address_list_unspent__obsoleted_version__wrong_version)

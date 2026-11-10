@@ -123,14 +123,14 @@ void protocol_admin::dispatch_websocket(const http::request& request) NOEXCEPT
     // by the channel (established by basic auth on the upgrade request).
     if (!authorized())
     {
-        stop(network::error::unauthorized);
+        send_unauthorized(request);
         return;
     }
 
     // Admin websocket interface supports only string requests.
     if (!request.body().contains<http::string_value>())
     {
-        stop(network::error::not_acceptable);
+        send_not_acceptable(request);
         return;
     }
 
@@ -140,32 +140,32 @@ void protocol_admin::dispatch_websocket(const http::request& request) NOEXCEPT
     rpc::request_t model{};
     if (const auto ec = admin_target(model, target))
     {
-        stop(network::error::bad_request);
+        send_not_found(request);
         return;
     }
 
     // Default to json by simulating a json accept header (format overrides).
     if (!admin_query(model, target, { media_type::application_json }))
     {
-        stop(network::error::bad_request);
+        send_bad_request(request);
         return;
     }
 
     if (strip_media(model) != media_type::application_json)
     {
-        stop(network::error::not_acceptable);
+        send_not_acceptable(request);
         return;
     }
 
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(model.method))
     {
-        stop(network::error::unauthorized);
+        send_forbidden(request);
         return;
     }
 
     if (dispatcher_.notify(model))
-        stop(network::error::bad_request);
+        send_bad_request(request);
 }
 
 // Interface handlers.

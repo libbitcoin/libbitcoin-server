@@ -122,7 +122,7 @@ void protocol_electrum_version::handle_server_version(const code& ec,
         if (handler_)
             send_code(reason, BIND(finished, _1, reason));
         else
-            stop(reason);
+            send_code(reason, reason);
 
         return;
     }

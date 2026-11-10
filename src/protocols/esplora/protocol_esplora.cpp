@@ -227,13 +227,13 @@ void protocol_esplora::dispatch_websocket(const http::request& request) NOEXCEPT
 
     if (!authorized())
     {
-        stop(network::error::unauthorized);
+        send_unauthorized(request);
         return;
     }
 
     if (!request.body().contains<http::string_value>())
     {
-        stop(network::error::not_acceptable);
+        send_not_acceptable(request);
         return;
     }
 
@@ -244,7 +244,7 @@ void protocol_esplora::dispatch_websocket(const http::request& request) NOEXCEPT
     rpc::request_t model{};
     if (esplora_target(model, frame.substr(zero, split)))
     {
-        stop(network::error::bad_request);
+        send_not_found(request);
         return;
     }
 
@@ -252,7 +252,7 @@ void protocol_esplora::dispatch_websocket(const http::request& request) NOEXCEPT
     {
         if (split == std::string::npos)
         {
-            stop(network::error::bad_request);
+            send_bad_request(request);
             return;
         }
 
@@ -262,12 +262,12 @@ void protocol_esplora::dispatch_websocket(const http::request& request) NOEXCEPT
     // The credential may be restricted to a subset of interface methods.
     if (!permitted(model.method))
     {
-        stop(network::error::unauthorized);
+        send_forbidden(request);
         return;
     }
 
     if (dispatcher_.notify(model))
-        stop(network::error::bad_request);
+        send_bad_request(request);
 }
 
 bool protocol_esplora::takes_body(const std::string& method) NOEXCEPT

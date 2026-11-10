@@ -102,10 +102,10 @@ BC_AUTO_TEST_CASE(native__ws_top__data__expected)
     BC_REQUIRE_EQUAL(response, base16_chunk("09"));
 }
 
-BC_AUTO_TEST_CASE(native__ws_top__xml__closed)
+BC_AUTO_TEST_CASE(native__ws_top__xml__bad_request)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_dropped("/v1/top?format=xml"));
+    BC_REQUIRE(ws_get_text("/v1/top?format=xml").starts_with("Bad Request"));
 }
 
 // subscribe
@@ -255,22 +255,22 @@ BC_AUTO_TEST_CASE(native__dispatch__html__bad_request)
     BC_REQUIRE_EQUAL(get_status("/v1/top?format=html"), http::status::bad_request);
 }
 
-BC_AUTO_TEST_CASE(native__ws_dispatch__html__closed)
+BC_AUTO_TEST_CASE(native__ws_dispatch__html__not_acceptable)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_dropped("/v1/top?format=html"));
+    BC_REQUIRE(ws_get_text("/v1/top?format=html").starts_with("Not Acceptable"));
 }
 
-BC_AUTO_TEST_CASE(native__ws_dispatch__invalid_target__closed)
+BC_AUTO_TEST_CASE(native__ws_dispatch__invalid_target__not_found)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_dropped("/v1/bogus"));
+    BC_REQUIRE(ws_get_text("/v1/bogus").starts_with("Not Found"));
 }
 
-BC_AUTO_TEST_CASE(native__ws_dispatch__unsupported_parameter__closed)
+BC_AUTO_TEST_CASE(native__ws_dispatch__unsupported_parameter__bad_request)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_dropped("/v1/top?format=json&witness=false"));
+    BC_REQUIRE(ws_get_text("/v1/top?format=json&witness=false").starts_with("Bad Request"));
 }
 
 BC_AUTO_TEST_CASE(native__dispatch__absolute_form_target__bad_request)

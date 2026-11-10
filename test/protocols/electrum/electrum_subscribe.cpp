@@ -46,12 +46,13 @@ BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__obsolete_version__wron
     BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__missing_arguments__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":1102,"method":"blockchain.address.subscribe","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__invalid_hash__invalid_argument)
@@ -62,12 +63,13 @@ BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__invalid_hash__invalid_
     BC_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__extra_argument__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__extra_argument__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":1104,"method":"blockchain.address.subscribe","params":["%1%",42]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__bogus_p2pkh__null)
@@ -284,12 +286,13 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__insufficient_versio
     BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__missing_arguments__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_1));
 
     const auto response = get(R"({"id":1102,"method":"blockchain.scripthash.subscribe","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__invalid_hash__invalid_argument)
@@ -300,13 +303,14 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__invalid_hash__inval
     BC_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__extra_argument__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__extra_argument__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_1));
 
     constexpr auto request = R"({{"id":1104,"method":"blockchain.scripthash.subscribe","params":["{}",42]}})" "\n";
     const auto response = get(std::format(request, bogus_scripthash));
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__bogus_scripthash__null)
@@ -574,12 +578,13 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__insufficient_vers
     BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__missing_arguments__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_4_2));
 
     const auto response = get(R"({"id":1102,"method":"blockchain.scripthash.unsubscribe","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__invalid_hash__invalid_argument)
@@ -590,13 +595,14 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__invalid_hash__inv
     BC_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__extra_argument__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__extra_argument__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_4_2));
 
     constexpr auto request = R"({{"id":1104,"method":"blockchain.scripthash.unsubscribe","params":["{}",-1]}})" "\n";
     const auto response = get(std::format(request, bogus_scripthash));
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_unsubscribe__unsubscribed__false)
@@ -649,12 +655,13 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__insufficient_vers
     BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__missing_arguments__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":1102,"method":"blockchain.scriptpubkey.subscribe","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__invalid_script_encoding__invalid_argument)
@@ -665,13 +672,14 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__invalid_script_en
     BC_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__extra_argument__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__extra_argument__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_7));
 
     constexpr auto request = R"({{"id":1104,"method":"blockchain.scriptpubkey.subscribe","params":["{}",42]}})" "\n";
     const auto response = get(std::format(request, bogus_scripthash));
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__bogus_script__null)
@@ -888,12 +896,13 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__insufficient_ve
     BC_REQUIRE_EQUAL(result, wrong_version.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__missing_arguments__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":1102,"method":"blockchain.scriptpubkey.unsubscribe","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__invalid_script_encoding__invalid_argument)
@@ -904,13 +913,14 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__invalid_script_
     BC_REQUIRE_EQUAL(result, invalid_argument.value());
 }
 
-BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__extra_argument__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__extra_argument__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_7));
 
     constexpr auto request = R"({{"id":1104,"method":"blockchain.scriptpubkey.unsubscribe","params":["{}",-1]}})" "\n";
     const auto response = get(std::format(request, bogus_scripthash));
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_unsubscribe__unsubscribed__false)

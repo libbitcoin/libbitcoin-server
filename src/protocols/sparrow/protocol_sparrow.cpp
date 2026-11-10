@@ -113,7 +113,7 @@ void protocol_sparrow::handle_unclaimed(const request_t& message) NOEXCEPT
     }
 
     if (const auto ec = sparrow_dispatcher_.notify(message))
-        stop(ec);
+        handle_dispatch_fault(ec);
 }
 
 // Features.

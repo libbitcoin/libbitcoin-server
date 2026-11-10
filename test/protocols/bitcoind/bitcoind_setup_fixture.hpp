@@ -77,10 +77,6 @@ struct bitcoind_setup_fixture
     system::json::value ws_rpc(std::string_view method,
         std::string_view params="[]");
 
-    // As ws_rpc(), returning {"dropped":true} if the channel dropped.
-    system::json::value ws_rpc_dropped(std::string_view method,
-        std::string_view params="[]");
-
     // Write a raw frame over the upgraded websocket without reading.
     void ws_notify(std::string_view body);
 

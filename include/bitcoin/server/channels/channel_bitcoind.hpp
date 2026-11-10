@@ -21,6 +21,8 @@
 
 #include <bitcoin/server/channels/channel_rpc.hpp>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/error/error.hpp>
+#include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -32,14 +34,42 @@ class BCS_API channel_bitcoind
 {
 public:
     typedef std::shared_ptr<channel_bitcoind> ptr;
+    using options_t = settings::bitcoind_server;
 
     inline channel_bitcoind(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options,
         bool in_band=false) NOEXCEPT
       : channel_rpc(log, socket, identifier, config, options, in_band),
-        network::tracker<channel_bitcoind>(log)
+        network::tracker<channel_bitcoind>(log),
+        error_status_(options.error_status)
     {
+    }
+
+    /// The http status of an unbatched json-rpc response, as bitcoind.
+    static inline network::http::status to_status(
+        const network::rpc::response_t& model) NOEXCEPT
+    {
+        using namespace network::http;
+        if (!model.error.has_value() ||
+            (model.jsonrpc == network::rpc::version::v2))
+            return status::ok;
+
+        switch (model.error->code)
+        {
+            case error::bitcoind::invalid_request:
+                return status::bad_request;
+            case error::bitcoind::method_not_found:
+                return status::not_found;
+            default:
+                return status::internal_server_error;
+        }
+    }
+
+    inline network::http::status to_rpc_status(
+        const network::rpc::response_t& model) const NOEXCEPT override
+    {
+        return error_status_ ? to_status(model) : network::http::status::ok;
     }
 
 protected:
@@ -48,6 +78,10 @@ protected:
     {
         return true;
     }
+
+private:
+    // This is thread safe.
+    const bool error_status_;
 };
 
 } // namespace server

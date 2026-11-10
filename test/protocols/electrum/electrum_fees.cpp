@@ -28,12 +28,13 @@ static const code invalid_argument{ server::error::electrum::bad_request };
 
 // blockchain.estimatefee
 
-BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__no_number__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__no_number__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__float_number__invalid_argument)

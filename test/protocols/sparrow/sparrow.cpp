@@ -79,12 +79,13 @@ BC_AUTO_TEST_CASE(sparrow__blockchain_block_stats__stub__method_not_found)
     BC_REQUIRE_EQUAL(result, not_implemented.value());
 }
 
-BC_AUTO_TEST_CASE(sparrow__blockchain_block_stats__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(sparrow__blockchain_block_stats__missing_arguments__invalid_params)
 {
     BC_REQUIRE(handshake(electrum::version::v1_4));
 
     const auto response = get(R"({"id":903,"method":"blockchain.block.stats","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__not_indexed__method_not_found)
@@ -351,10 +352,12 @@ BC_AUTO_TEST_CASE(sparrow__post__scoped_credential_unlisted_method__forbidden)
     BC_REQUIRE_EQUAL(status, rpc_client::status::forbidden);
 }
 
-BC_AUTO_TEST_CASE(sparrow__tcp__credentials_configured__dropped)
+BC_AUTO_TEST_CASE(sparrow__tcp__credentials_configured__unauthorized)
 {
     const auto response = get(R"({"id":903,"method":"server.version","params":["test","1.4"]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), code{ network::error::unauthorized }.value());
+    REQUIRE_NO_THROW_TRUE(receive().at("dropped").as_bool());
 }
 
 BC_AUTO_TEST_SUITE_END()

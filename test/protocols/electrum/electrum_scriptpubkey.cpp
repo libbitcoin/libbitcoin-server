@@ -32,13 +32,14 @@ BC_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
 // blockchain.scriptpubkey.get_balance
 
-BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__missing_arguments__invalid_params)
 {
     BC_REQUIRE(query_.address_enabled());
     BC_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":901,"method":"blockchain.scriptpubkey.get_balance","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__insufficient_version__dropped)
@@ -111,13 +112,14 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__confirmed_and_u
 
 // blockchain.scriptpubkey.get_history
 
-BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__missing_arguments__invalid_params)
 {
     BC_REQUIRE(query_.address_enabled());
     BC_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":1002,"method":"blockchain.scriptpubkey.get_history","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__insufficient_version__dropped)
@@ -203,13 +205,14 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_history__confirmed_and_u
 
 // blockchain.scriptpubkey.get_mempool
 
-BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__missing_arguments__invalid_params)
 {
     BC_REQUIRE(query_.address_enabled());
     BC_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":1002,"method":"blockchain.scriptpubkey.get_mempool","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__insufficient_version__dropped)
@@ -286,13 +289,14 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_mempool__confirmed_and_u
 
 // blockchain.scriptpubkey.list_unspent
 
-BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__missing_arguments__dropped)
+BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__missing_arguments__invalid_params)
 {
     BC_REQUIRE(query_.address_enabled());
     BC_REQUIRE(handshake(electrum::version::v1_7));
 
     const auto response = get(R"({"id":1002,"method":"blockchain.scriptpubkey.listunspent","params":[]})" "\n");
-    REQUIRE_NO_THROW_TRUE(response.at("dropped").as_bool());
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), network::rpc::reserved::invalid_params);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_list_unspent__insufficient_version__dropped)
