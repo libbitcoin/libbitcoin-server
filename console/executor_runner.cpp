@@ -103,6 +103,7 @@ bool executor::do_run()
         metadata_.configured.database.gpu_scan_minimum = max_uint32;
 
     database::file::create_directory(metadata_.configured.log.path);
+    database::file::create_directory(metadata_.configured.log.events_path);
     database::file::create_directory(metadata_.configured.network.path);
 
     // Hold sinks in scope for the length of the run.

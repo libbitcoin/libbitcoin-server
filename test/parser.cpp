@@ -31,7 +31,7 @@ static std::string write_config(const std::string& text)
 {
     const auto path = TEST_PATH + ".cfg";
     std::ofstream file{ path };
-    file << "[database]\npath = " << TEST_PATH << "\n" << text;
+    file << "[folders]\nroot = " << TEST_PATH << "\n" << text;
     return path;
 }
 
@@ -283,6 +283,7 @@ BC_AUTO_TEST_CASE(parser__parse__unconfigured_paths__network_root)
 
     const auto& configured = instance.configured;
     BC_REQUIRE_EQUAL(configured.log.path, system::config::path{ "testnet4" });
+    BC_REQUIRE_EQUAL(configured.log.events_path, system::config::path{ "testnet4" });
     BC_REQUIRE_EQUAL(configured.network.path, system::config::path{ "testnet4" });
     BC_REQUIRE(configured.server.admin.cert_path.empty());
     BC_REQUIRE(configured.server.admin.path.empty());
@@ -290,7 +291,7 @@ BC_AUTO_TEST_CASE(parser__parse__unconfigured_paths__network_root)
 
 BC_AUTO_TEST_CASE(parser__parse__relative_paths__under_root)
 {
-    const auto config = write_config("[log]\npath = logs\n[peer]\npath = peers\n[admin]\ncert_path = cert.pem\npath = web\n[electrum]\nkey_path = keys/key.pem\n");
+    const auto config = write_config("[folders]\nconsole = logs\nevents = events\npeers = peers\nstore = data\nadmin = web\n[admin]\ncert_path = cert.pem\n[electrum]\nkey_path = keys/key.pem\n");
     const char* argv[]{ "bs", "-n", "regtest", "-c", config.c_str() };
     std::ostringstream error{};
     server::parser instance{ selection::mainnet, pages, pages };
@@ -298,8 +299,9 @@ BC_AUTO_TEST_CASE(parser__parse__relative_paths__under_root)
 
     const auto& configured = instance.configured;
     const auto root = std::filesystem::path{ root_path("regtest") };
-    BC_REQUIRE_EQUAL(configured.database.path, store_path("regtest"));
+    BC_REQUIRE_EQUAL(configured.database.path, system::config::path{ root / "data" });
     BC_REQUIRE_EQUAL(configured.log.path, system::config::path{ root / "logs" });
+    BC_REQUIRE_EQUAL(configured.log.events_path, system::config::path{ root / "events" });
     BC_REQUIRE_EQUAL(configured.network.path, system::config::path{ root / "peers" });
     BC_REQUIRE_EQUAL(configured.server.admin.cert_path, system::config::path{ root / "cert.pem" });
     BC_REQUIRE_EQUAL(configured.server.admin.path, system::config::path{ root / "web" });
@@ -309,7 +311,7 @@ BC_AUTO_TEST_CASE(parser__parse__relative_paths__under_root)
 BC_AUTO_TEST_CASE(parser__parse__absolute_paths__unchanged)
 {
     const auto absolute = std::filesystem::current_path() / "logs";
-    const auto config = write_config("[log]\npath = " + absolute.string() + "\n[admin]\ncert_path = " + absolute.string() + "\n");
+    const auto config = write_config("[folders]\nconsole = " + absolute.string() + "\n[admin]\ncert_path = " + absolute.string() + "\n");
     const char* argv[]{ "bs", "-c", config.c_str() };
     std::ostringstream error{};
     server::parser instance{ selection::mainnet, pages, pages };

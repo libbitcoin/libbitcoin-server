@@ -102,18 +102,14 @@ void parser::select_network() NOEXCEPT
         configured.bitcoin.network = network;
 }
 
-// The network-named directory, under any configured database path.
+// The network-named directory, under the configured root.
 void parser::select_root() NOEXCEPT
 {
-    std::filesystem::path base{};
-    if (is_configured("database.path"))
-        base = configured.database.path;
-
-    root_ = base / std::string{ config::selection::to_word(
+    root_ = configured.root / std::string{ config::selection::to_word(
         configured.node.network) };
 }
 
-// The store is fixed within the root, and other paths are relative to it.
+// Paths are relative to the network directory.
 void parser::select_paths() NOEXCEPT
 {
     const auto relative = [this](config::path& path) NOEXCEPT
@@ -134,9 +130,13 @@ void parser::select_paths() NOEXCEPT
         relative(service.key_path);
     };
 
-    configured.database.path = root_ / "store";
-    rooted(configured.log.path);
+    if (!is_configured("folders.store"))
+        configured.database.path = "store";
+
+    rooted(configured.database.path);
     rooted(configured.network.path);
+    rooted(configured.log.path);
+    rooted(configured.log.events_path);
     relative(configured.network.inbound.key_path);
     relative(configured.server.admin.path);
     relative(configured.server.native.path);
@@ -368,6 +368,50 @@ options_metadata parser::load_settings() THROWS
 {
     options_metadata description("settings");
     description.add_options()
+
+    /* [folders] */
+    (
+        "folders.root",
+        setting<config::path>(&configured.root),
+        "The base of the network-named directory, defaults to the working directory."
+    )
+    (
+        "folders.peers",
+        setting<config::path>(&configured.network.path),
+        "The peer address cache directory, relative to the network directory, defaults to it."
+    )
+    (
+        "folders.events",
+        setting<config::path>(&configured.log.events_path),
+        "The events log directory, relative to the network directory, defaults to it."
+    )
+    (
+        "folders.console",
+        setting<config::path>(&configured.log.path),
+        "The console log files directory, relative to the network directory, defaults to it."
+    )
+    (
+        "folders.store",
+        setting<config::path>(&configured.database.path),
+        "The store directory, relative to the network directory, defaults to 'store'."
+    )
+    (
+        "folders.admin",
+        setting<config::path>(&configured.server.admin.path),
+        "The admin web site directory, relative to the network directory, defaults to embedded pages."
+    )
+    (
+        "folders.native",
+        setting<config::path>(&configured.server.native.path),
+        "The native web site directory, relative to the network directory, defaults to embedded pages."
+    )
+#if defined (HAVE_WINDOWS)
+    (
+        "folders.symbols",
+        setting<config::path>(&configured.log.symbols),
+        "The windows symbols (.pdb) directory, relative to the network directory, defaults to {}."
+    )
+#endif
 
     /* [forks] */
     (
@@ -973,11 +1017,6 @@ options_metadata parser::load_settings() THROWS
         setting<std::string>(&configured.network.user_agent),
         "The node user agent string, defaults to {}."
     )
-    (
-        "peer.path",
-        setting<config::path>(&configured.network.path),
-        "The peer address cache file directory, defaults to the network directory."
-    )
 
     /* [outbound] */
     (
@@ -1359,11 +1398,6 @@ options_metadata parser::load_settings() THROWS
         "Allow requests from opaque origin (see CORS), defaults to {}."
     )
     (
-        "admin.path",
-        setting<config::path>(&configured.server.admin.path),
-        "The required root path of source files to be served, defaults to {}."
-    )
-    (
         "admin.default",
         setting<std::string>(&configured.server.admin.default_),
         "The path of the default source page, defaults to {}."
@@ -1469,11 +1503,6 @@ options_metadata parser::load_settings() THROWS
         "native.allow_opaque_origin",
         setting<bool>(&configured.server.native.allow_opaque_origin),
         "Allow requests from opaque origin (see CORS), defaults to {}."
-    )
-    (
-        "native.path",
-        setting<config::path>(&configured.server.native.path),
-        "The required root path of source files to be served, defaults to {}."
     )
     (
         "native.default",
@@ -2446,11 +2475,6 @@ options_metadata parser::load_settings() THROWS
 
     /* [database] */
     (
-        "database.path",
-        setting<config::path>(&configured.database.path),
-        "The base of the network-named directory, which contains the store and resolves all relative paths, defaults to the working directory."
-    )
-    (
         "database.turbo",
         setting<bool>(&configured.database.turbo),
         "Allow individual non-validation queries to use all CPUs, defaults to {}."
@@ -2941,18 +2965,6 @@ options_metadata parser::load_settings() THROWS
         "log.events",
         setting<bool>(&configured.log.events),
         "Write events to the events log file, defaults to {}."
-    )
-#if defined (HAVE_WINDOWS)
-    (
-        "log.symbols",
-        setting<config::path>(&configured.log.symbols),
-        "Path to a directory containing windows symbols (.pdb) files, defaults to {}."
-    )
-#endif
-    (
-        "log.path",
-        setting<config::path>(&configured.log.path),
-        "The log files directory, defaults to the network directory."
     );
 
     return description;

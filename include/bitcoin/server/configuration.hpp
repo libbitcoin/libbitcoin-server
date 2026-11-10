@@ -40,6 +40,7 @@ public:
 
     /// Environment.
     system::config::path file{};
+    system::config::path root{};
     system::config::selection net{};
 
     /// Information.

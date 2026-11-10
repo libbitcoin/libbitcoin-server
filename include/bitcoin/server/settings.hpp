@@ -49,9 +49,10 @@ public:
     bool events;
     uint32_t limit;
     system::config::path path;
+    system::config::path events_path;
 
 #if defined (HAVE_WINDOWS)
-    system::config::path symbols;
+    system::config::path symbols{ "symbols" };
 #endif
 
     virtual std::filesystem::path log_file1() const NOEXCEPT;
