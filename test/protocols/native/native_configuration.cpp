@@ -33,15 +33,40 @@ BC_AUTO_TEST_CASE(native__configuration__json__expected)
     BC_REQUIRE(response.is_object());
 
     const auto& object = response.as_object();
-    BC_REQUIRE_EQUAL(object.size(), 8u);
-    BC_REQUIRE_EQUAL(object.at("network").as_string(), "mainnet");
-    BC_REQUIRE(object.at("address").as_bool());
-    BC_REQUIRE(object.at("filter").as_bool());
-    BC_REQUIRE(!object.at("turbo").as_bool());
-    BC_REQUIRE(object.at("witness").as_bool());
-    BC_REQUIRE(object.at("retarget").as_bool());
-    BC_REQUIRE(object.at("difficult").as_bool());
-    BC_REQUIRE_EQUAL(object.at("pruned").as_int64(), 0);
+    BC_REQUIRE_EQUAL(object.size(), 3u);
+
+    const auto& store = object.at("store").as_object();
+    BC_REQUIRE_EQUAL(store.size(), 6u);
+    BC_REQUIRE(store.at("address").as_bool());
+    BC_REQUIRE(store.at("filter").as_bool());
+    BC_REQUIRE(store.at("silent").is_null());
+    BC_REQUIRE(!store.at("turbo").as_bool());
+    BC_REQUIRE(store.at("witness").as_bool());
+    BC_REQUIRE_EQUAL(store.at("pruned").as_int64(), 0);
+
+    const auto& node = object.at("node").as_object();
+    BC_REQUIRE_EQUAL(node.size(), 7u);
+    BC_REQUIRE_EQUAL(node.at("network").as_string(), "mainnet");
+    BC_REQUIRE(!node.at("limited").as_bool());
+    BC_REQUIRE(node.at("blocks").as_bool());
+    BC_REQUIRE(node.at("witness").as_bool());
+    BC_REQUIRE(!node.at("filters").as_bool());
+    BC_REQUIRE(node.at("privacy").as_bool());
+    BC_REQUIRE(!node.at("fees").as_bool());
+
+    const auto& network = object.at("network").as_object();
+    BC_REQUIRE_EQUAL(network.size(), 10u);
+    BC_REQUIRE(network.contains("relay"));
+    BC_REQUIRE(network.contains("alert"));
+    BC_REQUIRE(network.contains("reject"));
+    BC_REQUIRE(network.contains("compact"));
+    BC_REQUIRE(network.contains("address"));
+    BC_REQUIRE(network.contains("witness_tx"));
+    BC_REQUIRE(network.contains("memory_pool"));
+    BC_REQUIRE(network.contains("not_found"));
+    BC_REQUIRE(!network.contains("address_v2"));
+    BC_REQUIRE_EQUAL(network.at("protocol_maximum").as_int64(), network::messages::peer::level::maximum_protocol);
+    BC_REQUIRE(network.at("protocol_minimum").is_int64());
 }
 
 BC_AUTO_TEST_CASE(native__configuration__text__not_acceptable)
@@ -60,7 +85,7 @@ BC_AUTO_TEST_CASE(native__ws_configuration__default__json)
 
     const auto response = ws_get_json("/v1/configuration");
     BC_REQUIRE(response.is_object());
-    BC_REQUIRE(response.as_object().at("witness").as_bool());
+    BC_REQUIRE(response.as_object().at("store").as_object().at("witness").as_bool());
 }
 
 BC_AUTO_TEST_SUITE_END()
@@ -71,7 +96,18 @@ BC_AUTO_TEST_CASE(native__configuration__limited_blocks_unreached_milestone__pru
 {
     const auto response = get_json("/v1/configuration?format=json");
     BC_REQUIRE(response.is_object());
-    BC_REQUIRE_EQUAL(response.as_object().at("pruned").as_int64(), 0);
+    BC_REQUIRE_EQUAL(response.as_object().at("store").as_object().at("pruned").as_int64(), 0);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(native_silent_tests, native_silent_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__configuration__silent_enabled__start_height)
+{
+    const auto response = get_json("/v1/configuration?format=json");
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE_EQUAL(response.as_object().at("store").as_object().at("silent").as_int64(), 42);
 }
 
 BC_AUTO_TEST_SUITE_END()

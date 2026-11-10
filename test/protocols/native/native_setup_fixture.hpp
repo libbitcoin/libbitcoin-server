@@ -285,6 +285,21 @@ struct native_limited_setup_fixture
     }
 };
 
+struct native_silent_setup_fixture
+  : native_setup_fixture
+{
+    inline native_silent_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.node.silent_start_height = 42;
+        })
+    {
+    }
+};
+
 // Runs a server node on demand, for start sequence outcomes.
 struct server_node_setup_fixture
 {
