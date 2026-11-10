@@ -1,14 +1,10 @@
 import { getEventDefinition } from './admin-contract';
 
-const numberFormatter = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 2,
-});
-
 const integerFormatter = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 0,
 });
 
-export function formatNumber(value: number, maximumFractionDigits = 2): string {
+function formatNumber(value: number, maximumFractionDigits = 2): string {
   return new Intl.NumberFormat(undefined, { maximumFractionDigits }).format(value);
 }
 
@@ -35,12 +31,6 @@ export function formatTimestamp(value: number, includeMilliseconds = true): stri
     : formatted;
 }
 
-export function formatDateTime(value: number): string {
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return 'Invalid time';
-  return date.toLocaleString();
-}
-
 export function formatElapsed(milliseconds: number): string {
   const totalSeconds = Math.max(0, Math.floor(milliseconds / 1_000));
   const days = Math.floor(totalSeconds / 86_400);
@@ -52,12 +42,6 @@ export function formatElapsed(milliseconds: number): string {
   if (hours > 0) return `${String(hours)}h ${String(minutes)}m`;
   if (minutes > 0) return `${String(minutes)}m ${String(seconds)}s`;
   return `${String(seconds)}s`;
-}
-
-export function formatDuration(milliseconds: number): string {
-  if (milliseconds < 1) return `${numberFormatter.format(milliseconds * 1_000)} µs`;
-  if (milliseconds < 1_000) return `${numberFormatter.format(milliseconds)} ms`;
-  return `${numberFormatter.format(milliseconds / 1_000)} s`;
 }
 
 export function formatEventValue(event: number, value: number): string {

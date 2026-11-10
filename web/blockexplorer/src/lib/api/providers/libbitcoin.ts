@@ -30,8 +30,6 @@ import {
   mapTransaction,
 } from './libbitcoin-mapper';
 
-export { decodeAddressToScript } from './libbitcoin-mapper';
-
 interface LibbitcoinClientOptions {
   baseUrl: string;
   pollIntervalMs?: number;

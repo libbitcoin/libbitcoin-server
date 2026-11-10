@@ -2,12 +2,7 @@ import type uPlot from 'uplot';
 import { POOL_STALE_AFTER_MS } from './native-contract';
 import type { ChartDefinition, ChartSeriesDefinition } from './chart-config';
 import type { MetricsSnapshot, SignalBucketSnapshot, TelemetryBucket } from './live-metrics';
-import {
-  getMeasureDefinition,
-  getSignalDefinition,
-  type SignalMeasure,
-  type SignalUnit,
-} from './signal-catalog';
+import { getMeasureDefinition, getSignalDefinition, type SignalUnit } from './signal-catalog';
 
 export interface SelectedChartData {
   data: uPlot.AlignedData;
@@ -249,8 +244,4 @@ export function unitSuffix(unit: SignalUnit): string {
 
 export function zeroBasedUnit(unit: SignalUnit): boolean {
   return unit !== 'height' && unit !== 'height-per-second';
-}
-
-export function measureLabel(signalId: string, measure: SignalMeasure): string {
-  return getMeasureDefinition(getSignalDefinition(signalId), measure).label;
 }

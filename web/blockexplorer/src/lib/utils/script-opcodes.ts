@@ -1,4 +1,5 @@
-// Opcode values: Bitcoin Core src/script/script.h. Tapscript changes: BIP 342.
+// Opcode values match libbitcoin-system/include/bitcoin/system/chain/enums/opcode.hpp.
+// Tapscript changes: BIP 342.
 const OPCODES: Partial<Record<number, readonly [string, string]>> = {
   0x61: ['NOP', 'Does nothing.'],
   0x62: ['VER', 'Reserved opcode; fails if executed under legacy rules.'],

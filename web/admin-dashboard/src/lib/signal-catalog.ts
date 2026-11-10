@@ -6,8 +6,8 @@ import {
   getEventDefinition,
 } from './admin-contract';
 
-export type SignalSource = 'event' | 'log' | 'native' | 'pool';
-export type SignalPayloadKind =
+type SignalSource = 'event' | 'log' | 'native' | 'pool';
+type SignalPayloadKind =
   | 'height'
   | 'duration'
   | 'count'

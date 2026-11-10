@@ -11,6 +11,8 @@
     "esModuleInterop": true,
     "strict": true,
     "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "jsx": "react-jsx",
     "types": ["vite/client"],
     "baseUrl": ".",

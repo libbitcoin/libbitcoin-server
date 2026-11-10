@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const nativeConfigurationSchema = z.object({
+const nativeConfigurationSchema = z.object({
   address: z.boolean(),
   filter: z.boolean(),
   turbo: z.boolean(),
@@ -12,7 +12,7 @@ export const nativeConfigurationSchema = z.object({
 
 export type NativeConfiguration = z.infer<typeof nativeConfigurationSchema>;
 
-export const nativeHeaderSchema = z.object({
+const nativeHeaderSchema = z.object({
   height: z.number().int().nonnegative(),
   timestamp: z.number().int().positive().max(0xffff_ffff),
 });
@@ -21,7 +21,7 @@ export type NativeHeader = z.infer<typeof nativeHeaderSchema>;
 
 // Native /v1/fees returns existing pool gauges, not transaction arrival counters.
 const poolIntegerSchema = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
-export const nativeFeesSchema = z.object({
+const nativeFeesSchema = z.object({
   count: poolIntegerSchema,
   virtual: poolIntegerSchema,
   fee: poolIntegerSchema,
