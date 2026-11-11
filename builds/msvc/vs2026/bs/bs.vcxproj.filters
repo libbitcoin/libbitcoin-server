@@ -16,6 +16,57 @@
     <Filter Include="src\embedded">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000002}</UniqueIdentifier>
     </Filter>
+    <Filter Include="web">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\admin-dashboard">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\admin-dashboard\src">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\admin-dashboard\src\app">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\admin-dashboard\src\components">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\admin-dashboard\src\lib">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\blockexplorer">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000009}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\blockexplorer\src">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\blockexplorer\src\app">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\blockexplorer\src\components">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\blockexplorer\src\lib">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\blockexplorer\src\lib\api">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\blockexplorer\src\lib\api\providers">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\blockexplorer\src\lib\hooks">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\blockexplorer\src\lib\utils">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\blockexplorer\src\routes">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\shared">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000004}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\console\embedded\admin_css.cpp">
@@ -112,6 +163,321 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\..\..\web\admin-dashboard\index.html">
+      <Filter>web\admin-dashboard</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\package-lock.json">
+      <Filter>web\admin-dashboard</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\package.json">
+      <Filter>web\admin-dashboard</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\app\app.tsx">
+      <Filter>web\admin-dashboard\src\app</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\app\providers.tsx">
+      <Filter>web\admin-dashboard\src\app</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\components\chart-editor.tsx">
+      <Filter>web\admin-dashboard\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\components\connection-pill.tsx">
+      <Filter>web\admin-dashboard\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\components\endpoint-settings.tsx">
+      <Filter>web\admin-dashboard\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\components\event-view.tsx">
+      <Filter>web\admin-dashboard\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\components\log-view.tsx">
+      <Filter>web\admin-dashboard\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\components\metric-item.tsx">
+      <Filter>web\admin-dashboard\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\components\node-sync-progress.tsx">
+      <Filter>web\admin-dashboard\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\components\overview.tsx">
+      <Filter>web\admin-dashboard\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\components\pool-fee-histogram.tsx">
+      <Filter>web\admin-dashboard\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\components\sync-status-notifier.tsx">
+      <Filter>web\admin-dashboard\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\components\telemetry-dashboard.tsx">
+      <Filter>web\admin-dashboard\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\components\time-series-chart.tsx">
+      <Filter>web\admin-dashboard\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\index.css">
+      <Filter>web\admin-dashboard\src</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\admin-client.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\admin-contract.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\browser-notifications.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\chart-config.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\chart-data.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\chart-scale.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\endpoints.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\event-window.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\fee-histogram.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\format.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\live-metrics.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\log-settings.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\log-window.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\native-client.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\native-contract.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\reconnecting-websocket.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\signal-catalog.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\stream-window.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\sync-status.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\telemetry-worker-protocol.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\telemetry-worker-runtime.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\telemetry.worker.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\use-current-time.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\use-telemetry.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\lib\worker-metrics-store.ts">
+      <Filter>web\admin-dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\main.tsx">
+      <Filter>web\admin-dashboard\src</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\src\vite-env.d.ts">
+      <Filter>web\admin-dashboard\src</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\tailwind.config.js">
+      <Filter>web\admin-dashboard</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\tsconfig.json">
+      <Filter>web\admin-dashboard</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\tsconfig.node.json">
+      <Filter>web\admin-dashboard</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin-dashboard\vite.config.ts">
+      <Filter>web\admin-dashboard</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\index.html">
+      <Filter>web\blockexplorer</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\package-lock.json">
+      <Filter>web\blockexplorer</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\package.json">
+      <Filter>web\blockexplorer</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\app\providers.tsx">
+      <Filter>web\blockexplorer\src\app</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\app\route-navigation.tsx">
+      <Filter>web\blockexplorer\src\app</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\app\router.tsx">
+      <Filter>web\blockexplorer\src\app</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\app\saved-investigations.tsx">
+      <Filter>web\blockexplorer\src\app</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\app\script-explainer-preference.tsx">
+      <Filter>web\blockexplorer\src\app</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\app\shell.tsx">
+      <Filter>web\blockexplorer\src\app</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\components\block-size-bar.tsx">
+      <Filter>web\blockexplorer\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\components\block-validation-inspector.tsx">
+      <Filter>web\blockexplorer\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\components\command-palette.tsx">
+      <Filter>web\blockexplorer\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\components\hash-text.tsx">
+      <Filter>web\blockexplorer\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\components\qr-code.tsx">
+      <Filter>web\blockexplorer\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\components\save-bookmark.tsx">
+      <Filter>web\blockexplorer\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\components\script-explainer.tsx">
+      <Filter>web\blockexplorer\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\components\script-lookup-status.tsx">
+      <Filter>web\blockexplorer\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\components\search-bar.tsx">
+      <Filter>web\blockexplorer\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\components\status-pill.tsx">
+      <Filter>web\blockexplorer\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\index.css">
+      <Filter>web\blockexplorer\src</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\api\client.tsx">
+      <Filter>web\blockexplorer\src\lib\api</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\api\providers\blockstream.ts">
+      <Filter>web\blockexplorer\src\lib\api\providers</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\api\providers\libbitcoin-mapper.ts">
+      <Filter>web\blockexplorer\src\lib\api\providers</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\api\providers\libbitcoin.ts">
+      <Filter>web\blockexplorer\src\lib\api\providers</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\api\providers\mempool.ts">
+      <Filter>web\blockexplorer\src\lib\api\providers</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\hooks\useBlockchainData.ts">
+      <Filter>web\blockexplorer\src\lib\hooks</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\hooks\useNow.ts">
+      <Filter>web\blockexplorer\src\lib\hooks</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\hooks\usePageTitle.ts">
+      <Filter>web\blockexplorer\src\lib\hooks</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\hooks\usePaginatedList.ts">
+      <Filter>web\blockexplorer\src\lib\hooks</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\hooks\useWindowScrollToBottom.ts">
+      <Filter>web\blockexplorer\src\lib\hooks</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\utils\address.ts">
+      <Filter>web\blockexplorer\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\utils\clipboard.ts">
+      <Filter>web\blockexplorer\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\utils\format.ts">
+      <Filter>web\blockexplorer\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\utils\investigations.ts">
+      <Filter>web\blockexplorer\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\utils\libbitcoin-address-alias.ts">
+      <Filter>web\blockexplorer\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\utils\routes.ts">
+      <Filter>web\blockexplorer\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\utils\script-explainer.ts">
+      <Filter>web\blockexplorer\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\utils\script-opcodes.ts">
+      <Filter>web\blockexplorer\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\lib\utils\search.ts">
+      <Filter>web\blockexplorer\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\main.tsx">
+      <Filter>web\blockexplorer\src</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\routes\address.tsx">
+      <Filter>web\blockexplorer\src\routes</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\routes\block.tsx">
+      <Filter>web\blockexplorer\src\routes</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\routes\blocks.tsx">
+      <Filter>web\blockexplorer\src\routes</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\routes\dashboard.tsx">
+      <Filter>web\blockexplorer\src\routes</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\routes\investigations.tsx">
+      <Filter>web\blockexplorer\src\routes</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\routes\not-found.tsx">
+      <Filter>web\blockexplorer\src\routes</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\routes\search.tsx">
+      <Filter>web\blockexplorer\src\routes</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\routes\top-block.tsx">
+      <Filter>web\blockexplorer\src\routes</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\routes\transaction.tsx">
+      <Filter>web\blockexplorer\src\routes</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\src\vite-env.d.ts">
+      <Filter>web\blockexplorer\src</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\tailwind.config.js">
+      <Filter>web\blockexplorer</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\tsconfig.json">
+      <Filter>web\blockexplorer</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\tsconfig.node.json">
+      <Filter>web\blockexplorer</Filter>
+    </None>
+    <None Include="..\..\..\..\web\blockexplorer\vite.config.ts">
+      <Filter>web\blockexplorer</Filter>
+    </None>
+    <None Include="..\..\..\..\web\licenses.mjs">
+      <Filter>web</Filter>
+    </None>
+    <None Include="..\..\..\..\web\shared\favicon.svg">
+      <Filter>web\shared</Filter>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
