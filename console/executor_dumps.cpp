@@ -82,9 +82,6 @@ void executor::dump_hardware() const
         logger(std::format("{:.<12} " BS_HARDWARE_COMPILED, extension.name,
             extension.platform, extension.compiled));
 
-    logger(std::format(BS_HARDWARE_BUILD, build_name("bs", detected_tags()),
-        build_name("bs", compiled_tags())));
-
     const auto cuda = cuda_device();
     const auto compiled = batched::compiled();
     const auto incompatible = cuda && compiled &&
@@ -101,6 +98,12 @@ void executor::dump_hardware() const
         if (cuda)
             logger(std::format("cuda ecc.... " BS_HARDWARE_ENABLED, cuda_ecc(), cuda_ecc_enabled()));
     }
+
+    const auto platform = build_name("bs", detected_tags());
+    const auto build = build_name("bs", compiled_tags());
+    logger(std::format(BS_HARDWARE_BUILD, build));
+    if (build != platform)
+        logger(std::format(BS_HARDWARE_PLATFORM, platform));
 }
 
 // logging compilation and initial values.
