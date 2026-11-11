@@ -77,7 +77,9 @@ void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
         return;
     }
 
-    estimate(target, mode_, BIND(handle_estimate_fee, _1, _2));
+    // The estimator targets the next block as zero, as does target zero.
+    estimate(floored_subtract(target, one), mode_,
+        BIND(handle_estimate_fee, _1, _2));
 }
 
 void protocol_electrum::handle_estimate_fee(const code& ec,

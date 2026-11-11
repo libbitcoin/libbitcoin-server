@@ -227,7 +227,8 @@ void protocol_esplora::next_estimate(size_t index) NOEXCEPT
         return;
     }
 
-    estimate(targets.at(index), node::estimator::mode::basic,
+    // The estimator targets the next block as zero.
+    estimate(sub1(targets.at(index)), node::estimator::mode::basic,
         BIND(handle_estimate, _1, _2, index));
 }
 
