@@ -52,7 +52,7 @@ BC_AUTO_TEST_CASE(settings__log__default_context__expected)
     BC_REQUIRE_EQUAL(log.log_file2(), "console_old.log");
     BC_REQUIRE_EQUAL(log.events_file(), "events.log");
 #if defined(HAVE_WINDOWS)
-    BC_REQUIRE_EQUAL(log.symbols, "symbols");
+    BC_REQUIRE_EQUAL(log.symbols_path, "symbols");
 #endif
 }
 

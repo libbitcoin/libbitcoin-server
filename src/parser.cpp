@@ -151,7 +151,7 @@ void parser::select_paths() NOEXCEPT
     secured(configured.server.stratum_v2);
 
 #if defined (HAVE_WINDOWS)
-    relative(configured.log.symbols);
+    relative(configured.log.symbols_path);
 #endif
 }
 
@@ -408,7 +408,7 @@ options_metadata parser::load_settings() THROWS
 #if defined (HAVE_WINDOWS)
     (
         "folders.symbols",
-        setting<config::path>(&configured.log.symbols),
+        setting<config::path>(&configured.log.symbols_path),
         "The windows symbols (.pdb) directory, relative to the network directory, defaults to {}."
     )
 #endif

@@ -141,7 +141,7 @@ int bc::system::main(int argc, char* argv[])
     }
 
 #if defined(HAVE_WINDOWS)
-    symbols_path = metadata.configured.log.symbols;
+    symbols_path = metadata.configured.log.symbols_path;
 #endif
 
     set_memory_priority(metadata.configured.node.memory_priority_());
