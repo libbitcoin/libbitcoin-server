@@ -3,9 +3,16 @@ import type { ConnectionStatus } from './reconnecting-websocket';
 import type { LogQuery, LogWindow } from './log-window';
 import type { EventQuery, EventWindow } from './event-window';
 import type { NativeFees } from './native-contract';
+import type { NativeLiveState } from './native-client';
 
 export type TelemetryCommand =
-  | { type: 'configure'; generation: number; endpoint: string; logFilter: number }
+  | {
+      type: 'configure';
+      generation: number;
+      endpoint: string;
+      nativeEndpoint: string;
+      logFilter: number;
+    }
   | { type: 'reset'; generation: number }
   | { type: 'poll'; generation: number; requestId: number }
   | { type: 'pause-display'; generation: number; stream: 'logs' | 'events'; paused: boolean }
@@ -53,6 +60,7 @@ export type TelemetryResponse =
       status: ConnectionStatus;
       update: MetricsUpdate;
     }
+  | { type: 'native'; status: ConnectionStatus; live: NativeLiveState }
   | { type: 'stopped' };
 
 export function createMetricsUpdate(

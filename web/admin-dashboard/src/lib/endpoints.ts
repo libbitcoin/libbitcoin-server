@@ -19,15 +19,6 @@ function browserOrigin(): string {
   return window_?.location.origin ?? 'http://localhost';
 }
 
-function browserNativeOrigin(): string {
-  const origin = new URL(browserOrigin());
-  origin.port = '';
-  origin.pathname = '/';
-  origin.search = '';
-  origin.hash = '';
-  return origin.origin;
-}
-
 export function normalizeEndpointUrl(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) throw new Error('Endpoint URL is required');
@@ -59,7 +50,7 @@ export function isSameOriginEndpoint(baseUrl: string, pageOrigin = browserOrigin
 export function defaultEndpointConfiguration(): EndpointConfiguration {
   return {
     adminUrl: normalizeEndpointUrl(import.meta.env.VITE_ADMIN_API_URL ?? browserOrigin()),
-    nativeUrl: normalizeEndpointUrl(import.meta.env.VITE_NATIVE_API_URL ?? browserNativeOrigin()),
+    nativeUrl: normalizeEndpointUrl(import.meta.env.VITE_NATIVE_API_URL ?? browserOrigin()),
   };
 }
 

@@ -7,6 +7,7 @@ import type { LogQuery, LogWindow } from './log-window';
 import { STREAM_REFRESH_MS } from './stream-window';
 import type { EventQuery, EventWindow } from './event-window';
 import type { NativeFees } from './native-contract';
+import { INITIAL_LIVE_STATE, type NativeLiveState } from './native-client';
 import {
   applyMetricsUpdate,
   reuseRows,
@@ -29,7 +30,11 @@ export class WorkerMetricsStore {
   #status: ConnectionStatus = INITIAL_STATUS;
   #listeners = new Set<() => void>();
   #statusListeners = new Set<() => void>();
+  #nativeStatus: ConnectionStatus = INITIAL_STATUS;
+  #nativeLive: NativeLiveState = INITIAL_LIVE_STATE;
+  #nativeListeners = new Set<() => void>();
   #endpoint: string | null = null;
+  #nativeEndpoint: string | null = null;
   #logFilter = DEFAULT_LOG_FILTER;
   #generation = 0;
   #requestId = 0;
@@ -54,6 +59,14 @@ export class WorkerMetricsStore {
 
   readonly getSnapshot = (): MetricsSnapshot => this.#snapshot;
   readonly getStatus = (): ConnectionStatus => this.#status;
+  readonly getNativeStatus = (): ConnectionStatus => this.#nativeStatus;
+  readonly getNativeLive = (): NativeLiveState => this.#nativeLive;
+  readonly subscribeNative = (listener: () => void): (() => void) => {
+    this.#nativeListeners.add(listener);
+    return () => {
+      this.#nativeListeners.delete(listener);
+    };
+  };
   readonly getLogWindow = (): LogWindow => this.#logWindow;
   readonly getEventWindow = (): EventWindow => this.#eventWindow;
   readonly subscribeEvents = (listener: () => void): (() => void) => {
@@ -87,19 +100,28 @@ export class WorkerMetricsStore {
     };
   };
 
-  configure(endpoint: string, logFilter: number): void {
-    if (endpoint === this.#endpoint && logFilter === this.#logFilter) return;
+  configure(endpoint: string, nativeEndpoint: string, logFilter: number): void {
+    if (
+      endpoint === this.#endpoint &&
+      nativeEndpoint === this.#nativeEndpoint &&
+      logFilter === this.#logFilter
+    )
+      return;
     if (this.#endpoint !== null && endpoint !== this.#endpoint) {
       this.reset();
       this.#setStatus({ ...INITIAL_STATUS, phase: 'connecting' });
     }
+    if (this.#nativeEndpoint !== null && nativeEndpoint !== this.#nativeEndpoint) {
+      this.#setNative({ ...INITIAL_STATUS, phase: 'connecting' }, INITIAL_LIVE_STATE);
+    }
     this.#endpoint = endpoint;
+    this.#nativeEndpoint = nativeEndpoint;
     this.#logFilter = logFilter;
     this.#sendConfiguration();
   }
 
   start(): void {
-    if (this.#worker || this.#endpoint === null) return;
+    if (this.#worker || this.#endpoint === null || this.#nativeEndpoint === null) return;
     try {
       const worker = this.createWorker();
       this.#worker = worker;
@@ -108,6 +130,7 @@ export class WorkerMetricsStore {
       for (const listener of this.#logListeners) listener();
       for (const listener of this.#eventListeners) listener();
       this.#setStatus({ ...INITIAL_STATUS, phase: 'connecting' });
+      this.#setNative({ ...INITIAL_STATUS, phase: 'connecting' }, INITIAL_LIVE_STATE);
       worker.onmessage = (event: MessageEvent<TelemetryResponse>) => {
         if (this.#worker !== worker) return;
         const response = event.data;
@@ -139,6 +162,10 @@ export class WorkerMetricsStore {
             logs: reuseRows(this.#logWindow.logs, response.window.logs),
           };
           for (const listener of this.#logListeners) listener();
+          return;
+        }
+        if (response.type === 'native') {
+          this.#setNative(response.status, response.live);
           return;
         }
         if (response.type !== 'snapshot') return;
@@ -209,6 +236,7 @@ export class WorkerMetricsStore {
       }
     }
     this.#setStatus(INITIAL_STATUS);
+    this.#setNative(INITIAL_STATUS, INITIAL_LIVE_STATE);
   }
 
   recordNativeTop(height: number, receivedAt = Date.now()): void {
@@ -337,11 +365,12 @@ export class WorkerMetricsStore {
   }
 
   #sendConfiguration(): void {
-    if (this.#endpoint !== null)
+    if (this.#endpoint !== null && this.#nativeEndpoint !== null)
       this.#send({
         type: 'configure',
         generation: this.#generation,
         endpoint: this.#endpoint,
+        nativeEndpoint: this.#nativeEndpoint,
         logFilter: this.#logFilter,
       });
   }
@@ -373,6 +402,13 @@ export class WorkerMetricsStore {
     this.#worker?.terminate();
     this.#worker = null;
     this.#setStatus({ ...INITIAL_STATUS, error });
+    this.#setNative({ ...INITIAL_STATUS, error }, INITIAL_LIVE_STATE);
+  }
+
+  #setNative(status: ConnectionStatus, live: NativeLiveState): void {
+    this.#nativeStatus = status;
+    this.#nativeLive = live;
+    for (const listener of this.#nativeListeners) listener();
   }
 
   #setStatus(status: ConnectionStatus): void {

@@ -11,17 +11,23 @@ export interface ConnectionStatus {
 
 type StatusListener = () => void;
 
-interface ReconnectingWebSocketOptions {
-  url: string;
+// One of several clients sharing a socket. Each frame is offered to the
+// channels in attachment order until one claims it.
+export interface SocketChannel {
   onOpen?: (socket: WebSocket) => void;
-  onMessage: (text: string) => void;
+  onMessage: (text: string) => boolean;
+  onUnclaimed?: (text: string) => void;
   onHeartbeat?: (socket: WebSocket) => void;
+  heartbeatMs?: number;
   onBeforeStop?: (socket: WebSocket) => void;
+}
+
+export interface ReconnectingWebSocketOptions {
+  url: string;
   webSocketFactory?: (url: string) => WebSocket;
   connectTimeoutMs?: number;
   retryMinimumMs?: number;
   retryMaximumMs?: number;
-  heartbeatMs?: number;
   jitterRatio?: number;
   now?: () => number;
   random?: () => number;
@@ -43,7 +49,6 @@ export class ReconnectingWebSocket {
       | 'connectTimeoutMs'
       | 'retryMinimumMs'
       | 'retryMaximumMs'
-      | 'heartbeatMs'
       | 'jitterRatio'
       | 'now'
       | 'random'
@@ -57,7 +62,8 @@ export class ReconnectingWebSocket {
   #listeners = new Set<StatusListener>();
   #connectTimer: ReturnType<typeof setTimeout> | null = null;
   #retryTimer: ReturnType<typeof setTimeout> | null = null;
-  #heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  #channels: SocketChannel[] = [];
+  #heartbeatTimers = new Map<SocketChannel, ReturnType<typeof setInterval>>();
   #retryDelayMs: number;
   #started = false;
 
@@ -67,7 +73,6 @@ export class ReconnectingWebSocket {
       connectTimeoutMs: options.connectTimeoutMs ?? 5_000,
       retryMinimumMs: options.retryMinimumMs ?? 1_000,
       retryMaximumMs: options.retryMaximumMs ?? 30_000,
-      heartbeatMs: options.heartbeatMs ?? 240_000,
       jitterRatio: options.jitterRatio ?? 0.2,
       now: options.now ?? Date.now,
       random: options.random ?? Math.random,
@@ -85,6 +90,29 @@ export class ReconnectingWebSocket {
     };
   };
 
+  attach(channel: SocketChannel): () => void {
+    this.#channels.push(channel);
+    const socket = this.#socket;
+    if (socket?.readyState === 1 && this.#status.phase === 'connected') {
+      channel.onOpen?.(socket);
+      this.#startHeartbeat(socket, channel);
+    }
+    return () => {
+      const index = this.#channels.indexOf(channel);
+      if (index < 0) return;
+      this.#channels.splice(index, 1);
+      this.#clearHeartbeat(channel);
+      const current = this.#socket;
+      if (current?.readyState === 1) {
+        try {
+          channel.onBeforeStop?.(current);
+        } catch {
+          // The socket is already closing.
+        }
+      }
+    };
+  }
+
   start(): void {
     if (this.#started) return;
     this.#started = true;
@@ -99,7 +127,8 @@ export class ReconnectingWebSocket {
     this.#socket = null;
     if (socket) {
       try {
-        if (socket.readyState === 1) this.#options.onBeforeStop?.(socket);
+        if (socket.readyState === 1)
+          for (const channel of [...this.#channels]) channel.onBeforeStop?.(socket);
         socket.close();
       } catch {
         // The socket is already closing.
@@ -160,8 +189,11 @@ export class ReconnectingWebSocket {
         connectedAt: this.#options.now(),
         error: null,
       });
-      this.#options.onOpen?.(socket);
-      this.#startHeartbeat(socket);
+      for (const channel of [...this.#channels]) {
+        if (this.#socket !== socket) return;
+        channel.onOpen?.(socket);
+        this.#startHeartbeat(socket, channel);
+      }
     });
 
     socket.addEventListener('message', (event) => {
@@ -173,7 +205,9 @@ export class ReconnectingWebSocket {
       if (this.#status.lastMessageAt === null || now - this.#status.lastMessageAt >= 1_000) {
         this.#setStatus({ ...this.#status, lastMessageAt: now });
       }
-      this.#options.onMessage(text);
+      const channels = [...this.#channels];
+      if (channels.some((channel) => channel.onMessage(text))) return;
+      for (const channel of channels) channel.onUnclaimed?.(text);
     });
 
     socket.addEventListener('error', () => {
@@ -191,7 +225,7 @@ export class ReconnectingWebSocket {
       if (this.#socket !== socket) return;
       this.#socket = null;
       this.#clearConnectTimer();
-      this.#clearHeartbeat();
+      this.#clearHeartbeats();
       if (this.#started) this.#scheduleRetry();
     });
   }
@@ -213,14 +247,16 @@ export class ReconnectingWebSocket {
     }, delay);
   }
 
-  #startHeartbeat(socket: WebSocket): void {
-    this.#clearHeartbeat();
-    if (!this.#options.onHeartbeat || this.#options.heartbeatMs <= 0) return;
-    this.#heartbeatTimer = setInterval(() => {
+  #startHeartbeat(socket: WebSocket, channel: SocketChannel): void {
+    this.#clearHeartbeat(channel);
+    const heartbeatMs = channel.heartbeatMs ?? 240_000;
+    if (!channel.onHeartbeat || heartbeatMs <= 0) return;
+    const timer = setInterval(() => {
       if (this.#socket === socket && socket.readyState === 1) {
-        this.#options.onHeartbeat?.(socket);
+        channel.onHeartbeat?.(socket);
       }
-    }, this.#options.heartbeatMs);
+    }, heartbeatMs);
+    this.#heartbeatTimers.set(channel, timer);
   }
 
   #clearConnectTimer(): void {
@@ -229,15 +265,21 @@ export class ReconnectingWebSocket {
     this.#connectTimer = null;
   }
 
-  #clearHeartbeat(): void {
-    if (!this.#heartbeatTimer) return;
-    clearInterval(this.#heartbeatTimer);
-    this.#heartbeatTimer = null;
+  #clearHeartbeat(channel: SocketChannel): void {
+    const timer = this.#heartbeatTimers.get(channel);
+    if (timer === undefined) return;
+    clearInterval(timer);
+    this.#heartbeatTimers.delete(channel);
+  }
+
+  #clearHeartbeats(): void {
+    for (const timer of this.#heartbeatTimers.values()) clearInterval(timer);
+    this.#heartbeatTimers.clear();
   }
 
   #clearTimers(): void {
     this.#clearConnectTimer();
-    this.#clearHeartbeat();
+    this.#clearHeartbeats();
     if (this.#retryTimer) {
       clearTimeout(this.#retryTimer);
       this.#retryTimer = null;

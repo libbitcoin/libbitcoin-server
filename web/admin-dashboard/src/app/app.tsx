@@ -46,7 +46,12 @@ export function App() {
     metrics.getSnapshot,
     metrics.getSnapshot
   );
-  const adminStatus = useAdminTelemetry(endpoints.adminUrl, metrics, logFilter);
+  const adminStatus = useAdminTelemetry(
+    endpoints.adminUrl,
+    endpoints.nativeUrl,
+    metrics,
+    logFilter
+  );
   const native = useNativeTelemetry(endpoints.nativeUrl, metrics, now);
   const syncEstimate = estimateSyncProgress(native.top, native.topHeader, now);
 
