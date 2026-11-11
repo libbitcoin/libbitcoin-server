@@ -164,16 +164,30 @@ export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate
           </header>
           {configuration ? (
             <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 text-sm">
-              <Capability label="Address index" enabled={configuration.address} />
-              <Capability label="Client filters" enabled={configuration.filter} />
-              <Capability label="Turbo" enabled={configuration.turbo} />
-              <Capability label="Witness" enabled={configuration.witness} />
-              <Capability label="Retarget" enabled={configuration.retarget} />
-              <Capability label="Difficulty" enabled={configuration.difficult} />
+              <Capability label="Address index" enabled={configuration.store.address} />
+              <Capability label="Client filters" enabled={configuration.store.filter} />
+              <Capability label="Turbo" enabled={configuration.store.turbo} />
+              <Capability label="Witness" enabled={configuration.store.witness} />
               <div className="border-accentSecondary/20 col-span-2 border-t pt-3">
+                <span className="text-textMuted">Network</span>
+                <span className="text-textPrimary float-right font-mono">
+                  {configuration.node.network}
+                </span>
+              </div>
+              <div className="col-span-2">
+                <span className="text-textMuted">Silent payments from</span>
+                <span className="text-textPrimary float-right font-mono">
+                  {configuration.store.silent === null
+                    ? 'Disabled'
+                    : formatInteger(configuration.store.silent)}
+                </span>
+              </div>
+              <div className="col-span-2">
                 <span className="text-textMuted">Pruned below</span>
                 <span className="text-textPrimary float-right font-mono">
-                  {configuration.pruned > 0 ? formatInteger(configuration.pruned) : 'Not pruned'}
+                  {configuration.store.pruned > 0
+                    ? formatInteger(configuration.store.pruned)
+                    : 'Not pruned'}
                 </span>
               </div>
             </div>

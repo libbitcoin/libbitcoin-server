@@ -1,13 +1,17 @@
 import { z } from 'zod';
 
 const nativeConfigurationSchema = z.object({
-  address: z.boolean(),
-  filter: z.boolean(),
-  turbo: z.boolean(),
-  witness: z.boolean(),
-  retarget: z.boolean(),
-  difficult: z.boolean(),
-  pruned: z.number().int().nonnegative(),
+  store: z.object({
+    address: z.boolean(),
+    filter: z.boolean(),
+    silent: z.number().int().nonnegative().nullable(),
+    turbo: z.boolean(),
+    witness: z.boolean(),
+    pruned: z.number().int().nonnegative(),
+  }),
+  node: z.object({
+    network: z.string(),
+  }),
 });
 
 export type NativeConfiguration = z.infer<typeof nativeConfigurationSchema>;

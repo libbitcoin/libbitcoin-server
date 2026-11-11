@@ -20,8 +20,6 @@ export interface BlockchainClientConfiguration {
   filter: boolean;
   turbo: boolean;
   witness: boolean;
-  retarget: boolean;
-  difficult: boolean;
 }
 
 export interface BlockStats {
