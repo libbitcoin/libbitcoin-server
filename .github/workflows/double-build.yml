@@ -214,15 +214,38 @@ jobs:
             host: "x86_64-linux-gnu"
             toolchain: "x86_64-linux-gnu"
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
-            options: "-Denable-avx2=ON -Denable-sse41=ON"
             linkflags: "-static-libstdc++ -static-libgcc"
-            flags: "-march=x86-64-v3 -mtune=generic"
+            flags: "-march=x86-64 -mtune=generic"
+
+          - basename: "bs-linux-x64-sse41"
+            host: "x86_64-linux-gnu"
+            toolchain: "x86_64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
+            options: "-Denable-sse41=ON"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            flags: "-march=x86-64 -mtune=generic"
 
           - basename: "bs-linux-x64-shani"
             host: "x86_64-linux-gnu"
             toolchain: "x86_64-linux-gnu"
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
-            options: "-Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            options: "-Denable-shani=ON"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            flags: "-march=x86-64-v2 -mtune=generic"
+
+          - basename: "bs-linux-x64-avx2"
+            host: "x86_64-linux-gnu"
+            toolchain: "x86_64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
+            options: "-Denable-avx2=ON"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-linux-x64-avx2-shani"
+            host: "x86_64-linux-gnu"
+            toolchain: "x86_64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
+            options: "-Denable-avx2=ON -Denable-shani=ON"
             linkflags: "-static-libstdc++ -static-libgcc"
             flags: "-march=x86-64-v3 -mtune=generic"
 
@@ -230,17 +253,41 @@ jobs:
             host: "x86_64-linux-gnu"
             toolchain: "x86_64-linux-gnu"
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
-            options: "-Denable-avxifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            options: "-Denable-avxifma=ON"
             linkflags: "-static-libstdc++ -static-libgcc"
             flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-linux-x64-avx512"
+            host: "x86_64-linux-gnu"
+            toolchain: "x86_64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
+            options: "-Denable-avx512=ON"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            flags: "-march=x86-64-v4 -mtune=generic"
+
+          - basename: "bs-linux-x64-avx512-shani"
+            host: "x86_64-linux-gnu"
+            toolchain: "x86_64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
+            options: "-Denable-avx512=ON -Denable-shani=ON"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            flags: "-march=x86-64-v4 -mtune=generic"
+
+          - basename: "bs-linux-x64-avx512-avxifma"
+            host: "x86_64-linux-gnu"
+            toolchain: "x86_64-linux-gnu"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
+            options: "-Denable-avx512=ON -Denable-avxifma=ON"
+            linkflags: "-static-libstdc++ -static-libgcc"
+            flags: "-march=x86-64-v4 -mtune=generic"
 
           - basename: "bs-linux-x64-avx512ifma"
             host: "x86_64-linux-gnu"
             toolchain: "x86_64-linux-gnu"
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
-            options: "-Denable-avx512ifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            options: "-Denable-avx512ifma=ON"
             linkflags: "-static-libstdc++ -static-libgcc"
-            flags: "-march=x86-64-v3 -mtune=generic"
+            flags: "-march=x86-64-v4 -mtune=generic"
 
           - basename: "bs-linux-arm64"
             host: "aarch64-linux-gnu"
@@ -253,7 +300,7 @@ jobs:
             host: "aarch64-linux-gnu"
             toolchain: "aarch64-linux-gnu"
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
-            options: "-Denable-sha2=ON -Denable-aes=ON"
+            options: "-Denable-sha2=ON"
             linkflags: "-static-libstdc++ -static-libgcc"
             flags: "-march=armv8-a+aes+sha2 -mtune=generic"
 
@@ -261,7 +308,7 @@ jobs:
             host: "aarch64-linux-gnu"
             toolchain: "aarch64-linux-gnu"
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04-arm" }
-            options: "-Denable-sha2=ON -Denable-sha3=ON -Denable-aes=ON"
+            options: "-Denable-sha3=ON"
             linkflags: "-static-libstdc++ -static-libgcc"
             flags: "-march=armv8.2-a+aes+sha2+sha3 -mtune=generic"
 
@@ -271,8 +318,88 @@ jobs:
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "apple"
             deployment_target: "13.3"
-            options: "-Denable-avx2=ON -Denable-sse41=ON -Denable-aesni=ON"
+            flags: "-march=x86-64 -mtune=generic"
+
+          - basename: "bs-macos-x64-sse41"
+            host: "x86_64-apple-darwin"
+            toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "apple"
+            deployment_target: "13.3"
+            options: "-Denable-sse41=ON"
+            flags: "-march=x86-64 -mtune=generic"
+
+          - basename: "bs-macos-x64-shani"
+            host: "x86_64-apple-darwin"
+            toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "apple"
+            deployment_target: "13.3"
+            options: "-Denable-shani=ON"
+            flags: "-march=x86-64-v2 -mtune=generic"
+
+          - basename: "bs-macos-x64-avx2"
+            host: "x86_64-apple-darwin"
+            toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "apple"
+            deployment_target: "13.3"
+            options: "-Denable-avx2=ON"
             flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-macos-x64-avx2-shani"
+            host: "x86_64-apple-darwin"
+            toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "apple"
+            deployment_target: "13.3"
+            options: "-Denable-avx2=ON -Denable-shani=ON"
+            flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-macos-x64-avxifma"
+            host: "x86_64-apple-darwin"
+            toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "apple"
+            deployment_target: "13.3"
+            options: "-Denable-avxifma=ON"
+            flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-macos-x64-avx512"
+            host: "x86_64-apple-darwin"
+            toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "apple"
+            deployment_target: "13.3"
+            options: "-Denable-avx512=ON"
+            flags: "-march=x86-64-v4 -mtune=generic"
+
+          - basename: "bs-macos-x64-avx512-shani"
+            host: "x86_64-apple-darwin"
+            toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "apple"
+            deployment_target: "13.3"
+            options: "-Denable-avx512=ON -Denable-shani=ON"
+            flags: "-march=x86-64-v4 -mtune=generic"
+
+          - basename: "bs-macos-x64-avx512-avxifma"
+            host: "x86_64-apple-darwin"
+            toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "apple"
+            deployment_target: "13.3"
+            options: "-Denable-avx512=ON -Denable-avxifma=ON"
+            flags: "-march=x86-64-v4 -mtune=generic"
+
+          - basename: "bs-macos-x64-avx512ifma"
+            host: "x86_64-apple-darwin"
+            toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "apple"
+            deployment_target: "13.3"
+            options: "-Denable-avx512ifma=ON"
+            flags: "-march=x86-64-v4 -mtune=generic"
 
           - basename: "bs-macos-arm64"
             host: "arm64-apple-darwin"
@@ -280,36 +407,104 @@ jobs:
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "apple"
             deployment_target: "13.3"
-            options: "-Denable-sha3=ON -Denable-sha2=ON -Denable-aes=ON"
-            flags: "-mtune=apple-m1"
+            flags: "-march=armv8-a -mtune=apple-m1"
+
+          - basename: "bs-macos-arm64-sha2"
+            host: "arm64-apple-darwin"
+            toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "apple"
+            deployment_target: "13.3"
+            options: "-Denable-sha2=ON"
+            flags: "-march=armv8-a+aes+sha2 -mtune=apple-m1"
+
+          - basename: "bs-macos-arm64-sha3"
+            host: "arm64-apple-darwin"
+            toolchain: "darwin"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "apple"
+            deployment_target: "13.3"
+            options: "-Denable-sha3=ON"
+            flags: "-march=armv8.2-a+aes+sha2+sha3 -mtune=apple-m1"
 
           - basename: "bs-windows-x64"
             host: "x86_64-pc-windows-msvc"
             toolchain: "windows"
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
-            options: "-Denable-avx2=ON -Denable-sse41=ON"
+            flags: "-march=x86-64 -mtune=generic"
+
+          - basename: "bs-windows-x64-sse41"
+            host: "x86_64-pc-windows-msvc"
+            toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "windows"
+            options: "-Denable-sse41=ON"
+            flags: "-march=x86-64 -mtune=generic"
 
           - basename: "bs-windows-x64-shani"
             host: "x86_64-pc-windows-msvc"
             toolchain: "windows"
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
-            options: "-Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            options: "-Denable-shani=ON"
+            flags: "-march=x86-64-v2 -mtune=generic"
+
+          - basename: "bs-windows-x64-avx2"
+            host: "x86_64-pc-windows-msvc"
+            toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "windows"
+            options: "-Denable-avx2=ON"
+            flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-windows-x64-avx2-shani"
+            host: "x86_64-pc-windows-msvc"
+            toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "windows"
+            options: "-Denable-avx2=ON -Denable-shani=ON"
+            flags: "-march=x86-64-v3 -mtune=generic"
 
           - basename: "bs-windows-x64-avxifma"
             host: "x86_64-pc-windows-msvc"
             toolchain: "windows"
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
-            options: "-Denable-avxifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            options: "-Denable-avxifma=ON"
+            flags: "-march=x86-64-v3 -mtune=generic"
+
+          - basename: "bs-windows-x64-avx512"
+            host: "x86_64-pc-windows-msvc"
+            toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "windows"
+            options: "-Denable-avx512=ON"
+            flags: "-march=x86-64-v4 -mtune=generic"
+
+          - basename: "bs-windows-x64-avx512-shani"
+            host: "x86_64-pc-windows-msvc"
+            toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "windows"
+            options: "-Denable-avx512=ON -Denable-shani=ON"
+            flags: "-march=x86-64-v4 -mtune=generic"
+
+          - basename: "bs-windows-x64-avx512-avxifma"
+            host: "x86_64-pc-windows-msvc"
+            toolchain: "windows"
+            images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
+            sdk: "windows"
+            options: "-Denable-avx512=ON -Denable-avxifma=ON"
+            flags: "-march=x86-64-v4 -mtune=generic"
 
           - basename: "bs-windows-x64-avx512ifma"
             host: "x86_64-pc-windows-msvc"
             toolchain: "windows"
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
-            options: "-Denable-avx512ifma=ON -Denable-shani=ON -Denable-avx2=ON -Denable-sse41=ON"
+            options: "-Denable-avx512ifma=ON"
+            flags: "-march=x86-64-v4 -mtune=generic"
 
           - basename: "bs-windows-arm64"
             host: "aarch64-pc-windows-msvc"
@@ -323,7 +518,7 @@ jobs:
             toolchain: "windows"
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
-            options: "-Denable-sha2=ON -Denable-aes=ON"
+            options: "-Denable-sha2=ON"
             flags: "-march=armv8-a+aes+sha2 -mtune=generic"
 
           - basename: "bs-windows-arm64-sha3"
@@ -331,7 +526,7 @@ jobs:
             toolchain: "windows"
             images: { a: "ubuntu-24.04", b: "ubuntu-24.04" }
             sdk: "windows"
-            options: "-Denable-sha2=ON -Denable-sha3=ON -Denable-aes=ON"
+            options: "-Denable-sha3=ON"
             flags: "-march=armv8.2-a+aes+sha2+sha3 -mtune=generic"
 
           - basename: "selector-linux-x64"
@@ -562,7 +757,7 @@ jobs:
           echo "| --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
           DIFFER=""
           MISSING=""
-          for NAME in bs-linux-x64 bs-linux-x64-shani bs-linux-x64-avxifma bs-linux-x64-avx512ifma bs-linux-arm64 bs-linux-arm64-sha2 bs-linux-arm64-sha3 bs-macos-x64 bs-macos-arm64 bs-windows-x64 bs-windows-x64-shani bs-windows-x64-avxifma bs-windows-x64-avx512ifma bs-windows-arm64 bs-windows-arm64-sha2 bs-windows-arm64-sha3 selector-linux-x64 selector-linux-arm64 selector-macos-x64 selector-macos-arm64 selector-windows-x64 selector-windows-arm64; do
+          for NAME in bs-linux-x64 bs-linux-x64-sse41 bs-linux-x64-shani bs-linux-x64-avx2 bs-linux-x64-avx2-shani bs-linux-x64-avxifma bs-linux-x64-avx512 bs-linux-x64-avx512-shani bs-linux-x64-avx512-avxifma bs-linux-x64-avx512ifma bs-linux-arm64 bs-linux-arm64-sha2 bs-linux-arm64-sha3 bs-macos-x64 bs-macos-x64-sse41 bs-macos-x64-shani bs-macos-x64-avx2 bs-macos-x64-avx2-shani bs-macos-x64-avxifma bs-macos-x64-avx512 bs-macos-x64-avx512-shani bs-macos-x64-avx512-avxifma bs-macos-x64-avx512ifma bs-macos-arm64 bs-macos-arm64-sha2 bs-macos-arm64-sha3 bs-windows-x64 bs-windows-x64-sse41 bs-windows-x64-shani bs-windows-x64-avx2 bs-windows-x64-avx2-shani bs-windows-x64-avxifma bs-windows-x64-avx512 bs-windows-x64-avx512-shani bs-windows-x64-avx512-avxifma bs-windows-x64-avx512ifma bs-windows-arm64 bs-windows-arm64-sha2 bs-windows-arm64-sha3 selector-linux-x64 selector-linux-arm64 selector-macos-x64 selector-macos-arm64 selector-windows-x64 selector-windows-arm64; do
             A="double-${NAME}-a"
             B="double-${NAME}-b"
             if [[ ! -f "${A}/SHA256SUMS" || ! -f "${B}/SHA256SUMS" ]]; then

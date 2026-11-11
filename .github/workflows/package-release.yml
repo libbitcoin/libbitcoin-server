@@ -51,11 +51,11 @@ jobs:
           bash libbitcoin-server/.github/packaging/fetch.sh
           "${{ github.event.inputs.tag }}"
           binaries
-          selector-linux-x64 bs-linux-x64 bs-linux-x64-shani
+          selector-linux-x64 bs-linux-x64 bs-linux-x64-avx2-shani
           selector-linux-arm64 bs-linux-arm64 bs-linux-arm64-sha2
-          selector-windows-x64.exe bs-windows-x64.exe bs-windows-x64-shani.exe
+          selector-windows-x64.exe bs-windows-x64.exe bs-windows-x64-avx2-shani.exe
           selector-windows-arm64.exe bs-windows-arm64.exe bs-windows-arm64-sha2.exe
-          bs-macos-arm64 bs-macos-x64
+          bs-macos-arm64-sha3 bs-macos-x64-avx2
 
       - name: Upload release binaries
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -77,16 +77,16 @@ jobs:
           - architecture: "amd64"
             selector: "selector-linux-x64"
             baseline: "bs-linux-x64"
-            baseline_requires: "avx2"
-            optimized: "bs-linux-x64-shani"
-            optimized_requires: "shani avx2 sse41"
+            baseline_requires: ""
+            optimized: "bs-linux-x64-avx2-shani"
+            optimized_requires: "avx2 shani"
 
           - architecture: "arm64"
             selector: "selector-linux-arm64"
             baseline: "bs-linux-arm64"
             baseline_requires: ""
             optimized: "bs-linux-arm64-sha2"
-            optimized_requires: "aes sha2"
+            optimized_requires: "sha2"
 
     env:
       VERSION: ${{ needs.version.outputs.version }}
@@ -223,9 +223,9 @@ jobs:
             architecture: "x64os"
             selector: "selector-windows-x64.exe"
             baseline: "bs-windows-x64.exe"
-            baseline_requires: "avx2"
-            optimized: "bs-windows-x64-shani.exe"
-            optimized_requires: "shani avx2 sse41"
+            baseline_requires: ""
+            optimized: "bs-windows-x64-avx2-shani.exe"
+            optimized_requires: "avx2 shani"
 
           - suffix: "arm64"
             architecture: "arm64"
@@ -233,7 +233,7 @@ jobs:
             baseline: "bs-windows-arm64.exe"
             baseline_requires: ""
             optimized: "bs-windows-arm64-sha2.exe"
-            optimized_requires: "aes sha2"
+            optimized_requires: "sha2"
 
     env:
       VERSION: ${{ needs.version.outputs.version }}
@@ -314,8 +314,8 @@ jobs:
           mkdir -p manifests
           sed -e "s|@VERSION@|${VERSION}|" \
               -e "s|@RELEASE_URL@|${RELEASE_URL}|" \
-              -e "s|@SHA256_ARM64@|$(sha256sum binaries/bs-macos-arm64 | cut -d' ' -f1)|" \
-              -e "s|@SHA256_X64@|$(sha256sum binaries/bs-macos-x64 | cut -d' ' -f1)|" \
+              -e "s|@SHA256_ARM64@|$(sha256sum binaries/bs-macos-arm64-sha3 | cut -d' ' -f1)|" \
+              -e "s|@SHA256_X64@|$(sha256sum binaries/bs-macos-x64-avx2 | cut -d' ' -f1)|" \
               libbitcoin-server/.github/packaging/homebrew/libbitcoin-server.rb.in \
               > manifests/libbitcoin-server.rb
 

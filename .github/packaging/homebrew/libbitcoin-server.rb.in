@@ -6,11 +6,11 @@ class LibbitcoinServer < Formula
 
   on_macos do
     on_arm do
-      url "@RELEASE_URL@/bs-macos-arm64"
+      url "@RELEASE_URL@/bs-macos-arm64-sha3"
       sha256 "@SHA256_ARM64@"
     end
     on_intel do
-      url "@RELEASE_URL@/bs-macos-x64"
+      url "@RELEASE_URL@/bs-macos-x64-avx2"
       sha256 "@SHA256_X64@"
     end
   end
