@@ -52,7 +52,7 @@ BC_AUTO_TEST_CASE(native__configuration__json__expected)
     BC_REQUIRE(node.at("witness").as_bool());
     BC_REQUIRE(!node.at("filters").as_bool());
     BC_REQUIRE(node.at("privacy").as_bool());
-    BC_REQUIRE(!node.at("fees").as_bool());
+    BC_REQUIRE(node.at("fees").as_bool());
 
     const auto& network = object.at("network").as_object();
     BC_REQUIRE_EQUAL(network.size(), 10u);
