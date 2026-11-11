@@ -114,7 +114,9 @@ def build_site(npm, site):
 
 def text_body(data, source):
     """Raw string literals of fixed size, line endings normalized to LF."""
-    content = data.replace(b"\r\n", b"\n")
+    content = data
+    while b"\r\n" in content:
+        content = content.replace(b"\r\n", b"\n")
     if CLOSE in content:
         sys.exit("{} contains the raw string delimiter.".format(source))
 
