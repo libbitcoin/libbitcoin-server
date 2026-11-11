@@ -57,14 +57,14 @@ settings::settings(chain::selection) NOEXCEPT
 std::filesystem::path settings::log_file1() const NOEXCEPT
 {
     BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-    return path / "console_back.log";
+    return console_path / "console_new.log";
     BC_POP_WARNING()
 }
 
 std::filesystem::path settings::log_file2() const NOEXCEPT
 {
     BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-    return path / "console_front.log";
+    return console_path / "console_old.log";
     BC_POP_WARNING()
 }
 

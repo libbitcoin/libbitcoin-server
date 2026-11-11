@@ -105,8 +105,8 @@ void parser::select_network() NOEXCEPT
 // The network-named directory, under the configured root.
 void parser::select_root() NOEXCEPT
 {
-    root_ = configured.root / std::string{ config::selection::to_word(
-        configured.node.network) };
+    const auto network = config::selection::to_word(configured.node.network);
+    root_ = configured.root / std::string{ network };
 }
 
 // Paths are relative to the network directory.
@@ -135,7 +135,7 @@ void parser::select_paths() NOEXCEPT
 
     rooted(configured.database.path);
     rooted(configured.network.path);
-    rooted(configured.log.path);
+    rooted(configured.log.console_path);
     rooted(configured.log.events_path);
     relative(configured.network.inbound.key_path);
     relative(configured.server.admin.path);
@@ -387,7 +387,7 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "folders.console",
-        setting<config::path>(&configured.log.path),
+        setting<config::path>(&configured.log.console_path),
         "The console log files directory, relative to the network directory, defaults to it."
     )
     (

@@ -48,7 +48,7 @@ public:
     bool console;
     bool events;
     uint32_t limit;
-    system::config::path path;
+    system::config::path console_path;
     system::config::path events_path;
 
 #if defined (HAVE_WINDOWS)

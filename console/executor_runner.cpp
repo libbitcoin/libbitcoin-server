@@ -102,7 +102,7 @@ bool executor::do_run()
     if (!metadata_.configured.node.use_gpu_())
         metadata_.configured.database.gpu_scan_minimum = max_uint32;
 
-    database::file::create_directory(metadata_.configured.log.path);
+    database::file::create_directory(metadata_.configured.log.console_path);
     database::file::create_directory(metadata_.configured.log.events_path);
     database::file::create_directory(metadata_.configured.network.path);
 

@@ -340,7 +340,7 @@ Start the server with a configuration file:
 ```
 
 On first launch, `bs` will:
-- Create the network directory, `<folders.root>/<network>` (`./bitcoin/mainnet/` with the sample `bs.cfg`), which contains the `store` directory, logs and peer cache.
+- Create a data store at the path specified in `bs.cfg` (defaults to `./mainnet/store/`).
 - Establish peer connections and begin syncing the Bitcoin blockchain in **milestone sync** mode.
 - Open an interactive console — see [Using the console](#using-the-console).
 - Write log files — see [Logging](#logging).
@@ -413,7 +413,7 @@ The console lets you toggle log verbosity, pause/resume networking, trigger a ba
 | File | Description |
 |------|-------------|
 | `events.log` | Sync log: block heights, timing |
-| `console_front.log` | Session start log (rotated to `console_back.log` on clean shutdown) |
+| `console_new.log` | Console log (rotated to `console_old.log` when full) |
 | `peers.cache` | Peer address cache |
 
 ### Performance

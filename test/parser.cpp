@@ -282,7 +282,7 @@ BC_AUTO_TEST_CASE(parser__parse__unconfigured_paths__network_root)
     BC_REQUIRE(instance.parse(3, argv, error));
 
     const auto& configured = instance.configured;
-    BC_REQUIRE_EQUAL(configured.log.path, system::config::path{ "testnet4" });
+    BC_REQUIRE_EQUAL(configured.log.console_path, system::config::path{ "testnet4" });
     BC_REQUIRE_EQUAL(configured.log.events_path, system::config::path{ "testnet4" });
     BC_REQUIRE_EQUAL(configured.network.path, system::config::path{ "testnet4" });
     BC_REQUIRE(configured.server.admin.cert_path.empty());
@@ -300,7 +300,7 @@ BC_AUTO_TEST_CASE(parser__parse__relative_paths__under_root)
     const auto& configured = instance.configured;
     const auto root = std::filesystem::path{ root_path("regtest") };
     BC_REQUIRE_EQUAL(configured.database.path, system::config::path{ root / "data" });
-    BC_REQUIRE_EQUAL(configured.log.path, system::config::path{ root / "logs" });
+    BC_REQUIRE_EQUAL(configured.log.console_path, system::config::path{ root / "logs" });
     BC_REQUIRE_EQUAL(configured.log.events_path, system::config::path{ root / "events" });
     BC_REQUIRE_EQUAL(configured.network.path, system::config::path{ root / "peers" });
     BC_REQUIRE_EQUAL(configured.server.admin.cert_path, system::config::path{ root / "cert.pem" });
@@ -316,7 +316,7 @@ BC_AUTO_TEST_CASE(parser__parse__absolute_paths__unchanged)
     std::ostringstream error{};
     server::parser instance{ selection::mainnet, pages, pages };
     BC_REQUIRE(instance.parse(3, argv, error));
-    BC_REQUIRE_EQUAL(instance.configured.log.path, system::config::path{ absolute });
+    BC_REQUIRE_EQUAL(instance.configured.log.console_path, system::config::path{ absolute });
     BC_REQUIRE_EQUAL(instance.configured.server.admin.cert_path, system::config::path{ absolute });
     BC_REQUIRE_EQUAL(instance.configured.network.path, root_path("mainnet"));
 }
@@ -364,7 +364,7 @@ BC_AUTO_TEST_CASE(parser__read_envelope__regtest_store__stored_defaults)
     BC_REQUIRE_EQUAL(configured.network.identifier, 3669344250u);
     BC_REQUIRE_EQUAL(configured.database.strong.buckets, 100'000u);
     BC_REQUIRE_EQUAL(configured.database.path, store_path("mainnet"));
-    BC_REQUIRE_EQUAL(configured.log.path, root_path("mainnet"));
+    BC_REQUIRE_EQUAL(configured.log.console_path, root_path("mainnet"));
     BC_REQUIRE_EQUAL(configured.network.path, root_path("mainnet"));
 }
 

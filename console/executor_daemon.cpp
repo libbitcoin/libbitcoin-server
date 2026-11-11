@@ -658,7 +658,7 @@ bool executor::do_daemon()
 
     const auto install = metadata_.configured.daemon.value();
     const auto result = install ?
-        create_service(metadata_.configured.file, metadata_.configured.log.path,
+        create_service(metadata_.configured.file, metadata_.configured.log.console_path,
             account, password) :
         delete_service();
 
