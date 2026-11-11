@@ -120,7 +120,7 @@ function currentSyncState(blocksBehind: number | null): SyncNotice | null {
 
 function noticeDescription(notice: SyncNotice): string {
   if (notice.state === 'near-current') {
-    return `Confirmed top is estimated to be within ${String(SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS)} blocks of the chain tip, based on block time.`;
+    return `Confirmed top is approximately ${String(SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS)} blocks from the top candidate header, based on block time.`;
   }
-  return `Confirmed top is estimated to be ${formatInteger(notice.blocksBehind)} blocks behind the chain tip, based on block time.`;
+  return `Confirmed top is approximately ${formatInteger(notice.blocksBehind)} blocks from the top candidate header, based on block time.`;
 }
