@@ -696,7 +696,9 @@ void protocol_btcd::do_connected(node::header_t link_value) NOEXCEPT
         heights))
     {
         if (fault != database::error::query_canceled)
+        {
             POST_BTCD(complete_overflow, fault);
+        }
 
         return;
     }
