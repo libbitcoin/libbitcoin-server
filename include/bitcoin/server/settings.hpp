@@ -21,6 +21,7 @@
 
 #include <filesystem>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/interfaces/interfaces.hpp>
 
 namespace libbitcoin {
 namespace log {
@@ -209,9 +210,14 @@ public:
         using base = network::settings::http_server;
         using base::base;
 
-        /// Version identity returned by getnetworkinfo.
-        system::config::version version{};
-        std::string subversion{ "/libbitcoin:server/" };
+        /// Minimum interface version (bitcoind version encoding).
+        uint32_t protocol_minimum{ interface::bitcoind::minimum_version };
+
+        /// Maximum interface version (bitcoind version encoding).
+        uint32_t protocol_maximum{ interface::bitcoind::maximum_version };
+
+        /// Validate the interface versions and initialize the context.
+        code initialize_context() NOEXCEPT override;
 
         /// Report an unbatched json-rpc v1 error in the http status.
         bool error_status{ true };

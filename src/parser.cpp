@@ -1602,14 +1602,14 @@ options_metadata parser::load_settings() THROWS
         "The server name (http header), defaults to {}."
     )
     (
-        "bitcoind.version",
-        setting<version>(&configured.server.bitcoind.version),
-        "The version identity (getnetworkinfo), defaults to {}."
+        "bitcoind.protocol_minimum",
+        setting<uint32_t>(&configured.server.bitcoind.protocol_minimum),
+        "The minimum interface version (bitcoind version encoding), defaults to {}."
     )
     (
-        "bitcoind.subversion",
-        setting<std::string>(&configured.server.bitcoind.subversion),
-        "The subversion identity (getnetworkinfo), defaults to {}."
+        "bitcoind.protocol_maximum",
+        setting<uint32_t>(&configured.server.bitcoind.protocol_maximum),
+        "The maximum interface version (bitcoind version encoding), defaults to {}."
     )
     (
         "bitcoind.host",

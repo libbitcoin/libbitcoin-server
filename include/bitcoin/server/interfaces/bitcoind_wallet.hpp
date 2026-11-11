@@ -38,6 +38,7 @@ struct bitcoind_wallet_methods
         method<"bumpfee", string_t, nullable<object_t>>{ unimplemented, "txid", "options" },
         method<"createwallet", string_t, nullopt<false>, nullopt<false>, nullable<string_t>, nullopt<false>, nullopt<true>, nullable<boolean_t>, nullopt<false>>{ unimplemented, "wallet_name", "disable_private_keys", "blank", "passphrase", "avoid_reuse", "descriptors", "load_on_startup", "external_signer" },
         method<"createwalletdescriptor", string_t, nullable<object_t>>{ unimplemented, "type", "options" },
+        method<"derivehdkey", string_t, nullable<object_t>>{ unimplemented, "path", "options" },
         method<"encryptwallet", string_t>{ unimplemented, "passphrase" },
         method<"exportwatchonlywallet", string_t>{ unimplemented, "destination" },
         method<"getaddressesbylabel", string_t>{ unimplemented, "label" },
@@ -110,56 +111,57 @@ struct bitcoind_wallet_methods
     using bump_fee = at<5>;
     using create_wallet = at<6>;
     using create_wallet_descriptor = at<7>;
-    using encrypt_wallet = at<8>;
-    using export_watchonly_wallet = at<9>;
-    using get_addresses_by_label = at<10>;
-    using get_address_info = at<11>;
-    using get_balance = at<12>;
-    using get_balances = at<13>;
-    using get_hd_keys = at<14>;
-    using get_new_address = at<15>;
-    using get_raw_change_address = at<16>;
-    using get_received_by_address = at<17>;
-    using get_received_by_label = at<18>;
-    using get_transaction = at<19>;
-    using get_wallet_info = at<20>;
-    using import_descriptors = at<21>;
-    using import_pruned_funds = at<22>;
-    using keypool_refill = at<23>;
-    using list_address_groupings = at<24>;
-    using list_descriptors = at<25>;
-    using list_labels = at<26>;
-    using list_lock_unspent = at<27>;
-    using list_received_by_address = at<28>;
-    using list_received_by_label = at<29>;
-    using list_since_block = at<30>;
-    using list_transactions = at<31>;
-    using list_unspent = at<32>;
-    using list_wallet_dir = at<33>;
-    using list_wallets = at<34>;
-    using load_wallet = at<35>;
-    using lock_unspent = at<36>;
-    using migrate_wallet = at<37>;
-    using psbt_bump_fee = at<38>;
-    using remove_pruned_funds = at<39>;
-    using rescan_block_chain = at<40>;
-    using restore_wallet = at<41>;
-    using send = at<42>;
-    using send_all = at<43>;
-    using send_many = at<44>;
-    using send_to_address = at<45>;
-    using set_label = at<46>;
-    using set_wallet_flag = at<47>;
-    using sign_message = at<48>;
-    using sign_raw_transaction_with_wallet = at<49>;
-    using simulate_raw_transaction = at<50>;
-    using unload_wallet = at<51>;
-    using wallet_create_funded_psbt = at<52>;
-    using wallet_display_address = at<53>;
-    using wallet_lock = at<54>;
-    using wallet_passphrase = at<55>;
-    using wallet_passphrase_change = at<56>;
-    using wallet_process_psbt = at<57>;
+    using derive_hd_key = at<8>;
+    using encrypt_wallet = at<9>;
+    using export_watchonly_wallet = at<10>;
+    using get_addresses_by_label = at<11>;
+    using get_address_info = at<12>;
+    using get_balance = at<13>;
+    using get_balances = at<14>;
+    using get_hd_keys = at<15>;
+    using get_new_address = at<16>;
+    using get_raw_change_address = at<17>;
+    using get_received_by_address = at<18>;
+    using get_received_by_label = at<19>;
+    using get_transaction = at<20>;
+    using get_wallet_info = at<21>;
+    using import_descriptors = at<22>;
+    using import_pruned_funds = at<23>;
+    using keypool_refill = at<24>;
+    using list_address_groupings = at<25>;
+    using list_descriptors = at<26>;
+    using list_labels = at<27>;
+    using list_lock_unspent = at<28>;
+    using list_received_by_address = at<29>;
+    using list_received_by_label = at<30>;
+    using list_since_block = at<31>;
+    using list_transactions = at<32>;
+    using list_unspent = at<33>;
+    using list_wallet_dir = at<34>;
+    using list_wallets = at<35>;
+    using load_wallet = at<36>;
+    using lock_unspent = at<37>;
+    using migrate_wallet = at<38>;
+    using psbt_bump_fee = at<39>;
+    using remove_pruned_funds = at<40>;
+    using rescan_block_chain = at<41>;
+    using restore_wallet = at<42>;
+    using send = at<43>;
+    using send_all = at<44>;
+    using send_many = at<45>;
+    using send_to_address = at<46>;
+    using set_label = at<47>;
+    using set_wallet_flag = at<48>;
+    using sign_message = at<49>;
+    using sign_raw_transaction_with_wallet = at<50>;
+    using simulate_raw_transaction = at<51>;
+    using unload_wallet = at<52>;
+    using wallet_create_funded_psbt = at<53>;
+    using wallet_display_address = at<54>;
+    using wallet_lock = at<55>;
+    using wallet_passphrase = at<56>;
+    using wallet_passphrase_change = at<57>;
+    using wallet_process_psbt = at<58>;
 };
 
 } // namespace interface

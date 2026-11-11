@@ -70,6 +70,8 @@ protected:
         rpc_interface::create_wallet) NOEXCEPT;
     bool handle_create_wallet_descriptor(const code& ec,
         rpc_interface::create_wallet_descriptor) NOEXCEPT;
+    bool handle_derive_hd_key(const code& ec,
+        rpc_interface::derive_hd_key) NOEXCEPT;
     bool handle_encrypt_wallet(const code& ec,
         rpc_interface::encrypt_wallet) NOEXCEPT;
     bool handle_export_watchonly_wallet(const code& ec,

@@ -102,6 +102,7 @@ const std::vector<method_params> scope_methods
     { "bumpfee", R"([""])" },
     { "createwallet", R"([""])" },
     { "createwalletdescriptor", R"([""])" },
+    { "derivehdkey", R"([""])" },
     { "encryptwallet", R"([""])" },
     { "exportwatchonlywallet", R"([""])" },
     { "getaddressesbylabel", R"([""])" },
@@ -153,6 +154,28 @@ const std::vector<method_params> scope_methods
     { "walletpassphrasechange", R"(["",""])" },
     { "walletprocesspsbt", R"([""])" },
     { "enumeratesigners", "[]" }
+};
+
+using interface_version = server::interface::bitcoind::version;
+
+// Methods introduced in v31, which do not exist at v30.
+const std::vector<method_params> v31_methods
+{
+    { "abortprivatebroadcast", R"([""])" },
+    { "getmempoolcluster", R"([""])" },
+    { "getmempoolfeeratediagram", "[]" },
+    { "getprivatebroadcastinfo", "[]" }
+};
+
+// Methods introduced in v32, which do not exist at v31 or v30.
+const std::vector<method_params> v32_methods
+{
+    { "addhdkey", "[]" },
+    { "derivehdkey", R"([""])" },
+    { "exportasmap", R"([""])" },
+    { "exportwatchonlywallet", R"([""])" },
+    { "getopenrpcinfo", "[]" },
+    { "rpc.discover", "[]" }
 };
 
 const std::vector<method_code> pending_methods
@@ -1437,7 +1460,13 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__createmultisig__excess_keys__invalid_parameter)
 BC_AUTO_TEST_CASE(bitcoind_rpc__rpc_discover__default__openrpc_version)
 {
     const auto response = rpc("rpc.discover");
-    BC_REQUIRE_EQUAL(as_text(response.at("result").at("openrpc")), "1.2.6");
+    BC_REQUIRE_EQUAL(as_text(response.at("result").at("openrpc")), "1.4.1");
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__rpc_discover__methods__excludes_negotiateversion)
+{
+    const auto response = rpc("rpc.discover");
+    BC_REQUIRE_EQUAL(serialize(response.at("result").at("methods")).find("negotiateversion"), std::string::npos);
 }
 
 // network
@@ -1455,6 +1484,243 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__fields)
     BC_REQUIRE(result.at("localservicesnames").is_array());
     BC_REQUIRE(result.at("connections_in").is_int64());
     BC_REQUIRE(result.at("connections_out").is_int64());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__default__maximum_version)
+{
+    const auto response = rpc("getnetworkinfo");
+    const auto& result = response.at("result");
+    BC_REQUIRE_EQUAL(result.at("version").as_int64(), 320000);
+    BC_REQUIRE_EQUAL(as_text(result.at("subversion")), "/Satoshi:32.0.0/");
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__no_range__maximum)
+{
+    BC_REQUIRE_EQUAL(rpc("negotiateversion").at("result").as_int64(), 320000);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__range__floor)
+{
+    BC_REQUIRE_EQUAL(rpc("negotiateversion", "[0,329999]").at("result").as_int64(), 320000);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__named_maximum__floor)
+{
+    BC_REQUIRE_EQUAL(rpc("negotiateversion", R"({"maximum":330000})").at("result").as_int64(), 320000);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__range__intermediate_floor)
+{
+    BC_REQUIRE_EQUAL(rpc("negotiateversion", "[0,319999]").at("result").as_int64(), 310000);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__below_minimum__invalid_parameter)
+{
+    BC_REQUIRE(has_code(rpc("negotiateversion", "[0,299999]"), -8));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__above_maximum__invalid_parameter)
+{
+    BC_REQUIRE(has_code(rpc("negotiateversion", "[320001]"), -8));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__fractional__invalid_parameter)
+{
+    BC_REQUIRE(has_code(rpc("negotiateversion", "[320000.5]"), -8));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__negotiated__getnetworkinfo_version)
+{
+    BC_REQUIRE_EQUAL(rpc("negotiateversion", "[320000,320000]").at("result").as_int64(), 320000);
+    BC_REQUIRE_EQUAL(rpc("getnetworkinfo").at("result").at("version").as_int64(), 320000);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__repeat__invalid_request)
+{
+    BC_REQUIRE_EQUAL(rpc("negotiateversion").at("result").as_int64(), 320000);
+    BC_REQUIRE(has_code(rpc("negotiateversion", "[320000,320000]"), -32600));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__after_request__invalid_request)
+{
+    BC_REQUIRE(!has_error(rpc("getblockcount")));
+    BC_REQUIRE(has_code(rpc("negotiateversion", "[0,320000]"), -32600));
+    BC_REQUIRE_EQUAL(rpc("getnetworkinfo").at("result").at("version").as_int64(), 320000);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__after_rest__invalid_request)
+{
+    BC_REQUIRE_EQUAL(rest_status("/rest/chaininfo.json"), status::ok);
+    BC_REQUIRE(has_code(rpc("negotiateversion"), -32600));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__invalid__dropped)
+{
+    BC_REQUIRE(has_code(rpc("negotiateversion", "[0,299999]"), -8));
+    BC_REQUIRE(rpc_body(R"({"jsonrpc":"2.0","id":1,"method":"getnetworkinfo","params":[]})").as_object().contains("dropped"));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__parameter_type__dropped)
+{
+    BC_REQUIRE(has_error(rpc("negotiateversion", R"(["x"])")));
+    BC_REQUIRE(rpc_body(R"({"jsonrpc":"2.0","id":1,"method":"getnetworkinfo","params":[]})").as_object().contains("dropped"));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__websocket__maximum)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE_EQUAL(ws_rpc("negotiateversion", "[0,330000]").at("result").as_int64(), 320000);
+    BC_REQUIRE_EQUAL(ws_rpc("getnetworkinfo").at("result").at("version").as_int64(), 320000);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__help__default__excludes_negotiateversion)
+{
+    BC_REQUIRE_EQUAL(as_text(rpc("help").at("result")).find("negotiateversion"), std::string::npos);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__help__negotiateversion__unknown)
+{
+    BC_REQUIRE_EQUAL(as_text(rpc("help", R"(["negotiateversion"])").at("result")), "help: unknown command: negotiateversion");
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__negotiateversion_first__latched)
+{
+    const auto response = rpc_body(
+        R"([{"jsonrpc":"2.0","id":1,"method":"negotiateversion","params":[0,330000]},)"
+        R"({"jsonrpc":"2.0","id":2,"method":"getnetworkinfo","params":[]}])");
+
+    BC_REQUIRE(response.is_array());
+    const auto& batch = response.as_array();
+    BC_REQUIRE_EQUAL(batch.size(), 2u);
+    BC_REQUIRE_EQUAL(batch.at(0).at("result").as_int64(), 320000);
+    BC_REQUIRE_EQUAL(batch.at(1).at("result").at("version").as_int64(), 320000);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiate__v30__getnetworkinfo_version)
+{
+    BC_REQUIRE(negotiate(interface_version::v30_0));
+    const auto response = rpc("getnetworkinfo");
+    BC_REQUIRE_EQUAL(response.at("result").at("version").as_int64(), 300000);
+    BC_REQUIRE_EQUAL(as_text(response.at("result").at("subversion")), "/Satoshi:30.0.0/");
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__negotiate__v31__getnetworkinfo_version)
+{
+    BC_REQUIRE(negotiate(interface_version::v31_0));
+    BC_REQUIRE_EQUAL(rpc("getnetworkinfo").at("result").at("version").as_int64(), 310000);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__tcp_negotiate__v30__getnetworkinfo_version)
+{
+    BC_REQUIRE(tcp_negotiate(interface_version::v30_0));
+    BC_REQUIRE_EQUAL(tcp_rpc("getnetworkinfo").at("result").at("version").as_int64(), 300000);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__ws_negotiate__v31__getnetworkinfo_version)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(ws_negotiate(interface_version::v31_0));
+    BC_REQUIRE_EQUAL(ws_rpc("getnetworkinfo").at("result").at("version").as_int64(), 310000);
+}
+
+// version gating
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__v31_methods__v30__method_not_found)
+{
+    BC_REQUIRE(negotiate(interface_version::v30_0));
+    for (const auto& [method, params]: v31_methods)
+    {
+        BC_REQUIRE_MESSAGE(has_code(rpc(method, params), -32601), method);
+    }
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__v32_methods__v30__method_not_found)
+{
+    BC_REQUIRE(negotiate(interface_version::v30_0));
+    for (const auto& [method, params]: v32_methods)
+    {
+        BC_REQUIRE_MESSAGE(has_code(rpc(method, params), -32601), method);
+    }
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__v32_methods__v31__method_not_found)
+{
+    BC_REQUIRE(negotiate(interface_version::v31_0));
+    for (const auto& [method, params]: v32_methods)
+    {
+        BC_REQUIRE_MESSAGE(has_code(rpc(method, params), -32601), method);
+    }
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__v32_methods__v31_websocket__method_not_found)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(ws_negotiate(interface_version::v31_0));
+    for (const auto& [method, params]: v32_methods)
+    {
+        BC_REQUIRE_MESSAGE(has_code(ws_rpc(method, params), -32601), method);
+    }
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolcluster__v30__method_not_found)
+{
+    BC_REQUIRE(negotiate(interface_version::v30_0));
+    BC_REQUIRE(has_code(rpc("getmempoolcluster", R"([""])"), -32601));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolcluster__v31__dispatched)
+{
+    BC_REQUIRE(negotiate(interface_version::v31_0));
+    BC_REQUIRE(has_code(rpc("getmempoolcluster", R"([""])"), -33));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__exportasmap__v31__method_not_found)
+{
+    BC_REQUIRE(negotiate(interface_version::v31_0));
+    BC_REQUIRE(has_code(rpc("exportasmap", R"([""])"), -32601));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__exportasmap__v32__dispatched)
+{
+    BC_REQUIRE(negotiate(interface_version::v32_0));
+    BC_REQUIRE(has_code(rpc("exportasmap", R"([""])"), -1));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getopenrpcinfo__v32__result)
+{
+    BC_REQUIRE(negotiate(interface_version::v32_0));
+    BC_REQUIRE_EQUAL(as_text(rpc("getopenrpcinfo").at("result").at("info").at("version")), "32.0.0");
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__rpc_discover__v32__result)
+{
+    BC_REQUIRE(negotiate(interface_version::v32_0));
+    BC_REQUIRE_EQUAL(as_text(rpc("rpc.discover").at("result").at("openrpc")), "1.4.1");
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__help__v31__excludes_exportasmap)
+{
+    BC_REQUIRE(negotiate(interface_version::v31_0));
+    BC_REQUIRE_EQUAL(as_text(rpc("help").at("result")).find("exportasmap"), std::string::npos);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__help__v32__includes_exportasmap)
+{
+    BC_REQUIRE(negotiate(interface_version::v32_0));
+    BC_REQUIRE_NE(as_text(rpc("help").at("result")).find("exportasmap"), std::string::npos);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__help_exportasmap__v31__unknown)
+{
+    BC_REQUIRE(negotiate(interface_version::v31_0));
+    BC_REQUIRE_EQUAL(as_text(rpc("help", R"(["exportasmap"])").at("result")), "help: unknown command: exportasmap");
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__help_exportasmap__v32__usage)
+{
+    BC_REQUIRE(negotiate(interface_version::v32_0));
+    BC_REQUIRE_EQUAL(as_text(rpc("help", R"(["exportasmap"])").at("result")), "exportasmap path");
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getpeerinfo__no_channels__empty)
@@ -2837,7 +3103,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getopenrpcinfo__always__document)
 {
     const auto response = rpc("getopenrpcinfo");
     const auto& result = response.at("result");
-    BC_REQUIRE_EQUAL(as_text(result.at("openrpc")), "1.2.6");
+    BC_REQUIRE_EQUAL(as_text(result.at("openrpc")), "1.4.1");
     BC_REQUIRE(result.at("methods").is_array());
     BC_REQUIRE(!result.at("methods").as_array().empty());
 }

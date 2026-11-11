@@ -594,6 +594,37 @@ BC_AUTO_TEST_CASE(bitcoind_rest__post_disallowed_host__bad_request)
 
 BC_AUTO_TEST_SUITE_END()
 
+// Configured with v30 as the maximum interface version.
+struct bitcoind_v30_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_v30_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.server.bitcoind.protocol_maximum = 300000;
+        })
+    {
+    }
+};
+
+BC_FIXTURE_TEST_SUITE(bitcoind_rest_v30_tests, bitcoind_v30_setup_fixture)
+
+BC_AUTO_TEST_CASE(bitcoind_rest__blockpart__v30__not_found)
+{
+    const auto target = "/rest/blockpart/" + block9 + ".bin?offset=0&size=80";
+    BC_REQUIRE_EQUAL(rest_status(target), status::not_found);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rest__block__v30__ok)
+{
+    BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block9 + ".hex"), status::ok);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
 struct bitcoind_origin_setup_fixture
   : bitcoind_setup_fixture
 {

@@ -34,13 +34,15 @@ namespace server {
 using session_admin = session_server<protocol_admin>;
 using session_native = session_server<protocol_native>;
 using session_esplora = session_server<protocol_esplora>;
-using session_bitcoind = session_server<protocol_bitcoind_rest,
+using session_bitcoind = session_handshake<protocol_bitcoind_version,
+    protocol_bitcoind_rest,
     protocol_bitcoind_blockchain, protocol_bitcoind_control,
     protocol_bitcoind_mining, protocol_bitcoind_network,
     protocol_bitcoind_notifications, protocol_bitcoind_test,
     protocol_bitcoind_transaction, protocol_bitcoind_utility,
     protocol_bitcoind_wallet, protocol_bitcoind>;
-using session_btcd = session_server<protocol_btcd,
+using session_btcd = session_handshake<protocol_bitcoind_version,
+    protocol_btcd,
     protocol_bitcoind_blockchain, protocol_bitcoind_control,
     protocol_bitcoind_mining, protocol_bitcoind_network,
     protocol_bitcoind_notifications, protocol_bitcoind_test,
@@ -91,14 +93,16 @@ server::session → node::session
     ╞══ session_admin      = server::session_server<protocol_admin>
     ╞══ session_native     = server::session_server<protocol_native>
     ╞══ session_esplora    = server::session_server<protocol_esplora>
-    ╞══ session_bitcoind   = server::session_server<protocol_bitcoind_rest,
-            protocol_bitcoind_<subgroup>..., protocol_bitcoind>
-    ╞══ session_btcd       = server::session_server<protocol_btcd,
-            protocol_bitcoind_<subgroup>..., protocol_bitcoind>
     ╞══ session_stratum_v1 = server::session_server<protocol_stratum_v1>
     ╞══ session_stratum_v2 = server::session_server<protocol_stratum_v2>
     ╞══ session_zmq        = server::session_server<protocol_zmq>
     └── server::session_handshake<...Protocols>
+        ╞══ session_bitcoind = server::session_handshake<
+        │       protocol_bitcoind_version, protocol_bitcoind_rest,
+        │       protocol_bitcoind_<subgroup>..., protocol_bitcoind>
+        ╞══ session_btcd     = server::session_handshake<
+        │       protocol_bitcoind_version, protocol_btcd,
+        │       protocol_bitcoind_<subgroup>..., protocol_bitcoind>
         ╞══ session_electrum = server::session_handshake<
         │       protocol_electrum_version, protocol_electrum>
         ╘══ session_sparrow  = server::session_handshake<

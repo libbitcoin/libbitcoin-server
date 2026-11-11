@@ -60,6 +60,7 @@ void protocol_bitcoind_wallet::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_bump_fee, _1, _2);
     SUBSCRIBE_BITCOIND(handle_create_wallet, _1, _2);
     SUBSCRIBE_BITCOIND(handle_create_wallet_descriptor, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_derive_hd_key, _1, _2);
     SUBSCRIBE_BITCOIND(handle_encrypt_wallet, _1, _2);
     SUBSCRIBE_BITCOIND(handle_export_watchonly_wallet, _1, _2);
     SUBSCRIBE_BITCOIND(handle_get_addresses_by_label, _1, _2);
@@ -166,6 +167,14 @@ bool protocol_bitcoind_wallet::handle_create_wallet(const code& ec,
 
 bool protocol_bitcoind_wallet::handle_create_wallet_descriptor(const code& ec,
     rpc_interface::create_wallet_descriptor) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_error(error::bitcoind::method_not_found);
+    return true;
+}
+
+bool protocol_bitcoind_wallet::handle_derive_hd_key(const code& ec,
+    rpc_interface::derive_hd_key) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::bitcoind::method_not_found);

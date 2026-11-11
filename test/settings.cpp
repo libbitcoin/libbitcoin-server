@@ -220,6 +220,37 @@ BC_AUTO_TEST_CASE(server__bitcoind_server__defaults__expected)
     BC_REQUIRE_EQUAL(server.server, BC_HTTP_SERVER_NAME);
     BC_REQUIRE(server.hosts.empty());
     BC_REQUIRE(server.host_names().empty());
+
+    // bitcoind_server
+    BC_REQUIRE_EQUAL(server.protocol_minimum, 300000u);
+    BC_REQUIRE_EQUAL(server.protocol_maximum, 320000u);
+}
+
+BC_AUTO_TEST_CASE(server__bitcoind_server__initialize_context_defaults__success)
+{
+    server::settings::bitcoind_server instance{ "bitcoind" };
+    BC_REQUIRE(!instance.initialize_context());
+}
+
+BC_AUTO_TEST_CASE(server__bitcoind_server__initialize_context_minimum_below_implemented__invalid_configuration)
+{
+    server::settings::bitcoind_server instance{ "bitcoind" };
+    instance.protocol_minimum = 299999;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__bitcoind_server__initialize_context_maximum_above_implemented__invalid_configuration)
+{
+    server::settings::bitcoind_server instance{ "bitcoind" };
+    instance.protocol_maximum = 320001;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__bitcoind_server__initialize_context_minimum_above_maximum__invalid_configuration)
+{
+    server::settings::bitcoind_server instance{ "bitcoind" };
+    instance.protocol_minimum = 320001;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
 
 BC_AUTO_TEST_CASE(server__electrum_server__defaults__expected)

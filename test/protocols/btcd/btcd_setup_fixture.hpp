@@ -51,6 +51,9 @@ struct btcd_setup_fixture
     int64_t rpc_error(std::string_view method,
         std::string_view params = "[]");
 
+    // Negotiate exactly the interface version, as the channel opener.
+    bool negotiate(server::interface::bitcoind::version version);
+
     // Authorize the connection (btcd's in-band credential method), for tests
     // that require it as a precondition -- mirrors electrum's handshake().
     bool authenticate(const std::string& username=BTCD_TEST_USERNAME,
