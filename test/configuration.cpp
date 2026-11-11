@@ -27,7 +27,6 @@ BC_AUTO_TEST_CASE(configuration__construct1__none_context__expected)
     const configuration instance(system::chain::selection::none, native, admin);
 
     BC_REQUIRE(instance.file.empty());
-    BC_REQUIRE(instance.root.empty());
     BC_REQUIRE(!instance.help);
     BC_REQUIRE(!instance.hardware);
     BC_REQUIRE(!instance.settings);

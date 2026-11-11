@@ -106,7 +106,7 @@ void parser::select_network() NOEXCEPT
 void parser::select_root() NOEXCEPT
 {
     const auto network = config::selection::to_word(configured.node.network);
-    root_ = configured.root / std::string{ network };
+    root_ = configured.server.path / std::string{ network };
 }
 
 // Paths are relative to the network directory.
@@ -372,7 +372,7 @@ options_metadata parser::load_settings() THROWS
     /* [folders] */
     (
         "folders.root",
-        setting<config::path>(&configured.root),
+        setting<config::path>(&configured.server.path),
         "The base of the network-named directory, defaults to the working directory."
     )
     (
