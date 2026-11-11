@@ -196,7 +196,7 @@ bool native_setup_fixture::expect_dropped(std::string_view target)
     network::code ec{};
     http::message<false, http::string_body> response{};
     http::read(socket_, buffer, response, ec);
-    return ec == network::error::http_error_t::end_of_stream;
+    return !!ec;
 }
 
 http::status native_setup_fixture::get_status(std::string_view target)

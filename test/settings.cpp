@@ -52,7 +52,7 @@ BC_AUTO_TEST_CASE(settings__log__default_context__expected)
     BC_REQUIRE_EQUAL(log.log_file2(), "console_old.log");
     BC_REQUIRE_EQUAL(log.events_file(), "events.log");
 #if defined(HAVE_WINDOWS)
-    BC_REQUIRE_EQUAL(log.symbols, "symbols");
+    BC_REQUIRE_EQUAL(log.symbols_path, "symbols");
 #endif
 }
 
@@ -96,6 +96,14 @@ BC_AUTO_TEST_CASE(server__html_server__defaults__expected)
     BC_REQUIRE(instance.websocket);
     BC_REQUIRE(instance.path.empty());
     BC_REQUIRE_EQUAL(instance.default_, "index.html");
+}
+
+BC_AUTO_TEST_CASE(server__settings__defaults__expected)
+{
+    const server::settings::embedded_pages admin{};
+    const server::settings::embedded_pages native{};
+    const server::settings instance{ selection::none, native, admin };
+    BC_REQUIRE(instance.path.empty());
 }
 
 BC_AUTO_TEST_CASE(server__admin_server__defaults__expected)

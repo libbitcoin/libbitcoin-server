@@ -75,22 +75,12 @@ void executor::dump_hardware() const
 
 #if defined(HAVE_ARM)
     logger(BS_HARDWARE_HEADER_ARM64);
-    logger(std::format("aes......... " BS_HARDWARE_COMPILED, try_neon_aes(), have_neon_aes));
-    logger(std::format("sha2........ " BS_HARDWARE_COMPILED, try_neon_sha2(), have_neon_sha));
-    logger(std::format("sha3........ " BS_HARDWARE_COMPILED, try_neon_sha3(), have_neon_sha3));
-    logger(std::format("neon........ " BS_HARDWARE_COMPILED, try_neon(), have_neon));
 #else
     logger(BS_HARDWARE_HEADER_X64);
-    logger(std::format("aesni....... " BS_HARDWARE_COMPILED, try_aesni(), have_aesni));
-    logger(std::format("vaes........ " BS_HARDWARE_COMPILED, try_vaes(), have_vaes));
-    logger(std::format("shani....... " BS_HARDWARE_COMPILED, try_shani(), have_shani));
-    logger(std::format("sha512...... " BS_HARDWARE_COMPILED, try_sha512(), have_sha512));
-    logger(std::format("sse41....... " BS_HARDWARE_COMPILED, try_sse41(), have_sse41));
-    logger(std::format("avx2........ " BS_HARDWARE_COMPILED, try_avx2(), have_avx2));
-    logger(std::format("avx512...... " BS_HARDWARE_COMPILED, try_avx512(), have_avx512));
-    logger(std::format("avxifma..... " BS_HARDWARE_COMPILED, try_avxifma(), have_avxifma));
-    logger(std::format("avx512ifma.. " BS_HARDWARE_COMPILED, try_avx512ifma(), have_avx512ifma));
 #endif
+    for (const auto& extension: extension_states())
+        logger(std::format("{:.<12} " BS_HARDWARE_COMPILED, extension.name,
+            extension.platform, extension.compiled));
 
     const auto cuda = cuda_device();
     const auto compiled = batched::compiled();
@@ -108,6 +98,12 @@ void executor::dump_hardware() const
         if (cuda)
             logger(std::format("cuda ecc.... " BS_HARDWARE_ENABLED, cuda_ecc(), cuda_ecc_enabled()));
     }
+
+    const auto platform = build_name("bs", detected_tags());
+    const auto build = build_name("bs", compiled_tags());
+    logger(std::format(BS_HARDWARE_BUILD, build));
+    if (build != platform)
+        logger(std::format(BS_HARDWARE_PLATFORM, platform));
 }
 
 // logging compilation and initial values.

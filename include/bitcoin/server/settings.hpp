@@ -52,7 +52,7 @@ public:
     system::config::path events_path;
 
 #if defined (HAVE_WINDOWS)
-    system::config::path symbols{ "symbols" };
+    system::config::path symbols_path{ "symbols" };
 #endif
 
     virtual std::filesystem::path log_file1() const NOEXCEPT;
@@ -251,6 +251,9 @@ public:
 
     /// The network of the service ports.
     system::chain::selection network{};
+
+    /// The base of the network-named directory.
+    system::config::path path{};
 
     /// The name of the service that failed to initialize, if any.
     std::string failure{};

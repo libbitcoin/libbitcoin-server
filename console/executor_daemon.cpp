@@ -656,10 +656,11 @@ bool executor::do_daemon()
         password = user.value().password();
     }
 
-    const auto install = metadata_.configured.daemon.value();
+    const auto& configured = metadata_.configured;
+    const auto install = configured.daemon.value();
     const auto result = install ?
-        create_service(metadata_.configured.file, metadata_.configured.log.console_path,
-            account, password) :
+        create_service(configured.file, configured.log.console_path, account,
+            password) :
         delete_service();
 
     switch (result)

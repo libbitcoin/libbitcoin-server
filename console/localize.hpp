@@ -401,6 +401,10 @@
     "platform:{:d} enabled:{:d}."
 #define BS_HARDWARE_INCOMPATIBLE \
     "platform:{:d} compiled:{:d} (unsupported)."
+#define BS_HARDWARE_BUILD \
+    "build....... {}"
+#define BS_HARDWARE_PLATFORM \
+    "platform.... {}"
 #define BS_HARDWARE_REQUIRED \
     "This processor lacks instruction set extensions compiled into this build."
 

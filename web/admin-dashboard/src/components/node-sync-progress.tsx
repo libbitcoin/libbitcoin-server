@@ -28,7 +28,7 @@ export function NodeSyncProgress({ confirmed, estimate }: NodeSyncProgressProps)
             Node synchronization
           </p>
           <h2 id="node-sync-progress-title" className="text-accent mt-1 text-lg font-semibold">
-            Catching up to estimated chain tip
+            Catching up to top candidate header
           </h2>
         </div>
         <p className="text-accent text-2xl font-semibold tabular-nums">{progressLabel}</p>
@@ -52,8 +52,8 @@ export function NodeSyncProgress({ confirmed, estimate }: NodeSyncProgressProps)
       </div>
 
       <dl className="bg-accentSecondary/10 mt-5 grid gap-px text-sm sm:grid-cols-3">
-        <SyncValue label="Confirmed top" value={formatInteger(confirmed)} />
-        <SyncValue label="Estimated chain tip" value={formatInteger(estimate.estimatedTop)} />
+        <SyncValue label="Top confirmed block" value={formatInteger(confirmed)} />
+        <SyncValue label="Top candidate header" value={formatInteger(estimate.estimatedTop)} />
         <SyncValue
           label="Estimated blocks remaining"
           value={formatInteger(estimate.blocksRemaining)}
