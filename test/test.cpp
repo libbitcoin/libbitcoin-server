@@ -162,6 +162,7 @@ static network::settings network_settings() NOEXCEPT
     out.enable_witness_tx = false;
     out.enable_compact = false;
     out.enable_not_found = false;
+    out.enable_memory_pool = false;
     out.enable_relay = false;
     out.maximum_skew_minutes = 120;
 
