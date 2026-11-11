@@ -71,7 +71,7 @@ bool protocol_native::handle_get_configuration(const code& ec,
                 { "witness", node.provide_witness },
                 { "filters", node.provide_filters },
                 { "privacy", node.provide_privacy },
-                { "fees", !is_zero(node.fee_estimate_horizon) }
+                { "fees", node.fee_estimate_enabled() }
             }
         },
         { "network", json::object
