@@ -2489,6 +2489,16 @@ options_metadata parser::load_settings() THROWS
         "Limit of concurrent prefetched block reads from disk, defaults to {} (0 unlimited)."
     )
     (
+        "database.memory_reserve",
+        setting<uint64_t>(&configured.database.memory_reserve),
+        "Bytes of unused memory restored by cache release when current, defaults to {} (0 disables)."
+    )
+    (
+        "database.memory_ceiling",
+        setting<uint64_t>(&configured.database.memory_ceiling),
+        "Bytes of process memory above which cache is released when current, defaults to {} (0 disables)."
+    )
+    (
         "database.gpu_scan_minimum",
         setting<uint32_t>(&configured.database.gpu_scan_minimum),
         "Minimum transactions for a silent payment scan to use the GPU, defaults to {}."
