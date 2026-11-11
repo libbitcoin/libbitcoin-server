@@ -2260,7 +2260,7 @@ options_metadata parser::load_settings() THROWS
     (
         "node.delay_inbound",
         setting<bool>(&configured.node.delay_inbound),
-        "Block inbound peer/client (excluding admin/native) until current, defaults to {}."
+        "Block inbound peer/client (excluding admin) until current, defaults to {}."
     )
     (
         "node.provide_blocks",

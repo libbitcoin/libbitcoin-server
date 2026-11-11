@@ -88,6 +88,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
             native.connections = 1;
             native.path = "unused";
             native.inactivity_minutes = 1;
+            config_.node.delay_inbound = false;
             config_.database.path = TEST_DIRECTORY;
             if (configure)
                 configure(config_);

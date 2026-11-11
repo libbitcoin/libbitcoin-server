@@ -55,15 +55,15 @@ void protocol_admin::start() NOEXCEPT
     // Subscription methods.
     SUBSCRIBE_ADMIN(handle_get_log_subscribe, _1, _2, _3, _4);
     SUBSCRIBE_ADMIN(handle_get_event_subscribe, _1, _2, _3, _4);
-    protocol_html::start();
+    protocol_native::start();
 }
 
 void protocol_admin::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     log_interest_->set(zero);
-    dispatcher_.stop(ec);
-    protocol_html::stopping(ec);
+    admin_dispatcher_.stop(ec);
+    protocol_native::stopping(ec);
 }
 
 // Dispatch.
@@ -80,8 +80,12 @@ bool protocol_admin::try_dispatch_object(const http::request& request) NOEXCEPT
     rpc::request_t model{};
     if (const auto ec = admin_target(model, target))
     {
+        // An unrecognized admin target may be a native interface request.
+        if (ec == error::invalid_target)
+            return protocol_native::try_dispatch_object(request);
+
         // Allow invalid interface target to be retried as a page request.
-        return !ec;
+        return false;
     }
 
     // No media defaults injected for an http request.
@@ -109,7 +113,7 @@ bool protocol_admin::try_dispatch_object(const http::request& request) NOEXCEPT
         return true;
     }
 
-    if (dispatcher_.notify(model))
+    if (admin_dispatcher_.notify(model))
         send_bad_request();
 
     return true;
@@ -140,7 +144,12 @@ void protocol_admin::dispatch_websocket(const http::request& request) NOEXCEPT
     rpc::request_t model{};
     if (const auto ec = admin_target(model, target))
     {
-        send_bad_target(ec, request);
+        // An unrecognized admin target may be a native interface request.
+        if (ec == error::invalid_target)
+            protocol_native::dispatch_websocket(request);
+        else
+            send_bad_target(ec, request);
+
         return;
     }
 
@@ -164,7 +173,7 @@ void protocol_admin::dispatch_websocket(const http::request& request) NOEXCEPT
         return;
     }
 
-    if (dispatcher_.notify(model))
+    if (admin_dispatcher_.notify(model))
         send_bad_request(request);
 }
 
@@ -172,7 +181,8 @@ void protocol_admin::dispatch_websocket(const http::request& request) NOEXCEPT
 // ----------------------------------------------------------------------------
 
 bool protocol_admin::handle_get_log_subscribe(const code& ec,
-    interface::log_subscribe, uint8_t /*version*/, uint64_t filter) NOEXCEPT
+    admin_interface::log_subscribe, uint8_t /*version*/,
+    uint64_t filter) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -193,7 +203,8 @@ bool protocol_admin::handle_get_log_subscribe(const code& ec,
 }
 
 bool protocol_admin::handle_get_event_subscribe(const code& ec,
-    interface::event_subscribe, uint8_t /*version*/, uint64_t filter) NOEXCEPT
+    admin_interface::event_subscribe, uint8_t /*version*/,
+    uint64_t filter) NOEXCEPT
 {
     BC_ASSERT(stranded());
 

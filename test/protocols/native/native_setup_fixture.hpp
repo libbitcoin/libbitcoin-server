@@ -284,6 +284,21 @@ struct native_origins_hosts_setup_fixture
     }
 };
 
+struct native_delayed_setup_fixture
+  : native_setup_fixture
+{
+    inline native_delayed_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.node.delay_inbound = true;
+        })
+    {
+    }
+};
+
 struct native_limited_setup_fixture
   : native_setup_fixture
 {

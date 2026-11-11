@@ -866,6 +866,18 @@ BC_AUTO_TEST_CASE(native__origins__same_host_other_port__forbidden)
 
 BC_AUTO_TEST_SUITE_END()
 
+// delayed
+// ----------------------------------------------------------------------------
+
+BC_FIXTURE_TEST_SUITE(native_delayed_tests, native_delayed_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__top__not_current__dropped)
+{
+    BC_REQUIRE(expect_dropped("/v1/top?format=json"));
+}
+
+BC_AUTO_TEST_SUITE_END()
+
 // faulted stores
 // ----------------------------------------------------------------------------
 
