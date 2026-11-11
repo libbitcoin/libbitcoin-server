@@ -23,13 +23,13 @@
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
-#include <bitcoin/server/protocols/protocol_html.hpp>
+#include <bitcoin/server/protocols/protocol_native.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 class BCS_API protocol_admin
-  : public protocol_html,
+  : public protocol_native,
     protected network::tracker<protocol_admin>
 {
 public:
@@ -37,13 +37,13 @@ public:
     static constexpr bool delayed{ false };
 
     typedef std::shared_ptr<protocol_admin> ptr;
-    using interface = server::interface::admin;
-    using dispatcher = network::rpc::dispatcher<interface>;
+    using admin_interface = server::interface::admin;
+    using admin_dispatcher = network::rpc::dispatcher<admin_interface>;
 
     inline protocol_admin(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : protocol_html(session, channel, options),
+      : protocol_native(session, channel, options),
         network::tracker<protocol_admin>(session->log),
         log_interest_(system::emplace_shared<interest_t>(session->log))
     {
@@ -56,7 +56,7 @@ protected:
     template <class Derived, typename Method, typename... Args>
     inline void subscribe(Method&& method, Args&&... args) NOEXCEPT
     {
-        dispatcher_.subscribe(BIND_SHARED(method, args));
+        admin_dispatcher_.subscribe(BIND_SHARED(method, args));
     }
 
     /// Dispatch.
@@ -76,10 +76,12 @@ protected:
     /// Interface handlers.
     /// -----------------------------------------------------------------------
 
-    bool handle_get_log_subscribe(const code& ec, interface::log_subscribe,
-        uint8_t version, uint64_t filter) NOEXCEPT;
-    bool handle_get_event_subscribe(const code& ec, interface::event_subscribe,
-        uint8_t version, uint64_t filter) NOEXCEPT;
+    bool handle_get_log_subscribe(const code& ec,
+        admin_interface::log_subscribe, uint8_t version,
+        uint64_t filter) NOEXCEPT;
+    bool handle_get_event_subscribe(const code& ec,
+        admin_interface::event_subscribe, uint8_t version,
+        uint64_t filter) NOEXCEPT;
 
 protected:
     /// Notification event handlers (protocol strand).
@@ -104,7 +106,7 @@ private:
     filter_t event_state_{};
 
     // These are protected by strand.
-    dispatcher dispatcher_{};
+    admin_dispatcher admin_dispatcher_{};
     bool log_subscribed_{};
 };
 

@@ -42,19 +42,52 @@ bool protocol_native::handle_get_configuration(const code& ec,
         return true;
     }
 
-    using selection = system::config::selection;
-    const auto network = selection::to_word(system_settings().genesis_network);
+    using namespace system;
+    using selection = config::selection;
+    const auto chain = selection::to_word(system_settings().genesis_network);
+    const auto& query = archive();
+    const auto& node = node_settings();
+    const auto& peer = network_settings();
+    const auto silent = query.silent_enabled() ?
+        json::value(query.silent_start_height()) : json::value(nullptr);
 
-    send_json(system::json::object
+    send_json(json::object
     {
-        { "network", std::string{ network } },
-        { "address", archive().address_enabled() },
-        { "filter", archive().filter_enabled() },
-        { "turbo", database_settings().turbo },
-        { "witness", node_settings().require_witness },
-        { "retarget", system_settings().forks.retarget },
-        { "difficult", system_settings().forks.difficult },
-        { "pruned", get_pruned_height() },
+        { "store", json::object
+            {
+                { "address", query.address_enabled() },
+                { "filter", query.filter_enabled() },
+                { "silent", silent },
+                { "turbo", database_settings().turbo },
+                { "witness", node.require_witness },
+                { "pruned", get_pruned_height() }
+            }
+        },
+        { "node", json::object
+            {
+                { "network", std::string{ chain } },
+                { "limited", node.limited_blocks },
+                { "blocks", node.provide_blocks },
+                { "witness", node.provide_witness },
+                { "filters", node.provide_filters },
+                { "privacy", node.provide_privacy },
+                { "fees", node.fee_estimate_enabled() }
+            }
+        },
+        { "network", json::object
+            {
+                { "relay", peer.enable_relay },
+                { "alert", peer.enable_alert },
+                { "reject", peer.enable_reject },
+                { "compact", peer.enable_compact },
+                { "address", peer.enable_address },
+                { "witness_tx", peer.enable_witness_tx },
+                { "memory_pool", peer.enable_memory_pool },
+                { "not_found", peer.enable_not_found },
+                { "protocol_maximum", peer.protocol_maximum },
+                { "protocol_minimum", peer.protocol_minimum }
+            }
+        }
     });
     return true;
 }

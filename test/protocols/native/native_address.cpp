@@ -169,7 +169,7 @@ BC_AUTO_TEST_CASE(native__configuration__no_address__disabled)
 {
     const auto response = get_json("/v1/configuration?format=json");
     BC_REQUIRE(response.is_object());
-    BC_REQUIRE(!response.as_object().at("address").as_bool());
+    BC_REQUIRE(!response.as_object().at("store").as_object().at("address").as_bool());
 }
 
 BC_AUTO_TEST_SUITE_END()

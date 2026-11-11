@@ -7,7 +7,6 @@ import type { WorkerMetricsStore } from './worker-metrics-store';
 import {
   NATIVE_STATE_STALE_AFTER_MS,
   NATIVE_POLL_INTERVAL_MS,
-  NativeClient,
   type NativeLiveState,
 } from './native-client';
 import {
@@ -37,6 +36,7 @@ type NativeTelemetrySelection = Pick<
 
 export function useAdminTelemetry(
   endpoint: string,
+  nativeEndpoint: string,
   metrics: WorkerMetricsStore,
   logFilter = DEFAULT_LOG_FILTER
 ): ConnectionStatus {
@@ -49,8 +49,8 @@ export function useAdminTelemetry(
   // Apply preferences before start and update the existing socket on control changes.
   useEffect(() => {
     // This synchronizes the external server subscription, not React parent state.
-    metrics.configure(endpoint, logFilter);
-  }, [endpoint, metrics, logFilter]);
+    metrics.configure(endpoint, nativeEndpoint, logFilter);
+  }, [endpoint, nativeEndpoint, metrics, logFilter]);
 
   useEffect(() => {
     metrics.start();
@@ -65,21 +65,28 @@ export function useAdminTelemetry(
 
 export function useNativeTelemetry(
   endpoint: string,
-  metrics: Pick<WorkerMetricsStore, 'recordNativeTop' | 'recordNativeFees'>,
+  metrics: Pick<
+    WorkerMetricsStore,
+    | 'recordNativeTop'
+    | 'recordNativeFees'
+    | 'subscribeNative'
+    | 'getNativeStatus'
+    | 'getNativeLive'
+  >,
   now: number
 ): NativeTelemetry {
-  const client = useMemo(() => new NativeClient(endpoint), [endpoint]);
   const canUseRestFallback = useMemo(() => isSameOriginEndpoint(endpoint), [endpoint]);
-  const status = useSyncExternalStore(client.subscribeStatus, client.getStatus, client.getStatus);
-  const live = useSyncExternalStore(client.subscribeState, client.getState, client.getState);
+  const status = useSyncExternalStore(
+    metrics.subscribeNative,
+    metrics.getNativeStatus,
+    metrics.getNativeStatus
+  );
+  const live = useSyncExternalStore(
+    metrics.subscribeNative,
+    metrics.getNativeLive,
+    metrics.getNativeLive
+  );
   const liveIsFresh = hasFreshNativeLiveState(status, live, now);
-
-  useEffect(() => {
-    client.start();
-    return () => {
-      client.stop();
-    };
-  }, [client]);
 
   const rest = useQuery({
     queryKey: ['native-snapshot', endpoint],

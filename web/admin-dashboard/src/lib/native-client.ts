@@ -1,4 +1,3 @@
-import { toWebSocketUrl } from './endpoints';
 import {
   type NativeConfiguration,
   type NativeFrame,
@@ -9,7 +8,11 @@ import {
   nativeHeaderPath,
   parseNativeFrame,
 } from './native-contract';
-import { type ConnectionStatus, ReconnectingWebSocket } from './reconnecting-websocket';
+import {
+  type ConnectionStatus,
+  type ReconnectingWebSocket,
+  type SocketChannel,
+} from './reconnecting-websocket';
 
 export interface NativeLiveState {
   configuration: NativeConfiguration | null;
@@ -23,10 +26,6 @@ export interface NativeLiveState {
 }
 
 interface NativeClientOptions {
-  webSocketFactory?: (url: string) => WebSocket;
-  retryMinimumMs?: number;
-  retryMaximumMs?: number;
-  jitterRatio?: number;
   pollIntervalMs?: number;
   now?: () => number;
 }
@@ -34,7 +33,7 @@ interface NativeClientOptions {
 export const NATIVE_POLL_INTERVAL_MS = 15_000;
 export const NATIVE_STATE_STALE_AFTER_MS = 3 * NATIVE_POLL_INTERVAL_MS;
 
-const INITIAL_LIVE_STATE: NativeLiveState = {
+export const INITIAL_LIVE_STATE: NativeLiveState = {
   configuration: null,
   configurationReceivedAt: null,
   top: null,
@@ -49,6 +48,9 @@ export class NativeClient {
   #state: NativeLiveState = INITIAL_LIVE_STATE;
   #stateListeners = new Set<() => void>();
   #socket: ReconnectingWebSocket;
+  #channel: SocketChannel;
+  #detach: (() => void) | null = null;
+  #unsubscribeStatus: (() => void) | null = null;
   #now: () => number;
   #connectedAt: number | null = null;
   #headerRequest: { height: number; requestedAt: number } | null = null;
@@ -57,17 +59,12 @@ export class NativeClient {
   #poolTimer: ReturnType<typeof setInterval> | null = null;
   #poolRequestedAt: number | null = null;
 
-  constructor(baseUrl: string, options: NativeClientOptions = {}) {
+  constructor(socket: ReconnectingWebSocket, options: NativeClientOptions = {}) {
     this.#now = options.now ?? Date.now;
     this.#pollIntervalMs = options.pollIntervalMs ?? NATIVE_POLL_INTERVAL_MS;
-    this.#socket = new ReconnectingWebSocket({
-      url: toWebSocketUrl(baseUrl),
-      webSocketFactory: options.webSocketFactory,
-      retryMinimumMs: options.retryMinimumMs,
-      retryMaximumMs: options.retryMaximumMs,
-      jitterRatio: options.jitterRatio,
+    this.#socket = socket;
+    this.#channel = {
       heartbeatMs: this.#pollIntervalMs,
-      now: this.#now,
       onOpen: (socket) => {
         this.#connectedAt = this.#now();
         socket.send('/v1/configuration?format=json');
@@ -92,22 +89,14 @@ export class NativeClient {
       },
       onMessage: (text) => {
         const frame = parseNativeFrame(text);
-        if (!frame) {
-          this.#setState({ ...this.#state, invalidFrames: this.#state.invalidFrames + 1 });
-          return;
-        }
+        if (!frame) return false;
         this.#applyFrame(frame);
+        return true;
       },
-    });
-    this.#socket.subscribeStatus(() => {
-      if (this.#socket.getStatus().phase !== 'connected') {
-        this.#connectedAt = null;
-        this.#poolRequestedAt = null;
-        this.#headerRequest = null;
-        this.#lastHeaderRequestedAt = null;
-        this.#invalidateLiveState();
-      }
-    });
+      onUnclaimed: () => {
+        this.#setState({ ...this.#state, invalidFrames: this.#state.invalidFrames + 1 });
+      },
+    };
   }
 
   readonly getStatus = (): ConnectionStatus => this.#socket.getStatus();
@@ -128,14 +117,26 @@ export class NativeClient {
     this.#poolTimer ??= setInterval(() => {
       this.#requestPool();
     }, POOL_POLL_INTERVAL_MS);
-    this.#socket.start();
+    this.#unsubscribeStatus ??= this.#socket.subscribeStatus(() => {
+      if (this.#socket.getStatus().phase !== 'connected') {
+        this.#connectedAt = null;
+        this.#poolRequestedAt = null;
+        this.#headerRequest = null;
+        this.#lastHeaderRequestedAt = null;
+        this.#invalidateLiveState();
+      }
+    });
+    this.#detach ??= this.#socket.attach(this.#channel);
   }
 
   stop(): void {
     if (this.#poolTimer !== null) clearInterval(this.#poolTimer);
     this.#poolTimer = null;
     this.#poolRequestedAt = null;
-    this.#socket.stop();
+    this.#unsubscribeStatus?.();
+    this.#unsubscribeStatus = null;
+    this.#detach?.();
+    this.#detach = null;
   }
 
   #applyFrame(frame: NativeFrame): void {

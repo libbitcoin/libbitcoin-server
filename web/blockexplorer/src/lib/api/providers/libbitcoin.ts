@@ -143,16 +143,14 @@ const DEFAULT_CONFIGURATION: BlockchainClientConfiguration = {
   filter: false,
   turbo: true,
   witness: true,
-  retarget: false,
-  difficult: false,
 };
 
 function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+  if (!isRecord(raw) || !isRecord(raw.store)) {
     return DEFAULT_CONFIGURATION;
   }
 
-  const record = raw as Record<string, unknown>;
+  const record = raw.store;
   const coerceBoolean = (key: keyof BlockchainClientConfiguration) =>
     typeof record[key] === 'boolean' ? record[key] : DEFAULT_CONFIGURATION[key];
 
@@ -161,8 +159,6 @@ function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
     filter: coerceBoolean('filter'),
     turbo: coerceBoolean('turbo'),
     witness: coerceBoolean('witness'),
-    retarget: coerceBoolean('retarget'),
-    difficult: coerceBoolean('difficult'),
   };
 }
 

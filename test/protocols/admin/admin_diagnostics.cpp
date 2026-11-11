@@ -122,6 +122,28 @@ BC_AUTO_TEST_CASE(admin__dispatch__html__bad_request)
     BC_REQUIRE(get_status("/v1/log/subscribe?filter=1&format=html") == status::bad_request);
 }
 
+// native (http)
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(admin__native_top__json__expected)
+{
+    const auto response = get_json("/v1/top?format=json");
+    BC_REQUIRE(response.is_int64());
+    BC_REQUIRE_EQUAL(response.as_int64(), 9);
+}
+
+BC_AUTO_TEST_CASE(admin__native_configuration__json__object)
+{
+    const auto response = get_json("/v1/configuration?format=json");
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE(response.as_object().contains("node"));
+}
+
+BC_AUTO_TEST_CASE(admin__native_top__default__not_acceptable)
+{
+    BC_REQUIRE(get_status("/v1/top") == status::not_acceptable);
+}
+
 // subscribe (websockets)
 // ----------------------------------------------------------------------------
 
@@ -178,6 +200,31 @@ BC_AUTO_TEST_CASE(admin__ws_dispatch__missing_subcomponent__bad_request)
 {
     BC_REQUIRE(!ws_upgrade());
     BC_REQUIRE(ws_get_text("/v1/log").starts_with("Bad Request"));
+}
+
+// native (websockets)
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(admin__ws_native_top__json__expected)
+{
+    BC_REQUIRE(!ws_upgrade());
+
+    const auto response = ws_get_json("/v1/top");
+    BC_REQUIRE(response.is_int64());
+    BC_REQUIRE_EQUAL(response.as_int64(), 9);
+}
+
+BC_AUTO_TEST_CASE(admin__ws_native_and_admin__same_connection__expected)
+{
+    BC_REQUIRE(!ws_upgrade());
+
+    const auto ack = ws_get_json("/v1/log/subscribe?filter=1024");
+    REQUIRE_NO_THROW_TRUE(ack.at("previous").is_int64());
+    BC_REQUIRE_EQUAL(ack.at("previous").as_int64(), 0);
+
+    const auto top = ws_get_json("/v1/top");
+    BC_REQUIRE(top.is_int64());
+    BC_REQUIRE_EQUAL(top.as_int64(), 9);
 }
 
 // streams (websockets)
@@ -300,6 +347,11 @@ BC_AUTO_TEST_CASE(admin__event_subscribe__scoped_credential__ok)
 BC_AUTO_TEST_CASE(admin__log_subscribe__scoped_credential_unlisted_method__forbidden)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/log/subscribe?filter=1&format=json", network::http::field::authorization, ADMIN_TEST_AUTHORIZATION), status::forbidden);
+}
+
+BC_AUTO_TEST_CASE(admin__native_top__scoped_credential_unlisted_method__forbidden)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/top?format=json", network::http::field::authorization, ADMIN_TEST_AUTHORIZATION), status::forbidden);
 }
 
 BC_AUTO_TEST_CASE(admin__event_subscribe__no_credential__unauthorized)

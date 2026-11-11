@@ -102,13 +102,14 @@ bool executor::do_run()
     if (!metadata_.configured.node.use_gpu_())
         metadata_.configured.database.gpu_scan_minimum = max_uint32;
 
-    if (!metadata_.configured.log.path.empty())
-        database::file::create_directory(metadata_.configured.log.path);
+    database::file::create_directory(metadata_.configured.log.console_path);
+    database::file::create_directory(metadata_.configured.log.events_path);
+    database::file::create_directory(metadata_.configured.network.path);
 
     // Hold sinks in scope for the length of the run.
     auto log = create_log_sink();
     auto events = create_event_sink();
-    if (!log || !events)
+    if ((log && !*log) || (events && !*events))
     {
         // Stop ensures console output.
         log_.stop();
@@ -117,8 +118,9 @@ bool executor::do_run()
     }
 
     // These all use std iostreams (exception risk).
-    subscribe_log(log);
-    subscribe_events(events);
+    subscribe_log(log ? &log.value() : nullptr);
+    if (events)
+        subscribe_events(events.value());
 
     // A service has no console input.
     if (!service_)

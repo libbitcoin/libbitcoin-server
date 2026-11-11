@@ -1,5 +1,8 @@
 import { AdminClient } from './admin-client';
 import { ALL_EVENT_FILTER } from './admin-contract';
+import { toWebSocketUrl } from './endpoints';
+import { NativeClient } from './native-client';
+import { ReconnectingWebSocket } from './reconnecting-websocket';
 import {
   LiveMetricsStore,
   type MetricsSnapshot,
@@ -14,13 +17,16 @@ import {
   type TelemetryResponse,
 } from './telemetry-worker-protocol';
 
-type ClientFactory = (endpoint: string, logFilter: number) => AdminClient;
+type SocketFactory = (endpoint: string) => ReconnectingWebSocket;
 
 // No DOM or React dependencies: the worker owns receipt, validation and aggregation.
 export class TelemetryWorkerRuntime {
   #metrics: LiveMetricsStore;
   #client: AdminClient | null = null;
+  #native: NativeClient | null = null;
+  #sockets: ReconnectingWebSocket[] = [];
   #endpoint: string | null = null;
+  #nativeEndpoint: string | null = null;
   #generation = 0;
   #previous: MetricsSnapshot | null = null;
   #frozenLogs: readonly RecentLog[] | null = null;
@@ -29,8 +35,8 @@ export class TelemetryWorkerRuntime {
 
   constructor(
     readonly send: (message: TelemetryResponse) => void,
-    readonly createClient: ClientFactory = (endpoint, logFilter) =>
-      new AdminClient(endpoint, { logFilter }),
+    readonly createSocket: SocketFactory = (endpoint) =>
+      new ReconnectingWebSocket({ url: toWebSocketUrl(endpoint) }),
     now: () => number = Date.now
   ) {
     // Materialize snapshots only when the UI requests one. Collection and pruning
@@ -50,19 +56,12 @@ export class TelemetryWorkerRuntime {
       if (command.generation !== this.#generation || command.endpoint !== this.#endpoint) {
         this.#reset(command.generation);
       }
-      if (command.endpoint !== this.#endpoint || this.#client === null) {
-        this.#disconnect();
-        this.#endpoint = command.endpoint;
-        this.#client = this.createClient(command.endpoint, command.logFilter);
-        this.#unsubscribers = [
-          this.#client.subscribeFrames((frame) => {
-            this.#metrics.ingest(frame);
-          }),
-          this.#client.subscribeInvalidFrames(() => {
-            this.#metrics.recordInvalidFrame();
-          }),
-        ];
-        this.#client.start();
+      if (
+        command.endpoint !== this.#endpoint ||
+        command.nativeEndpoint !== this.#nativeEndpoint ||
+        this.#client === null
+      ) {
+        this.#connect(command.endpoint, command.nativeEndpoint, command.logFilter);
         this.#metrics.start();
       } else {
         this.#client.setFilters(command.logFilter, ALL_EVENT_FILTER);
@@ -153,10 +152,45 @@ export class TelemetryWorkerRuntime {
     this.#metrics.reset();
   }
 
+  // Admin and native share one socket when they share an endpoint.
+  #connect(endpoint: string, nativeEndpoint: string, logFilter: number): void {
+    this.#disconnect();
+    this.#endpoint = endpoint;
+    this.#nativeEndpoint = nativeEndpoint;
+    const adminSocket = this.createSocket(endpoint);
+    const nativeSocket =
+      nativeEndpoint === endpoint ? adminSocket : this.createSocket(nativeEndpoint);
+    this.#sockets = adminSocket === nativeSocket ? [adminSocket] : [adminSocket, nativeSocket];
+    const client = new AdminClient(adminSocket, { logFilter });
+    const native = new NativeClient(nativeSocket);
+    const sendNative = () => {
+      this.send({ type: 'native', status: native.getStatus(), live: native.getState() });
+    };
+    this.#client = client;
+    this.#native = native;
+    this.#unsubscribers = [
+      client.subscribeFrames((frame) => {
+        this.#metrics.ingest(frame);
+      }),
+      client.subscribeInvalidFrames(() => {
+        this.#metrics.recordInvalidFrame();
+      }),
+      native.subscribeStatus(sendNative),
+      native.subscribeState(sendNative),
+    ];
+    client.start();
+    native.start();
+    for (const socket of this.#sockets) socket.start();
+  }
+
   #disconnect(): void {
     for (const unsubscribe of this.#unsubscribers) unsubscribe();
     this.#unsubscribers = [];
+    for (const socket of this.#sockets) socket.stop();
     this.#client?.stop();
+    this.#native?.stop();
+    this.#sockets = [];
     this.#client = null;
+    this.#native = null;
   }
 }

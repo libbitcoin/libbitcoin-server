@@ -6,8 +6,11 @@ import {
   isAdminLogFrame,
   parseAdminFrame,
 } from './admin-contract';
-import { toWebSocketUrl } from './endpoints';
-import { type ConnectionStatus, ReconnectingWebSocket } from './reconnecting-websocket';
+import {
+  type ConnectionStatus,
+  type ReconnectingWebSocket,
+  type SocketChannel,
+} from './reconnecting-websocket';
 
 type FrameListener = (frame: AdminFrame) => void;
 type InvalidFrameListener = (text: string) => void;
@@ -15,10 +18,6 @@ type InvalidFrameListener = (text: string) => void;
 interface AdminClientOptions {
   logFilter?: number;
   eventFilter?: number;
-  webSocketFactory?: (url: string) => WebSocket;
-  retryMinimumMs?: number;
-  retryMaximumMs?: number;
-  jitterRatio?: number;
 }
 
 export class AdminClient {
@@ -27,16 +26,14 @@ export class AdminClient {
   #frameListeners = new Set<FrameListener>();
   #invalidFrameListeners = new Set<InvalidFrameListener>();
   #socket: ReconnectingWebSocket;
+  #channel: SocketChannel;
+  #detach: (() => void) | null = null;
 
-  constructor(baseUrl: string, options: AdminClientOptions = {}) {
+  constructor(socket: ReconnectingWebSocket, options: AdminClientOptions = {}) {
     this.#logFilter = options.logFilter ?? DEFAULT_LOG_FILTER;
     this.#eventFilter = options.eventFilter ?? ALL_EVENT_FILTER;
-    this.#socket = new ReconnectingWebSocket({
-      url: toWebSocketUrl(baseUrl),
-      webSocketFactory: options.webSocketFactory,
-      retryMinimumMs: options.retryMinimumMs,
-      retryMaximumMs: options.retryMaximumMs,
-      jitterRatio: options.jitterRatio,
+    this.#socket = socket;
+    this.#channel = {
       onOpen: (socket) => {
         this.#sendSubscriptions(socket);
       },
@@ -49,15 +46,16 @@ export class AdminClient {
       },
       onMessage: (text) => {
         const frame = parseAdminFrame(text);
-        if (!frame) {
-          for (const listener of this.#invalidFrameListeners) listener(text);
-          return;
-        }
+        if (!frame) return false;
         // A few old frames may already be in flight after reducing the server mask.
-        if (isAdminLogFrame(frame) && !includesLogLevel(this.#logFilter, frame.level)) return;
+        if (isAdminLogFrame(frame) && !includesLogLevel(this.#logFilter, frame.level)) return true;
         for (const listener of this.#frameListeners) listener(frame);
+        return true;
       },
-    });
+      onUnclaimed: (text) => {
+        for (const listener of this.#invalidFrameListeners) listener(text);
+      },
+    };
   }
 
   readonly getStatus = (): ConnectionStatus => this.#socket.getStatus();
@@ -66,11 +64,12 @@ export class AdminClient {
     this.#socket.subscribeStatus(listener);
 
   start(): void {
-    this.#socket.start();
+    this.#detach ??= this.#socket.attach(this.#channel);
   }
 
   stop(): void {
-    this.#socket.stop();
+    this.#detach?.();
+    this.#detach = null;
   }
 
   subscribeFrames(listener: FrameListener): () => void {

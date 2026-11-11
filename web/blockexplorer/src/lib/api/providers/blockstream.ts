@@ -492,8 +492,6 @@ export function createBlockstreamClient({ baseUrl }: BlockstreamClientOptions): 
         filter: false,
         turbo: false,
         witness: true,
-        retarget: false,
-        difficult: false,
       });
     },
     async getLatestBlocks(limit = 10): Promise<BlockSummary[]> {

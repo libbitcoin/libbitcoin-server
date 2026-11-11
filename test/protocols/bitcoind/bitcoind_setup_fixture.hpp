@@ -292,7 +292,7 @@ struct bitcoind_hosts_setup_fixture
         {
             // Write a hosts file (10 ipv4, 2 ipv6) for the pool to load.
             // Services must satisfy node.services_required (network|witness).
-            system::ofstream file{ TEST_DIRECTORY + "/hosts.cache" };
+            system::ofstream file{ TEST_DIRECTORY + "/peers.cache" };
             file << "10.0.0.1:42/0/9\n";
             file << "10.0.0.2:42/0/9\n";
             file << "10.0.0.3:42/0/9\n";

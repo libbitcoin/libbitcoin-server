@@ -102,13 +102,57 @@ void parser::select_network() NOEXCEPT
         configured.bitcoin.network = network;
 }
 
-// A configured path is the base of the network-named store directory.
-void parser::select_path() NOEXCEPT
+// The network-named directory, under the configured root.
+void parser::select_root() NOEXCEPT
 {
-    auto& path = configured.database.path;
-    if (is_configured("database.path"))
-        path = path / std::string{ config::selection::to_word(
-            configured.node.network) };
+    const auto network = config::selection::to_word(configured.node.network);
+    root_ = configured.root / std::string{ network };
+}
+
+// Paths are relative to the network directory.
+void parser::select_paths() NOEXCEPT
+{
+    const auto relative = [this](config::path& path) NOEXCEPT
+    {
+        if (!path.empty())
+            path = root_ / path;
+    };
+
+    const auto rooted = [this](config::path& path) NOEXCEPT
+    {
+        path = path.empty() ? root_ : root_ / path;
+    };
+
+    const auto secured = [&](network::settings::tls_server& service) NOEXCEPT
+    {
+        relative(service.cert_auth);
+        relative(service.cert_path);
+        relative(service.key_path);
+    };
+
+    if (!is_configured("folders.store"))
+        configured.database.path = "store";
+
+    rooted(configured.database.path);
+    rooted(configured.network.path);
+    rooted(configured.log.console_path);
+    rooted(configured.log.events_path);
+    relative(configured.network.inbound.key_path);
+    relative(configured.server.admin.path);
+    relative(configured.server.native.path);
+    secured(configured.server.admin);
+    secured(configured.server.native);
+    secured(configured.server.bitcoind);
+    secured(configured.server.btcd);
+    secured(configured.server.electrum);
+    secured(configured.server.sparrow);
+    secured(configured.server.esplora);
+    secured(configured.server.stratum_v1);
+    secured(configured.server.stratum_v2);
+
+#if defined (HAVE_WINDOWS)
+    relative(configured.log.symbols);
+#endif
 }
 
 // The network of an existing store governs at its path, for commands that
@@ -128,9 +172,7 @@ void parser::read_envelope() NOEXCEPT
     const auto specified = selected != chain::selection::none &&
         selected != chain::selection::mainnet;
 
-    const auto path = configured.database.path;
     reset_network(stored.network);
-    configured.database.path = path;
     derive_buckets();
 
     // A specified network is retained as configured, for override reporting.
@@ -139,8 +181,13 @@ void parser::read_envelope() NOEXCEPT
 }
 
 // Network defaults are reset, and then configured settings are reapplied.
+// Paths are retained, as they are network independent once resolved.
 void parser::reset_network(chain::selection context) NOEXCEPT
 {
+    const auto store = configured.database.path;
+    const auto peers = configured.network.path;
+    const auto key = configured.network.inbound.key_path;
+
     configured.bitcoin = system::settings{ context };
     configured.database = database::settings{ context };
     configured.network = network::settings{ context };
@@ -156,6 +203,10 @@ void parser::reset_network(chain::selection context) NOEXCEPT
             option->semantic()->notify(variables().at(name).value());
     }
     BC_POP_WARNING()
+
+    configured.database.path = store;
+    configured.network.path = peers;
+    configured.network.inbound.key_path = key;
 }
 
 // Composes a variable name with its command line shortcut.
@@ -317,6 +368,50 @@ options_metadata parser::load_settings() THROWS
 {
     options_metadata description("settings");
     description.add_options()
+
+    /* [folders] */
+    (
+        "folders.root",
+        setting<config::path>(&configured.root),
+        "The base of the network-named directory, defaults to the working directory."
+    )
+    (
+        "folders.peers",
+        setting<config::path>(&configured.network.path),
+        "The peer address cache directory, relative to the network directory, defaults to it."
+    )
+    (
+        "folders.events",
+        setting<config::path>(&configured.log.events_path),
+        "The events log directory, relative to the network directory, defaults to it."
+    )
+    (
+        "folders.console",
+        setting<config::path>(&configured.log.console_path),
+        "The console log files directory, relative to the network directory, defaults to it."
+    )
+    (
+        "folders.store",
+        setting<config::path>(&configured.database.path),
+        "The store directory, relative to the network directory, defaults to 'store'."
+    )
+    (
+        "folders.admin",
+        setting<config::path>(&configured.server.admin.path),
+        "The admin web site directory, relative to the network directory, defaults to embedded pages."
+    )
+    (
+        "folders.native",
+        setting<config::path>(&configured.server.native.path),
+        "The native web site directory, relative to the network directory, defaults to embedded pages."
+    )
+#if defined (HAVE_WINDOWS)
+    (
+        "folders.symbols",
+        setting<config::path>(&configured.log.symbols),
+        "The windows symbols (.pdb) directory, relative to the network directory, defaults to {}."
+    )
+#endif
 
     /* [forks] */
     (
@@ -922,11 +1017,6 @@ options_metadata parser::load_settings() THROWS
         setting<std::string>(&configured.network.user_agent),
         "The node user agent string, defaults to {}."
     )
-    (
-        "peer.path",
-        setting<config::path>(&configured.network.path),
-        "The peer address cache file directory, defaults to {}."
-    )
 
     /* [outbound] */
     (
@@ -1308,11 +1398,6 @@ options_metadata parser::load_settings() THROWS
         "Allow requests from opaque origin (see CORS), defaults to {}."
     )
     (
-        "admin.path",
-        setting<config::path>(&configured.server.admin.path),
-        "The required root path of source files to be served, defaults to {}."
-    )
-    (
         "admin.default",
         setting<std::string>(&configured.server.admin.default_),
         "The path of the default source page, defaults to {}."
@@ -1418,11 +1503,6 @@ options_metadata parser::load_settings() THROWS
         "native.allow_opaque_origin",
         setting<bool>(&configured.server.native.allow_opaque_origin),
         "Allow requests from opaque origin (see CORS), defaults to {}."
-    )
-    (
-        "native.path",
-        setting<config::path>(&configured.server.native.path),
-        "The required root path of source files to be served, defaults to {}."
     )
     (
         "native.default",
@@ -2260,7 +2340,7 @@ options_metadata parser::load_settings() THROWS
     (
         "node.delay_inbound",
         setting<bool>(&configured.node.delay_inbound),
-        "Block inbound peer/client (excluding admin/native) until current, defaults to {}."
+        "Block inbound peer/client (excluding admin) until current, defaults to {}."
     )
     (
         "node.provide_blocks",
@@ -2394,11 +2474,6 @@ options_metadata parser::load_settings() THROWS
     ////)
 
     /* [database] */
-    (
-        "database.path",
-        setting<config::path>(&configured.database.path),
-        "The base of the network-named blockchain database directory, defaults to the working directory."
-    )
     (
         "database.turbo",
         setting<bool>(&configured.database.turbo),
@@ -2877,21 +2952,19 @@ options_metadata parser::load_settings() THROWS
     )
 #endif
     (
-        "log.maximum_size",
-        setting<uint32_t>(&configured.log.maximum_size),
+        "log.console",
+        setting<bool>(&configured.log.console),
+        "Write the console log to a pair of rotated log files, defaults to {}."
+    )
+    (
+        "log.limit",
+        setting<uint32_t>(&configured.log.limit),
         "The maximum byte size of each pair of rotated log files, defaults to {}."
     )
-#if defined (HAVE_WINDOWS)
     (
-        "log.symbols",
-        setting<config::path>(&configured.log.symbols),
-        "Path to a directory containing windows symbols (.pdb) files, defaults to {}."
-    )
-#endif
-    (
-        "log.path",
-        setting<config::path>(&configured.log.path),
-        "The log files directory, defaults to {}."
+        "log.events",
+        setting<bool>(&configured.log.events),
+        "Write events to the events log file, defaults to {}."
     );
 
     return description;
@@ -2917,7 +2990,8 @@ BC_POP_WARNING()
         // Update bound variables in metadata.settings.
         notify(variables_);
         select_network();
-        select_path();
+        select_root();
+        select_paths();
         derive_buckets();
 
         // Clear the config file path if it wasn't used.

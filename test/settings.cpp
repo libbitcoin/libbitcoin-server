@@ -43,13 +43,16 @@ BC_AUTO_TEST_CASE(settings__log__default_context__expected)
     BC_REQUIRE_EQUAL(log.quitting, false /*levels::quitting_defined*/);
     BC_REQUIRE_EQUAL(log.objects, false /*levels::objects_defined*/);
     BC_REQUIRE_EQUAL(log.verbose, false /*levels::verbose_defined*/);
-    BC_REQUIRE_EQUAL(log.maximum_size, 1'000'000_u32);
-    BC_REQUIRE_EQUAL(log.path, "");
-    BC_REQUIRE_EQUAL(log.log_file1(), "bs_end.log");
-    BC_REQUIRE_EQUAL(log.log_file2(), "bs_begin.log");
+    BC_REQUIRE_EQUAL(log.console, true);
+    BC_REQUIRE_EQUAL(log.events, true);
+    BC_REQUIRE_EQUAL(log.limit, 1'000'000_u32);
+    BC_REQUIRE_EQUAL(log.console_path, "");
+    BC_REQUIRE_EQUAL(log.events_path, "");
+    BC_REQUIRE_EQUAL(log.log_file1(), "console_new.log");
+    BC_REQUIRE_EQUAL(log.log_file2(), "console_old.log");
     BC_REQUIRE_EQUAL(log.events_file(), "events.log");
 #if defined(HAVE_WINDOWS)
-    BC_REQUIRE_EQUAL(log.symbols, "");
+    BC_REQUIRE_EQUAL(log.symbols, "symbols");
 #endif
 }
 

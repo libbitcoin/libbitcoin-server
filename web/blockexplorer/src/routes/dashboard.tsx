@@ -48,7 +48,6 @@ export function DashboardPage() {
   const sampleSize = blocks?.length ?? 0;
   const showStatsPlaceholder =
     info.id === 'libbitcoin' && latestBlock !== undefined && latestStatsLoading;
-  const showNetworkCapabilities = configuration?.retarget !== configuration?.difficult;
 
   return (
     <div className="space-y-8">
@@ -224,12 +223,6 @@ export function DashboardPage() {
                 <CapabilityPill label="Witness Node" enabled={configuration?.witness} />
                 <CapabilityPill label="Client Filters" enabled={configuration?.filter} />
                 <CapabilityPill label="Turbo API" enabled={configuration?.turbo} />
-                {showNetworkCapabilities && (
-                  <>
-                    <CapabilityPill label="Retarget" enabled={configuration?.retarget} />
-                    <CapabilityPill label="Difficulty" enabled={configuration?.difficult} />
-                  </>
-                )}
               </div>
             </div>
           </div>

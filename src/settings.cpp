@@ -43,7 +43,9 @@ settings::settings() NOEXCEPT
     quitting{ false /*levels::quitting_defined*/ },
     objects{ false /*levels::objects_defined*/ },
     verbose{ false /*levels::verbose_defined*/ },
-    maximum_size{ 1'000'000_u32 }
+    console{ true },
+    events{ true },
+    limit{ 1'000'000_u32 }
 {
 }
 
@@ -55,21 +57,21 @@ settings::settings(chain::selection) NOEXCEPT
 std::filesystem::path settings::log_file1() const NOEXCEPT
 {
     BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-    return path / "bs_end.log";
+    return console_path / "console_new.log";
     BC_POP_WARNING()
 }
 
 std::filesystem::path settings::log_file2() const NOEXCEPT
 {
     BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-    return path / "bs_begin.log";
+    return console_path / "console_old.log";
     BC_POP_WARNING()
 }
 
 std::filesystem::path settings::events_file() const NOEXCEPT
 {
     BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
-    return path / "events.log";
+    return events_path / "events.log";
     BC_POP_WARNING()
 }
 

@@ -268,6 +268,37 @@ struct native_origins_setup_fixture
     }
 };
 
+struct native_origins_hosts_setup_fixture
+  : native_setup_fixture
+{
+    inline native_origins_hosts_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.server.native.hosts = { { "localhost" } };
+            config.server.native.origins = { { "example.com" } };
+        })
+    {
+    }
+};
+
+struct native_delayed_setup_fixture
+  : native_setup_fixture
+{
+    inline native_delayed_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.node.delay_inbound = true;
+        })
+    {
+    }
+};
+
 struct native_limited_setup_fixture
   : native_setup_fixture
 {
@@ -280,6 +311,21 @@ struct native_limited_setup_fixture
             config.node.limited_blocks = true;
             config.database.filter_bk.buckets = 0;
             config.database.filter_tx.buckets = 0;
+        })
+    {
+    }
+};
+
+struct native_silent_setup_fixture
+  : native_setup_fixture
+{
+    inline native_silent_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.node.silent_start_height = 42;
         })
     {
     }

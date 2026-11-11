@@ -45,11 +45,14 @@ public:
     bool objects;
     bool verbose;
 
-    uint32_t maximum_size;
-    system::config::path path;
+    bool console;
+    bool events;
+    uint32_t limit;
+    system::config::path console_path;
+    system::config::path events_path;
 
 #if defined (HAVE_WINDOWS)
-    system::config::path symbols;
+    system::config::path symbols{ "symbols" };
 #endif
 
     virtual std::filesystem::path log_file1() const NOEXCEPT;
