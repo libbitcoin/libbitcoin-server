@@ -149,10 +149,12 @@ private:
 #endif
 
     // Logging.
-    std::optional<database::file::stream::out::rotator>
-        create_log_sink() const;
-    std::optional<system::ofstream> create_event_sink() const;
-    network::logger::interest::ptr create_log_interest() const;
+    using log_sink = std::optional<database::file::stream::out::rotator>;
+    using event_sink = std::optional<system::ofstream>;
+    using interest_ptr = network::logger::interest::ptr;
+    log_sink create_log_sink() const;
+    event_sink create_event_sink() const;
+    interest_ptr create_log_interest() const;
     void subscribe_log(std::ostream* sink);
     void subscribe_events(std::ostream& sink);
     void logger(const std::string& message) const;
@@ -191,7 +193,7 @@ private:
     std::ostream& output_;
     network::logger log_{};
     network::capture capture_{ input_, close_ };
-    const network::logger::interest::ptr log_interest_;
+    const interest_ptr log_interest_;
 
     // Shutdown.
     // ------------------------------------------------------------------------

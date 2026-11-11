@@ -72,17 +72,14 @@ const std::unordered_map<uint8_t, std::string> executor::fired_
 // the writes are not wrapped in a try block (performance) but this can be
 // appplied centrally below if desired.
 
-std::optional<system::ofstream> executor::create_event_sink() const
+executor::event_sink executor::create_event_sink() const
 {
     const auto& config = metadata_.configured.log;
     if (!config.events)
         return {};
 
     // Standard file name, within the [node].path directory.
-    return std::optional<system::ofstream>
-    {
-        std::in_place, config.events_file()
-    };
+    return event_sink{ std::in_place, config.events_file() };
 }
 
 void executor::subscribe_events(std::ostream& sink)

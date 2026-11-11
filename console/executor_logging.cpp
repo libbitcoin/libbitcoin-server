@@ -47,15 +47,14 @@ const std::unordered_map<uint8_t, bool> executor::defined_
 // the writes are not wrapped in a try block (performance) but this can be
 // appplied centrally below if desired.
 
-std::optional<database::file::stream::out::rotator>
-executor::create_log_sink() const
+executor::log_sink executor::create_log_sink() const
 {
     const auto& config = metadata_.configured.log;
     if (!config.console)
         return {};
 
     // Standard file names, within the [node].path directory.
-    return std::optional<database::file::stream::out::rotator>
+    return log_sink
     {
         std::in_place,
         config.log_file1(),
@@ -64,7 +63,7 @@ executor::create_log_sink() const
     };
 }
 
-network::logger::interest::ptr executor::create_log_interest() const
+executor::interest_ptr executor::create_log_interest() const
 {
     using namespace system;
     using namespace network;
