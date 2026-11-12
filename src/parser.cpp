@@ -2473,6 +2473,21 @@ options_metadata parser::load_settings() THROWS
         setting<double>(&configured.node.pool.minimum_fee_rate),
         "Minimum fee rate for non-conflicting tx acceptance, defaults to {}."
     )
+    (
+        "pool.maximum_outcomes",
+        setting<uint32_t>(&configured.node.pool.maximum_outcomes),
+        "Maximum conflict outcomes evaluated to accept a transaction, defaults to {}."
+    )
+    (
+        "pool.bytes_per_sigop",
+        setting<uint32_t>(&configured.node.pool.bytes_per_sigop),
+        "Virtual bytes charged per signature operation, defaults to {}."
+    )
+    (
+        "pool.coinbase_weight",
+        setting<uint32_t>(&configured.node.pool.coinbase_weight),
+        "Declared weight of the miner's coinbase transaction, defaults to {}."
+    )
 
     /* [database] */
     (
