@@ -350,7 +350,7 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
         return true;
     }
 
-    if (exceeds_fee_rate(*tx, {}, maxfeerate, query))
+    if (link.is_terminal() && exceeds_fee_rate(*tx, {}, maxfeerate, query))
     {
         send_error_message(error::bitcoind::verify_error, fee_exceeded);
         return true;
