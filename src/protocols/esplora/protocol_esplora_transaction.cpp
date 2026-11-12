@@ -183,6 +183,12 @@ bool protocol_esplora::handle_get_tx(const code& ec, interface::tx,
     if (stopped(ec))
         return false;
 
+    if (media == data && !at_least(esplora::version::v3_0))
+    {
+        send_not_found();
+        return true;
+    }
+
     const auto& query = archive();
     const auto link = query.to_tx(*hash);
     if (link.is_terminal())

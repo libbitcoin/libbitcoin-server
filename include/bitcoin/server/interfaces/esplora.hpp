@@ -154,6 +154,69 @@ struct esplora_methods
 /// /fee-estimates {1}
 
 } // namespace interface
+
+namespace esplora
+{
+    /// Implemented interface versions (10'000 major, 100 minor, patch).
+    enum class version : uint32_t
+    {
+        /// Invalid version.
+        v0_0 = 0,
+
+        /// esplora v2.10 (minimum).
+        v2_10 = 21000,
+
+        /// esplora v3.0 (maximum).
+        v3_0 = 30000
+    };
+
+    /// The implemented versions, ascending.
+    inline constexpr std::array versions
+    {
+        version::v2_10,
+        version::v3_0
+    };
+    inline constexpr uint32_t minimum_version = to_value(versions.front());
+    inline constexpr uint32_t maximum_version = to_value(versions.back());
+
+    /// A method and the version that introduced it.
+    struct introduction
+    {
+        std::string_view name;
+        version since;
+    };
+
+    /// The methods introduced after the minimum version, by name.
+    inline constexpr std::array introductions
+    {
+        introduction{ "tx_merkleblock_proof", version::v3_0 },
+        introduction{ "broadcast", version::v3_0 },
+        introduction{ "broadcast_package", version::v3_0 },
+        introduction{ "block_header", version::v3_0 },
+        introduction{ "block_txid", version::v3_0 }
+    };
+
+    /// The version that introduced the method (the minimum if not listed).
+    constexpr version introduced(std::string_view name) NOEXCEPT
+    {
+        for (const auto& entry: introductions)
+            if (entry.name == name)
+                return entry.since;
+
+        return versions.front();
+    }
+
+    /// The greatest implemented version not exceeding value (v0_0 if none).
+    constexpr version version_floor(uint32_t value) NOEXCEPT
+    {
+        auto floor = version::v0_0;
+        for (const auto implemented: versions)
+            if (to_value(implemented) <= value)
+                floor = implemented;
+
+        return floor;
+    }
+} // namespace esplora
 } // namespace server
 } // namespace libbitcoin
 

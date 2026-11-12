@@ -406,3 +406,37 @@ BC_AUTO_TEST_CASE(esplora__tx_merkle_proof__misassociated__not_found)
 }
 
 BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(esplora_v2_10_tests, esplora_v2_10_setup_fixture)
+
+BC_AUTO_TEST_CASE(esplora__tx_hex__v2_10__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/tx/" + coinbase1() + "/hex"), http::status::ok);
+}
+
+BC_AUTO_TEST_CASE(esplora__tx_raw__v2_10__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/tx/" + coinbase1() + "/raw"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(esplora__tx_merkle_proof__v2_10__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/tx/" + coinbase1() + "/merkle-proof"), http::status::ok);
+}
+
+BC_AUTO_TEST_CASE(esplora__tx_merkleblock_proof__v2_10__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/tx/" + coinbase1() + "/merkleblock-proof"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(esplora__broadcast__v2_10__not_found)
+{
+    BC_REQUIRE_EQUAL(post_status("/tx", "00"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(esplora__broadcast_package__v2_10__not_found)
+{
+    BC_REQUIRE_EQUAL(post_status("/txs/package", "[]"), http::status::not_found);
+}
+
+BC_AUTO_TEST_SUITE_END()

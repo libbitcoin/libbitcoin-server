@@ -283,6 +283,22 @@ code settings::bitcoind_server::initialize_context() NOEXCEPT
     return network::error::success;
 }
 
+code settings::esplora_server::initialize_context() NOEXCEPT
+{
+    using namespace server::esplora;
+    if (const auto ec = base::initialize_context())
+        return ec;
+
+    // The range is bounded by the implemented versions, and the maximum
+    // floors to an implemented version within the range.
+    if (protocol_minimum < minimum_version ||
+        protocol_maximum > maximum_version ||
+        to_value(version_floor(protocol_maximum)) < protocol_minimum)
+        return network::error::invalid_configuration;
+
+    return network::error::success;
+}
+
 } // namespace server
 
 // ----------------------------------------------------------------------------

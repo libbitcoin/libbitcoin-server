@@ -2186,6 +2186,16 @@ options_metadata parser::load_settings() THROWS
         "The server name (http header), defaults to {}."
     )
     (
+        "esplora.protocol_minimum",
+        setting<uint32_t>(&configured.server.esplora.protocol_minimum),
+        "The minimum interface version (10000 major, 100 minor, patch), defaults to {}."
+    )
+    (
+        "esplora.protocol_maximum",
+        setting<uint32_t>(&configured.server.esplora.protocol_maximum),
+        "The maximum interface version (10000 major, 100 minor, patch), defaults to {}."
+    )
+    (
         "esplora.maximum_history",
         setting<uint32_t>(&configured.server.esplora.maximum_history),
         "The maximum number of address history entries, defaults to {}."

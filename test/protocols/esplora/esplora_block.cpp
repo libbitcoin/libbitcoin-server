@@ -288,3 +288,37 @@ BC_AUTO_TEST_CASE(esplora__tip_height__no_credential__unauthorized)
 }
 
 BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(esplora_v2_10_tests, esplora_v2_10_setup_fixture)
+
+BC_AUTO_TEST_CASE(esplora__tip_height__v2_10__expected)
+{
+    BC_REQUIRE_EQUAL(get_text("/blocks/tip/height"), "9");
+}
+
+BC_AUTO_TEST_CASE(esplora__block__v2_10__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(test::block1.hash())), http::status::ok);
+}
+
+BC_AUTO_TEST_CASE(esplora__block_raw__v2_10__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(test::block1.hash()) + "/raw"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(esplora__block_header__v2_10__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(test::block1.hash()) + "/header"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(esplora__block_txid__v2_10__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(test::block1.hash()) + "/txid/0"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(esplora__block_txids__v2_10__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(test::block1.hash()) + "/txids"), http::status::ok);
+}
+
+BC_AUTO_TEST_SUITE_END()
