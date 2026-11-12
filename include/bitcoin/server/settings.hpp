@@ -155,13 +155,10 @@ public:
         using base = network::settings::websocket_server;
         using base::base;
 
-        /// Minimum interface version (10000 major, 100 minor, patch).
-        uint32_t protocol_minimum{ server::esplora::minimum_version };
+        /// Interface version (10000 major, 100 minor, patch).
+        uint32_t protocol_version{ server::esplora::maximum_version };
 
-        /// Maximum interface version (10000 major, 100 minor, patch).
-        uint32_t protocol_maximum{ server::esplora::maximum_version };
-
-        /// Validate the interface versions and initialize the context.
+        /// Validate the interface version and initialize the context.
         code initialize_context() NOEXCEPT override;
 
         /// Maximum number of address history entries upon one index walk.

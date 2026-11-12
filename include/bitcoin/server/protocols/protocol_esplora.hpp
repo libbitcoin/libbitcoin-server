@@ -62,10 +62,10 @@ protected:
         return options_;
     }
 
-    /// The interface version of the service (the configured maximum).
+    /// The interface version of the service (as configured).
     inline server::esplora::version interface_version() const NOEXCEPT
     {
-        return server::esplora::version_floor(options_.protocol_maximum);
+        return server::esplora::version_floor(options_.protocol_version);
     }
 
     /// The interface version of the service is at least the specified version.

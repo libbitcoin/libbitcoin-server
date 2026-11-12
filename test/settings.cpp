@@ -264,8 +264,7 @@ BC_AUTO_TEST_CASE(server__esplora_server__defaults__expected)
 
     BC_REQUIRE_EQUAL(server.name, "esplora");
     BC_REQUIRE_EQUAL(server.maximum_history, 1'000'000u);
-    BC_REQUIRE_EQUAL(server.protocol_minimum, 21000u);
-    BC_REQUIRE_EQUAL(server.protocol_maximum, 30000u);
+    BC_REQUIRE_EQUAL(server.protocol_version, 30000u);
 }
 
 BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_defaults__success)
@@ -274,32 +273,31 @@ BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_defaults__success)
     BC_REQUIRE(!instance.initialize_context());
 }
 
-BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_minimum_below_implemented__invalid_configuration)
+BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_minimum__success)
 {
     server::settings::esplora_server instance{ "esplora" };
-    instance.protocol_minimum = 20999;
+    instance.protocol_version = 21000;
+    BC_REQUIRE(!instance.initialize_context());
+}
+
+BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_between_implemented__success)
+{
+    server::settings::esplora_server instance{ "esplora" };
+    instance.protocol_version = 29999;
+    BC_REQUIRE(!instance.initialize_context());
+}
+
+BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_below_implemented__invalid_configuration)
+{
+    server::settings::esplora_server instance{ "esplora" };
+    instance.protocol_version = 20999;
     BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
 
-BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_maximum_above_implemented__invalid_configuration)
+BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_above_implemented__invalid_configuration)
 {
     server::settings::esplora_server instance{ "esplora" };
-    instance.protocol_maximum = 30001;
-    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
-}
-
-BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_minimum_above_maximum__invalid_configuration)
-{
-    server::settings::esplora_server instance{ "esplora" };
-    instance.protocol_minimum = 30001;
-    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
-}
-
-BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_maximum_floors_below_minimum__invalid_configuration)
-{
-    server::settings::esplora_server instance{ "esplora" };
-    instance.protocol_minimum = 21001;
-    instance.protocol_maximum = 29999;
+    instance.protocol_version = 30001;
     BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
 

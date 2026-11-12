@@ -237,7 +237,7 @@ struct esplora_scoped_credential_setup_fixture
     }
 };
 
-// Configured with v2.10 as the maximum interface version.
+// Configured with v2.10 as the interface version.
 struct esplora_v2_10_setup_fixture
   : esplora_setup_fixture
 {
@@ -247,7 +247,7 @@ struct esplora_v2_10_setup_fixture
             return test::setup_ten_block_store(query);
         }, [](server::configuration& config)
         {
-            config.server.esplora.protocol_maximum = 21000;
+            config.server.esplora.protocol_version = 21000;
         })
     {
     }
