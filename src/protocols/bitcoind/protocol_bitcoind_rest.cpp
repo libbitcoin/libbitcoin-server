@@ -954,7 +954,7 @@ bool protocol_bitcoind_rest::handle_get_mempool_information(const code& ec,
 
     object out{};
     if (!mempool_info(out, archive(), database_settings().path, minimum,
-        relay, settings.minimum_bump_rate))
+        relay, settings.minimum_fee_rate))
     {
         send_internal_server_error(database::error::integrity);
         return true;

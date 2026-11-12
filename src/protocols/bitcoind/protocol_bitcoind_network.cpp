@@ -168,7 +168,7 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
             network("cjdns", net_settings.gossip_ipv6, proxy)
         } },
         { "relayfee", node_settings().minimum_fee_rate },
-        { "incrementalfee", node_settings().minimum_bump_rate },
+        { "incrementalfee", node_settings().minimum_fee_rate },
         { "localaddresses", std::move(locals) },
         { "warnings", array_t{} }
     });

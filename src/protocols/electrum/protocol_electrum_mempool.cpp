@@ -84,7 +84,7 @@ void protocol_electrum::handle_mempool_get_info(const code& ec,
         // Even with a txpool or txgraph this value is fixed.
         { "mempoolminfee", settings.minimum_fee_rate },
         { "minrelaytxfee", settings.minimum_fee_rate },
-        { "incrementalrelayfee", settings.minimum_bump_rate }
+        { "incrementalrelayfee", settings.minimum_fee_rate }
     });
 }
 
