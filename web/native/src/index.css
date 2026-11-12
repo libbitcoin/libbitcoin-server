@@ -12,3 +12,7 @@ body {
 ::selection {
   @apply bg-accent text-background;
 }
+
+[tabindex='-1']:focus {
+  outline: none;
+}
