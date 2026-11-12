@@ -93,6 +93,10 @@ settings::settings(system::chain::selection context,
     admin("admin", admin_pages),
     native("native", native_pages)
 {
+    // Admin is enabled by default, for the local machine only.
+    admin.connections = 10;
+    admin.binds.emplace_back(system::ip::ipv4::loopback(), 0_u16);
+
     // Admin may accumulate a large amount of log backlog.
     admin.maximum_backlog = 10 * network::megabyte;
 

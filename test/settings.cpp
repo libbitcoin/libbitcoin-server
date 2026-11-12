@@ -115,11 +115,13 @@ BC_AUTO_TEST_CASE(server__admin_server__defaults__expected)
 
     // tcp_server
     BC_REQUIRE_EQUAL(server.name, "admin");
-    BC_REQUIRE(server.binds.empty());
-    BC_REQUIRE_EQUAL(server.connections, 0u);
+    BC_REQUIRE_EQUAL(server.binds.size(), 1u);
+    BC_REQUIRE_EQUAL(server.binds.front().ip(), system::ip::address{ system::ip::ipv4::loopback() });
+    BC_REQUIRE_EQUAL(server.binds.front().port(), 0u);
+    BC_REQUIRE_EQUAL(server.connections, 10u);
     BC_REQUIRE_EQUAL(server.inactivity_minutes, 10u);
     BC_REQUIRE_EQUAL(server.expiration_minutes, 60u);
-    BC_REQUIRE(!server.enabled());
+    BC_REQUIRE(server.enabled());
     BC_REQUIRE(server.inactivity() == minutes(10));
     BC_REQUIRE(server.expiration() == minutes(60));
 

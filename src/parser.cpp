@@ -1300,7 +1300,7 @@ options_metadata parser::load_settings() THROWS
     (
         "admin.bind",
         setting<network::config::authorities>(&configured.server.admin.binds),
-        "IP address to bind, multiple allowed, defaults to {} (disabled)."
+        "IP address to bind, multiple allowed, defaults to {} (loopback)."
     )
     (
         "admin.safe",

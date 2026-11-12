@@ -220,6 +220,9 @@ void configure(server::configuration& out) NOEXCEPT
     service(services.stratum_v1);
     service(services.zmq);
     service(services.stratum_v2);
+
+    services.admin.connections = 0;
+    services.admin.binds.clear();
 }
 
 } // namespace test
