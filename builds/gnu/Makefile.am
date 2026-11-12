@@ -89,6 +89,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_test.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_transaction.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_utility.cpp \
+    ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_version.cpp \
     ${srcdir}/../../src/protocols/bitcoind/protocol_bitcoind_wallet.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd_filter.cpp \
@@ -264,6 +265,7 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_test.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_transaction.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_utility.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_version.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_wallet.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_electrum.hpp \

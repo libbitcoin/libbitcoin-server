@@ -143,6 +143,7 @@
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_test.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_transaction.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_utility.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_version.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_wallet.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_filter.cpp" />
@@ -263,6 +264,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_test.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_transaction.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_utility.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_wallet.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum.hpp" />
