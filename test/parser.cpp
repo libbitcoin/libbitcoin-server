@@ -417,4 +417,62 @@ BC_AUTO_TEST_CASE(parser__read_envelope__make__unchanged)
     BC_REQUIRE(instance.configured.bitcoin.network == selection::testnet4);
 }
 
+// portable
+
+static const std::string portable
+{
+    "[outbound]\nseed = seed.example.com\n"
+    "[inbound]\nbind = 0.0.0.0\nself = 1.2.3.4\n"
+    "[manual]\npeer = 5.6.7.8\n"
+    "[bitcoind]\nbind = 127.0.0.1\nhost = localhost\n"
+    "origin = example.com\n"
+    "[esplora]\nbind = 127.0.0.1\nhost = localhost\n"
+};
+
+static void require_portable(const char* name, uint16_t peer,
+    uint16_t bitcoind, uint16_t esplora)
+{
+    const auto config = write_config(portable);
+    const char* argv[]{ "bs", "-n", name, "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(5, argv, error));
+    BC_REQUIRE(!instance.configured.initialize());
+
+    const auto& p2p = instance.configured.network;
+    BC_REQUIRE_EQUAL(p2p.inbound.binds.front().port(), peer);
+    BC_REQUIRE_EQUAL(p2p.inbound.selfs.front().port(), peer);
+    BC_REQUIRE_EQUAL(p2p.manual.peers.front().port(), peer);
+    BC_REQUIRE_EQUAL(p2p.outbound.seeds.front().port(), peer);
+
+    const auto& services = instance.configured.server;
+    BC_REQUIRE_EQUAL(services.bitcoind.binds.front().port(), bitcoind);
+    BC_REQUIRE_EQUAL(services.esplora.binds.front().port(), esplora);
+
+    using namespace network::config;
+    const auto bitcoind_host = "localhost:" + std::to_string(bitcoind);
+    const auto esplora_host = "localhost:" + std::to_string(esplora);
+    const auto origin = "http://example.com:" + std::to_string(bitcoind);
+    const auto& hosts = services.bitcoind.host_names();
+    const auto& origins = services.bitcoind.origin_names();
+    BC_REQUIRE(contains_host(hosts, bitcoind_host, 80));
+    BC_REQUIRE(contains_origin(origins, origin, 80));
+    BC_REQUIRE(contains_host(services.esplora.host_names(), esplora_host, 80));
+}
+
+BC_AUTO_TEST_CASE(parser__parse__portable_mainnet__mainnet_ports)
+{
+    require_portable("mainnet", 8333, 8280, 8780);
+}
+
+BC_AUTO_TEST_CASE(parser__parse__portable_testnet4__testnet4_ports)
+{
+    require_portable("testnet4", 48333, 48280, 48780);
+}
+
+BC_AUTO_TEST_CASE(parser__parse__portable_regtest__regtest_ports)
+{
+    require_portable("regtest", 18444, 28280, 28780);
+}
+
 BC_AUTO_TEST_SUITE_END()
