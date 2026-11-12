@@ -39,10 +39,6 @@ btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
             // 2: the ws connection, plus the plain one used by http_rpc or
             // tcp_rpc.
             btcd.connections = 2;
-
-            // Distinct from the [bitcoind] section default, so that a read
-            // of the wrong service section is visible.
-            btcd.subversion = "/libbitcoin:btcd/";
             btcd.inactivity_minutes = 1;
 
             if (configure)
@@ -79,6 +75,33 @@ system::json::value btcd_setup_fixture::rpc(std::string_view method,
     std::string_view params)
 {
     return client_.frame(body_of(request_id_++, method, params), true);
+}
+
+// The params of a negotiateversion request for exactly the version.
+static std::string negotiation(server::interface::bitcoind::version version)
+{
+    const auto value = std::to_string(to_value(version));
+    return "[" + value + "," + value + "]";
+}
+
+// The negotiateversion response negotiated exactly the version.
+static bool negotiated(const system::json::value& response,
+    server::interface::bitcoind::version version)
+{
+    try
+    {
+        return response.at("result").as_int64() == to_value(version);
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
+bool btcd_setup_fixture::negotiate(
+    server::interface::bitcoind::version version)
+{
+    return negotiated(rpc("negotiateversion", negotiation(version)), version);
 }
 
 int64_t btcd_setup_fixture::rpc_error(std::string_view method,

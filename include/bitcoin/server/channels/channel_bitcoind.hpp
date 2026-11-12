@@ -22,6 +22,7 @@
 #include <bitcoin/server/channels/channel_rpc.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/error/error.hpp>
+#include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/settings.hpp>
 
 namespace libbitcoin {
@@ -44,6 +45,45 @@ public:
         network::tracker<channel_bitcoind>(log),
         error_status_(options.error_status)
     {
+        using namespace server::interface::bitcoind;
+        version_ = version_floor(options.protocol_maximum);
+    }
+
+    /// The interface version of the channel (requires strand).
+    inline server::interface::bitcoind::version version() const NOEXCEPT
+    {
+        BC_ASSERT(stranded());
+        return version_;
+    }
+
+    /// Set the interface version of the channel (requires strand).
+    inline void set_version(
+        server::interface::bitcoind::version version) NOEXCEPT
+    {
+        BC_ASSERT(stranded());
+        version_ = version;
+    }
+
+    /// Retain the request in dispatch as a non-handshake opener, dispatched
+    /// again (under its own gate) when the channel resumes the reader.
+    inline void set_opener() NOEXCEPT
+    {
+        BC_ASSERT(stranded());
+        opener_ = current_;
+    }
+
+    /// Overridden to dispatch a retained opener before reading on.
+    inline void receive() NOEXCEPT override
+    {
+        BC_ASSERT(stranded());
+
+        if (opener_ && !stopped())
+        {
+            dispatch(std::exchange(opener_, {}));
+            return;
+        }
+
+        channel_rpc::receive();
     }
 
     /// The http status of an unbatched json-rpc response, as bitcoind.
@@ -79,9 +119,24 @@ protected:
         return true;
     }
 
+    /// Overridden to retain the request in dispatch (see set_opener).
+    inline void dispatch(
+        const network::http::request_ptr& request) NOEXCEPT override
+    {
+        BC_ASSERT(stranded());
+        current_ = request;
+        channel_rpc::dispatch(request);
+        current_.reset();
+    }
+
 private:
     // This is thread safe.
     const bool error_status_;
+
+    // These are protected by strand.
+    server::interface::bitcoind::version version_{};
+    network::http::request_ptr current_{};
+    network::http::request_ptr opener_{};
 };
 
 } // namespace server

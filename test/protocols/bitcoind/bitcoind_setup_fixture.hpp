@@ -62,6 +62,12 @@ struct bitcoind_setup_fixture
     system::json::value tcp_rpc(std::string_view method,
         std::string_view params="[]");
 
+    // Negotiate exactly the interface version, as the channel opener.
+    bool negotiate(server::interface::bitcoind::version version);
+
+    // As negotiate(), over raw tcp (downgrades the connection).
+    bool tcp_negotiate(server::interface::bitcoind::version version);
+
     // As rpc(), with basic authorization, returning only the http status.
     status rpc_status(std::string_view method, const std::string& username,
         const std::string& password);
@@ -76,6 +82,9 @@ struct bitcoind_setup_fixture
     // As rpc(), over the upgraded websocket connection.
     system::json::value ws_rpc(std::string_view method,
         std::string_view params="[]");
+
+    // As negotiate(), over the upgraded websocket connection.
+    bool ws_negotiate(server::interface::bitcoind::version version);
 
     // Write a raw frame over the upgraded websocket without reading.
     void ws_notify(std::string_view body);

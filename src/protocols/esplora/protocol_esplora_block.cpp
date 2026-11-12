@@ -85,6 +85,12 @@ bool protocol_esplora::handle_get_block(const code& ec, interface::block,
     if (stopped(ec))
         return false;
 
+    if (media == data && !at_least(esplora::version::v3_0))
+    {
+        send_not_found();
+        return true;
+    }
+
     const auto& query = archive();
     const auto link = query.to_header(*hash);
     if (link.is_terminal())

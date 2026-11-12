@@ -101,10 +101,7 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    // bitcoind's numeric version encoding (10'000 major, 100 minor, patch).
-    const auto& settings = options();
-    const auto& segments = settings.version.segments();
-    const auto version = 10'000 * segments[0] + 100 * segments[1] + segments[2];
+    const auto version = interface_version();
 
     // Proxy credentials are configured, so are never randomized.
     const auto network = [](const std::string& name, bool reachable,
@@ -151,8 +148,8 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
 
     send_result(object_t
     {
-        { "version", version },
-        { "subversion", settings.subversion },
+        { "version", to_value(version) },
+        { "subversion", server::interface::bitcoind::to_subversion(version) },
         { "protocolversion", net_settings.protocol_maximum },
         { "localservices", encode_base16(to_big_endian(services)) },
         { "localservicesnames", to_service_names(services) },

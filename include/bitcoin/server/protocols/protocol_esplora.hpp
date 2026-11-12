@@ -62,6 +62,24 @@ protected:
         return options_;
     }
 
+    /// The interface version of the service (as configured).
+    inline server::esplora::version interface_version() const NOEXCEPT
+    {
+        return server::esplora::version_floor(options_.protocol_version);
+    }
+
+    /// The interface version of the service is at least the specified version.
+    inline bool at_least(server::esplora::version version) const NOEXCEPT
+    {
+        return interface_version() >= version;
+    }
+
+    /// The method exists at the interface version of the service.
+    inline bool is_active(std::string_view method) const NOEXCEPT
+    {
+        return at_least(server::esplora::introduced(method));
+    }
+
     template <class Derived, typename Method, typename... Args>
     inline void subscribe(Method&& method, Args&&... args) NOEXCEPT
     {

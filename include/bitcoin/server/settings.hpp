@@ -21,6 +21,7 @@
 
 #include <filesystem>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/interfaces/interfaces.hpp>
 
 namespace libbitcoin {
 namespace log {
@@ -154,6 +155,12 @@ public:
         using base = network::settings::websocket_server;
         using base::base;
 
+        /// Interface version (10000 major, 100 minor, patch).
+        uint32_t protocol_version{ server::esplora::maximum_version };
+
+        /// Validate the interface version and initialize the context.
+        code initialize_context() NOEXCEPT override;
+
         /// Maximum number of address history entries upon one index walk.
         uint32_t maximum_history{ 1'000'000 };
     };
@@ -209,9 +216,14 @@ public:
         using base = network::settings::http_server;
         using base::base;
 
-        /// Version identity returned by getnetworkinfo.
-        system::config::version version{};
-        std::string subversion{ "/libbitcoin:server/" };
+        /// Minimum interface version (bitcoind version encoding).
+        uint32_t protocol_minimum{ interface::bitcoind::minimum_version };
+
+        /// Maximum interface version (bitcoind version encoding).
+        uint32_t protocol_maximum{ interface::bitcoind::maximum_version };
+
+        /// Validate the interface versions and initialize the context.
+        code initialize_context() NOEXCEPT override;
 
         /// Report an unbatched json-rpc v1 error in the http status.
         bool error_status{ true };

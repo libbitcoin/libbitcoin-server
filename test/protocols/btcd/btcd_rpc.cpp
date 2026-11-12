@@ -848,14 +848,30 @@ BC_AUTO_TEST_CASE(btcd_rpc__getcfilter__http_post_numeric_hash__invalid_params)
 // service settings
 // ----------------------------------------------------------------------------
 
-// btcd settings derive bitcoind settings, and btcd is an independent service,
-// so it reports its own configured section (not that of [bitcoind]).
-BC_AUTO_TEST_CASE(btcd_rpc__getnetworkinfo__derived_settings__btcd_section)
+BC_AUTO_TEST_CASE(btcd_rpc__getnetworkinfo__default__maximum_version)
 {
     const auto response = rpc("getnetworkinfo");
     const auto& result = response.at("result").as_object();
-    BC_REQUIRE_EQUAL(result.at("subversion").as_string(),
-        "/libbitcoin:btcd/");
+    BC_REQUIRE_EQUAL(result.at("version").as_int64(), 320000);
+    BC_REQUIRE_EQUAL(result.at("subversion").as_string(), "/Satoshi:32.0.0/");
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__negotiate__v30__getnetworkinfo_version)
+{
+    BC_REQUIRE(negotiate(server::interface::bitcoind::version::v30_0));
+    BC_REQUIRE_EQUAL(rpc("getnetworkinfo").at("result").at("version").as_int64(), 300000);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__exportasmap__v31__method_not_found)
+{
+    BC_REQUIRE(negotiate(server::interface::bitcoind::version::v31_0));
+    BC_REQUIRE_EQUAL(rpc_error("exportasmap", R"([""])"), -32601);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__exportasmap__v32__dispatched)
+{
+    BC_REQUIRE(negotiate(server::interface::bitcoind::version::v32_0));
+    BC_REQUIRE_NE(rpc_error("exportasmap", R"([""])"), -32601);
 }
 
 // response envelope
@@ -1293,6 +1309,13 @@ BC_AUTO_TEST_CASE(btcd_scoped_credential__notifyblocks__http_post_unlisted_metho
     BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), invalid_params.value());
 }
 
+BC_AUTO_TEST_CASE(btcd_scoped_credential__negotiateversion__http_post_unlisted_method__maximum)
+{
+    const auto response = http_rpc("negotiateversion", "[0,330000]", BTCD_TEST_USERNAME, BTCD_TEST_PASSWORD);
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), 320000);
+}
+
 BC_AUTO_TEST_SUITE_END()
 
 // authenticate (protocol_btcd::handle_authenticate): exercises the
@@ -1332,6 +1355,13 @@ BC_AUTO_TEST_CASE(btcd_auth__session__not_authenticated__unauthorized)
     // 'session' as the first message, with a credential configured: any
     // method but authenticate is invalid until authorization is established.
     BC_REQUIRE_EQUAL(rpc_error("session"), unauthorized.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_auth__negotiateversion__not_authenticated__maximum)
+{
+    BC_REQUIRE_EQUAL(rpc("negotiateversion", "[0,330000]").at("result").as_int64(), 320000);
+    BC_REQUIRE(authenticate());
+    REQUIRE_NO_THROW_TRUE(rpc("session").at("result").is_object());
 }
 
 BC_AUTO_TEST_CASE(btcd_auth__authenticate__already_authenticated__unauthorized)

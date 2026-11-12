@@ -31,6 +31,7 @@
 #include <bitcoin/server/protocols/protocol_bitcoind_test.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_transaction.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_utility.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_version.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_wallet.hpp>
 #include <bitcoin/server/protocols/protocol_btcd.hpp>
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
@@ -114,6 +115,8 @@ server::protocol → node::protocol
         │   │   └── protocol_bitcoind_blockchain
         │   ╞══ protocol_bitcoind_dispatch<bitcoind_control>
         │   │   └── protocol_bitcoind_control
+        │   ╞══ protocol_bitcoind_dispatch<bitcoind_handshake>
+        │   │   └── protocol_bitcoind_version (handshake, attached first)
         │   ╞══ protocol_bitcoind_dispatch<bitcoind_mining>
         │   │   └── protocol_bitcoind_mining
         │   ╞══ protocol_bitcoind_dispatch<bitcoind_network>

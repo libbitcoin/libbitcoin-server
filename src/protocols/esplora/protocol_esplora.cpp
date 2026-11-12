@@ -140,7 +140,7 @@ bool protocol_esplora::try_dispatch_object(const http::request& request) NOEXCEP
     BC_POP_WARNING()
 
     rpc::request_t model{};
-    if (esplora_target(model, target))
+    if (esplora_target(model, target) || !is_active(model.method))
         return false;
 
     if (takes_body(model.method))
@@ -190,7 +190,7 @@ void protocol_esplora::handle_receive_post(const code& ec,
 
     set_request(post);
     rpc::request_t model{};
-    if (esplora_target(model, post->target()))
+    if (esplora_target(model, post->target()) || !is_active(model.method))
     {
         send_not_found();
         return;
@@ -242,7 +242,8 @@ void protocol_esplora::dispatch_websocket(const http::request& request) NOEXCEPT
     const auto split = frame.find('\n');
 
     rpc::request_t model{};
-    if (esplora_target(model, frame.substr(zero, split)))
+    const auto target = frame.substr(zero, split);
+    if (esplora_target(model, target) || !is_active(model.method))
     {
         send_not_found(request);
         return;

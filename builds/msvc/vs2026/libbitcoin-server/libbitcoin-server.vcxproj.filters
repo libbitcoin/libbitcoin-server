@@ -186,6 +186,9 @@
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_utility.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_version.cpp">
+      <Filter>src\protocols\bitcoind</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\bitcoind\protocol_bitcoind_wallet.cpp">
       <Filter>src\protocols\bitcoind</Filter>
     </ClCompile>
@@ -540,6 +543,9 @@
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_utility.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_version.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_wallet.hpp">

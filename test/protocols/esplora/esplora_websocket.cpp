@@ -99,3 +99,25 @@ BC_AUTO_TEST_CASE(esplora__ws_invalid_target__not_found)
 }
 
 BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(esplora_websocket_v2_10_tests, esplora_v2_10_setup_fixture)
+
+BC_AUTO_TEST_CASE(esplora__ws_tip_height__v2_10__expected)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE_EQUAL(ws_get_text("/blocks/tip/height"), "9");
+}
+
+BC_AUTO_TEST_CASE(esplora__ws_block_header__v2_10__not_found)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(ws_get_text("/block/" + encode_hash(test::block1.hash()) + "/header").starts_with("Not Found"));
+}
+
+BC_AUTO_TEST_CASE(esplora__ws_broadcast__v2_10__not_found)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(ws_get_text("/tx\n00").starts_with("Not Found"));
+}
+
+BC_AUTO_TEST_SUITE_END()

@@ -115,11 +115,13 @@ BC_AUTO_TEST_CASE(server__admin_server__defaults__expected)
 
     // tcp_server
     BC_REQUIRE_EQUAL(server.name, "admin");
-    BC_REQUIRE(server.binds.empty());
-    BC_REQUIRE_EQUAL(server.connections, 0u);
+    BC_REQUIRE_EQUAL(server.binds.size(), 1u);
+    BC_REQUIRE_EQUAL(server.binds.front().ip(), system::ip::address{ system::ip::ipv4::loopback() });
+    BC_REQUIRE_EQUAL(server.binds.front().port(), 0u);
+    BC_REQUIRE_EQUAL(server.connections, 10u);
     BC_REQUIRE_EQUAL(server.inactivity_minutes, 10u);
     BC_REQUIRE_EQUAL(server.expiration_minutes, 60u);
-    BC_REQUIRE(!server.enabled());
+    BC_REQUIRE(server.enabled());
     BC_REQUIRE(server.inactivity() == minutes(10));
     BC_REQUIRE(server.expiration() == minutes(60));
 
@@ -220,6 +222,83 @@ BC_AUTO_TEST_CASE(server__bitcoind_server__defaults__expected)
     BC_REQUIRE_EQUAL(server.server, BC_HTTP_SERVER_NAME);
     BC_REQUIRE(server.hosts.empty());
     BC_REQUIRE(server.host_names().empty());
+
+    // bitcoind_server
+    BC_REQUIRE_EQUAL(server.protocol_minimum, 300000u);
+    BC_REQUIRE_EQUAL(server.protocol_maximum, 320000u);
+}
+
+BC_AUTO_TEST_CASE(server__bitcoind_server__initialize_context_defaults__success)
+{
+    server::settings::bitcoind_server instance{ "bitcoind" };
+    BC_REQUIRE(!instance.initialize_context());
+}
+
+BC_AUTO_TEST_CASE(server__bitcoind_server__initialize_context_minimum_below_implemented__invalid_configuration)
+{
+    server::settings::bitcoind_server instance{ "bitcoind" };
+    instance.protocol_minimum = 299999;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__bitcoind_server__initialize_context_maximum_above_implemented__invalid_configuration)
+{
+    server::settings::bitcoind_server instance{ "bitcoind" };
+    instance.protocol_maximum = 320001;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__bitcoind_server__initialize_context_minimum_above_maximum__invalid_configuration)
+{
+    server::settings::bitcoind_server instance{ "bitcoind" };
+    instance.protocol_minimum = 320001;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__esplora_server__defaults__expected)
+{
+    const server::settings::embedded_pages admin{};
+    const server::settings::embedded_pages native{};
+    const server::settings instance{ selection::none, native, admin };
+    const auto& server = instance.esplora;
+
+    BC_REQUIRE_EQUAL(server.name, "esplora");
+    BC_REQUIRE_EQUAL(server.maximum_history, 1'000'000u);
+    BC_REQUIRE_EQUAL(server.protocol_version, 30000u);
+}
+
+BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_defaults__success)
+{
+    server::settings::esplora_server instance{ "esplora" };
+    BC_REQUIRE(!instance.initialize_context());
+}
+
+BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_minimum__success)
+{
+    server::settings::esplora_server instance{ "esplora" };
+    instance.protocol_version = 21000;
+    BC_REQUIRE(!instance.initialize_context());
+}
+
+BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_between_implemented__success)
+{
+    server::settings::esplora_server instance{ "esplora" };
+    instance.protocol_version = 29999;
+    BC_REQUIRE(!instance.initialize_context());
+}
+
+BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_below_implemented__invalid_configuration)
+{
+    server::settings::esplora_server instance{ "esplora" };
+    instance.protocol_version = 20999;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__esplora_server__initialize_context_above_implemented__invalid_configuration)
+{
+    server::settings::esplora_server instance{ "esplora" };
+    instance.protocol_version = 30001;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
 
 BC_AUTO_TEST_CASE(server__electrum_server__defaults__expected)

@@ -51,6 +51,9 @@ protected:
     {
     }
 
+    /// Publish the served method names (e.g. for control subgroup help).
+    virtual void register_names() NOEXCEPT;
+
     /// The post transport of the interface subgroup.
     void handle_receive_post(const code& ec,
         const post::cptr& post) NOEXCEPT override;

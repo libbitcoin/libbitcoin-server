@@ -152,7 +152,7 @@ static std::string basic(const std::string& username,
     const std::string& password)
 {
     const std::string plain{ username + ":" + password };
-    return "Basic " + libbitcoin::system::encode_base64(plain);
+    return "Basic " + bc::system::encode_base64(plain);
 }
 
 http::message<false, http::string_body> rpc_client::get(std::string_view target)

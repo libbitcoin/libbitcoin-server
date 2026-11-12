@@ -47,6 +47,7 @@ namespace interface {
 using admin                  = publish<admin_methods>;
 using bitcoind_blockchain    = publish<bitcoind_blockchain_methods>;
 using bitcoind_control       = publish<bitcoind_control_methods>;
+using bitcoind_handshake     = publish<bitcoind_handshake_methods>;
 using bitcoind_mining        = publish<bitcoind_mining_methods>;
 using bitcoind_network       = publish<bitcoind_network_methods>;
 using bitcoind_notifications = publish<bitcoind_notifications_methods>;

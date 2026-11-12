@@ -47,8 +47,7 @@ void CLASS::start() NOEXCEPT
     if (started())
         return;
 
-    // Publish served method names (e.g. for control subgroup help).
-    register_methods(Interface::names);
+    register_names();
 
     using websocket = network::http::method::websocket;
     using stream = network::http::method::stream;
@@ -59,6 +58,14 @@ void CLASS::start() NOEXCEPT
     subscribe_channel<CLASS, stream>(&CLASS::handle_receive_stream,
         std::placeholders::_1, std::placeholders::_2);
     network::protocol::start();
+}
+
+TEMPLATE
+void CLASS::register_names() NOEXCEPT
+{
+    for (const auto& name: system::split(Interface::names))
+        if (is_active(name))
+            register_methods(name);
 }
 
 TEMPLATE
@@ -93,8 +100,10 @@ void CLASS::handle_receive_post(const code& ec,
     const auto& message =
         post->body().template get<network::rpc::request>().message;
 
-    // Silently defer methods not defined by the interface subgroup.
-    if (!rpc_dispatcher::contains(message.method))
+    // Silently defer methods not defined by the interface subgroup, or not
+    // introduced at the interface version of the channel.
+    if (!rpc_dispatcher::contains(message.method) ||
+        !is_active(message.method))
         return;
 
     // Claim the request (informs the terminal responder).
@@ -143,8 +152,10 @@ void CLASS::dispatch_websocket(
     const auto& message =
         request.body().template get<network::rpc::request>().message;
 
-    // Silently defer methods not defined by the interface subgroup.
-    if (!rpc_dispatcher::contains(message.method))
+    // Silently defer methods not defined by the interface subgroup, or not
+    // introduced at the interface version of the channel.
+    if (!rpc_dispatcher::contains(message.method) ||
+        !is_active(message.method))
         return;
 
     // Claim the request (informs the terminal responder).
@@ -181,6 +192,7 @@ BC_POP_WARNING()
 // dispatch metaprogramming to this translation unit.
 template class protocol_bitcoind_dispatch<interface::bitcoind_blockchain>;
 template class protocol_bitcoind_dispatch<interface::bitcoind_control>;
+template class protocol_bitcoind_dispatch<interface::bitcoind_handshake>;
 template class protocol_bitcoind_dispatch<interface::bitcoind_mining>;
 template class protocol_bitcoind_dispatch<interface::bitcoind_network>;
 template class protocol_bitcoind_dispatch<interface::bitcoind_notifications>;
@@ -197,6 +209,8 @@ template class network::rpc::dispatcher<
     server::interface::bitcoind_blockchain>;
 template class network::rpc::dispatcher<
     server::interface::bitcoind_control>;
+template class network::rpc::dispatcher<
+    server::interface::bitcoind_handshake>;
 template class network::rpc::dispatcher<
     server::interface::bitcoind_mining>;
 template class network::rpc::dispatcher<

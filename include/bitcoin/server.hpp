@@ -85,6 +85,7 @@
 #include <bitcoin/server/protocols/protocol_bitcoind_test.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_transaction.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_utility.hpp>
+#include <bitcoin/server/protocols/protocol_bitcoind_version.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_wallet.hpp>
 #include <bitcoin/server/protocols/protocol_btcd.hpp>
 #include <bitcoin/server/protocols/protocol_electrum.hpp>

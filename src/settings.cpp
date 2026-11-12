@@ -93,6 +93,10 @@ settings::settings(system::chain::selection context,
     admin("admin", admin_pages),
     native("native", native_pages)
 {
+    // Admin is enabled by default, for the local machine only.
+    admin.connections = 10;
+    admin.binds.emplace_back(system::ip::ipv4::loopback(), 0_u16);
+
     // Admin may accumulate a large amount of log backlog.
     admin.maximum_backlog = 10 * network::megabyte;
 
@@ -264,6 +268,37 @@ settings::html_server::html_server(const std::string_view& logging_name,
   : network::settings::websocket_server(logging_name),
     pages(embedded)
 {
+}
+
+// settings::bitcoind_server
+code settings::bitcoind_server::initialize_context() NOEXCEPT
+{
+    using namespace interface::bitcoind;
+    if (const auto ec = base::initialize_context())
+        return ec;
+
+    // The range is bounded by the implemented versions, and the maximum
+    // floors to an implemented version within the range.
+    if (protocol_minimum < minimum_version ||
+        protocol_maximum > maximum_version ||
+        to_value(version_floor(protocol_maximum)) < protocol_minimum)
+        return network::error::invalid_configuration;
+
+    return network::error::success;
+}
+
+code settings::esplora_server::initialize_context() NOEXCEPT
+{
+    using namespace server::esplora;
+    if (const auto ec = base::initialize_context())
+        return ec;
+
+    // The version floors to an implemented version.
+    if (protocol_version < minimum_version ||
+        protocol_version > maximum_version)
+        return network::error::invalid_configuration;
+
+    return network::error::success;
 }
 
 } // namespace server

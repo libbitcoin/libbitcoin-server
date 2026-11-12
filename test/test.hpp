@@ -33,7 +33,7 @@
     BC_REQUIRE(!expression)
 
 #define TEST_NAME \
-    ::libbitcoin::system::unit_test::session::instance().case_name()
+    ::bc::system::unit_test::session::instance().case_name()
 #define TEST_DIRECTORY \
     test::directory
 #define TEST_PATH \
@@ -74,7 +74,7 @@ inline std::ostream& operator<<(std::ostream& stream, status value) NOEXCEPT
 { \
     network::code require_ec{}; \
     (object).method(__VA_ARGS__ __VA_OPT__(,) require_ec); \
-    BC_REQUIRE_EQUAL(require_ec, ::libbitcoin::network::error::success); \
+    BC_REQUIRE_EQUAL(require_ec, ::bc::network::error::success); \
 }
 
 namespace test {

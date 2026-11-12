@@ -51,6 +51,7 @@ public:
         const options_t& options) NOEXCEPT
       : server::protocol_http(session, channel, options),
         network::tracker<protocol_bitcoind>(session->log),
+        channel_(std::dynamic_pointer_cast<channel_t>(channel)),
         options_(options),
         p2kh_(session->server_settings().wallet.p2kh_prefix),
         p2sh_(session->server_settings().wallet.p2sh_prefix),
@@ -70,6 +71,24 @@ protected:
     inline const options_t& options() const NOEXCEPT
     {
         return options_;
+    }
+
+    /// The interface version of the channel (requires strand).
+    inline interface::bitcoind::version interface_version() const NOEXCEPT
+    {
+        return channel_->version();
+    }
+
+    /// The interface version of the channel is at least the specified version.
+    inline bool at_least(interface::bitcoind::version version) const NOEXCEPT
+    {
+        return interface_version() >= version;
+    }
+
+    /// The method exists at the interface version of the channel.
+    inline bool is_active(std::string_view method) const NOEXCEPT
+    {
+        return at_least(interface::bitcoind::introduced(method));
     }
 
     /// Terminal dispatch (unclaimed requests only).
@@ -150,6 +169,9 @@ private:
     // These are protected by strand.
     network::rpc::version version_{};
     network::rpc::id_option id_{};
+
+    // This is mostly thread safe, and used in a thread safe manner.
+    const channel_t::ptr channel_;
 
 protected:
     // These are thread safe.

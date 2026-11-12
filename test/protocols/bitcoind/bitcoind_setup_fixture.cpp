@@ -115,6 +115,47 @@ system::json::value bitcoind_setup_fixture::tcp_rpc(std::string_view method,
     return client_.send(body_of(method, params) + "\n");
 }
 
+// The params of a negotiateversion request for exactly the version.
+static std::string negotiation(server::interface::bitcoind::version version)
+{
+    const auto value = std::to_string(to_value(version));
+    return "[" + value + "," + value + "]";
+}
+
+// The negotiateversion response negotiated exactly the version.
+static bool negotiated(const system::json::value& response,
+    server::interface::bitcoind::version version)
+{
+    try
+    {
+        return response.at("result").as_int64() == to_value(version);
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
+bool bitcoind_setup_fixture::negotiate(
+    server::interface::bitcoind::version version)
+{
+    return negotiated(rpc("negotiateversion", negotiation(version)), version);
+}
+
+bool bitcoind_setup_fixture::tcp_negotiate(
+    server::interface::bitcoind::version version)
+{
+    const auto params = negotiation(version);
+    return negotiated(tcp_rpc("negotiateversion", params), version);
+}
+
+bool bitcoind_setup_fixture::ws_negotiate(
+    server::interface::bitcoind::version version)
+{
+    const auto params = negotiation(version);
+    return negotiated(ws_rpc("negotiateversion", params), version);
+}
+
 system::json::value bitcoind_setup_fixture::rpc_body(std::string_view body)
 {
     return client_.post(std::string{ body });
