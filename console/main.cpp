@@ -96,7 +96,7 @@ namespace system {
 int main(int argc, char* argv[])
 {
     install_stack_trace();
-    return libbitcoin::system::main(argc, argv);
+    return bc::system::main(argc, argv);
 }
 
 #else

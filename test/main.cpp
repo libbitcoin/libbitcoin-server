@@ -20,5 +20,5 @@
 
 int main(int argc, char* argv[])
 {
-    return libbitcoin::system::unit_test::runner{ "libbitcoin_server_test" }.run(argc, argv);
+    return bc::system::unit_test::runner{ "libbitcoin_server_test" }.run(argc, argv);
 }

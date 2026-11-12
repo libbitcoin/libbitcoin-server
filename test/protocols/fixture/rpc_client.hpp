@@ -31,7 +31,7 @@ class rpc_client
 {
 public:
     using status = network::http::status;
-    using error_code = libbitcoin::network::code;
+    using error_code = bc::network::code;
     using request = network::http::message<true, network::http::string_body>;
 
     DELETE_COPY_MOVE(rpc_client);
