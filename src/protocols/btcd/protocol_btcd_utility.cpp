@@ -52,14 +52,14 @@ bool protocol_btcd::handle_estimate_fee(const code& ec,
 
     size_t target{};
     if (!to_integer(target, numblocks) || is_zero(target) ||
-        target > node::estimator::maximum_horizon)
+        target > node::maximum_estimate_horizon)
     {
         send_error(error::btcd::invalid_params);
         return true;
     }
 
     // The estimator targets the next block as zero.
-    estimate(sub1(target), node::estimator::mode::basic,
+    estimate(sub1(target), node::estimate_mode::basic,
         BIND(handle_estimate, _1, _2));
     return true;
 }

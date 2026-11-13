@@ -31,7 +31,7 @@ using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-using mode_t = node::estimator::mode;
+using mode_t = node::estimate_mode;
 mode_t mode_from_string(const std::string& mode) NOEXCEPT
 {
     if (mode.empty()) return mode_t::basic;

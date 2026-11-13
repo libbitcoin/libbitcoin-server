@@ -362,14 +362,14 @@ bool protocol_bitcoind_utility::handle_estimate_smart_fee(const code& ec,
 
     size_t target{};
     if (!to_integer(target, conf_target) || is_zero(target) ||
-        target > node::estimator::maximum_horizon)
+        target > node::maximum_estimate_horizon)
     {
         send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
     // "unset" selects the default mode.
-    using mode_t = node::estimator::mode;
+    using mode_t = node::estimate_mode;
     const auto lower = ascii_to_lower(estimate_mode);
     const auto mode =
         (lower == "unset" || lower == "economical") ? mode_t::economical :

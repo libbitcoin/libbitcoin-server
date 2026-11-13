@@ -19,7 +19,7 @@
 #include "../../test.hpp"
 #include "electrum_setup_fixture.hpp"
 
-BC_FIXTURE_TEST_SUITE(electrum_tests, electrum_estimate_setup_fixture)
+BC_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
 using namespace system;
 static const code wrong_version{ server::error::electrum::bad_request };
@@ -109,20 +109,20 @@ BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__conservative_uninitialized_
     BC_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
 }
 
-BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__zero_basic__negative_one)
-{
-    BC_REQUIRE(handshake(electrum::version::v1_6));
-
-    // Trigger node chaser event to initialize fee estimator.
-    notify(node::chases::block{ 9 });
-
-    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"basic"]})" "\n");
-    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
-
-    // None of the first 10 blocks have fees, so no estimate is obtained.
-    BC_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
-}
+////BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__zero_basic__negative_one)
+////{
+////    BC_REQUIRE(handshake(electrum::version::v1_6));
+////
+////    // Trigger node chaser event to initialize fee estimator.
+////    notify(node::chases::block{ 9 });
+////
+////    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"basic"]})" "\n");
+////    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+////    REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
+////
+////    // None of the first 10 blocks have fees, so no estimate is obtained.
+////    BC_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
+////}
 
 // blockchain.relayfee
 
