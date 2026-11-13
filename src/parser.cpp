@@ -2338,11 +2338,6 @@ options_metadata parser::load_settings() THROWS
         "Set validation threads to high processing priority, defaults to {}."
     )
     (
-        "node.memory_priority",
-        setting<bool>(&configured.node.memory_priority),
-        "Set the process to high memory priority, defaults to {}."
-    )
-    (
         "node.delay_inbound",
         setting<bool>(&configured.node.delay_inbound),
         "Block inbound peer/client (excluding admin) until current, defaults to {}."
