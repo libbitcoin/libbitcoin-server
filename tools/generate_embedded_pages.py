@@ -2,7 +2,7 @@
 """
 Generate the embedded web pages for libbitcoin-server.
 
-Source: web/admin-dashboard and web/blockexplorer, each installed exactly from
+Source: web/admin_dashboard and web/native, each installed exactly from
         its package-lock.json and built by its package.json build script,
         and web/shared/favicon.svg.
 Output: console/embedded/{admin,native}_{html,css,ecma}.cpp, icon.cpp
@@ -23,7 +23,7 @@ import sys
 
 WEB = "web"
 OUTPUT = os.path.join("console", "embedded")
-SITES = ["admin-dashboard", "blockexplorer"]
+SITES = ["admin_dashboard", "native"]
 CHUNK = 8000
 COLUMNS = 12
 OPEN = b'R"DELIM('
@@ -53,17 +53,17 @@ LICENSE_HEADER = """\
 # (output, container, member, source relative to web, binary)
 PAGES = [
     ("admin_html.cpp", "admin_pages", "html",
-        "admin-dashboard/dist/index.html", False),
+        "admin_dashboard/dist/index.html", False),
     ("admin_css.cpp", "admin_pages", "css",
-        "admin-dashboard/dist/style.css", False),
+        "admin_dashboard/dist/style.css", False),
     ("admin_ecma.cpp", "admin_pages", "ecma",
-        "admin-dashboard/dist/script.js", False),
+        "admin_dashboard/dist/script.js", False),
     ("native_html.cpp", "native_pages", "html",
-        "blockexplorer/dist/index.html", False),
+        "native/dist/index.html", False),
     ("native_css.cpp", "native_pages", "css",
-        "blockexplorer/dist/style.css", False),
+        "native/dist/style.css", False),
     ("native_ecma.cpp", "native_pages", "ecma",
-        "blockexplorer/dist/script.js", False),
+        "native/dist/script.js", False),
     ("icon.cpp", "shared_pages", "icon",
         "shared/favicon.svg", True)]
 
