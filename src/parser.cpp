@@ -2418,11 +2418,6 @@ options_metadata parser::load_settings() THROWS
         "Minimum fee rate for non-conflicting tx acceptance, defaults to {}."
     )
     (
-        "node.minimum_bump_rate",
-        setting<double>(&configured.node.minimum_bump_rate),
-        "Minimum fee rate increment for conflicting tx acceptance, defaults to {}."
-    )
-    (
         "node.allowed_deviation",
         setting<float>(&configured.node.allowed_deviation),
         "Allowable underperformance standard deviation, defaults to {} (0 disables)."

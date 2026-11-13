@@ -1741,7 +1741,7 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
     const auto relay = to_floating(settings.minimum_fee_rate_()) /
         chain::satoshi_per_bitcoin;
 
-    PARALLEL(do_get_mempool_info, minimum, relay, settings.minimum_bump_rate,
+    PARALLEL(do_get_mempool_info, minimum, relay, settings.minimum_fee_rate,
         gate());
     return true;
 }
