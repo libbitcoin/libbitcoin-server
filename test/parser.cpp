@@ -50,6 +50,23 @@ static system::config::path default_store(const std::string& network)
     return std::filesystem::path{ network } / "store";
 }
 
+static std::string genesis_text(selection network)
+{
+    return system::settings{ network }.genesis_block.to_string();
+}
+
+static std::string genesis_config(selection network)
+{
+    return "[bitcoin]\ngenesis_block = " + genesis_text(network) + "\n";
+}
+
+static std::string unknown_genesis_config()
+{
+    auto text = genesis_text(selection::mainnet);
+    text.at(136) = 'f';
+    return "[bitcoin]\ngenesis_block = " + text + "\n";
+}
+
 // net
 
 BC_AUTO_TEST_CASE(parser__parse__net_testnet4__testnet4_defaults)
@@ -233,15 +250,27 @@ BC_AUTO_TEST_CASE(parser__parse__net_conflicting_network__net_network_configured
     BC_REQUIRE(instance.variables().at("bitcoin.network").as<system::config::selection>() == selection::regtest);
 }
 
-BC_AUTO_TEST_CASE(parser__parse__net_mainnet_configured_network__configured_defaults)
+BC_AUTO_TEST_CASE(parser__parse__net_mainnet_configured_network__net_network)
 {
     const auto config = write_config("[bitcoin]\nnetwork = testnet4\n");
     const char* argv[]{ "bs", "-n", "mainnet", "-c", config.c_str() };
     std::ostringstream error{};
     server::parser instance{ selection::mainnet, pages, pages };
     BC_REQUIRE(instance.parse(5, argv, error));
-    BC_REQUIRE(instance.configured.bitcoin.network == selection::testnet4);
-    BC_REQUIRE_EQUAL(instance.configured.network.identifier, 675223068u);
+    BC_REQUIRE(instance.configured.bitcoin.network == selection::mainnet);
+    BC_REQUIRE_EQUAL(instance.configured.network.identifier, 3652501241u);
+    BC_REQUIRE_EQUAL(instance.configured.database.path, store_path("mainnet"));
+}
+
+BC_AUTO_TEST_CASE(parser__parse__net_mainnet_known_genesis__mainnet_defaults)
+{
+    const auto config = write_config(genesis_config(selection::testnet5));
+    const char* argv[]{ "bs", "-n", "mainnet", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(5, argv, error));
+    BC_REQUIRE(instance.configured.bitcoin.network == selection::mainnet);
+    BC_REQUIRE_EQUAL(instance.configured.database.path, store_path("mainnet"));
 }
 
 BC_AUTO_TEST_CASE(parser__parse__configured_path__network_under_path)
@@ -319,6 +348,67 @@ BC_AUTO_TEST_CASE(parser__parse__absolute_paths__unchanged)
     BC_REQUIRE_EQUAL(instance.configured.log.console_path, system::config::path{ absolute });
     BC_REQUIRE_EQUAL(instance.configured.server.admin.cert_path, system::config::path{ absolute });
     BC_REQUIRE_EQUAL(instance.configured.network.path, root_path("mainnet"));
+}
+
+// bitcoin.genesis_block
+
+BC_AUTO_TEST_CASE(parser__parse__known_genesis__genesis_network_defaults)
+{
+    const auto config = write_config(genesis_config(selection::testnet5));
+    const char* argv[]{ "bs", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(3, argv, error));
+
+    const auto& configured = instance.configured;
+    BC_REQUIRE(configured.bitcoin.network == selection::testnet5);
+    BC_REQUIRE(configured.node.network == selection::testnet5);
+    BC_REQUIRE(configured.server.network == selection::testnet5);
+    BC_REQUIRE(configured.bitcoin.genesis_block.hash() == system::settings{ selection::testnet5 }.genesis_block.hash());
+    BC_REQUIRE_EQUAL(configured.database.path, store_path("testnet5"));
+}
+
+BC_AUTO_TEST_CASE(parser__parse__unknown_genesis__mainnet_defaults)
+{
+    const auto config = write_config(unknown_genesis_config());
+    const char* argv[]{ "bs", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(3, argv, error));
+
+    const auto& configured = instance.configured;
+    BC_REQUIRE(configured.bitcoin.network == selection::mainnet);
+    BC_REQUIRE(configured.node.network == selection::mainnet);
+    BC_REQUIRE(configured.bitcoin.genesis_block.hash() != system::settings{ selection::mainnet }.genesis_block.hash());
+    BC_REQUIRE_EQUAL(configured.database.path, store_path("mainnet"));
+}
+
+BC_AUTO_TEST_CASE(parser__parse__configured_network_known_genesis__configured_network_defaults)
+{
+    const auto config = write_config(genesis_config(selection::testnet5) + "network = signet\n");
+    const char* argv[]{ "bs", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(3, argv, error));
+
+    const auto& configured = instance.configured;
+    BC_REQUIRE(configured.bitcoin.network == selection::signet);
+    BC_REQUIRE(configured.bitcoin.genesis_block.hash() == system::settings{ selection::testnet5 }.genesis_block.hash());
+    BC_REQUIRE_EQUAL(configured.database.path, store_path("signet"));
+}
+
+BC_AUTO_TEST_CASE(parser__parse__net_known_genesis__net_defaults)
+{
+    const auto config = write_config(genesis_config(selection::testnet5));
+    const char* argv[]{ "bs", "-n", "testnet4", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(5, argv, error));
+
+    const auto& configured = instance.configured;
+    BC_REQUIRE(configured.bitcoin.network == selection::testnet4);
+    BC_REQUIRE(configured.bitcoin.genesis_block.hash() == system::settings{ selection::testnet5 }.genesis_block.hash());
+    BC_REQUIRE_EQUAL(configured.database.path, store_path("testnet4"));
 }
 
 // read_envelope

@@ -84,16 +84,25 @@ void parser::derive_buckets() NOEXCEPT
             database.wtxid.expected, contested, target);
 }
 
-// A specified network governs, otherwise configuration.
+// A specified network governs, otherwise configuration, otherwise the network
+// of a configured genesis block.
 void parser::select_network() NOEXCEPT
 {
     const chain::selection selected = configured.net;
-    const auto specified = selected != chain::selection::none &&
-        selected != chain::selection::mainnet;
+    const auto specified = selected != chain::selection::none;
 
     chain::selection network = configured.bitcoin.network;
     if (specified)
+    {
         network = selected;
+    }
+    else if (!is_configured("bitcoin.network") &&
+        is_configured("bitcoin.genesis_block"))
+    {
+        configured.bitcoin.initialize();
+        if (configured.bitcoin.genesis_network != chain::selection::none)
+            network = configured.bitcoin.genesis_network;
+    }
 
     if (network != configured.node.network)
         reset_network(network);
@@ -169,8 +178,7 @@ void parser::read_envelope() NOEXCEPT
         return;
 
     const chain::selection selected = configured.net;
-    const auto specified = selected != chain::selection::none &&
-        selected != chain::selection::mainnet;
+    const auto specified = selected != chain::selection::none;
 
     reset_network(stored.network);
     derive_buckets();
@@ -600,7 +608,8 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoin.genesis_block",
         setting<config::block>(&configured.bitcoin.genesis_block),
-        "The hexadecimal encoding of the genesis block, defaults to mainnet."
+        "The hexadecimal encoding of the genesis block, defaults to mainnet, "
+        "the genesis of a known network sets the network if not specified."
     )
     (
         "bitcoin.signet_challenge",
@@ -2338,11 +2347,6 @@ options_metadata parser::load_settings() THROWS
         "Set validation threads to high processing priority, defaults to {}."
     )
     (
-        "node.memory_priority",
-        setting<bool>(&configured.node.memory_priority),
-        "Set the process to high memory priority, defaults to {}."
-    )
-    (
         "node.delay_inbound",
         setting<bool>(&configured.node.delay_inbound),
         "Block inbound peer/client (excluding admin) until current, defaults to {}."
@@ -2478,6 +2482,21 @@ options_metadata parser::load_settings() THROWS
         "database.turbo",
         setting<bool>(&configured.database.turbo),
         "Allow individual non-validation queries to use all CPUs, defaults to {}."
+    )
+    (
+        "database.cold_reads",
+        setting<uint16_t>(&configured.database.cold_reads),
+        "Limit of concurrent prefetched block reads from disk, defaults to {} (0 unlimited)."
+    )
+    (
+        "database.memory_reserve",
+        setting<uint64_t>(&configured.database.memory_reserve),
+        "Bytes of unused memory restored by cache release when current, defaults to {} (0 disables)."
+    )
+    (
+        "database.memory_ceiling",
+        setting<uint64_t>(&configured.database.memory_ceiling),
+        "Bytes of process memory above which cache is released when current, defaults to {} (0 disables)."
     )
     (
         "database.gpu_scan_minimum",

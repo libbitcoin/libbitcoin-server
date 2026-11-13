@@ -144,8 +144,6 @@ int bc::system::main(int argc, char* argv[])
     symbols_path = metadata.configured.log.symbols_path;
 #endif
 
-    set_memory_priority(metadata.configured.node.memory_priority_());
-
     // Blocks until stopped if started by the service control manager.
     if (executor::service(metadata, cin, cerr))
         return EXIT_SUCCESS;
