@@ -89,8 +89,7 @@ void parser::derive_buckets() NOEXCEPT
 void parser::select_network() NOEXCEPT
 {
     const chain::selection selected = configured.net;
-    const auto specified = selected != chain::selection::none &&
-        selected != chain::selection::mainnet;
+    const auto specified = selected != chain::selection::none;
 
     chain::selection network = configured.bitcoin.network;
     if (specified)
@@ -179,8 +178,7 @@ void parser::read_envelope() NOEXCEPT
         return;
 
     const chain::selection selected = configured.net;
-    const auto specified = selected != chain::selection::none &&
-        selected != chain::selection::mainnet;
+    const auto specified = selected != chain::selection::none;
 
     reset_network(stored.network);
     derive_buckets();

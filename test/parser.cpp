@@ -250,15 +250,27 @@ BC_AUTO_TEST_CASE(parser__parse__net_conflicting_network__net_network_configured
     BC_REQUIRE(instance.variables().at("bitcoin.network").as<system::config::selection>() == selection::regtest);
 }
 
-BC_AUTO_TEST_CASE(parser__parse__net_mainnet_configured_network__configured_defaults)
+BC_AUTO_TEST_CASE(parser__parse__net_mainnet_configured_network__net_network)
 {
     const auto config = write_config("[bitcoin]\nnetwork = testnet4\n");
     const char* argv[]{ "bs", "-n", "mainnet", "-c", config.c_str() };
     std::ostringstream error{};
     server::parser instance{ selection::mainnet, pages, pages };
     BC_REQUIRE(instance.parse(5, argv, error));
-    BC_REQUIRE(instance.configured.bitcoin.network == selection::testnet4);
-    BC_REQUIRE_EQUAL(instance.configured.network.identifier, 675223068u);
+    BC_REQUIRE(instance.configured.bitcoin.network == selection::mainnet);
+    BC_REQUIRE_EQUAL(instance.configured.network.identifier, 3652501241u);
+    BC_REQUIRE_EQUAL(instance.configured.database.path, store_path("mainnet"));
+}
+
+BC_AUTO_TEST_CASE(parser__parse__net_mainnet_known_genesis__mainnet_defaults)
+{
+    const auto config = write_config(genesis_config(selection::testnet5));
+    const char* argv[]{ "bs", "-n", "mainnet", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(5, argv, error));
+    BC_REQUIRE(instance.configured.bitcoin.network == selection::mainnet);
+    BC_REQUIRE_EQUAL(instance.configured.database.path, store_path("mainnet"));
 }
 
 BC_AUTO_TEST_CASE(parser__parse__configured_path__network_under_path)
