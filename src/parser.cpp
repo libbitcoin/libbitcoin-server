@@ -84,7 +84,8 @@ void parser::derive_buckets() NOEXCEPT
             database.wtxid.expected, contested, target);
 }
 
-// A specified network governs, otherwise configuration.
+// A specified network governs, otherwise configuration, otherwise the network
+// of a configured genesis block.
 void parser::select_network() NOEXCEPT
 {
     const chain::selection selected = configured.net;
@@ -93,7 +94,16 @@ void parser::select_network() NOEXCEPT
 
     chain::selection network = configured.bitcoin.network;
     if (specified)
+    {
         network = selected;
+    }
+    else if (!is_configured("bitcoin.network") &&
+        is_configured("bitcoin.genesis_block"))
+    {
+        configured.bitcoin.initialize();
+        if (configured.bitcoin.genesis_network != chain::selection::none)
+            network = configured.bitcoin.genesis_network;
+    }
 
     if (network != configured.node.network)
         reset_network(network);
@@ -600,7 +610,8 @@ options_metadata parser::load_settings() THROWS
     (
         "bitcoin.genesis_block",
         setting<config::block>(&configured.bitcoin.genesis_block),
-        "The hexadecimal encoding of the genesis block, defaults to mainnet."
+        "The hexadecimal encoding of the genesis block, defaults to mainnet, "
+        "the genesis of a known network sets the network if not specified."
     )
     (
         "bitcoin.signet_challenge",
