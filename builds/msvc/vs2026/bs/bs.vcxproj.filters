@@ -19,53 +19,59 @@
     <Filter Include="web">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000003}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\admin_dashboard">
+    <Filter Include="web\admin-dashboard">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000004}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\admin_dashboard\src">
+    <Filter Include="web\admin_dashboard">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\admin_dashboard\src\app">
+    <Filter Include="web\admin_dashboard\src">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\admin_dashboard\src\components">
+    <Filter Include="web\admin_dashboard\src\app">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\admin_dashboard\src\lib">
+    <Filter Include="web\admin_dashboard\src\components">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native">
+    <Filter Include="web\admin_dashboard\src\lib">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src">
+    <Filter Include="web\blockexplorer">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000A}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\app">
+    <Filter Include="web\native">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000B}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\components">
+    <Filter Include="web\native\src">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib">
+    <Filter Include="web\native\src\app">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000D}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib\api">
+    <Filter Include="web\native\src\components">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000E}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib\api\providers">
+    <Filter Include="web\native\src\lib">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000F}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib\hooks">
+    <Filter Include="web\native\src\lib\api">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000001}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib\utils">
+    <Filter Include="web\native\src\lib\api\providers">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000002}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\routes">
+    <Filter Include="web\native\src\lib\hooks">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000003}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\shared">
+    <Filter Include="web\native\src\lib\utils">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\src\routes">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\shared">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -310,6 +316,9 @@
     <None Include="..\..\..\..\web\admin_dashboard\vite.config.ts">
       <Filter>web\admin_dashboard</Filter>
     </None>
+    <None Include="..\..\..\..\web\licenses.mjs">
+      <Filter>web</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\index.html">
       <Filter>web\native</Filter>
     </None>
@@ -471,9 +480,6 @@
     </None>
     <None Include="..\..\..\..\web\native\vite.config.ts">
       <Filter>web\native</Filter>
-    </None>
-    <None Include="..\..\..\..\web\licenses.mjs">
-      <Filter>web</Filter>
     </None>
     <None Include="..\..\..\..\web\shared\favicon.svg">
       <Filter>web\shared</Filter>
