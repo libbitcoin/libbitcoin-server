@@ -946,7 +946,7 @@ bool protocol_bitcoind_rest::handle_get_mempool_information(const code& ec,
     if (stopped(ec))
         return false;
 
-    const auto& settings = node_settings();
+    const auto& settings = node_settings().pool;
     const auto minimum = to_floating(minimum_fee_rate()) /
         chain::satoshi_per_bitcoin;
     const auto relay = to_floating(settings.minimum_fee_rate_()) /

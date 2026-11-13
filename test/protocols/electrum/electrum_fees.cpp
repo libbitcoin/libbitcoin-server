@@ -128,7 +128,7 @@ BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__conservative_uninitialized_
 
 BC_AUTO_TEST_CASE(electrum__blockchain_relay_fee__default__expected)
 {
-    config_.node.minimum_fee_rate = 42.42;
+    config_.node.pool.minimum_fee_rate = 42.42;
     BC_REQUIRE(handshake(electrum::version::v1_0));
 
     const auto response = get(R"({"id":90,"method":"blockchain.relayfee","params":[]})" "\n");
@@ -136,7 +136,7 @@ BC_AUTO_TEST_CASE(electrum__blockchain_relay_fee__default__expected)
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_double());
     BC_REQUIRE_EQUAL(response.at("id").as_int64(), 90);
-    BC_REQUIRE_EQUAL(response.at("result").as_double(), config_.node.minimum_fee_rate);
+    BC_REQUIRE_EQUAL(response.at("result").as_double(), config_.node.pool.minimum_fee_rate);
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_relay_fee__obsoleted__wrong_version)

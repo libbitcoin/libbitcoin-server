@@ -78,7 +78,7 @@ void protocol_electrum::handle_mempool_get_info(const code& ec,
         return;
     }
 
-    const auto& settings = node_settings();
+    const auto& settings = node_settings().pool;
     send_result(object_t
     {
         // Even with a txpool or txgraph this value is fixed.

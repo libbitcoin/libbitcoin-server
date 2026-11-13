@@ -167,8 +167,8 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
             network("i2p", net_settings.gossip_i2p && (proxied || bridged), bridge),
             network("cjdns", net_settings.gossip_ipv6, proxy)
         } },
-        { "relayfee", node_settings().minimum_fee_rate },
-        { "incrementalfee", node_settings().minimum_fee_rate },
+        { "relayfee", node_settings().pool.minimum_fee_rate },
+        { "incrementalfee", node_settings().pool.minimum_fee_rate },
         { "localaddresses", std::move(locals) },
         { "warnings", array_t{} }
     });

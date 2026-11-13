@@ -135,7 +135,7 @@ void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
         return;
     }
 
-    send_result(node_settings().minimum_fee_rate);
+    send_result(node_settings().pool.minimum_fee_rate);
 }
 
 BC_POP_WARNING()

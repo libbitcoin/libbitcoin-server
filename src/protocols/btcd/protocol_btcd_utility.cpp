@@ -298,7 +298,7 @@ bool protocol_btcd::handle_get_info(const code& ec,
         { "proxy", proxy },
         { "difficulty", header->difficulty() },
         { "testnet", chain_name(system_settings()) != "main" },
-        { "relayfee", node_settings().minimum_fee_rate },
+        { "relayfee", node_settings().pool.minimum_fee_rate },
         { "errors", std::string{} }
     });
     return true;

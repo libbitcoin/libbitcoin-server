@@ -781,7 +781,7 @@ static double tx1c_rate(double factor) NOEXCEPT
 
 BC_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__below_fee_rate__daemon_error)
 {
-    config_.node.minimum_fee_rate = tx1c_rate(2.0);
+    config_.node.pool.minimum_fee_rate = tx1c_rate(2.0);
     BC_REQUIRE(handshake(electrum::version::v1_4));
 
     constexpr auto request = R"({{"id":2100,"method":"blockchain.transaction.broadcast","params":["{}"]}})" "\n";
@@ -792,7 +792,7 @@ BC_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__below_fee_rate__da
 
 BC_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__above_fee_rate__txid)
 {
-    config_.node.minimum_fee_rate = tx1c_rate(0.5);
+    config_.node.pool.minimum_fee_rate = tx1c_rate(0.5);
     BC_REQUIRE(handshake(electrum::version::v1_4));
 
     constexpr auto request = R"({{"id":2101,"method":"blockchain.transaction.broadcast","params":["{}"]}})" "\n";
