@@ -17,7 +17,7 @@ export function SearchBar() {
   return (
     <form
       onSubmit={onSubmit}
-      className="border-accent/30 bg-surface/80 flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-sm shadow-inner md:w-auto"
+      className="border-accent/30 bg-surface/80 focus-within:border-accent flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-sm shadow-inner md:w-auto"
     >
       <MagnifyingGlassIcon className="text-accent h-4 w-4" aria-hidden="true" />
       <input
