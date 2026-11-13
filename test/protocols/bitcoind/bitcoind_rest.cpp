@@ -312,7 +312,7 @@ BC_AUTO_TEST_CASE(bitcoind_rest__blockhashbyheight_bin__height_five__block5)
 
 BC_AUTO_TEST_CASE(bitcoind_rest__blockhashbyheight_hex__height_five__block5)
 {
-    BC_REQUIRE_EQUAL(rest_text("/rest/blockhashbyheight/5.hex"), encode_base16(test::block5_hash) + "\n");
+    BC_REQUIRE_EQUAL(rest_text("/rest/blockhashbyheight/5.hex"), block5 + "\n");
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rest__blockhashbyheight_above_top__not_found)

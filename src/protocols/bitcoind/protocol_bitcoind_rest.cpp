@@ -302,7 +302,7 @@ bool protocol_bitcoind_rest::handle_get_block_hash(const code& ec,
             send_chunk(to_chunk(hash));
             return true;
         case text:
-            send_text(encode_base16(hash));
+            send_text(encode_hash(hash));
             return true;
         case json:
             send_json(object{ { "blockhash", encode_hash(hash) } });
