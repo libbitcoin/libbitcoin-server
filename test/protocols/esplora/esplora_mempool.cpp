@@ -64,7 +64,7 @@ BC_AUTO_TEST_CASE(esplora__mempool_invalid_component__not_found)
 // fee-estimates
 // ----------------------------------------------------------------------------
 
-// The store is below the estimation horizon, so all targets are omitted.
+// The node is not started, so all targets are omitted.
 BC_AUTO_TEST_CASE(esplora__fee_estimates__json__empty)
 {
     const auto response = get_json("/fee-estimates");
@@ -222,6 +222,23 @@ BC_AUTO_TEST_CASE(esplora__mempool_recent__broadcast__expected)
     BC_REQUIRE_EQUAL(tx.at("fee").as_int64(), 10);
     BC_REQUIRE_EQUAL(tx.at("vsize").as_int64(), to_signed(test::tx1c.virtual_size()));
     BC_REQUIRE_EQUAL(tx.at("value").as_int64(), 0x5a);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+// fee-estimates (node started)
+
+BC_FIXTURE_TEST_SUITE(esplora_estimate_tests, esplora_submit_setup_fixture)
+
+BC_AUTO_TEST_CASE(esplora__fee_estimates__minimum_fee_rate__satoshis_per_vbyte)
+{
+    config_.node.pool.minimum_fee_rate = 0.0000152587890625;
+
+    const auto response = get_json("/fee-estimates");
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE_EQUAL(response.as_object().size(), 28u);
+    BC_REQUIRE_EQUAL(response.at("1").as_double(), 1'526.0 / 1'000.0);
+    BC_REQUIRE_EQUAL(response.at("1008").as_double(), 1'526.0 / 1'000.0);
 }
 
 BC_AUTO_TEST_SUITE_END()
