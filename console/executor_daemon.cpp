@@ -328,9 +328,11 @@ uint32_t executor::delete_service() NOEXCEPT
 
 #if defined(HAVE_POSIX)
 
+#if defined(HAVE_LINUX) || defined(HAVE_APPLE)
 // The drain exceeds the default stop timeout on both platforms, and can run
 // to minutes, depending on dirty page volume and disk speed.
 constexpr auto stop_timeout_seconds = 600;
+#endif
 
 #if defined(HAVE_LINUX)
 
@@ -349,7 +351,7 @@ static std::filesystem::path enabled_path(const std::string& name) NOEXCEPT
 // the posix counterpart to reporting SERVICE_RUNNING to the manager. Restart
 // is not configured, as a store that fails to open does so deterministically,
 // and retrying only obscures the fault (as does the manager on windows).
-static std::string unit_text(const std::string& command,
+static std::string unit_text(const std::string&, const std::string& command,
     const std::string&, const std::string& account) NOEXCEPT
 {
     // Console output is captured to the journal, so it is not redirected.
@@ -369,7 +371,7 @@ static std::string unit_text(const std::string& command,
         "WantedBy=multi-user.target\n";
 }
 
-#else // HAVE_APPLE
+#elif defined(HAVE_APPLE)
 
 // launchd clamps a positive ExitTimeOut to 60 seconds (600 reports as 60), so
 // this is the effective drain ceiling on osx. Do not "fix" this with zero,
@@ -386,7 +388,7 @@ static std::filesystem::path unit_path(const std::string&) NOEXCEPT
 // fails to open does so deterministically (as with the other two managers).
 // launchd discards console output, and the log file is buffered, so redirect
 // it to obtain the live view that the journal provides on linux.
-static std::string unit_text(const std::string& command,
+static std::string unit_text(const std::string&, const std::string& command,
     const std::string& console, const std::string& account) NOEXCEPT
 {
     return
@@ -410,6 +412,60 @@ static std::string unit_text(const std::string& command,
             std::to_string(exit_timeout_seconds) + "</integer>\n"
         "</dict>\n"
         "</plist>\n";
+}
+
+#elif defined(HAVE_FREEBSD)
+
+// An rc.d script, and the rc.conf.d file by which the script is enabled.
+static std::filesystem::path unit_path(const std::string& name) NOEXCEPT
+{
+    return { "/usr/local/etc/rc.d/" + name };
+}
+
+static std::filesystem::path enabled_path(const std::string& name) NOEXCEPT
+{
+    return { "/etc/rc.conf.d/" + name };
+}
+
+// Set by the rc.d script, as rc.subr exports nothing by which to detect it.
+constexpr auto service_variable = "BS_SERVICE";
+
+// rc.subr has no readiness protocol, so daemon(8) detaches the node, records
+// its pid for rc.subr, and redirects console output (otherwise discarded).
+// Restart is not configured (as with the other managers). rc.subr stops with
+// SIGTERM and waits without limit, but rc.shutdown terminates the system after
+// rcshutdown_timeout (90 seconds by default), which may not cover the drain.
+static std::string unit_text(const std::string& name,
+    const std::string& command, const std::string& console,
+    const std::string& account) NOEXCEPT
+{
+    const auto module = system::from_path(system::module_path());
+    const auto pidfile = "/var/run/" + name + ".pid";
+    return
+        "#!/bin/sh\n"
+        "\n"
+        "# PROVIDE: " + name + "\n"
+        "# REQUIRE: LOGIN\n"
+        "# KEYWORD: shutdown\n"
+        "\n"
+        ". /etc/rc.subr\n"
+        "\n"
+        "name=\"" + name + "\"\n"
+        "rcvar=\"" + name + "_enable\"\n"
+        "desc=\"" BS_SERVICE_DESCRIPTION "\"\n"
+        "\n"
+        "load_rc_config \"$name\"\n"
+        ": \"${" + name + "_enable:=NO}\"\n"
+        "\n"
+        "export " + service_variable + "=\"$name\"\n"
+        "pidfile=\"" + pidfile + "\"\n"
+        "procname=\"" + module + "\"\n"
+        "command=\"/usr/sbin/daemon\"\n"
+        "command_args='-p " + pidfile +
+            (console.empty() ? " -f" : " -o \"" + console + "\"") +
+            (account.empty() ? "" : " -u " + account) + " " + command + "'\n"
+        "\n"
+        "run_rc_command \"$1\"\n";
 }
 
 #endif // HAVE_LINUX
@@ -444,7 +500,7 @@ uint32_t executor::create_service(const std::filesystem::path& config,
     if (!file.good())
         return EACCES;
 
-    file << unit_text(command, console, account);
+    file << unit_text(name_, command, console, account);
     file.flush();
     if (!file.good())
         return EIO;
@@ -461,6 +517,26 @@ uint32_t executor::create_service(const std::filesystem::path& config,
     std::filesystem::create_symlink(unit, enabled, ec);
     if (ec)
         return EACCES;
+#elif defined(HAVE_FREEBSD)
+    // rc.d requires an executable script, and rc.subr sources the rc.conf.d
+    // file of the same name, which is what enabling the script (sysrc) does.
+    file.close();
+    using perms = std::filesystem::perms;
+    std::filesystem::permissions(unit, perms::owner_all | perms::group_read |
+        perms::group_exec | perms::others_read | perms::others_exec, ec);
+    if (ec)
+        return EACCES;
+
+    const auto enabled = enabled_path(name_);
+    std::filesystem::create_directories(enabled.parent_path(), ec);
+    if (ec)
+        return EACCES;
+
+    system::ofstream enable{ enabled };
+    enable << name_ << "_enable=\"YES\"\n";
+    enable.flush();
+    if (!enable.good())
+        return EACCES;
 #endif
 
     return {};
@@ -474,7 +550,7 @@ uint32_t executor::delete_service() NOEXCEPT
     if (!std::filesystem::exists(unit, ec))
         return ENOENT;
 
-#if defined(HAVE_LINUX)
+#if defined(HAVE_LINUX) || defined(HAVE_FREEBSD)
     std::filesystem::remove(enabled_path(name_), ec);
 #endif
 
@@ -630,6 +706,9 @@ bool executor::service(parser&, std::istream&, std::ostream&)
 #elif defined(HAVE_APPLE)
     // Set by launchd for a managed job.
     service_ = !is_null(std::getenv("XPC_SERVICE_NAME"));
+#elif defined(HAVE_FREEBSD)
+    // Set by the rc.d script.
+    service_ = !is_null(std::getenv(service_variable));
 #endif
 
     return false;
