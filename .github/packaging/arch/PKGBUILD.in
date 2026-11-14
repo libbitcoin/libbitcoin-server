@@ -1,0 +1,78 @@
+# Maintainer: libbitcoin developers <eric@voskuil.org>
+
+pkgname=libbitcoin-server-bin
+_tag=@TAG@
+pkgver=@PKGVER@
+pkgrel=1
+pkgdesc="Bitcoin Full Node and Query Server"
+arch=('x86_64' 'aarch64')
+url="https://github.com/libbitcoin/libbitcoin-server"
+license=('AGPL-3.0-or-later')
+depends=('bash' 'glibc' 'grep')
+provides=('libbitcoin-server')
+conflicts=('libbitcoin-server')
+options=('!strip' '!debug')
+validpgpkeys=('@PGP_FINGERPRINT@')
+
+_release="${url}/releases/download/${_tag}"
+_prefix="${pkgname}-${pkgver}"
+
+source=("bs")
+source_x86_64=(
+    "${_prefix}-selector-linux-x64::${_release}/selector-linux-x64"
+    "${_prefix}-selector-linux-x64.asc::${_release}/selector-linux-x64.asc"
+    "${_prefix}-bs-linux-x64::${_release}/bs-linux-x64"
+    "${_prefix}-bs-linux-x64.asc::${_release}/bs-linux-x64.asc"
+    "${_prefix}-bs-linux-x64-avx2-shani::${_release}/bs-linux-x64-avx2-shani"
+    "${_prefix}-bs-linux-x64-avx2-shani.asc::${_release}/bs-linux-x64-avx2-shani.asc")
+source_aarch64=(
+    "${_prefix}-selector-linux-arm64::${_release}/selector-linux-arm64"
+    "${_prefix}-selector-linux-arm64.asc::${_release}/selector-linux-arm64.asc"
+    "${_prefix}-bs-linux-arm64::${_release}/bs-linux-arm64"
+    "${_prefix}-bs-linux-arm64.asc::${_release}/bs-linux-arm64.asc"
+    "${_prefix}-bs-linux-arm64-sha2::${_release}/bs-linux-arm64-sha2"
+    "${_prefix}-bs-linux-arm64-sha2.asc::${_release}/bs-linux-arm64-sha2.asc")
+
+sha256sums=('@SHA256_BS@')
+sha256sums_x86_64=(
+    '@SHA256_SELECTOR_X64@' 'SKIP'
+    '@SHA256_BASELINE_X64@' 'SKIP'
+    '@SHA256_OPTIMIZED_X64@' 'SKIP')
+sha256sums_aarch64=(
+    '@SHA256_SELECTOR_ARM64@' 'SKIP'
+    '@SHA256_BASELINE_ARM64@' 'SKIP'
+    '@SHA256_OPTIMIZED_ARM64@' 'SKIP')
+
+package()
+{
+    local suffix baseline optimized optimized_requires
+    case "${CARCH}" in
+        x86_64)
+            suffix="x64"
+            baseline="bs-linux-x64"
+            optimized="bs-linux-x64-avx2-shani"
+            optimized_requires="avx2 shani"
+            ;;
+        aarch64)
+            suffix="arm64"
+            baseline="bs-linux-arm64"
+            optimized="bs-linux-arm64-sha2"
+            optimized_requires="sha2"
+            ;;
+    esac
+
+    # Each variant is installed as bs in its own directory, so that its
+    # process is named bs (as seen by ps, pgrep, pidof and killall).
+    local directory="${pkgdir}/usr/lib/libbitcoin-server"
+    install -Dm0755 "${_prefix}-selector-linux-${suffix}" "${directory}/selector"
+    install -Dm0755 "${_prefix}-${baseline}" "${directory}/${baseline}/bs"
+    install -Dm0755 "${_prefix}-${optimized}" "${directory}/${optimized}/bs"
+
+    # The selector writes one supported feature per line, and the launcher
+    # runs the first variant whose required features are all present.
+    printf '%s %s\n%s\n' "${optimized}" "${optimized_requires}" "${baseline}" \
+        > "${directory}/variants"
+    chmod 0644 "${directory}/variants"
+
+    install -Dm0755 bs "${pkgdir}/usr/bin/bs"
+}
