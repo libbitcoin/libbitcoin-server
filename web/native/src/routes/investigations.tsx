@@ -7,7 +7,8 @@ import {
   bookmarkFieldClass,
 } from '@/components/save-bookmark';
 import { createBlockchainClient, useProviderSwitcher } from '@/lib/api/client';
-import { getNetworkParams, scriptHashFromAddress } from '@/lib/api/providers/libbitcoin-mapper';
+import { scriptHashFromAddress } from '@/lib/api/providers/libbitcoin-mapper';
+import { useNetwork } from '@/lib/hooks/useBlockchainData';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
 import {
   bookmarkIdentifier,
@@ -39,14 +40,15 @@ export function InvestigationsPage() {
     id: string;
     label: string;
   } | null>(null);
+  const { network, params: networkParams } = useNetwork();
   const sources = useMemo(
     () =>
       new Set(
         availableProviders.map((id) =>
-          sourceKey(bookmarkSource(createBlockchainClient(id).metadata))
+          sourceKey(bookmarkSource(createBlockchainClient(id).metadata, network))
         )
       ),
-    [availableProviders]
+    [availableProviders, network]
   );
   const matching = data.bookmarks
     .filter((item) => {
@@ -72,11 +74,8 @@ export function InvestigationsPage() {
   const openBookmark = (item: SavedBookmark) => {
     if (!sources.has(sourceKey(item.source))) return;
     let state: { displayAddress: string } | undefined;
-    if (item.target.kind === 'address' && item.target.displayAddress && item.source.network) {
-      const decoded = scriptHashFromAddress(
-        item.target.displayAddress,
-        getNetworkParams(item.source.network)
-      );
+    if (item.target.kind === 'address' && item.target.displayAddress && networkParams) {
+      const decoded = scriptHashFromAddress(item.target.displayAddress, networkParams);
       if (decoded?.hash === item.target.address)
         state = { displayAddress: item.target.displayAddress };
     }

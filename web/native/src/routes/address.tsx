@@ -4,6 +4,7 @@ import {
   useAddressSummary,
   useAddressTransactions,
   useAddressUtxos,
+  useNetwork,
 } from '@/lib/hooks/useBlockchainData';
 import { useNow } from '@/lib/hooks/useNow';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
@@ -23,11 +24,7 @@ import { copyTextToClipboard } from '@/lib/utils/clipboard';
 import { AddressQRCode } from '@/components/qr-code';
 import { HashText } from '@/components/hash-text';
 import { SaveBookmarkButton } from '@/components/save-bookmark';
-import {
-  getNetwork,
-  getNetworkParams,
-  scriptHashFromAddress,
-} from '@/lib/api/providers/libbitcoin-mapper';
+import { scriptHashFromAddress } from '@/lib/api/providers/libbitcoin-mapper';
 import {
   addressPath,
   blockByHeightPath,
@@ -40,8 +37,6 @@ import {
   lookupLibbitcoinAddressAlias,
   rememberLibbitcoinAddressAlias,
 } from '@/lib/utils/libbitcoin-address-alias';
-const NETWORK = getNetwork();
-const NETWORK_PARAMS = getNetworkParams(NETWORK);
 const UTXO_PAGE_SIZE = 25;
 
 const activityKey = (item: AddressActivityItem) => item.id ?? item.txid;
@@ -63,6 +58,7 @@ export function AddressPage() {
   const client = useBlockchainClient();
   const now = useNow();
   const isLibbitcoin = client.metadata.id === 'libbitcoin';
+  const { network, params: networkParams } = useNetwork();
   const stateDisplayAddress = (() => {
     const state = location.state as { displayAddress?: unknown } | null;
     const value = typeof state?.displayAddress === 'string' ? state.displayAddress.trim() : '';
@@ -76,19 +72,20 @@ export function AddressPage() {
 
     const isScriptHash = /^[0-9a-fA-F]{64}$/u.test(paramValue);
     const lookupHash = isScriptHash ? paramValue.toLowerCase() : null;
-    const rememberedAddress = lookupHash ? lookupLibbitcoinAddressAlias(NETWORK, lookupHash) : null;
+    const rememberedAddress =
+      lookupHash && network ? lookupLibbitcoinAddressAlias(network, lookupHash) : null;
 
     if (isLibbitcoin) {
       return stateDisplayAddress ?? rememberedAddress ?? paramValue;
     }
 
     return rememberedAddress ?? paramValue;
-  }, [isLibbitcoin, paramValue, stateDisplayAddress]);
+  }, [isLibbitcoin, network, paramValue, stateDisplayAddress]);
   const canonicalLibbitcoinHash = useMemo(() => {
-    if (!isLibbitcoin) return null;
-    const info = scriptHashFromAddress(queryAddressKey, NETWORK_PARAMS);
+    if (!isLibbitcoin || !networkParams) return null;
+    const info = scriptHashFromAddress(queryAddressKey, networkParams);
     return info?.hash ?? null;
-  }, [isLibbitcoin, queryAddressKey]);
+  }, [isLibbitcoin, networkParams, queryAddressKey]);
   const {
     data,
     isLoading: summaryLoading,
@@ -147,10 +144,10 @@ export function AddressPage() {
   });
 
   useEffect(() => {
-    if (!paramValue) return;
+    if (!paramValue || !network) return;
     if (isLibbitcoin) {
       if (!canonicalLibbitcoinHash) return;
-      rememberLibbitcoinAddressAlias(NETWORK, canonicalLibbitcoinHash, queryAddressKey);
+      rememberLibbitcoinAddressAlias(network, canonicalLibbitcoinHash, queryAddressKey);
       const normalizedParam = /^[0-9a-fA-F]{64}$/u.test(paramValue)
         ? paramValue.toLowerCase()
         : null;
@@ -166,7 +163,7 @@ export function AddressPage() {
     }
 
     if (/^[0-9a-fA-F]{64}$/u.test(paramValue)) {
-      const remembered = lookupLibbitcoinAddressAlias(NETWORK, paramValue);
+      const remembered = lookupLibbitcoinAddressAlias(network, paramValue);
       const next = stateDisplayAddress ?? remembered;
       if (next && next !== paramValue) {
         void navigate(addressPath(next), { replace: true });
@@ -176,6 +173,7 @@ export function AddressPage() {
     canonicalLibbitcoinHash,
     isLibbitcoin,
     navigate,
+    network,
     paramValue,
     queryAddressKey,
     stateDisplayAddress,

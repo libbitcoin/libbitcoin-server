@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useScriptExplainerPreference } from '@/app/script-explainer-preference';
 import {
   useLatestBlocks,
+  useNetwork,
   useTransaction,
   useTransactionHeader,
   useTransactionInputScriptHex,
@@ -11,11 +12,7 @@ import {
 } from '@/lib/hooks/useBlockchainData';
 import { useNow } from '@/lib/hooks/useNow';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
-import {
-  getNetwork,
-  getNetworkParams,
-  scriptHashFromAddress,
-} from '@/lib/api/providers/libbitcoin-mapper';
+import { scriptHashFromAddress } from '@/lib/api/providers/libbitcoin-mapper';
 import {
   formatBtc,
   formatHash,
@@ -31,6 +28,7 @@ import { ScriptExplainer } from '@/components/script-explainer';
 import { ScriptLookupStatus } from '@/components/script-lookup-status';
 import { SaveBookmarkButton } from '@/components/save-bookmark';
 import {
+  type NetworkParams,
   type TransactionInput,
   type TransactionOutput,
   type TransactionOutputSpend,
@@ -46,12 +44,13 @@ import {
 } from '@/lib/utils/routes';
 import { rememberLibbitcoinAddressAlias } from '@/lib/utils/libbitcoin-address-alias';
 
-const NETWORK = getNetwork();
-const NETWORK_PARAMS = getNetworkParams(NETWORK);
-
-function canonicalizeAddressForProvider(providerId: string, address: string) {
-  if (providerId !== 'libbitcoin') return address;
-  return scriptHashFromAddress(address, NETWORK_PARAMS)?.hash ?? address;
+function canonicalizeAddressForProvider(
+  providerId: string,
+  address: string,
+  params: NetworkParams | undefined
+) {
+  if (providerId !== 'libbitcoin' || !params) return address;
+  return scriptHashFromAddress(address, params)?.hash ?? address;
 }
 
 export function TransactionPage() {
@@ -60,6 +59,7 @@ export function TransactionPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const provider = useProviderInfo();
+  const { network, params: networkParams } = useNetwork();
   const now = useNow();
   const { data: latestBlocks } = useLatestBlocks(1);
   const {
@@ -111,7 +111,7 @@ export function TransactionPage() {
 
   useEffect(() => {
     if (provider.id !== 'libbitcoin') return;
-    if (!tx) return;
+    if (!tx || !network || !networkParams) return;
     const addresses = new Set<string>();
     for (const input of tx.inputs) {
       if (input.address) addresses.add(input.address);
@@ -120,11 +120,11 @@ export function TransactionPage() {
       if (output.address) addresses.add(output.address);
     }
     for (const address of addresses) {
-      const scriptInfo = scriptHashFromAddress(address, NETWORK_PARAMS);
+      const scriptInfo = scriptHashFromAddress(address, networkParams);
       if (!scriptInfo) continue;
-      rememberLibbitcoinAddressAlias(NETWORK, scriptInfo.hash, address);
+      rememberLibbitcoinAddressAlias(network, scriptInfo.hash, address);
     }
-  }, [provider.id, tx]);
+  }, [network, networkParams, provider.id, tx]);
 
   useEffect(() => {
     if (!txid) return;
@@ -358,6 +358,7 @@ function TransactionInputRow({
   onToggle: () => void;
 }) {
   const key = inputKey(input);
+  const { params: networkParams } = useNetwork();
   const { enabled: scriptExplainerEnabled } = useScriptExplainerPreference();
   const shouldFetchHex = isExpanded && input.script?.hex === undefined;
   const {
@@ -413,7 +414,7 @@ function TransactionInputRow({
         {input.scriptType && <span>{input.scriptType}</span>}
         {input.address &&
           (() => {
-            const canonical = canonicalizeAddressForProvider(providerId, input.address);
+            const canonical = canonicalizeAddressForProvider(providerId, input.address, networkParams);
             return (
               <Link
                 to={addressPath(canonical)}
@@ -512,6 +513,7 @@ function TransactionOutputRow({
   isExpanded: boolean;
   onToggle: () => void;
 }) {
+  const { params: networkParams } = useNetwork();
   const { enabled: scriptExplainerEnabled } = useScriptExplainerPreference();
   const shouldFetchHex = isExpanded && output.script?.hex === undefined;
   const {
@@ -541,7 +543,7 @@ function TransactionOutputRow({
         <p className="text-textMuted min-w-0 flex-1 text-xs">
           {output.address ? (
             <Link
-              to={addressPath(canonicalizeAddressForProvider(providerId, output.address))}
+              to={addressPath(canonicalizeAddressForProvider(providerId, output.address, networkParams))}
               className="text-accent hover:text-accentSecondary"
               state={providerId === 'libbitcoin' ? { displayAddress: output.address } : undefined}
             >

@@ -23,8 +23,7 @@ import {
   TxOutputResponse,
   TxPoint,
   TxResponse,
-  getNetwork,
-  getNetworkParams,
+  MAINNET_PARAMS,
   scriptHashFromAddress,
   toBlockSummary,
   mapTransaction,
@@ -143,6 +142,9 @@ const DEFAULT_CONFIGURATION: BlockchainClientConfiguration = {
   filter: false,
   turbo: true,
   witness: true,
+  network: 'mainnet',
+  forks: [],
+  wallet: MAINNET_PARAMS,
 };
 
 function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
@@ -151,14 +153,33 @@ function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
   }
 
   const record = raw.store;
-  const coerceBoolean = (key: keyof BlockchainClientConfiguration) =>
+  const coerceBoolean = (key: 'address' | 'filter' | 'turbo' | 'witness') =>
     typeof record[key] === 'boolean' ? record[key] : DEFAULT_CONFIGURATION[key];
+
+  const node = isRecord(raw.node) ? raw.node : {};
+  const network =
+    typeof node.network === 'string' ? node.network : DEFAULT_CONFIGURATION.network;
+  const forks = isRecord(raw.forks)
+    ? Object.entries(raw.forks)
+        .filter(([, enabled]) => enabled === true)
+        .map(([fork]) => fork)
+    : DEFAULT_CONFIGURATION.forks;
+  const wallet =
+    isRecord(raw.wallet) &&
+    typeof raw.wallet.p2kh === 'number' &&
+    typeof raw.wallet.p2sh === 'number' &&
+    typeof raw.wallet.witness === 'string'
+      ? { p2pkh: raw.wallet.p2kh, p2sh: raw.wallet.p2sh, hrp: raw.wallet.witness }
+      : DEFAULT_CONFIGURATION.wallet;
 
   return {
     address: coerceBoolean('address'),
     filter: coerceBoolean('filter'),
     turbo: coerceBoolean('turbo'),
     witness: coerceBoolean('witness'),
+    network,
+    forks,
+    wallet,
   };
 }
 
@@ -693,7 +714,6 @@ export function createLibbitcoinClient({
   let eventTransport: BlockchainEventTransport = 'idle';
   let lastHeight: number | null = null;
   let lastBlockHash: string | null = null;
-  const networkParams = getNetworkParams(getNetwork());
   let configuration: BlockchainClientConfiguration | null = null;
   let configurationPromise: Promise<BlockchainClientConfiguration> | null = null;
   const websocketUrl = resolveWebSocketUrl(baseUrl);
@@ -762,12 +782,17 @@ export function createLibbitcoinClient({
     return configurationPromise;
   }
 
+  async function resolveNetworkParams() {
+    const config = configuration ?? (await ensureConfiguration());
+    return config.wallet;
+  }
+
   function isAddressEnabled(cfg: BlockchainClientConfiguration) {
     return cfg.address;
   }
 
   function isTurboEnabled(cfg: BlockchainClientConfiguration) {
-    return isAddressEnabled(cfg) && cfg.turbo;
+    return cfg.turbo;
   }
 
   function getEventStatus(): BlockchainEventStatus {
@@ -1112,6 +1137,7 @@ export function createLibbitcoinClient({
     },
 
     async getBlock(hashOrHeight: string): Promise<BlockDetail> {
+      const networkParams = await resolveNetworkParams();
       const { path, height } = await resolveBlockPath(baseUrl, hashOrHeight);
       const tipPromise =
         height === undefined ? fetchTopHeightCached(baseUrl) : Promise.resolve(height);
@@ -1188,6 +1214,7 @@ export function createLibbitcoinClient({
       hashOrHeight: string,
       startIndex = 0
     ): Promise<TransactionSummary[]> {
+      const networkParams = await resolveNetworkParams();
       const { path } = await resolveBlockPath(baseUrl, hashOrHeight);
       const [header, tip, context] = await Promise.all([
         fetchJson<BlockHeaderResponse>(baseUrl, `${path}/header?format=json`),
@@ -1239,6 +1266,7 @@ export function createLibbitcoinClient({
     },
 
     async getTransaction(txid: string): Promise<TransactionSummary> {
+      const networkParams = await resolveNetworkParams();
       const tx = await fetchJson<TxResponse>(baseUrl, `/v1/tx/${txid}?format=json`);
       const resolvePrevout = createPrevoutResolver(baseUrl);
       const prevoutsPromise = mapWithConcurrency(tx.inputs, REQUEST_CONCURRENCY, (input) => {
@@ -1273,6 +1301,7 @@ export function createLibbitcoinClient({
     },
 
     async getTransactionHeader(txid: string): Promise<TransactionSummary> {
+      const networkParams = await resolveNetworkParams();
       const tx = await fetchJson<TxResponse>(baseUrl, `/v1/tx/${txid}?format=json`);
       const [header, tip, details] = await Promise.all([
         tryFetchJson<BlockHeaderResponse>(baseUrl, `/v1/tx/${txid}/header?format=json`),
@@ -1336,6 +1365,7 @@ export function createLibbitcoinClient({
     },
 
     async getAddress(address: string): Promise<AddressDetails> {
+      const networkParams = await resolveNetworkParams();
       const scriptInfo = scriptHashFromAddress(address, networkParams);
       if (!scriptInfo) throw new Error('Unsupported address format for libbitcoin adapter');
 
@@ -1366,6 +1396,7 @@ export function createLibbitcoinClient({
     },
 
     async getAddressSummary(address: string): Promise<AddressSummary> {
+      const networkParams = await resolveNetworkParams();
       const scriptInfo = scriptHashFromAddress(address, networkParams);
       if (!scriptInfo) throw new Error('Unsupported address format for libbitcoin adapter');
 
@@ -1393,6 +1424,7 @@ export function createLibbitcoinClient({
     },
 
     async getAddressUtxos(address: string): Promise<AddressUtxo[]> {
+      const networkParams = await resolveNetworkParams();
       const scriptInfo = scriptHashFromAddress(address, networkParams);
       if (!scriptInfo) throw new Error('Unsupported address format for libbitcoin adapter');
 
@@ -1412,6 +1444,7 @@ export function createLibbitcoinClient({
     },
 
     async getAddressTransactions(address: string, cursor?: string): Promise<AddressActivityItem[]> {
+      const networkParams = await resolveNetworkParams();
       const scriptInfo = scriptHashFromAddress(address, networkParams);
       if (!scriptInfo) return [];
       const config = configuration ?? (await ensureConfiguration());

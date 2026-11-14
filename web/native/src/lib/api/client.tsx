@@ -15,11 +15,20 @@ export interface BlockSummary {
   previousBlockHash?: string | null;
 }
 
+export interface NetworkParams {
+  p2pkh: number;
+  p2sh: number;
+  hrp: string;
+}
+
 export interface BlockchainClientConfiguration {
   address: boolean;
   filter: boolean;
   turbo: boolean;
   witness: boolean;
+  network: string;
+  forks: string[];
+  wallet: NetworkParams;
 }
 
 export interface BlockStats {

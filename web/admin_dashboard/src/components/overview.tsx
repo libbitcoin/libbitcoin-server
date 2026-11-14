@@ -190,6 +190,19 @@ export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate
                     : 'Not pruned'}
                 </span>
               </div>
+              <div className="border-accentSecondary/20 col-span-2 border-t pt-3">
+                <span className="text-textMuted">Forks</span>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {configuration.forks.map((fork) => (
+                    <span
+                      key={fork}
+                      className="text-textPrimary bg-accentSecondary/15 rounded-full px-2 py-0.5 font-mono text-xs"
+                    >
+                      {fork}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
           ) : (
             <p className="text-textMuted px-5 py-10 text-center text-sm">

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useSavedInvestigations } from '@/app/saved-investigations';
 import { useProviderInfo } from '@/lib/api/client';
+import { useNetwork } from '@/lib/hooks/useBlockchainData';
 import {
   bookmarkIdentity,
   bookmarkSource,
@@ -73,7 +74,8 @@ export function SaveBookmarkButton({
   compact?: boolean;
 }) {
   const metadata = useProviderInfo();
-  const source = bookmarkSource(metadata);
+  const { network } = useNetwork();
+  const source = bookmarkSource(metadata, network);
   const { bookmarksByTarget } = useSavedInvestigations();
   const [open, setOpen] = useState(false);
   const parsed = bookmarkTargetSchema.safeParse(target);
@@ -112,7 +114,9 @@ export function SaveBookmarkButton({
 }
 
 function SaveBookmarkForm({ target, onClose }: { target: BookmarkTarget; onClose: () => void }) {
-  const source = bookmarkSource(useProviderInfo());
+  const metadata = useProviderInfo();
+  const { network } = useNetwork();
+  const source = bookmarkSource(metadata, network);
   const { bookmarksByTarget, saveBookmark, error } = useSavedInvestigations();
   const matches = bookmarksByTarget.get(bookmarkIdentity(target, source)) ?? [];
   const [investigationId, setInvestigationId] = useState(matches[0]?.investigationId ?? INBOX_ID);

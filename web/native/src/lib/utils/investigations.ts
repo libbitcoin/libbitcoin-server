@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import type { BlockchainClientMetadata } from '@/lib/api/client';
-import { getNetwork } from '@/lib/api/providers/libbitcoin-mapper';
 import { inferAddressType } from './address';
 import {
   addressPath,
@@ -43,7 +42,7 @@ const sourceSchema = z.object({
     .string()
     .max(2048)
     .transform((value) => value.replace(/\/+$/u, '')),
-  network: z.enum(['mainnet', 'testnet', 'regtest']).optional(),
+  network: z.string().min(1).max(40).optional(),
 });
 const investigationSchema = z.object({
   id,
@@ -90,11 +89,14 @@ export function emptyInvestigations(): InvestigationsData {
   };
 }
 
-export function bookmarkSource(metadata: BlockchainClientMetadata): BookmarkSource {
+export function bookmarkSource(
+  metadata: BlockchainClientMetadata,
+  network: string | undefined
+): BookmarkSource {
   return {
     providerId: metadata.id,
     endpoint: (metadata.endpoint ?? '').replace(/\/+$/u, ''),
-    ...(metadata.id === 'libbitcoin' ? { network: getNetwork() } : {}),
+    ...(metadata.id === 'libbitcoin' && network ? { network } : {}),
   };
 }
 

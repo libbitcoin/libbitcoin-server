@@ -214,6 +214,7 @@ export function DashboardPage() {
               <PanelStat label="Top Updates" value={formatTopUpdateMode(eventStatus.transport)} />
               <PanelStat label="Transport" value={formatEventTransport(eventStatus.transport)} />
               <PanelStat label="Provider ID" value={info.id} />
+              <PanelStat label="Network" value={configuration?.network ?? '—'} />
             </div>
 
             <div className="space-y-3">
@@ -225,6 +226,22 @@ export function DashboardPage() {
                 <CapabilityPill label="Turbo API" enabled={configuration?.turbo} />
               </div>
             </div>
+
+            {configuration && configuration.forks.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-accentSecondary text-xs tracking-wide uppercase">Forks</p>
+                <div className="flex flex-wrap gap-2">
+                  {configuration.forks.map((fork) => (
+                    <span
+                      key={fork}
+                      className="text-textPrimary bg-accentSecondary/15 rounded-full px-3 py-1 font-mono text-xs"
+                    >
+                      {fork}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
