@@ -177,6 +177,7 @@
     <None Include="..\..\..\..\web\admin_dashboard\tsconfig.json" />
     <None Include="..\..\..\..\web\admin_dashboard\tsconfig.node.json" />
     <None Include="..\..\..\..\web\admin_dashboard\vite.config.ts" />
+    <None Include="..\..\..\..\web\licenses.mjs" />
     <None Include="..\..\..\..\web\native\index.html" />
     <None Include="..\..\..\..\web\native\package-lock.json" />
     <None Include="..\..\..\..\web\native\package.json" />
@@ -231,7 +232,6 @@
     <None Include="..\..\..\..\web\native\tsconfig.json" />
     <None Include="..\..\..\..\web\native\tsconfig.node.json" />
     <None Include="..\..\..\..\web\native\vite.config.ts" />
-    <None Include="..\..\..\..\web\licenses.mjs" />
     <None Include="..\..\..\..\web\shared\favicon.svg" />
     <None Include="packages.config" />
   </ItemGroup>

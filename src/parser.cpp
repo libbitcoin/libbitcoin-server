@@ -2412,11 +2412,6 @@ options_metadata parser::load_settings() THROWS
         "Count of silent payment transactions to index in each batch, defaults to {} (0 disables)."
     )
     (
-        "node.fee_estimate_horizon",
-        setting<uint16_t>(&configured.node.fee_estimate_horizon),
-        "Fee estimation horizon, limited to 1008, defaults to {} (0 disables)."
-    )
-    (
         "node.minimum_fee_rate",
         setting<double>(&configured.node.minimum_fee_rate),
         "Minimum fee rate for non-conflicting tx acceptance, defaults to {}."
