@@ -14,6 +14,7 @@ import type {
   TransactionSummary,
 } from '../client';
 import { inferAddressType } from '@/lib/utils/address';
+import { MAINNET_PARAMS } from './libbitcoin-mapper';
 
 interface BlockstreamClientOptions {
   baseUrl: string;
@@ -492,6 +493,9 @@ export function createBlockstreamClient({ baseUrl }: BlockstreamClientOptions): 
         filter: false,
         turbo: false,
         witness: true,
+        network: 'mainnet',
+        forks: [],
+        wallet: MAINNET_PARAMS,
       });
     },
     async getLatestBlocks(limit = 10): Promise<BlockSummary[]> {

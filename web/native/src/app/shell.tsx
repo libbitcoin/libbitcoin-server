@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { SearchBar } from '@/components/search-bar';
 import { StatusPill } from '@/components/status-pill';
 import { CommandPalette } from '@/components/command-palette';
@@ -24,8 +24,11 @@ export function AppShell() {
   const { provider, setProvider, availableProviders, selectorVisible } = useProviderSwitcher();
   const { turbo, setTurbo } = useTurbo();
   const { data: configuration } = useProviderConfiguration();
-  const showTurbo =
-    provider === 'libbitcoin' && (!configuration || (configuration.turbo && configuration.address));
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isLibbitcoin = provider === 'libbitcoin';
+  const turboAvailable = isLibbitcoin && configuration?.turbo === true;
+  const turboActive = turbo && turboAvailable;
   const endpointLabel = info.endpoint ? formatEndpointLabel(info.endpoint) : info.label;
   const statusTitle =
     info.endpoint && info.description
@@ -33,12 +36,17 @@ export function AppShell() {
       : (info.endpoint ?? info.description);
 
   useEffect(() => {
-    if (provider !== 'libbitcoin') return;
-    if (!configuration) return;
-    if (!configuration.address || !configuration.turbo) {
-      setTurbo(false);
-    }
-  }, [configuration, provider, setTurbo]);
+    if (isLibbitcoin && !configuration) return;
+    const parameters = new URLSearchParams(location.search);
+    if ((parameters.get('turbo') === 'true') === turboActive) return;
+    if (turboActive) parameters.set('turbo', 'true');
+    else parameters.delete('turbo');
+    const search = parameters.toString();
+    void navigate(
+      { pathname: location.pathname, search: search ? `?${search}` : '', hash: location.hash },
+      { replace: true, state: location.state as unknown }
+    );
+  }, [configuration, isLibbitcoin, location, navigate, turboActive]);
 
   return (
     <div className="bg-background text-textPrimary min-h-screen">
@@ -92,12 +100,20 @@ export function AppShell() {
                 title={statusTitle}
                 labelClassName={info.endpoint ? 'font-mono normal-case' : undefined}
               />
-              {showTurbo && (
-                <label className="text-textMuted flex items-center gap-2 text-xs tracking-wide uppercase">
+              {isLibbitcoin && (
+                <label
+                  className={`text-textMuted flex items-center gap-2 text-xs tracking-wide uppercase ${
+                    turboAvailable ? '' : 'opacity-50'
+                  }`}
+                  title={
+                    configuration && !turboAvailable ? 'Turbo is disabled by the server' : undefined
+                  }
+                >
                   <input
                     type="checkbox"
-                    className="border-accent/50 bg-surface/80 text-accent focus:ring-accent h-4 w-4 rounded"
-                    checked={turbo}
+                    className="border-accent/50 bg-surface/80 text-accent focus:ring-accent h-4 w-4 rounded disabled:cursor-not-allowed"
+                    checked={turboActive}
+                    disabled={!turboAvailable}
                     onChange={(event) => {
                       setTurbo(event.target.checked);
                     }}

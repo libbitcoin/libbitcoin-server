@@ -33,7 +33,7 @@ BC_AUTO_TEST_CASE(native__configuration__json__expected)
     BC_REQUIRE(response.is_object());
 
     const auto& object = response.as_object();
-    BC_REQUIRE_EQUAL(object.size(), 3u);
+    BC_REQUIRE_EQUAL(object.size(), 5u);
 
     const auto& store = object.at("store").as_object();
     BC_REQUIRE_EQUAL(store.size(), 6u);
@@ -54,6 +54,16 @@ BC_AUTO_TEST_CASE(native__configuration__json__expected)
     BC_REQUIRE(node.at("privacy").as_bool());
     BC_REQUIRE(!node.at("fees").as_bool());
 
+    const auto& wallet = object.at("wallet").as_object();
+    BC_REQUIRE_EQUAL(wallet.size(), 7u);
+    BC_REQUIRE_EQUAL(wallet.at("p2kh").as_int64(), 0x00);
+    BC_REQUIRE_EQUAL(wallet.at("p2sh").as_int64(), 0x05);
+    BC_REQUIRE_EQUAL(wallet.at("wif").as_int64(), 0x80);
+    BC_REQUIRE_EQUAL(wallet.at("witness").as_string(), "bc");
+    BC_REQUIRE_EQUAL(wallet.at("silent").as_string(), "sp");
+    BC_REQUIRE_EQUAL(wallet.at("hd_private").as_int64(), 0x0488ade4);
+    BC_REQUIRE_EQUAL(wallet.at("hd_public").as_int64(), 0x0488b21e);
+
     const auto& network = object.at("network").as_object();
     BC_REQUIRE_EQUAL(network.size(), 10u);
     BC_REQUIRE(network.contains("relay"));
@@ -67,6 +77,37 @@ BC_AUTO_TEST_CASE(native__configuration__json__expected)
     BC_REQUIRE(!network.contains("address_v2"));
     BC_REQUIRE_EQUAL(network.at("protocol_maximum").as_int64(), network::messages::peer::level::maximum_protocol);
     BC_REQUIRE(network.at("protocol_minimum").is_int64());
+
+    const auto& forks = object.at("forks").as_object();
+    BC_REQUIRE_EQUAL(forks.size(), 28u);
+    BC_REQUIRE(forks.at("bip16").as_bool());
+    BC_REQUIRE(!forks.at("bip90").as_bool());
+    BC_REQUIRE(forks.at("bip30").as_bool());
+    BC_REQUIRE(forks.at("bip42").as_bool());
+    BC_REQUIRE(forks.at("bip34").as_bool());
+    BC_REQUIRE(forks.at("bip65").as_bool());
+    BC_REQUIRE(forks.at("bip66").as_bool());
+    BC_REQUIRE(forks.at("bip68").as_bool());
+    BC_REQUIRE(forks.at("bip112").as_bool());
+    BC_REQUIRE(forks.at("bip113").as_bool());
+    BC_REQUIRE(forks.at("bip141").as_bool());
+    BC_REQUIRE(forks.at("bip143").as_bool());
+    BC_REQUIRE(forks.at("bip147").as_bool());
+    BC_REQUIRE(forks.at("bip341").as_bool());
+    BC_REQUIRE(forks.at("bip342").as_bool());
+    BC_REQUIRE(forks.at("bip54_timewarp").as_bool());
+    BC_REQUIRE(forks.at("bip54_timespan").as_bool());
+    BC_REQUIRE(forks.at("bip54_sigops").as_bool());
+    BC_REQUIRE(forks.at("bip54_txsize").as_bool());
+    BC_REQUIRE(forks.at("bip54_coinbase").as_bool());
+    BC_REQUIRE(forks.at("retarget").as_bool());
+    BC_REQUIRE(forks.at("difficult").as_bool());
+    BC_REQUIRE(!forks.at("time_warp_patch").as_bool());
+    BC_REQUIRE(!forks.at("block_storm_patch").as_bool());
+    BC_REQUIRE(!forks.at("signet").as_bool());
+    BC_REQUIRE(!forks.at("ltc_time_warp_patch").as_bool());
+    BC_REQUIRE(!forks.at("ltc_retarget_overflow_patch").as_bool());
+    BC_REQUIRE(!forks.at("ltc_scrypt_proof_of_work").as_bool());
 }
 
 BC_AUTO_TEST_CASE(native__configuration__text__not_acceptable)

@@ -16,6 +16,12 @@ function readLocalStorage(key: string): string | null {
   return window_?.localStorage.getItem(key) ?? null;
 }
 
+function readTurboParameter(): boolean {
+  const window_ = (globalThis as unknown as { window?: Window }).window;
+  const search = window_?.location.search ?? "";
+  return new URLSearchParams(search).get("turbo") === "true";
+}
+
 function writeLocalStorage(key: string, value: string) {
   const window_ = (globalThis as unknown as { window?: Window }).window;
   window_?.localStorage.setItem(key, value);
@@ -26,7 +32,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     import.meta.env.VITE_BLOCKCHAIN_PROVIDER ?? "libbitcoin";
   const availableProviders = getAvailableProviders();
   const [turbo, setTurbo] = useState(
-    () => readLocalStorage("turboEnabled") === "true",
+    () => readTurboParameter() || readLocalStorage("turboEnabled") !== "false",
   );
   const [provider, setProvider] = useState(() => {
     const storedProvider = readLocalStorage("blockchainProvider");

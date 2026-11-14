@@ -12,6 +12,9 @@ const nativeConfigurationSchema = z.object({
   node: z.object({
     network: z.string(),
   }),
+  forks: z
+    .record(z.string(), z.boolean())
+    .transform((forks) => Object.keys(forks).filter((fork) => forks[fork])),
 });
 
 export type NativeConfiguration = z.infer<typeof nativeConfigurationSchema>;

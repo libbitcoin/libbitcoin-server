@@ -1,7 +1,13 @@
 import { bech32, bech32m, createBase58check } from '@scure/base';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
-import { BlockSummary, TransactionInput, TransactionOutput, TransactionSummary } from '../client';
+import {
+  BlockSummary,
+  NetworkParams,
+  TransactionInput,
+  TransactionOutput,
+  TransactionSummary,
+} from '../client';
 
 export interface BlockHeaderResponse {
   hash: string;
@@ -41,8 +47,6 @@ export interface TxResponse {
 
 const base58c = createBase58check(sha256);
 const MAX_TARGET = 0x00000000ffff0000000000000000000000000000000000000000000000000000n;
-
-export type BitcoinNetwork = 'mainnet' | 'testnet' | 'regtest';
 
 export function hexToBytes(hex: string): Uint8Array {
   if (hex.length % 2 !== 0) throw new Error('Invalid hex string');
@@ -86,24 +90,7 @@ function mapScriptType(script: string): string | undefined {
   return undefined;
 }
 
-export function getNetwork(): BitcoinNetwork {
-  const env = import.meta.env.VITE_BITCOIN_NETWORK;
-  const normalized = env ? env.toLowerCase() : undefined;
-  if (normalized === 'testnet' || normalized === 'test') return 'testnet';
-  if (normalized === 'regtest' || normalized === 'reg') return 'regtest';
-  return 'mainnet';
-}
-
-export function getNetworkParams(network: BitcoinNetwork) {
-  if (network === 'testnet' || network === 'regtest') {
-    return {
-      p2pkh: 0x6f,
-      p2sh: 0xc4,
-      hrp: network === 'regtest' ? 'bcrt' : 'tb',
-    };
-  }
-  return { p2pkh: 0x00, p2sh: 0x05, hrp: 'bc' };
-}
+export const MAINNET_PARAMS: NetworkParams = { p2pkh: 0x00, p2sh: 0x05, hrp: 'bc' };
 
 function encodeBase58(version: number, hash: string) {
   const data = new Uint8Array(hash.length / 2 + 1);
@@ -122,7 +109,7 @@ function encodeSegwit(hrp: string, version: number, programHex: string) {
 
 function decodeScriptAddress(
   script: string,
-  params: ReturnType<typeof getNetworkParams>
+  params: NetworkParams
 ): { address?: string; type?: string } {
   const lower = script.toLowerCase();
   const p2pkh = lower.match(/dup hash160 \[([0-9a-f]{40})\] equalverify checksig/);
@@ -140,7 +127,7 @@ function decodeScriptAddress(
 
 function addressToScript(
   address: string,
-  params: ReturnType<typeof getNetworkParams>
+  params: NetworkParams
 ): { scriptHex: string; type: string } | null {
   // Base58
   try {
@@ -197,16 +184,9 @@ function addressToScript(
   return null;
 }
 
-export function decodeAddressToScript(
-  address: string,
-  network: 'mainnet' | 'testnet' | 'regtest' = 'mainnet'
-) {
-  return addressToScript(address, getNetworkParams(network));
-}
-
 export function scriptHashFromAddress(
   address: string,
-  params: ReturnType<typeof getNetworkParams>
+  params: NetworkParams
 ) {
   const hexCandidate = address.toLowerCase();
   if (/^[0-9a-f]{64}$/.test(hexCandidate)) return { hash: hexCandidate, type: 'script-hash' };
@@ -238,7 +218,7 @@ function parseWitness(value?: string) {
 function mapInput(
   input: TxInputResponse,
   prevout: TxOutputResponse | null | undefined,
-  params: ReturnType<typeof getNetworkParams>,
+  params: NetworkParams,
   index: number
 ): TransactionInput {
   const isCoinbase = /^0{64}$/u.test(input.point.hash);
@@ -264,7 +244,7 @@ function mapInput(
 function mapOutput(
   output: TxOutputResponse,
   index: number,
-  params: ReturnType<typeof getNetworkParams>
+  params: NetworkParams
 ): TransactionOutput {
   const decoded = decodeScriptAddress(output.script, params);
   return {
@@ -285,7 +265,7 @@ export function computeConfirmations(tip?: number, blockHeight?: number) {
 export function mapTransaction(
   tx: TxResponse,
   prevouts: (TxOutputResponse | null | undefined)[],
-  params: ReturnType<typeof getNetworkParams>,
+  params: NetworkParams,
   context: {
     blockHeight?: number;
     blockHash?: string;

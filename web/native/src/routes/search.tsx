@@ -2,13 +2,9 @@ import { useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { classifySearchQuery } from '@/lib/utils/search';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
-import { useBlockHeader, useTransactionHeader } from '@/lib/hooks/useBlockchainData';
+import { useBlockHeader, useNetwork, useTransactionHeader } from '@/lib/hooks/useBlockchainData';
 import { useProviderInfo } from '@/lib/api/client';
-import {
-  getNetwork,
-  getNetworkParams,
-  scriptHashFromAddress,
-} from '@/lib/api/providers/libbitcoin-mapper';
+import { scriptHashFromAddress } from '@/lib/api/providers/libbitcoin-mapper';
 import {
   addressPath,
   blockByHashPath,
@@ -18,9 +14,6 @@ import {
   transactionOutputPath,
 } from '@/lib/utils/routes';
 import { rememberLibbitcoinAddressAlias } from '@/lib/utils/libbitcoin-address-alias';
-
-const NETWORK = getNetwork();
-const NETWORK_PARAMS = getNetworkParams(NETWORK);
 
 function getHttpStatus(error: unknown) {
   if (!error || typeof error !== 'object' || Array.isArray(error)) return;
@@ -46,6 +39,7 @@ export function SearchPage() {
   const query = rawQuery.trim();
   const navigate = useNavigate();
   const provider = useProviderInfo();
+  const { network, params: networkParams } = useNetwork();
 
   const classification = useMemo(() => classifySearchQuery(query), [query]);
   const hashValue = classification.type === 'hash' ? (classification.value ?? '') : '';
@@ -70,13 +64,14 @@ export function SearchPage() {
       return;
     }
     const isLibbitcoin = provider.id === 'libbitcoin';
+    if (classification.type === 'address' && isLibbitcoin && (!network || !networkParams)) return;
     const addressScriptInfo =
-      classification.type === 'address' && isLibbitcoin
-        ? scriptHashFromAddress(value, NETWORK_PARAMS)
+      classification.type === 'address' && isLibbitcoin && networkParams
+        ? scriptHashFromAddress(value, networkParams)
         : null;
     const scriptHash = addressScriptInfo?.hash ?? null;
-    if (classification.type === 'address' && isLibbitcoin && scriptHash) {
-      rememberLibbitcoinAddressAlias(NETWORK, scriptHash, value);
+    if (classification.type === 'address' && isLibbitcoin && network && scriptHash) {
+      rememberLibbitcoinAddressAlias(network, scriptHash, value);
     }
     const target =
       classification.type === 'block-height'
@@ -85,7 +80,7 @@ export function SearchPage() {
     const state =
       classification.type === 'address' && isLibbitcoin ? { displayAddress: value } : undefined;
     void navigate(target, { replace: true, state });
-  }, [classification, navigate, provider.id, query]);
+  }, [classification, navigate, network, networkParams, provider.id, query]);
 
   const blockLookupSettled = blockLookup.isSuccess || blockLookup.isError;
   const transactionLookupSettled = transactionLookup.isSuccess || transactionLookup.isError;

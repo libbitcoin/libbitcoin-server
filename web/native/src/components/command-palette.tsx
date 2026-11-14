@@ -4,11 +4,8 @@ import { useScriptExplainerPreference } from '@/app/script-explainer-preference'
 import { classifySearchQuery } from '@/lib/utils/search';
 import { copyTextToClipboard } from '@/lib/utils/clipboard';
 import { formatHash } from '@/lib/utils/format';
-import {
-  getNetwork,
-  getNetworkParams,
-  scriptHashFromAddress,
-} from '@/lib/api/providers/libbitcoin-mapper';
+import { scriptHashFromAddress } from '@/lib/api/providers/libbitcoin-mapper';
+import { useNetwork, useProviderConfiguration } from '@/lib/hooks/useBlockchainData';
 import {
   useBlockchainClient,
   useProviderInfo,
@@ -50,8 +47,6 @@ interface PaletteItem {
 
 const RECENTS_STORAGE_KEY = 'recentlyViewed';
 const MAX_RECENTS = 50;
-const NETWORK = getNetwork();
-const NETWORK_PARAMS = getNetworkParams(NETWORK);
 
 function getLocalStorage() {
   const window_ = (globalThis as unknown as { window?: Window }).window;
@@ -184,6 +179,8 @@ export function CommandPalette() {
   const location = useLocation();
   const client = useBlockchainClient();
   const providerInfo = useProviderInfo();
+  const { network, params: networkParams } = useNetwork();
+  const { data: configuration } = useProviderConfiguration();
   const { provider, setProvider, availableProviders, selectorVisible, setSelectorVisible } =
     useProviderSwitcher();
   const { turbo, setTurbo } = useTurbo();
@@ -447,6 +444,19 @@ export function CommandPalette() {
               detail: `Current provider: ${provider}`,
               onSelect: () => {
                 showStatus('Turbo is only available when provider is server');
+              },
+            },
+          ];
+        }
+
+        if (configuration && !configuration.turbo) {
+          return [
+            {
+              id: 'cmd.turbo.disabled',
+              section: 'Provider',
+              label: 'Turbo is disabled by the server',
+              onSelect: () => {
+                showStatus('Turbo is disabled by the server');
               },
             },
           ];
@@ -984,12 +994,13 @@ export function CommandPalette() {
               onSelect: () => {
                 dismissPalette();
                 const isLibbitcoin = providerInfo.id === 'libbitcoin';
-                const scriptInfo = isLibbitcoin
-                  ? scriptHashFromAddress(value, NETWORK_PARAMS)
-                  : null;
+                const scriptInfo =
+                  isLibbitcoin && networkParams
+                    ? scriptHashFromAddress(value, networkParams)
+                    : null;
                 const scriptHash = scriptInfo?.hash ?? null;
-                if (isLibbitcoin && scriptHash) {
-                  rememberLibbitcoinAddressAlias(NETWORK, scriptHash, value);
+                if (isLibbitcoin && network && scriptHash) {
+                  rememberLibbitcoinAddressAlias(network, scriptHash, value);
                 }
                 void navigate(addressPath(scriptHash ?? value), {
                   state: isLibbitcoin ? { displayAddress: value } : undefined,

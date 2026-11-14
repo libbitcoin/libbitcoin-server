@@ -184,6 +184,11 @@ export function useProviderConfiguration() {
   });
 }
 
+export function useNetwork() {
+  const { data } = useProviderConfiguration();
+  return { network: data?.network, params: data?.wallet };
+}
+
 export function useBlockHeader(
   hashOrHeight: string,
   options?: {

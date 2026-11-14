@@ -6,7 +6,6 @@ interface ImportMetaEnv {
   readonly VITE_MEMPOOL_API_URL?: string;
   readonly VITE_BLOCKCHAIN_API_URL?: string;
   readonly VITE_LIBBITCOIN_API_URL?: string;
-  readonly VITE_BITCOIN_NETWORK?: 'mainnet' | 'testnet' | 'regtest';
 }
 
 interface ImportMeta {
