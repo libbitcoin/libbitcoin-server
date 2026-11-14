@@ -73,7 +73,7 @@ bool protocol_native::handle_get_configuration(const code& ec,
                 { "witness", node.provide_witness },
                 { "filters", node.provide_filters },
                 { "privacy", node.provide_privacy },
-                { "fees", false }
+                { "fees", peer.enable_relay }
             }
         },
         { "wallet", json::object

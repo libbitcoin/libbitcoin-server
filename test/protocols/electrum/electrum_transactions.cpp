@@ -813,6 +813,16 @@ using namespace system;
 static const code daemon_error{ server::error::electrum::daemon_error };
 static const code pooling_disabled{ node::error::pooling_disabled };
 
+BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__closed_pool__negative_one)
+{
+    BC_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"basic"]})" "\n");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
+}
+
 BC_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__closed_pool__daemon_error)
 {
     BC_REQUIRE(handshake(electrum::version::v1_6));

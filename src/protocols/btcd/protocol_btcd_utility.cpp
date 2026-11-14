@@ -95,8 +95,8 @@ void protocol_btcd::complete_estimate(const code& ec, uint64_t fee) NOEXCEPT
         return;
     }
 
-    // sats/vbyte to btc/kvbyte.
-    constexpr double fee_scale = 100'000.0;
+    // Satoshis to bitcoin (each per virtual kilobyte).
+    constexpr double fee_scale = 100'000'000.0;
     send_result(fee / fee_scale);
 }
 
