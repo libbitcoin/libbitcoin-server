@@ -48,6 +48,8 @@ bool protocol_native::handle_get_configuration(const code& ec,
     const auto& query = archive();
     const auto& node = node_settings();
     const auto& peer = network_settings();
+    const auto& fork = system_settings().forks;
+    const auto& wallet = server_settings().wallet;
     const auto silent = query.silent_enabled() ?
         json::value(query.silent_start_height()) : json::value(nullptr);
 
@@ -74,6 +76,17 @@ bool protocol_native::handle_get_configuration(const code& ec,
                 { "fees", false }
             }
         },
+        { "wallet", json::object
+            {
+                { "p2kh", uint8_t{ wallet.p2kh_prefix } },
+                { "p2sh", uint8_t{ wallet.p2sh_prefix } },
+                { "wif", uint8_t{ wallet.wif_prefix } },
+                { "witness", wallet.witness_prefix },
+                { "silent", wallet.silent_prefix },
+                { "hd_private", wallet.hd_private_prefix },
+                { "hd_public", wallet.hd_public_prefix }
+            }
+        },
         { "network", json::object
             {
                 { "relay", peer.enable_relay },
@@ -86,6 +99,38 @@ bool protocol_native::handle_get_configuration(const code& ec,
                 { "not_found", peer.enable_not_found },
                 { "protocol_maximum", peer.protocol_maximum },
                 { "protocol_minimum", peer.protocol_minimum }
+            }
+        },
+        { "forks", json::object
+            {
+                { "bip16", fork.bip16 },
+                { "bip90", fork.bip90 },
+                { "bip30", fork.bip30 },
+                { "bip42", fork.bip42 },
+                { "bip34", fork.bip34 },
+                { "bip65", fork.bip65 },
+                { "bip66", fork.bip66 },
+                { "bip68", fork.bip68 },
+                { "bip112", fork.bip112 },
+                { "bip113", fork.bip113 },
+                { "bip141", fork.bip141 },
+                { "bip143", fork.bip143 },
+                { "bip147", fork.bip147 },
+                { "bip341", fork.bip341 },
+                { "bip342", fork.bip342 },
+                { "bip54_timewarp", fork.bip54_timewarp },
+                { "bip54_timespan", fork.bip54_timespan },
+                { "bip54_sigops", fork.bip54_sigops },
+                { "bip54_txsize", fork.bip54_txsize },
+                { "bip54_coinbase", fork.bip54_coinbase },
+                { "retarget", fork.retarget },
+                { "difficult", fork.difficult },
+                { "time_warp_patch", fork.time_warp_patch },
+                { "block_storm_patch", fork.block_storm_patch },
+                { "signet", fork.signet },
+                { "ltc_time_warp_patch", fork.ltc_time_warp_patch },
+                { "ltc_retarget_overflow_patch", fork.ltc_retarget_overflow_patch },
+                { "ltc_scrypt_proof_of_work", fork.ltc_scrypt_proof_of_work }
             }
         }
     });
