@@ -64,7 +64,7 @@ void protocol_esplora::start() NOEXCEPT
     SUBSCRIBE_ESPLORA(handle_get_tx_outspend, _1, _2, _3, _4, _5);
     SUBSCRIBE_ESPLORA(handle_get_tx_outspends, _1, _2, _3, _4);
     SUBSCRIBE_ESPLORA(handle_broadcast, _1, _2, _3, _4);
-    SUBSCRIBE_ESPLORA(handle_broadcast_package, _1, _2, _3, _4);
+    SUBSCRIBE_ESPLORA(handle_broadcast_package, _1, _2, _3, _4, _5, _6);
 
     // Block methods.
     SUBSCRIBE_ESPLORA(handle_get_block, _1, _2, _3, _4);

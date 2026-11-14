@@ -32,10 +32,9 @@ struct bitcoind_transaction_methods
     {
         method<"createrawtransaction", array_t, value_t, nullopt<0.0>, nullopt<true>, nullopt<2.0>>{ "inputs", "outputs", "locktime", "replaceable", "version" },
         method<"decoderawtransaction", string_t, nullable<boolean_t>>{ "hexstring", "iswitness" },
-        method<"getrawtransaction", string_t, nullopt<0.0>, nullopt<""_t>>{ "txid", "verbosity", "blockhash" },
-        // bitcoind also accepts quoted amounts (slop; needs dispatch special case).
-        method<"sendrawtransaction", string_t, nullopt<0.1>, nullopt<0.0>, command>{ "hexstring", "maxfeerate", "maxburnamount" },
-        method<"testmempoolaccept", array_t, nullopt<0.1>>{ "rawtxs", "maxfeerate" },
+        method<"getrawtransaction", string_t, nullopt<0.0, cast<boolean_t, number_t>>, nullopt<""_t>>{ "txid", "verbosity|verbose", "blockhash" },
+        method<"sendrawtransaction", string_t, nullopt<0.1, cast<string_t, number_t>>, nullopt<0.0, cast<string_t, number_t>>, command>{ "hexstring", "maxfeerate", "maxburnamount" },
+        method<"testmempoolaccept", array_t, nullopt<0.1, cast<string_t, number_t>>>{ "rawtxs", "maxfeerate" },
         method<"analyzepsbt", string_t>{ "psbt" },
         method<"combinepsbt", array_t>{ "txs" },
         method<"converttopsbt", string_t, nullopt<false>, nullable<boolean_t>, nullopt<2.0>>{ "hexstring", "permitsigdata", "iswitness", "psbt_version" },
@@ -47,7 +46,7 @@ struct bitcoind_transaction_methods
         method<"utxoupdatepsbt", string_t, nullopt<empty::array>>{ "psbt", "descriptors" },
         method<"abortprivatebroadcast", string_t>{ unimplemented, "id" },
         method<"getprivatebroadcastinfo">{ unimplemented },
-        method<"submitpackage", array_t, nullopt<0.1>, nullopt<0.0>, command>{ "package", "maxfeerate", "maxburnamount" },
+        method<"submitpackage", array_t, nullopt<0.1, cast<string_t, number_t>>, nullopt<0.0, cast<string_t, number_t>>, command>{ "package", "maxfeerate", "maxburnamount" },
         method<"combinerawtransaction", array_t>{ "txs" },
         method<"signrawtransactionwithkey", string_t, array_t, nullable<array_t>, nullable<string_t>>{ unimplemented, "hexstring", "privkeys", "prevtxs", "sighashtype" }
     };

@@ -81,8 +81,8 @@ static void append_usage(std::string& out, const Method& entry,
     {
         ((out += is_defaulted<std::tuple_element_t<Index,
             typename Method::args_native>> ?
-                " ( " + std::string{ names.at(Index) } + " )" :
-                " " + std::string{ names.at(Index) }), ...);
+                " ( " + std::string{ primary_name(names.at(Index)) } + " )" :
+                " " + std::string{ primary_name(names.at(Index)) }), ...);
     }(std::make_index_sequence<Method::size>{});
 }
 
@@ -183,7 +183,7 @@ static void append_method(array_t& out, const Method& entry,
     {
         (parameters.emplace_back(object_t
         {
-            { "name", std::string{ names.at(Index) } },
+            { "name", std::string{ primary_name(names.at(Index)) } },
             { "required", !is_defaulted<std::tuple_element_t<Index,
                 typename Method::args_native>> }
         }), ...);

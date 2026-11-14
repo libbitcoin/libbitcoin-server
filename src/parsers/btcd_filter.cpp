@@ -31,14 +31,17 @@ using namespace network::rpc;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-code filter_keys(hashes& out, const value_t& addresses, uint8_t p2kh,
-    uint8_t p2sh, const std::string& witness) NOEXCEPT
+code filter_keys(hashes& out, const std::optional<value_t>& addresses,
+    uint8_t p2kh, uint8_t p2sh, const std::string& witness) NOEXCEPT
 {
-    if (!std::holds_alternative<array_t>(addresses.value()))
+    if (!addresses.has_value())
+        return error::success;
+
+    if (!std::holds_alternative<array_t>(addresses->value()))
         return error::invalid_argument;
 
     script script{};
-    for (const auto& item: std::get<array_t>(addresses.value()))
+    for (const auto& item: std::get<array_t>(addresses->value()))
     {
         if (!std::holds_alternative<string_t>(item.value()))
             return error::invalid_argument;
@@ -53,14 +56,18 @@ code filter_keys(hashes& out, const value_t& addresses, uint8_t p2kh,
     return error::success;
 }
 
-code filter_points(points& out, const value_t& outpoints) NOEXCEPT
+code filter_points(points& out,
+    const std::optional<value_t>& outpoints) NOEXCEPT
 {
-    if (!std::holds_alternative<array_t>(outpoints.value()))
+    if (!outpoints.has_value())
+        return error::success;
+
+    if (!std::holds_alternative<array_t>(outpoints->value()))
         return error::invalid_argument;
 
     uint32_t index{};
     hash_digest hash{};
-    for (const auto& item: std::get<array_t>(outpoints.value()))
+    for (const auto& item: std::get<array_t>(outpoints->value()))
     {
         if (!std::holds_alternative<object_t>(item.value()))
             return error::invalid_argument;

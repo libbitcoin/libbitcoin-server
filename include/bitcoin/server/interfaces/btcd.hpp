@@ -62,15 +62,15 @@ struct btcd_methods
         method<"stopnotifynewtransactions">{},
 
         /// Filters.
-        method<"loadtxfilter", boolean_t, value_t, value_t>{ "reload", "addresses", "outpoints" },
-        method<"rescanblocks", value_t>{ "blockhashes" },
+        method<"loadtxfilter", boolean_t, nullable<value_t>, nullable<value_t>>{ "reload", "addresses", "outpoints" },
+        method<"rescanblocks", nullable<value_t>>{ "blockhashes" },
 
         /// Deprecated (confirmed matching only, no mempool in v4).
-        method<"notifyreceived", value_t>{ "addresses" },
-        method<"stopnotifyreceived", value_t>{ "addresses" },
-        method<"notifyspent", value_t>{ "outpoints" },
-        method<"stopnotifyspent", value_t>{ "outpoints" },
-        method<"rescan", string_t, value_t, value_t, nullopt<""_t>>{ "beginblock", "addresses", "outpoints", "endblock" }
+        method<"notifyreceived", nullable<value_t>>{ "addresses" },
+        method<"stopnotifyreceived", nullable<value_t>>{ "addresses" },
+        method<"notifyspent", nullable<value_t>>{ "outpoints" },
+        method<"stopnotifyspent", nullable<value_t>>{ "outpoints" },
+        method<"rescan", string_t, nullable<value_t>, nullable<value_t>, nullopt<""_t>>{ "beginblock", "addresses", "outpoints", "endblock" }
     };
 
     /// Method names as reported by help.

@@ -42,6 +42,12 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
+static bool is_amount(double value) NOEXCEPT
+{
+    uint64_t units{};
+    return to_units(units, value, btc_decimal_places);
+}
+
 // Start.
 // ----------------------------------------------------------------------------
 
@@ -210,10 +216,16 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
 
 bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
     rpc_interface::send_raw_transaction, const std::string& hexstring,
-    double, double) NOEXCEPT
+    double maxfeerate, double maxburnamount) NOEXCEPT
 {
     if (stopped(ec))
         return false;
+
+    if (!is_amount(maxfeerate) || !is_amount(maxburnamount))
+    {
+        send_error(error::bitcoind::type_error);
+        return true;
+    }
 
     data_chunk data{};
     if (!decode_base16(data, hexstring))
@@ -301,10 +313,16 @@ void protocol_bitcoind_transaction::complete_submit_tx(const code& ec,
 
 bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
     rpc_interface::test_mempool_accept, const array_t& rawtxs,
-    double) NOEXCEPT
+    double maxfeerate) NOEXCEPT
 {
     if (stopped(ec))
         return false;
+
+    if (!is_amount(maxfeerate))
+    {
+        send_error(error::bitcoind::type_error);
+        return true;
+    }
 
     if (rawtxs.empty())
     {
@@ -826,11 +844,17 @@ bool protocol_bitcoind_transaction::handle_get_private_broadcast_info(const code
 }
 
 bool protocol_bitcoind_transaction::handle_submit_package(const code& ec,
-    rpc_interface::submit_package, const array_t& package, double,
-    double) NOEXCEPT
+    rpc_interface::submit_package, const array_t& package, double maxfeerate,
+    double maxburnamount) NOEXCEPT
 {
     if (stopped(ec))
         return false;
+
+    if (!is_amount(maxfeerate) || !is_amount(maxburnamount))
+    {
+        send_error(error::bitcoind::type_error);
+        return true;
+    }
 
     if (package.empty() || package.size() > maximum_package)
     {

@@ -296,7 +296,8 @@ bool protocol_btcd::handle_stop_notify_new_transactions(const code& ec,
 // This is the call btcwallet makes to bootstrap its sync starting point.
 bool protocol_btcd::handle_rescan(const code& ec,
     btcd_interface::rescan, const std::string& beginblock,
-    const value_t& addresses, const value_t& outpoints,
+    const std::optional<value_t>& addresses,
+    const std::optional<value_t>& outpoints,
     const std::string&) NOEXCEPT
 {
     if (stopped(ec)) return false;
@@ -315,10 +316,15 @@ bool protocol_btcd::handle_rescan(const code& ec,
         return true;
     }
 
-    const auto has_addresses = std::holds_alternative<array_t>(
-        addresses.value()) && !std::get<array_t>(addresses.value()).empty();
-    const auto has_outpoints = std::holds_alternative<array_t>(
-        outpoints.value()) && !std::get<array_t>(outpoints.value()).empty();
+    const auto has_entries = [](const std::optional<value_t>& list) NOEXCEPT
+    {
+        return list.has_value() &&
+            std::holds_alternative<array_t>(list->value()) &&
+            !std::get<array_t>(list->value()).empty();
+    };
+
+    const auto has_addresses = has_entries(addresses);
+    const auto has_outpoints = has_entries(outpoints);
 
     if (has_addresses || has_outpoints)
     {

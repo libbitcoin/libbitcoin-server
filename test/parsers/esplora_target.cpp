@@ -204,6 +204,26 @@ BC_AUTO_TEST_CASE(parsers__esplora_target__broadcast__expected)
     BC_REQUIRE_EQUAL(std::get<uint8_t>(object.at("media").value()), text);
 }
 
+BC_AUTO_TEST_CASE(parsers__esplora_target__broadcast_package_query__amounts)
+{
+    request_t request{};
+    BC_REQUIRE(!esplora_target(request, "/txs/package?maxfeerate=0.1&maxburnamount=1e-8&other=x"));
+    BC_REQUIRE_EQUAL(request.method, "broadcast_package");
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(std::get<number_t>(object.at("maxfeerate").value()), 0.1);
+    BC_REQUIRE_EQUAL(std::get<number_t>(object.at("maxburnamount").value()), 1e-8);
+    BC_REQUIRE(!object.contains("other"));
+}
+
+BC_AUTO_TEST_CASE(parsers__esplora_target__broadcast_package_invalid_query__invalid_number)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(esplora_target(out, "/txs/package?maxfeerate=x"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(esplora_target(out, "/txs/package?maxburnamount=.5"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(esplora_target(out, "/txs/package?maxfeerate"), server::error::invalid_number);
+}
+
 BC_AUTO_TEST_CASE(parsers__esplora_target__broadcast_package__expected)
 {
     request_t request{};
@@ -288,10 +308,14 @@ BC_AUTO_TEST_CASE(parsers__esplora_target__address_txs_chain_last_seen__expected
     BC_REQUIRE_EQUAL(to_uintx(*hash_cptr), uint256_t{ 0x42 });
 }
 
-BC_AUTO_TEST_CASE(parsers__esplora_target__address_txs_chain_invalid_last_seen__invalid_hash)
+BC_AUTO_TEST_CASE(parsers__esplora_target__address_txs_chain_invalid_last_seen__ignored)
 {
-    request_t out{};
-    BC_REQUIRE_EQUAL(esplora_target(out, "/address/1abc/txs/chain/invalid"), server::error::invalid_hash);
+    request_t request{};
+    BC_REQUIRE(!esplora_target(request, "/address/1abc/txs/chain/invalid"));
+    BC_REQUIRE_EQUAL(request.method, "address_txs_chain");
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE(!object.contains("last_seen"));
 }
 
 BC_AUTO_TEST_CASE(parsers__esplora_target__address_txs_mempool__expected)
@@ -455,10 +479,23 @@ BC_AUTO_TEST_CASE(parsers__esplora_target__block_txs_start__expected)
     BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("start").value()), 25u);
 }
 
-BC_AUTO_TEST_CASE(parsers__esplora_target__block_txs_invalid_start__invalid_number)
+BC_AUTO_TEST_CASE(parsers__esplora_target__block_txs_invalid_start__ignored)
 {
-    request_t out{};
-    BC_REQUIRE_EQUAL(esplora_target(out, "/block/0000000000000000000000000000000000000000000000000000000000000042/txs/x"), server::error::invalid_number);
+    request_t request{};
+    BC_REQUIRE(!esplora_target(request, "/block/0000000000000000000000000000000000000000000000000000000000000042/txs/x"));
+    BC_REQUIRE_EQUAL(request.method, "block_txs");
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE(!object.contains("start"));
+}
+
+BC_AUTO_TEST_CASE(parsers__esplora_target__block_txs_padded_start__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!esplora_target(request, "/block/0000000000000000000000000000000000000000000000000000000000000042/txs/+025"));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("start").value()), 25u);
 }
 
 BC_AUTO_TEST_CASE(parsers__esplora_target__block_txids__expected)
@@ -540,10 +577,31 @@ BC_AUTO_TEST_CASE(parsers__esplora_target__block_height_zero__expected)
     BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("height").value()), 0u);
 }
 
-BC_AUTO_TEST_CASE(parsers__esplora_target__block_height_leading_zero__invalid_number)
+BC_AUTO_TEST_CASE(parsers__esplora_target__block_height_leading_zero__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!esplora_target(request, "/block-height/0123"));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("height").value()), 123u);
+}
+
+BC_AUTO_TEST_CASE(parsers__esplora_target__block_height_plus_sign__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!esplora_target(request, "/block-height/+123"));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("height").value()), 123u);
+}
+
+BC_AUTO_TEST_CASE(parsers__esplora_target__block_height_signs__invalid_number)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(esplora_target(out, "/block-height/0123"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(esplora_target(out, "/block-height/-1"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(esplora_target(out, "/block-height/+"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(esplora_target(out, "/block-height/+-1"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(esplora_target(out, "/block-height/4294967296"), server::error::invalid_number);
 }
 
 BC_AUTO_TEST_CASE(parsers__esplora_target__block_height_missing__missing_height)
@@ -582,10 +640,14 @@ BC_AUTO_TEST_CASE(parsers__esplora_target__blocks_height__expected)
     BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("height").value()), 100u);
 }
 
-BC_AUTO_TEST_CASE(parsers__esplora_target__blocks_invalid_height__invalid_number)
+BC_AUTO_TEST_CASE(parsers__esplora_target__blocks_invalid_height__ignored)
 {
-    request_t out{};
-    BC_REQUIRE_EQUAL(esplora_target(out, "/blocks/x"), server::error::invalid_number);
+    request_t request{};
+    BC_REQUIRE(!esplora_target(request, "/blocks/x"));
+    BC_REQUIRE_EQUAL(request.method, "blocks");
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE(!object.contains("height"));
 }
 
 BC_AUTO_TEST_CASE(parsers__esplora_target__tip_height__expected)

@@ -47,8 +47,9 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 // ----------------------------------------------------------------------------
 
 bool protocol_btcd::handle_load_tx_filter(const code& ec,
-    btcd_interface::load_tx_filter, bool reload, const value_t& addresses,
-    const value_t& outpoints) NOEXCEPT
+    btcd_interface::load_tx_filter, bool reload,
+    const std::optional<value_t>& addresses,
+    const std::optional<value_t>& outpoints) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -164,7 +165,8 @@ void protocol_btcd::complete_load_tx_filter(const code& ec,
 // cursor-based history matching.
 
 bool protocol_btcd::handle_notify_received(const code& ec,
-    btcd_interface::notify_received, const value_t& addresses) NOEXCEPT
+    btcd_interface::notify_received,
+    const std::optional<value_t>& addresses) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -241,7 +243,8 @@ void protocol_btcd::complete_notify_received(const code& ec,
 }
 
 bool protocol_btcd::handle_stop_notify_received(const code& ec,
-    btcd_interface::stop_notify_received, const value_t& addresses) NOEXCEPT
+    btcd_interface::stop_notify_received,
+    const std::optional<value_t>& addresses) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -270,7 +273,8 @@ void protocol_btcd::do_stop_notify_received(const hashes& keys) NOEXCEPT
 }
 
 bool protocol_btcd::handle_notify_spent(const code& ec,
-    btcd_interface::notify_spent, const value_t& outpoints) NOEXCEPT
+    btcd_interface::notify_spent,
+    const std::optional<value_t>& outpoints) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -330,7 +334,8 @@ void protocol_btcd::complete_notify_spent(const code& ec,
 }
 
 bool protocol_btcd::handle_stop_notify_spent(const code& ec,
-    btcd_interface::stop_notify_spent, const value_t& outpoints) NOEXCEPT
+    btcd_interface::stop_notify_spent,
+    const std::optional<value_t>& outpoints) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -359,12 +364,14 @@ void protocol_btcd::do_stop_notify_spent(const chain::points& points) NOEXCEPT
 }
 
 bool protocol_btcd::handle_rescan_blocks(const code& ec,
-    btcd_interface::rescan_blocks, const value_t& blockhashes) NOEXCEPT
+    btcd_interface::rescan_blocks,
+    const std::optional<value_t>& blockhashes) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
-    if (!std::holds_alternative<array_t>(blockhashes.value()))
+    const auto list = blockhashes.value_or(array_t{});
+    if (!std::holds_alternative<array_t>(list.value()))
     {
         send_error(error::btcd::invalid_params);
         return true;
@@ -372,7 +379,7 @@ bool protocol_btcd::handle_rescan_blocks(const code& ec,
 
     hash_digest hash{};
     hashes block_hashes{};
-    for (const auto& item: std::get<array_t>(blockhashes.value()))
+    for (const auto& item: std::get<array_t>(list.value()))
     {
         // btcd wraps the hash parse failure as an internal error.
         if (!std::holds_alternative<string_t>(item.value()) ||

@@ -444,6 +444,13 @@ BC_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__valid_address__null_result)
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
+BC_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__null_lists__null_result)
+{
+    const auto response = rpc("loadtxfilter", R"([true,null,null])");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
 BC_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__invalid_address__invalid_argument)
 {
     const auto result = rpc_error("loadtxfilter", std::format(R"([true,["{}"],[]])", bogus_address));
@@ -462,6 +469,13 @@ BC_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__malformed_outpoint__invalid_argument)
 {
     const auto result = rpc_error("loadtxfilter", R"([true,[],[{"hash":"00"}]])");
     BC_REQUIRE_EQUAL(result, invalid_parameter.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescanblocks__null_hashes__empty_result)
+{
+    const auto response = rpc("rescanblocks", R"([null])");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
 }
 
 BC_AUTO_TEST_CASE(btcd_rpc__rescanblocks__unknown_hash__not_found)
@@ -774,6 +788,16 @@ BC_AUTO_TEST_CASE(btcd_rpc__rescan__unknown_beginblock__not_found)
 BC_AUTO_TEST_CASE(btcd_rpc__rescan__invalid_beginblock__not_found)
 {
     BC_REQUIRE_EQUAL(rpc_error("rescan", R"(["not-a-hash",[],[],""])"), block_not_found.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__null_lists__rescan_finished)
+{
+    const auto response = rpc("rescan", std::format(R"(["{}",null,null,""])", block9));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+
+    const auto finished = receive_notification();
+    BC_REQUIRE_EQUAL(as_text(finished.at("method")), "rescanfinished");
 }
 
 BC_AUTO_TEST_CASE(btcd_rpc__rescan__no_addresses_or_outpoints__rescan_finished)
