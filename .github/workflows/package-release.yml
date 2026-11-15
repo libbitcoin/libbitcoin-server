@@ -158,11 +158,9 @@ jobs:
           IMAGE="image/${{ matrix.architecture }}"
           mkdir -p "${IMAGE}"
 
-          # Each variant is installed as bs in its own directory, so that its
-          # process is named bs (as seen by ps, pgrep, pidof and killall).
           install -m 0755 "binaries/${{ matrix.selector }}" "${IMAGE}/selector"
-          install -D -m 0755 "binaries/${{ matrix.optimized }}" "${IMAGE}/${{ matrix.optimized }}/bs"
-          install -D -m 0755 "binaries/${{ matrix.baseline }}" "${IMAGE}/${{ matrix.baseline }}/bs"
+          install -m 0755 "binaries/${{ matrix.optimized }}" "${IMAGE}/${{ matrix.optimized }}"
+          install -m 0755 "binaries/${{ matrix.baseline }}" "${IMAGE}/${{ matrix.baseline }}"
 
           printf '%s %s\n%s %s\n' \
             "${{ matrix.optimized }}" "${{ matrix.optimized_requires }}" \

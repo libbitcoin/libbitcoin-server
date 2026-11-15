@@ -374,7 +374,7 @@ private:
         network::result_handler&& handler) NOEXCEPT
     {
         using namespace network::http;
-        auto message = to_response(status::ok, true);
+        auto message = to_response(status::ok);
         message.set(field::content_type,
             from_media_type(media_type::application_json));
         message.body() = network::rpc::response{ {}, std::move(model) };

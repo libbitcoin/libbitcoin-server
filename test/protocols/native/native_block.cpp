@@ -753,6 +753,57 @@ BC_AUTO_TEST_CASE(native__embedded__png__icon)
     BC_REQUIRE_EQUAL(get_text("/icon.png"), "icon");
 }
 
+BC_AUTO_TEST_CASE(native__embedded__root__tagged)
+{
+    const auto response = get_response("/", http::field::user_agent, "libbitcoin");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response[http::field::etag], "W/\"b633a587c652d02386c4f16f8c6f6aab7352d97f16367c3c40576214372dd628\"");
+    BC_REQUIRE_EQUAL(response[http::field::cache_control], "no-cache");
+    BC_REQUIRE_EQUAL(response.body(), "<html></html>");
+}
+
+BC_AUTO_TEST_CASE(native__embedded__css__tagged)
+{
+    const auto response = get_response("/style.css", http::field::user_agent, "libbitcoin");
+    BC_REQUIRE_EQUAL(response[http::field::etag], "W/\"7c98040a541657584690ae2a1cc3b42a8b53b159cc60c5d3abbfecbaeac6c94a\"");
+}
+
+BC_AUTO_TEST_CASE(native__embedded__if_none_match_tag__not_modified)
+{
+    const auto response = get_response("/", http::field::if_none_match, "W/\"b633a587c652d02386c4f16f8c6f6aab7352d97f16367c3c40576214372dd628\"");
+    BC_REQUIRE_EQUAL(response.result(), http::status::not_modified);
+    BC_REQUIRE_EQUAL(response[http::field::etag], "W/\"b633a587c652d02386c4f16f8c6f6aab7352d97f16367c3c40576214372dd628\"");
+    BC_REQUIRE_EQUAL(response[http::field::cache_control], "no-cache");
+    BC_REQUIRE(response.body().empty());
+}
+
+BC_AUTO_TEST_CASE(native__embedded__if_none_match_strong_form__not_modified)
+{
+    BC_REQUIRE_EQUAL(get_response("/", http::field::if_none_match, "\"b633a587c652d02386c4f16f8c6f6aab7352d97f16367c3c40576214372dd628\"").result(), http::status::not_modified);
+}
+
+BC_AUTO_TEST_CASE(native__embedded__if_none_match_list__not_modified)
+{
+    BC_REQUIRE_EQUAL(get_response("/", http::field::if_none_match, "\"other\", W/\"b633a587c652d02386c4f16f8c6f6aab7352d97f16367c3c40576214372dd628\"").result(), http::status::not_modified);
+}
+
+BC_AUTO_TEST_CASE(native__embedded__if_none_match_any__not_modified)
+{
+    BC_REQUIRE_EQUAL(get_response("/", http::field::if_none_match, "*").result(), http::status::not_modified);
+}
+
+BC_AUTO_TEST_CASE(native__embedded__if_none_match_other__ok)
+{
+    const auto response = get_response("/", http::field::if_none_match, "W/\"other\"");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response.body(), "<html></html>");
+}
+
+BC_AUTO_TEST_CASE(native__embedded__if_none_match_css_tag__not_modified)
+{
+    BC_REQUIRE_EQUAL(get_response("/style.css", http::field::if_none_match, "W/\"7c98040a541657584690ae2a1cc3b42a8b53b159cc60c5d3abbfecbaeac6c94a\"").result(), http::status::not_modified);
+}
+
 BC_AUTO_TEST_CASE(native__embedded__unknown_type__not_found)
 {
     BC_REQUIRE_EQUAL(get_status("/readme.txt"), http::status::not_found);

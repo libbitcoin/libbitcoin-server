@@ -135,13 +135,13 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\app\providers.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\chart-editor.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\connection-pill.tsx" />
-    <None Include="..\..\..\..\web\admin_dashboard\src\components\endpoint-settings.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\event-view.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\log-view.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\metric-item.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\node-sync-progress.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\overview.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\pool-fee-histogram.tsx" />
+    <None Include="..\..\..\..\web\admin_dashboard\src\components\settings.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\sync-status-notifier.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\telemetry-dashboard.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\time-series-chart.tsx" />

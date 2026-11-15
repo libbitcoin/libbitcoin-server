@@ -61,11 +61,10 @@ protected:
     /// Obtain cached request without clearing cache (requires strand).
     const network::http::request_cptr& get_request() const NOEXCEPT;
 
-    /// Response to the cached request, with its version and the common and
-    /// access control headers, and coding headers if the body may be coded,
-    /// clearing the cache (requires strand).
-    network::http::response to_response(network::http::status status,
-        bool coded=false) NOEXCEPT;
+    /// Response to the cached request, with its version and the common,
+    /// access control and coding headers, clearing the cache (requires
+    /// strand).
+    network::http::response to_response(network::http::status status) NOEXCEPT;
 
     /// Senders, responding to the cached request (requires strand).
     void send_json(system::json::value&& model) NOEXCEPT;
@@ -78,6 +77,11 @@ protected:
     void send_buffer(network::http::buffer_body::value_type&& buffer,
         network::http::media_type type) NOEXCEPT;
     void send_empty() NOEXCEPT;
+
+    /// Send an embedded page, revalidated by its entity tag.
+    void send_page(network::http::span_body::value_type&& span,
+        network::http::media_type type, const std::string& tag) NOEXCEPT;
+    void send_not_modified(const std::string& tag) NOEXCEPT;
 
     /// Send size bytes of the media type, written into the socket buffer.
     using wire_writer = std::function<bool(const system::data_slab&)>;
