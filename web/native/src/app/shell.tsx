@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { SearchBar } from '@/components/search-bar';
 import { StatusPill } from '@/components/status-pill';
@@ -35,7 +35,7 @@ export function AppShell() {
       ? `${info.endpoint} — ${info.description}`
       : (info.endpoint ?? info.description);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isLibbitcoin && !configuration) return;
     const parameters = new URLSearchParams(location.search);
     if ((parameters.get('turbo') === 'true') === turboActive) return;

@@ -2412,11 +2412,6 @@ options_metadata parser::load_settings() THROWS
         "Count of silent payment transactions to index in each batch, defaults to {} (0 disables)."
     )
     (
-        "node.minimum_fee_rate",
-        setting<double>(&configured.node.minimum_fee_rate),
-        "Minimum fee rate for non-conflicting tx acceptance, defaults to {}."
-    )
-    (
         "node.allowed_deviation",
         setting<float>(&configured.node.allowed_deviation),
         "Allowable underperformance standard deviation, defaults to {} (0 disables)."
@@ -2471,6 +2466,33 @@ options_metadata parser::load_settings() THROWS
     ////    setting<uint32_t>(&configured.node.snapshot_confirm),
     ////    "Completed confirmations that trigger snapshot, defaults to {} (0 disables)."
     ////)
+
+    /* [pool] */
+    (
+        "pool.minimum_fee_rate",
+        setting<double>(&configured.node.pool.minimum_fee_rate),
+        "Minimum fee rate for non-conflicting tx acceptance, defaults to {}."
+    )
+    (
+        "pool.maximum_outcomes",
+        setting<uint32_t>(&configured.node.pool.maximum_outcomes),
+        "Maximum conflict outcomes evaluated to accept a transaction, defaults to {}."
+    )
+    (
+        "pool.bytes_per_sigop",
+        setting<uint32_t>(&configured.node.pool.bytes_per_sigop),
+        "Virtual bytes charged per signature operation, defaults to {}."
+    )
+    (
+        "pool.coinbase_weight",
+        setting<uint32_t>(&configured.node.pool.coinbase_weight),
+        "Declared weight of the miner's coinbase transaction, defaults to {}."
+    )
+    (
+        "pool.maximum_chunk_depth",
+        setting<uint32_t>(&configured.node.pool.maximum_chunk_depth),
+        "Maximum ancestor depth of a block template chunk, defaults to {}."
+    )
 
     /* [database] */
     (

@@ -146,9 +146,8 @@ BC_AUTO_TEST_CASE(btcd_rpc__estimatefee__zero_blocks__invalid_params)
     BC_REQUIRE_EQUAL(rpc_error("estimatefee", "[0]"), invalid_params.value());
 }
 
-BC_AUTO_TEST_CASE(btcd_rpc__estimatefee__uninitialized__misc_error)
+BC_AUTO_TEST_CASE(btcd_rpc__estimatefee__closed_pool__misc_error)
 {
-    // The fixture estimator is not initialized (btcd reports an error).
     BC_REQUIRE_EQUAL(rpc_error("estimatefee", "[2]"), misc_error.value());
 }
 

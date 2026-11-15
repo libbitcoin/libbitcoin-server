@@ -89,7 +89,7 @@ void protocol_electrum::handle_estimate_fee(const code& ec,
 }
 
 constexpr int64_t no_fee_estimate = -1;
-constexpr double sats_per_vbyte_to_btc_per_vkbyte = 100'000.0;
+constexpr double sats_per_vkbyte_to_btc_per_vkbyte = 100'000'000.0;
 
 void protocol_electrum::complete_estimate_fee(const code& ec,
     uint64_t fee) NOEXCEPT
@@ -117,7 +117,7 @@ void protocol_electrum::complete_estimate_fee(const code& ec,
         return;
     }
 
-    send_result(fee / sats_per_vbyte_to_btc_per_vkbyte);
+    send_result(fee / sats_per_vkbyte_to_btc_per_vkbyte);
 }
 
 void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
@@ -135,7 +135,7 @@ void protocol_electrum::handle_blockchain_relay_fee(const code& ec,
         return;
     }
 
-    send_result(node_settings().minimum_fee_rate);
+    send_result(node_settings().pool.minimum_fee_rate);
 }
 
 BC_POP_WARNING()

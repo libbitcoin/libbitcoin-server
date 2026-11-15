@@ -109,7 +109,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
         auto& node_settings = config_.node;
 
         database_settings.interval_depth = 2;
-        node_settings.minimum_fee_rate = 99.0;
+        node_settings.pool.minimum_fee_rate = 99.0;
         network_settings.inbound.connections = 0;
         network_settings.outbound.connections = 0;
 
@@ -382,7 +382,7 @@ server_node_setup_fixture::server_node_setup_fixture()
     {
         test::clear(test::directory);
         config_.database.interval_depth = 2;
-        config_.node.minimum_fee_rate = 99.0;
+        config_.node.pool.minimum_fee_rate = 99.0;
         config_.network.inbound.connections = 0;
         config_.network.outbound.connections = 0;
 

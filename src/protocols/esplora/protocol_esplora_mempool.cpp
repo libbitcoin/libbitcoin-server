@@ -238,6 +238,8 @@ void protocol_esplora::handle_estimate(const code& ec, uint64_t fee,
     POST(complete_estimate, ec, fee, index);
 }
 
+constexpr double sats_per_vkbyte_to_sats_per_vbyte = 1'000.0;
+
 void protocol_esplora::complete_estimate(const code& ec, uint64_t fee,
     size_t index) NOEXCEPT
 {
@@ -260,7 +262,8 @@ void protocol_esplora::complete_estimate(const code& ec, uint64_t fee,
 
     // An unavailable target is omitted, as there is no null convention.
     if (!disabled)
-        estimates_[system::serialize(targets.at(index))] = fee;
+        estimates_[system::serialize(targets.at(index))] =
+            fee / sats_per_vkbyte_to_sats_per_vbyte;
 
     next_estimate(add1(index));
 }

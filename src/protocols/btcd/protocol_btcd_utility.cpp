@@ -95,8 +95,8 @@ void protocol_btcd::complete_estimate(const code& ec, uint64_t fee) NOEXCEPT
         return;
     }
 
-    // sats/vbyte to btc/kvbyte.
-    constexpr double fee_scale = 100'000.0;
+    // Satoshis to bitcoin (each per virtual kilobyte).
+    constexpr double fee_scale = 100'000'000.0;
     send_result(fee / fee_scale);
 }
 
@@ -298,7 +298,7 @@ bool protocol_btcd::handle_get_info(const code& ec,
         { "proxy", proxy },
         { "difficulty", header->difficulty() },
         { "testnet", chain_name(system_settings()) != "main" },
-        { "relayfee", node_settings().minimum_fee_rate },
+        { "relayfee", node_settings().pool.minimum_fee_rate },
         { "errors", std::string{} }
     });
     return true;

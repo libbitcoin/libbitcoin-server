@@ -61,7 +61,7 @@ admin_setup_fixture::admin_setup_fixture(const initializer& setup,
         admin.path = "unused";
         admin.inactivity_minutes = 1;
         database_settings.interval_depth = 2;
-        node_settings.minimum_fee_rate = 99.0;
+        node_settings.pool.minimum_fee_rate = 99.0;
         network_settings.inbound.connections = 0;
         network_settings.outbound.connections = 0;
         if (configure)

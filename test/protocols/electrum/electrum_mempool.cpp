@@ -103,7 +103,7 @@ BC_AUTO_TEST_CASE(electrum__mempool_get_info__extra_param__invalid_params)
 
 BC_AUTO_TEST_CASE(electrum__mempool_get_info__empty_params__expected)
 {
-    config_.node.minimum_fee_rate = 42.42;
+    config_.node.pool.minimum_fee_rate = 42.42;
     BC_REQUIRE(handshake(electrum::version::v1_6));
 
     const auto response = get(R"({"id":703,"method":"mempool.get_info","params":[]})" "\n");
@@ -114,8 +114,8 @@ BC_AUTO_TEST_CASE(electrum__mempool_get_info__empty_params__expected)
     REQUIRE_NO_THROW_TRUE(result.at("mempoolminfee").is_number());
     REQUIRE_NO_THROW_TRUE(result.at("minrelaytxfee").is_number());
     REQUIRE_NO_THROW_TRUE(result.at("incrementalrelayfee").is_number());
-    BC_REQUIRE_EQUAL(result.at("mempoolminfee").as_double(), config_.node.minimum_fee_rate);
-    BC_REQUIRE_EQUAL(result.at("minrelaytxfee").as_double(), config_.node.minimum_fee_rate);
+    BC_REQUIRE_EQUAL(result.at("mempoolminfee").as_double(), config_.node.pool.minimum_fee_rate);
+    BC_REQUIRE_EQUAL(result.at("minrelaytxfee").as_double(), config_.node.pool.minimum_fee_rate);
 }
 
 // mempool.recent

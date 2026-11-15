@@ -781,7 +781,7 @@ static double tx1c_rate(double factor) NOEXCEPT
 
 BC_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__below_fee_rate__daemon_error)
 {
-    config_.node.minimum_fee_rate = tx1c_rate(2.0);
+    config_.node.pool.minimum_fee_rate = tx1c_rate(2.0);
     BC_REQUIRE(handshake(electrum::version::v1_4));
 
     constexpr auto request = R"({{"id":2100,"method":"blockchain.transaction.broadcast","params":["{}"]}})" "\n";
@@ -792,7 +792,7 @@ BC_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__below_fee_rate__da
 
 BC_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__above_fee_rate__txid)
 {
-    config_.node.minimum_fee_rate = tx1c_rate(0.5);
+    config_.node.pool.minimum_fee_rate = tx1c_rate(0.5);
     BC_REQUIRE(handshake(electrum::version::v1_4));
 
     constexpr auto request = R"({{"id":2101,"method":"blockchain.transaction.broadcast","params":["{}"]}})" "\n";
@@ -812,6 +812,16 @@ BC_FIXTURE_TEST_SUITE(electrum_closed_tests, electrum_closed_setup_fixture)
 using namespace system;
 static const code daemon_error{ server::error::electrum::daemon_error };
 static const code pooling_disabled{ node::error::pooling_disabled };
+
+BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__closed_pool__negative_one)
+{
+    BC_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto response = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"basic"]})" "\n");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_int64());
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), -1);
+}
 
 BC_AUTO_TEST_CASE(electrum__blockchain_transaction_broadcast__closed_pool__daemon_error)
 {

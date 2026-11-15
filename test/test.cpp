@@ -187,7 +187,7 @@ static node::settings node_settings() NOEXCEPT
     out.network = system::chain::selection::mainnet;
     out.batch_verify = 0;
     out.batch_silent = 0;
-    out.minimum_fee_rate = 0.0;
+    out.pool.minimum_fee_rate = 0.0;
     out.maximum_concurrency = 50'000;
     return out;
 }

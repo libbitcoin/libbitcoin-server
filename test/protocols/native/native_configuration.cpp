@@ -52,7 +52,7 @@ BC_AUTO_TEST_CASE(native__configuration__json__expected)
     BC_REQUIRE(node.at("witness").as_bool());
     BC_REQUIRE(!node.at("filters").as_bool());
     BC_REQUIRE(node.at("privacy").as_bool());
-    BC_REQUIRE(!node.at("fees").as_bool());
+    BC_REQUIRE_EQUAL(node.at("fees").as_bool(), config_.network.enable_relay);
 
     const auto& wallet = object.at("wallet").as_object();
     BC_REQUIRE_EQUAL(wallet.size(), 7u);

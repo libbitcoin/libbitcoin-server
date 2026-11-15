@@ -2090,9 +2090,8 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__estimatesmartfee__invalid_mode__invalid_paramete
     BC_REQUIRE(has_code(response, -8));
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__estimatesmartfee__uninitialized__errors_with_blocks)
+BC_AUTO_TEST_CASE(bitcoind_rpc__estimatesmartfee__closed_pool__errors_with_blocks)
 {
-    // The fixture estimator is not initialized, reported in-band.
     const auto response = rpc("estimatesmartfee", R"([2,"CONSERVATIVE"])");
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
@@ -2101,6 +2100,18 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__estimatesmartfee__uninitialized__errors_with_blo
     BC_REQUIRE_EQUAL(result.at("blocks").as_int64(), 2);
     BC_REQUIRE_EQUAL(result.at("errors").as_array().size(), 1u);
     BC_REQUIRE(!result.as_object().contains("feerate"));
+}
+
+BC_FIXTURE_TEST_CASE(bitcoind_rpc__estimatesmartfee__empty_pool__zero_feerate, bitcoind_submit_setup_fixture)
+{
+    const auto response = rpc("estimatesmartfee", R"([2,"CONSERVATIVE"])");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+
+    const auto& result = response.at("result");
+    BC_REQUIRE_EQUAL(result.at("blocks").as_int64(), 2);
+    BC_REQUIRE_EQUAL(result.at("feerate").as_double(), 0.0);
+    BC_REQUIRE(!result.as_object().contains("errors"));
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__block1_by_height__coinbase_only)
