@@ -24,4 +24,18 @@ if [ "$1" = "configure" ]; then
 
     ln -sf "${directory}/${variant}" /usr/bin/bs
     echo "libbitcoin-server: installed ${variant} as /usr/bin/bs."
+
+    # Create the service account and store directory, and load the service
+    # unit (not enabled).
+    if command -v systemd-sysusers > /dev/null; then
+        systemd-sysusers /usr/lib/sysusers.d/libbitcoin-server.conf
+    fi
+
+    if command -v systemd-tmpfiles > /dev/null; then
+        systemd-tmpfiles --create /usr/lib/tmpfiles.d/libbitcoin-server.conf || true
+    fi
+
+    if [ -d /run/systemd/system ]; then
+        systemctl daemon-reload
+    fi
 fi

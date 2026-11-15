@@ -1,0 +1,22 @@
+[Unit]
+Description=Libbitcoin Server
+Documentation=https://libbitcoin.org/configuration/index.html
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=libbitcoin
+Group=libbitcoin
+ExecStart=/usr/bin/bs --config /etc/libbitcoin-server/bs.cfg
+StateDirectory=libbitcoin-server
+WorkingDirectory=/var/lib/libbitcoin-server
+TimeoutStartSec=600
+TimeoutStopSec=600
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

@@ -3,6 +3,9 @@ set -e
 
 case "$1" in
     remove|deconfigure)
+        if [ -d /run/systemd/system ]; then
+            systemctl stop libbitcoin-server.service || true
+        fi
         rm -f /usr/bin/bs
         ;;
 esac
