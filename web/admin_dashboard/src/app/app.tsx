@@ -1,5 +1,5 @@
 import { useMemo, useState, useSyncExternalStore } from 'react';
-import { EndpointSettings } from '@/components/endpoint-settings';
+import { Settings } from '@/components/settings';
 import { EventView } from '@/components/event-view';
 import { LogView } from '@/components/log-view';
 import { Overview } from '@/components/overview';
@@ -8,13 +8,7 @@ import {
   loadBrowserNotificationsEnabled,
   saveBrowserNotificationsEnabled,
 } from '@/lib/browser-notifications';
-import {
-  clearEndpointConfiguration,
-  defaultEndpointConfiguration,
-  loadEndpointConfiguration,
-  saveEndpointConfiguration,
-  type EndpointConfiguration,
-} from '@/lib/endpoints';
+import { loadEndpointConfiguration } from '@/lib/endpoints';
 import { WorkerMetricsStore } from '@/lib/worker-metrics-store';
 import { loadLogFilter, saveLogFilter } from '@/lib/log-settings';
 import { estimateSyncProgress } from '@/lib/sync-status';
@@ -32,7 +26,7 @@ const navigation: Array<{ id: DashboardView; label: string }> = [
 export function App() {
   const metrics = useMemo(() => new WorkerMetricsStore(), []);
   const now = useCurrentTime();
-  const [endpoints, setEndpoints] = useState(loadEndpointConfiguration);
+  const [endpoints] = useState(loadEndpointConfiguration);
   const [view, setView] = useState<DashboardView>('overview');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [logFilter, setLogFilter] = useState(loadLogFilter);
@@ -54,28 +48,6 @@ export function App() {
   );
   const native = useNativeTelemetry(endpoints.nativeUrl, metrics, now);
   const syncEstimate = estimateSyncProgress(native.top, native.topHeader, now);
-
-  function saveEndpoints(configuration: EndpointConfiguration) {
-    saveEndpointConfiguration(configuration);
-    if (
-      configuration.adminUrl !== endpoints.adminUrl ||
-      configuration.nativeUrl !== endpoints.nativeUrl
-    ) {
-      metrics.reset();
-    }
-    setEndpoints(configuration);
-    setSettingsOpen(false);
-  }
-
-  function resetEndpoints() {
-    clearEndpointConfiguration();
-    const defaults = defaultEndpointConfiguration();
-    if (defaults.adminUrl !== endpoints.adminUrl || defaults.nativeUrl !== endpoints.nativeUrl) {
-      metrics.reset();
-    }
-    setEndpoints(defaults);
-    setSettingsOpen(false);
-  }
 
   function updateBrowserNotifications(enabled: boolean) {
     saveBrowserNotificationsEnabled(enabled);
@@ -141,7 +113,7 @@ export function App() {
                 }}
                 className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary rounded-md border px-3 py-2 text-sm font-medium"
               >
-                Endpoints
+                Settings
               </button>
             </div>
           </div>
@@ -195,21 +167,16 @@ export function App() {
       </main>
 
       <SyncStatusNotifier
-        key={endpoints.nativeUrl}
         estimate={syncEstimate}
         browserNotificationsEnabled={browserNotificationsEnabled}
       />
 
       {settingsOpen && (
-        <EndpointSettings
-          key={`${endpoints.adminUrl}|${endpoints.nativeUrl}`}
-          configuration={endpoints}
+        <Settings
           browserNotificationsEnabled={browserNotificationsEnabled}
           onClose={() => {
             setSettingsOpen(false);
           }}
-          onReset={resetEndpoints}
-          onSave={saveEndpoints}
           onBrowserNotificationsEnabledChange={updateBrowserNotifications}
         />
       )}
