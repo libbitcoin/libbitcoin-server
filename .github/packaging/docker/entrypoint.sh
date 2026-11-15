@@ -67,4 +67,4 @@ if [ ! -f /data/bs.cfg ]; then
     cp "${directory}/bs.cfg" /data/bs.cfg
 fi
 
-exec "${directory}/${variant}" --config /data/bs.cfg "$@"
+exec "${directory}/${variant}/bs" --config /data/bs.cfg "$@"
