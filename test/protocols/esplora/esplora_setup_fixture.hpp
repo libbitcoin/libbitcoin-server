@@ -46,6 +46,8 @@ struct esplora_setup_fixture
         network::http::message<false, network::http::string_body>;
     string_response get_response(std::string_view target,
         std::string_view origin);
+    string_response get_response(std::string_view target,
+        network::http::field name, std::string_view value);
     std::string get_text(std::string_view target);
     system::data_chunk get_data(std::string_view target);
     system::json::value get_json(std::string_view target);
@@ -124,6 +126,21 @@ struct esplora_header_setup_fixture
             return test::setup_ten_block_store(query) &&
                 query.set(test::mock_block10.header(),
                     database::context{ 0, 10, 0 }, {}, false);
+        })
+    {
+    }
+};
+
+struct esplora_uncompressed_setup_fixture
+  : esplora_setup_fixture
+{
+    inline esplora_uncompressed_setup_fixture()
+      : esplora_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.server.esplora.compression = false;
         })
     {
     }

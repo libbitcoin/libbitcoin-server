@@ -11,7 +11,7 @@ supports()
 }
 
 if [ "$1" = "configure" ]; then
-    features="$("${directory}/selector")"
+    features="$("${directory}/selector" --tags)"
 
     if supports @OPTIMIZED_REQUIRES@; then
         variant=@OPTIMIZED@

@@ -44,8 +44,10 @@ template <typename Type>
 using nullable = network::rpc::nullable<Type>;
 template <auto Default>
 using optional = network::rpc::optional<Default>;
-template <auto Default>
-using nullopt = network::rpc::nullopt<Default>;
+template <auto Default, typename Cast = void>
+using nullopt = network::rpc::nullopt<Default, Cast>;
+template <typename ...Types>
+using cast = network::rpc::cast<Types...>;
 using boolean_t = network::rpc::boolean_t;
 using string_t = network::rpc::string_t;
 using number_t = network::rpc::number_t;

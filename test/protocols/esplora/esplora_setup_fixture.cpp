@@ -177,6 +177,21 @@ esplora_setup_fixture::string_response esplora_setup_fixture::get_response(
     return response;
 }
 
+esplora_setup_fixture::string_response esplora_setup_fixture::get_response(
+    std::string_view target, http::field name, std::string_view value)
+{
+    auto request = create_request(target);
+    request.set(name, value);
+    test::write_http(socket_, request);
+
+    http::flat_buffer buffer{};
+    network::code ec{};
+    string_response response{};
+    http::read(socket_, buffer, response, ec);
+    BC_CHECK_MESSAGE(!ec, ec.message());
+    return response;
+}
+
 http::status esplora_setup_fixture::get_status(std::string_view target,
     http::field name, std::string_view value)
 {

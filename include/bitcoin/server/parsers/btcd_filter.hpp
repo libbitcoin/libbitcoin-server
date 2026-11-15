@@ -25,14 +25,14 @@ namespace libbitcoin {
 namespace server {
 namespace btcd {
 
-/// Parse loadtxfilter addresses to their output script hashes.
+/// Parse loadtxfilter addresses to their output script hashes (null empty).
 BCS_API code filter_keys(system::hashes& out,
-    const network::rpc::value_t& addresses, uint8_t p2kh, uint8_t p2sh,
-    const std::string& witness) NOEXCEPT;
+    const std::optional<network::rpc::value_t>& addresses, uint8_t p2kh,
+    uint8_t p2sh, const std::string& witness) NOEXCEPT;
 
-/// Parse loadtxfilter outpoints to their points.
+/// Parse loadtxfilter outpoints to their points (null empty).
 BCS_API code filter_points(system::chain::points& out,
-    const network::rpc::value_t& outpoints) NOEXCEPT;
+    const std::optional<network::rpc::value_t>& outpoints) NOEXCEPT;
 
 /// Parse a searchrawtransactions address to its output script hashes. A
 /// serialized public key implies two scripts (p2pk and its derived p2pkh).

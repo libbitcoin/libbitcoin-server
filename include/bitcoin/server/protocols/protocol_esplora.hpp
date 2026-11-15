@@ -140,7 +140,9 @@ protected:
         uint8_t media, const std::string& transaction) NOEXCEPT;
     bool handle_broadcast_package(const code& ec,
         interface::broadcast_package, uint8_t media,
-        const network::rpc::array_t& transactions) NOEXCEPT;
+        const network::rpc::array_t& transactions,
+        const std::optional<double>& maxfeerate,
+        const std::optional<double>& maxburnamount) NOEXCEPT;
 
     bool handle_get_block(const code& ec, interface::block,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;

@@ -403,6 +403,46 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__fractional_verbosity__misc_error)
     BC_REQUIRE(has_code(rpc("getblock", hash_param(test::block9_hash, "1.5")), -1));
 }
 
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__true_verbosity__txid_list)
+{
+    const auto response = rpc("getblock", hash_param(test::block9_hash, "true"));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").at("tx").at(0).is_string());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__false_verbosity__hex)
+{
+    const auto response = rpc("getblock", hash_param(test::block9_hash, "false"));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__integral_verbosity__hex)
+{
+    const auto response = rpc("getblock", hash_param(test::block9_hash, "0.0"));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__string_verbosity__type_error)
+{
+    BC_REQUIRE(has_code(rpc("getblock", hash_param(test::block9_hash, "\"1\"")), -3));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__named_verbose__hex)
+{
+    const auto response = rpc("getblock", "{\"blockhash\":\"" + block9 + "\",\"verbose\":0}");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__named_verbosity__hex)
+{
+    const auto response = rpc("getblock", "{\"blockhash\":\"" + block9 + "\",\"verbosity\":false}");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
+}
+
 BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__unknown__invalid_address)
 {
     const std::string unknown(64, '1');
@@ -527,6 +567,22 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__coinbase_verbosity_two__no_fe
     BC_REQUIRE(!result.as_object().contains("fee"));
 }
 
+BC_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__true_verbosity__object)
+{
+    const auto txid = test::block1.transactions_ptr()->front()->hash(false);
+    const auto response = rpc("getrawtransaction", hash_param(txid, "true"));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__named_verbose__object)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto response = rpc("getrawtransaction", "{\"txid\":\"" + txid + "\",\"verbose\":true}");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
+}
+
 BC_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__excess_verbosity__clamped_verbose)
 {
     const auto txid = test::block1.transactions_ptr()->front()->hash(false);
@@ -573,6 +629,34 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__numeric__type_error)
 BC_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__not_transaction__deserialization_error)
 {
     BC_REQUIRE(has_code(rpc("testmempoolaccept", "[[\"0000\"]]"), -22));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__string_maxfeerate__accepted)
+{
+    BC_REQUIRE(has_code(rpc("testmempoolaccept", "[[\"0000\"], \"0.1\"]"), -22));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__invalid_maxfeerate__type_error)
+{
+    BC_REQUIRE(has_code(rpc("testmempoolaccept", "[[\"0000\"], \"x\"]"), -3));
+    BC_REQUIRE(has_code(rpc("testmempoolaccept", "[[\"0000\"], 0.123456789]"), -3));
+    BC_REQUIRE(has_code(rpc("testmempoolaccept", "[[\"0000\"], -1]"), -3));
+    BC_REQUIRE(has_code(rpc("testmempoolaccept", "[[\"0000\"], true]"), -3));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__string_amounts__accepted)
+{
+    BC_REQUIRE(has_code(rpc("sendrawtransaction", "[\"nothex\", \"0.1\", \"0\"]"), -22));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__invalid_maxburnamount__type_error)
+{
+    BC_REQUIRE(has_code(rpc("sendrawtransaction", "[\"nothex\", 0.1, \"x\"]"), -3));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__submitpackage__invalid_maxfeerate__type_error)
+{
+    BC_REQUIRE(has_code(rpc("submitpackage", "[[\"0000\"], \"x\"]"), -3));
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__combinerawtransaction__not_transaction__deserialization_error)
@@ -684,6 +768,21 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__amount__exact_satoshis)
     const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": 83052.07783498}]");
     const auto decoded = rpc("decoderawtransaction", "[\"" + std::string{ as_text(created.at("result")) } + "\"]");
     BC_REQUIRE_EQUAL(decoded.at("result").at("vout").at(0).at("value").as_double(), 83052.07783498);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__string_amount__exact_satoshis)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto created = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": \"83052.07783498\"}]");
+    const auto decoded = rpc("decoderawtransaction", "[\"" + std::string{ as_text(created.at("result")) } + "\"]");
+    BC_REQUIRE_EQUAL(decoded.at("result").at("vout").at(0).at("value").as_double(), 83052.07783498);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__inexact_amount__type_error)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto response = rpc("createrawtransaction", "[[{\"txid\":\"" + txid + "\",\"vout\":0}], {\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\": \"0.000000001\"}]");
+    BC_REQUIRE_MESSAGE(has_code(response, -3), response);
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__excess_amount__error)

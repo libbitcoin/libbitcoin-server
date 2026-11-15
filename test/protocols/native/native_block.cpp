@@ -288,7 +288,7 @@ BC_AUTO_TEST_CASE(native__dispatch__origin_json__access_control)
     const auto response = get_response("/v1/top?format=json", "http://example.com");
     BC_REQUIRE_EQUAL(response.result(), http::status::ok);
     BC_REQUIRE_EQUAL(response[http::field::access_control_allow_origin], "http://example.com");
-    BC_REQUIRE_EQUAL(response[http::field::vary], "origin");
+    BC_REQUIRE_EQUAL(response[http::field::vary], "origin, accept-encoding");
 }
 
 BC_AUTO_TEST_CASE(native__dispatch__origin_text__access_control)
@@ -296,7 +296,7 @@ BC_AUTO_TEST_CASE(native__dispatch__origin_text__access_control)
     const auto response = get_response("/v1/top?format=text", "http://example.com");
     BC_REQUIRE_EQUAL(response.result(), http::status::ok);
     BC_REQUIRE_EQUAL(response[http::field::access_control_allow_origin], "http://example.com");
-    BC_REQUIRE_EQUAL(response[http::field::vary], "origin");
+    BC_REQUIRE_EQUAL(response[http::field::vary], "origin, accept-encoding");
 }
 
 BC_AUTO_TEST_CASE(native__dispatch__origin_data__access_control)
@@ -304,7 +304,7 @@ BC_AUTO_TEST_CASE(native__dispatch__origin_data__access_control)
     const auto response = get_response("/v1/top?format=data", "http://example.com");
     BC_REQUIRE_EQUAL(response.result(), http::status::ok);
     BC_REQUIRE_EQUAL(response[http::field::access_control_allow_origin], "http://example.com");
-    BC_REQUIRE_EQUAL(response[http::field::vary], "origin");
+    BC_REQUIRE_EQUAL(response[http::field::vary], "origin, accept-encoding");
 }
 
 BC_AUTO_TEST_CASE(native__dispatch__origin_stream__access_control)
@@ -319,7 +319,7 @@ BC_AUTO_TEST_CASE(native__dispatch__no_origin__no_access_control)
     const auto response = get_response("/v1/top?format=json");
     BC_REQUIRE_EQUAL(response.result(), http::status::ok);
     BC_REQUIRE(is_zero(response.count(http::field::access_control_allow_origin)));
-    BC_REQUIRE(is_zero(response.count(http::field::vary)));
+    BC_REQUIRE_EQUAL(response[http::field::vary], "accept-encoding");
 }
 
 BC_AUTO_TEST_CASE(native__dispatch__http_1_0__version_1_0)

@@ -1407,6 +1407,11 @@ options_metadata parser::load_settings() THROWS
         "Allow requests from opaque origin (see CORS), defaults to {}."
     )
     (
+        "admin.compression",
+        setting<bool>(&configured.server.admin.compression),
+        "Compress response bodies as accepted by the request (gzip, deflate), defaults to {}."
+    )
+    (
         "admin.default",
         setting<std::string>(&configured.server.admin.default_),
         "The path of the default source page, defaults to {}."
@@ -1512,6 +1517,11 @@ options_metadata parser::load_settings() THROWS
         "native.allow_opaque_origin",
         setting<bool>(&configured.server.native.allow_opaque_origin),
         "Allow requests from opaque origin (see CORS), defaults to {}."
+    )
+    (
+        "native.compression",
+        setting<bool>(&configured.server.native.compression),
+        "Compress response bodies as accepted by the request (gzip, deflate), defaults to {}."
     )
     (
         "native.default",
@@ -1634,6 +1644,11 @@ options_metadata parser::load_settings() THROWS
         "bitcoind.allow_opaque_origin",
         setting<bool>(&configured.server.bitcoind.allow_opaque_origin),
         "Allow requests from opaque origin (see CORS), defaults to {}."
+    )
+    (
+        "bitcoind.compression",
+        setting<bool>(&configured.server.bitcoind.compression),
+        "Compress response bodies as accepted by the request (gzip, deflate), defaults to {}."
     )
 
     /* [zmq] */
@@ -1804,6 +1819,11 @@ options_metadata parser::load_settings() THROWS
         setting<bool>(&configured.server.btcd.allow_opaque_origin),
         "Allow requests from opaque origin (see CORS), defaults to {}."
     )
+    (
+        "btcd.compression",
+        setting<bool>(&configured.server.btcd.compression),
+        "Compress response bodies as accepted by the request (gzip, deflate), defaults to {}."
+    )
 
     /* [electrum] */
     (
@@ -1840,6 +1860,11 @@ options_metadata parser::load_settings() THROWS
         "electrum.credential",
         secret<network::config::credentials>(&configured.server.electrum.credentials),
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
+    )
+    (
+        "electrum.compression",
+        setting<bool>(&configured.server.electrum.compression),
+        "Compress http response bodies as accepted by the request (gzip, deflate), defaults to {}."
     )
     (
         "electrum.connections",
@@ -1992,6 +2017,11 @@ options_metadata parser::load_settings() THROWS
         "sparrow.credential",
         secret<network::config::credentials>(&configured.server.sparrow.credentials),
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
+    )
+    (
+        "sparrow.compression",
+        setting<bool>(&configured.server.sparrow.compression),
+        "Compress http response bodies as accepted by the request (gzip, deflate), defaults to {}."
     )
     (
         "sparrow.connections",
@@ -2218,6 +2248,11 @@ options_metadata parser::load_settings() THROWS
         "esplora.allow_opaque_origin",
         setting<bool>(&configured.server.esplora.allow_opaque_origin),
         "Allow requests from opaque origin (see CORS), defaults to {}."
+    )
+    (
+        "esplora.compression",
+        setting<bool>(&configured.server.esplora.compression),
+        "Compress response bodies as accepted by the request (gzip, deflate), defaults to {}."
     )
 #if defined(DISABLED)
     /* [stratum_v1] */

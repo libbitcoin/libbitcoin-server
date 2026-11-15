@@ -123,28 +123,29 @@ protected:
     /// Handlers (filters).
     bool handle_load_tx_filter(const code& ec,
         btcd_interface::load_tx_filter, bool reload,
-        const network::rpc::value_t& addresses,
-        const network::rpc::value_t& outpoints) NOEXCEPT;
+        const std::optional<network::rpc::value_t>& addresses,
+        const std::optional<network::rpc::value_t>& outpoints) NOEXCEPT;
     bool handle_rescan_blocks(const code& ec,
         btcd_interface::rescan_blocks,
-        const network::rpc::value_t& blockhashes) NOEXCEPT;
+        const std::optional<network::rpc::value_t>& blockhashes) NOEXCEPT;
 
     /// Handlers (deprecated).
     bool handle_notify_received(const code& ec,
         btcd_interface::notify_received,
-        const network::rpc::value_t& addresses) NOEXCEPT;
+        const std::optional<network::rpc::value_t>& addresses) NOEXCEPT;
     bool handle_stop_notify_received(const code& ec,
         btcd_interface::stop_notify_received,
-        const network::rpc::value_t& addresses) NOEXCEPT;
+        const std::optional<network::rpc::value_t>& addresses) NOEXCEPT;
     bool handle_notify_spent(const code& ec,
         btcd_interface::notify_spent,
-        const network::rpc::value_t& outpoints) NOEXCEPT;
+        const std::optional<network::rpc::value_t>& outpoints) NOEXCEPT;
     bool handle_stop_notify_spent(const code& ec,
         btcd_interface::stop_notify_spent,
-        const network::rpc::value_t& outpoints) NOEXCEPT;
+        const std::optional<network::rpc::value_t>& outpoints) NOEXCEPT;
     bool handle_rescan(const code& ec, btcd_interface::rescan,
-        const std::string& beginblock, const network::rpc::value_t& addresses,
-        const network::rpc::value_t& outpoints,
+        const std::string& beginblock,
+        const std::optional<network::rpc::value_t>& addresses,
+        const std::optional<network::rpc::value_t>& outpoints,
         const std::string& endblock) NOEXCEPT;
 
     /// Event handlers.

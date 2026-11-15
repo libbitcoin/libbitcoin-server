@@ -486,7 +486,8 @@ void protocol_esplora::complete_submit_tx(const code& ec,
 
 bool protocol_esplora::handle_broadcast_package(const code& ec,
     interface::broadcast_package, uint8_t media,
-    const network::rpc::array_t& transactions) NOEXCEPT
+    const network::rpc::array_t& transactions,
+    const std::optional<double>&, const std::optional<double>&) NOEXCEPT
 {
     if (stopped(ec))
         return false;

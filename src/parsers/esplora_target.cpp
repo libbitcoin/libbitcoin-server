@@ -30,10 +30,34 @@ BC_PUSH_WARNING(NO_ARRAY_INDEXING)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 template <typename Number>
-static bool to_number(Number& out, const std::string_view& token) NOEXCEPT
+static bool to_number(Number& out, std::string_view token) NOEXCEPT
 {
-    return !token.empty() && is_ascii_numeric(token) && (is_one(token.size()) ||
-        token.front() != '0') && deserialize(out, token);
+    if (!token.empty() && token.front() == '+')
+        token.remove_prefix(one);
+
+    return !token.empty() && token.front() != '-' &&
+        is_ascii_numeric(token) && deserialize(out, token);
+}
+
+// Package query parameters, a number each.
+static code set_package_query(network::rpc::object_t& params,
+    const std::string_view& query) NOEXCEPT
+{
+    for (const auto& pair: split(query, "&", false, true))
+    {
+        const auto parts = split(pair, "=", false, false);
+        const auto& key = parts.front();
+        if (key != "maxfeerate" && key != "maxburnamount")
+            continue;
+
+        network::rpc::number_t value{};
+        if (parts.size() != two || !json_cast(value, parts.back()))
+            return error::invalid_number;
+
+        params[key] = value;
+    }
+
+    return error::success;
 }
 
 static hash_cptr to_hash(const std::string_view& token) NOEXCEPT
@@ -63,7 +87,8 @@ code esplora_target(request_t& out, const std::string_view& path) NOEXCEPT
     constexpr auto json = network::http::media_type::application_json;
     constexpr auto data = network::http::media_type::application_octet_stream;
 
-    const auto clean = split(path, "?", false, false).front();
+    const auto parts = split(path, "?", false, false);
+    const auto& clean = parts.front();
     if (clean.empty())
         return error::empty_path;
 
@@ -168,6 +193,10 @@ code esplora_target(request_t& out, const std::string_view& path) NOEXCEPT
         if (segments[segment++] != "package")
             return error::invalid_component;
 
+        if (parts.size() > one)
+            if (const auto ec = set_package_query(params, parts.back()))
+                return ec;
+
         set_media(params, json);
         method = "broadcast_package";
     }
@@ -209,13 +238,10 @@ code esplora_target(request_t& out, const std::string_view& path) NOEXCEPT
                     const auto subcomponent = segments[segment++];
                     if (subcomponent == "chain")
                     {
+                        // An invalid last seen txid is ignored.
                         if (segment != segments.size())
-                        {
-                            const auto last = to_hash(segments[segment++]);
-                            if (!last) return error::invalid_hash;
-
-                            params["last_seen"] = last;
-                        }
+                            if (const auto last = to_hash(segments[segment++]))
+                                params["last_seen"] = last;
 
                         set_media(params, json);
                         method = "address_txs_chain";
@@ -276,14 +302,11 @@ code esplora_target(request_t& out, const std::string_view& path) NOEXCEPT
             }
             else if (component == "txs")
             {
-                if (segment != segments.size())
-                {
-                    uint32_t start{};
-                    if (!to_number(start, segments[segment++]))
-                        return error::invalid_number;
-
+                // An invalid start index is ignored.
+                uint32_t start{};
+                if (segment != segments.size() &&
+                    to_number(start, segments[segment++]))
                     params["start"] = start;
-                }
 
                 set_media(params, json);
                 method = "block_txs";
@@ -356,11 +379,11 @@ code esplora_target(request_t& out, const std::string_view& path) NOEXCEPT
         }
         else
         {
+            // An invalid start height is ignored.
             uint32_t height{};
-            if (!to_number(height, segments[segment++]))
-                return error::invalid_number;
+            if (to_number(height, segments[segment++]))
+                params["height"] = height;
 
-            params["height"] = height;
             set_media(params, json);
             method = "blocks";
         }

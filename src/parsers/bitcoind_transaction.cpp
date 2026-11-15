@@ -108,13 +108,8 @@ code parse_transaction(transaction& out, const array_t& inputs,
         if (output_script(script, name, p2kh, p2sh, witness))
             return error::bitcoind::invalid_address_or_key;
 
-        // bitcoind also accepts a quoted amount (slop; not special-cased).
-        if (!std::holds_alternative<number_t>(item.value()))
-            return error::bitcoind::type_error;
-
         uint64_t satoshis{};
-        const auto bitcoins = std::get<number_t>(item.value());
-        if (!to_integer(satoshis, bitcoins * satoshi_per_bitcoin, true) ||
+        if (!to_units(satoshis, item, btc_decimal_places) ||
             satoshis > maximum)
             return error::bitcoind::type_error;
 

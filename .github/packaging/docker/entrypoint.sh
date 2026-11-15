@@ -2,7 +2,7 @@
 set -e
 
 directory=/opt/libbitcoin-server
-features="$("${directory}/selector")"
+features="$("${directory}/selector" --tags)"
 
 supports()
 {
