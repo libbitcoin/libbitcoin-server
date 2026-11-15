@@ -90,7 +90,7 @@ begin
   Selector := ExpandConstant('{tmp}\{#Selector}');
   Output := ExpandConstant('{tmp}\features.txt');
 
-  if not Exec(ExpandConstant('{cmd}'), '/C ""' + Selector + '" > "' + Output + '""',
+  if not Exec(ExpandConstant('{cmd}'), '/C ""' + Selector + '" --tags > "' + Output + '""',
     '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) or
     not LoadStringsFromFile(Output, Features) then
   begin
