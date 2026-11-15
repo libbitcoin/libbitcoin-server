@@ -78,6 +78,11 @@ protected:
         network::http::media_type type) NOEXCEPT;
     void send_empty() NOEXCEPT;
 
+    /// Send an embedded page, revalidated by its entity tag.
+    void send_page(network::http::span_body::value_type&& span,
+        network::http::media_type type, const std::string& tag) NOEXCEPT;
+    void send_not_modified(const std::string& tag) NOEXCEPT;
+
     /// Send size bytes of the media type, written into the socket buffer.
     using wire_writer = std::function<bool(const system::data_slab&)>;
     void send_stream(size_t size, wire_writer&& writer,

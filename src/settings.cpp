@@ -270,6 +270,39 @@ settings::html_server::html_server(const std::string_view& logging_name,
 {
 }
 
+// A weak tag, as each page may be sent in any content coding.
+code settings::html_server::initialize_context() NOEXCEPT
+{
+    if (const auto ec = base::initialize_context())
+        return ec;
+
+    const auto tag = [](const span_value& page) NOEXCEPT -> std::string
+    {
+        if (page.empty())
+            return {};
+
+        const auto hash = accumulator<sha256>::hash(page.size(), page.data());
+        return "W/\"" + encode_base16(hash) + "\"";
+    };
+
+    tags_ =
+    {
+        tag(pages.css()),
+        tag(pages.html()),
+        tag(pages.ecma()),
+        tag(pages.font()),
+        tag(pages.icon())
+    };
+
+    return network::error::success;
+}
+
+const settings::html_server::page_tags&
+settings::html_server::tags() const NOEXCEPT
+{
+    return tags_;
+}
+
 // settings::bitcoind_server
 code settings::bitcoind_server::initialize_context() NOEXCEPT
 {

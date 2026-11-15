@@ -166,6 +166,30 @@ void protocol_http::send_span(span_body::value_type&& span,
     SEND(std::move(message), handle_complete, _1, error::success);
 }
 
+void protocol_http::send_page(span_body::value_type&& span, media_type type,
+    const std::string& tag) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    auto message = to_response(status::ok);
+    message.set(field::content_type, from_media_type(type));
+    message.set(field::etag, tag);
+    message.set(field::cache_control, "no-cache");
+    message.body() = std::move(span);
+    message.prepare_payload();
+    SEND(std::move(message), handle_complete, _1, error::success);
+}
+
+void protocol_http::send_not_modified(const std::string& tag) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    auto message = to_response(status::not_modified);
+    message.set(field::etag, tag);
+    message.set(field::cache_control, "no-cache");
+    message.body() = empty_value{};
+    message.prepare_payload();
+    SEND(std::move(message), handle_complete, _1, error::success);
+}
+
 void protocol_http::send_buffer(buffer_body::value_type&& buffer,
     media_type type) NOEXCEPT
 {

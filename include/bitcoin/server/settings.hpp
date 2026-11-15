@@ -170,11 +170,29 @@ public:
     struct BCS_API html_server
       : public network::settings::websocket_server
     {
+        using base = network::settings::websocket_server;
+
+        /// Weak entity tags of the embedded pages, empty where none.
+        struct page_tags
+        {
+            std::string css{};
+            std::string html{};
+            std::string ecma{};
+            std::string font{};
+            std::string icon{};
+        };
+
         // tls_server and embedded_pages reference preclude copy.
         DELETE_COPY(html_server);
 
         html_server(const std::string_view& logging_name,
             const embedded_pages& embedded) NOEXCEPT;
+
+        /// Initialize the context and tag the embedded pages.
+        code initialize_context() NOEXCEPT override;
+
+        /// Weak entity tags of the embedded pages (initialized).
+        virtual const page_tags& tags() const NOEXCEPT;
 
         /// Embeded single page with html, css, js, favicon resource.
         /// This is a reference to the caller's resource (retained instance).
@@ -188,6 +206,9 @@ public:
 
         /// Default page for default URL (recommended).
         std::string default_{ "index.html" };
+
+    private:
+        page_tags tags_{};
     };
 
     /// Address encoding, implied by coin and network (not by forks).

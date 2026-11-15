@@ -49,6 +49,8 @@ struct native_setup_fixture
     string_response get_response(std::string_view target,
         std::string_view origin={},
         uint32_t version=network::http::version_1_1);
+    string_response get_response(std::string_view target,
+        network::http::field name, std::string_view value);
 
     std::string get_text(std::string_view target);
     system::data_chunk get_data(std::string_view target);

@@ -99,38 +99,77 @@ bool protocol_html::try_dispatch_object(const request&) NOEXCEPT
     return false;
 }
 
+// The entity tag matches the If-None-Match list, by weak comparison
+// (rfc9110 13.1.2).
+static bool is_unmodified(const std::string_view& list,
+    const std::string& tag) NOEXCEPT
+{
+    const auto opaque = [](const std::string_view& value) NOEXCEPT
+    {
+        return value.starts_with("W/") ? value.substr(two) : value;
+    };
+
+    if (tag.empty())
+        return false;
+
+    const auto tags = split(list, { "," }, http_whitespace);
+    return std::any_of(tags.begin(), tags.end(), [&](const auto& item) NOEXCEPT
+    {
+        return item == "*" || opaque(item) == opaque(tag);
+    });
+}
+
 // Accept field (RFC 7231) and ?format=<format> parameter are ignored.
 // Return embedded page based on file extension only (defaulting to html).
 // The content-type field is determined by the requested file extension.
 void protocol_html::dispatch_embedded(const request& request) NOEXCEPT
 {
     const auto& pages = options_.pages;
-    switch (const auto media = file_media_type(to_path(request.target()),
-        media_type::text_html))
+    const auto& tags = options_.tags();
+    const auto media = file_media_type(to_path(request.target()),
+        media_type::text_html);
+
+    span_value page{};
+    const std::string* tag{};
+    switch (media)
     {
         case media_type::text_html:
-            send_span(pages.html(), media);
+            page = pages.html();
+            tag = &tags.html;
             break;
         case media_type::text_css:
-            send_span(pages.css(), media);
+            page = pages.css();
+            tag = &tags.css;
             break;
         case media_type::application_javascript:
-            send_span(pages.ecma(), media);
+            page = pages.ecma();
+            tag = &tags.ecma;
             break;
         case media_type::font_woff:
         case media_type::font_woff2:
-            send_span(pages.font(), media);
+            page = pages.font();
+            tag = &tags.font;
             break;
         case media_type::image_png:
         case media_type::image_gif:
         case media_type::image_jpeg:
         case media_type::image_svg_xml:
         case media_type::image_x_icon:
-            send_span(pages.icon(), media);
+            page = pages.icon();
+            tag = &tags.icon;
             break;
         default:
             send_not_found();
+            return;
     }
+
+    if (is_unmodified(request[field::if_none_match], *tag))
+    {
+        send_not_modified(*tag);
+        return;
+    }
+
+    send_page(std::move(page), media, *tag);
 }
 
 // Accept field (media type) and ?format=<format> parameter are ignored.
