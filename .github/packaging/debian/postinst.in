@@ -38,4 +38,10 @@ if [ "$1" = "configure" ]; then
     if [ -d /run/systemd/system ]; then
         systemctl daemon-reload
     fi
+
+    # A 'bs -d true' unit conflicts with the packaged service (only one runs).
+    if [ -f /etc/systemd/system/bs.service ]; then
+        echo "libbitcoin-server: found /etc/systemd/system/bs.service (from 'bs -d true')." >&2
+        echo "libbitcoin-server: it conflicts with libbitcoin-server.service, run 'bs -d false' to remove it." >&2
+    fi
 fi

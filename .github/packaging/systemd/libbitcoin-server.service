@@ -3,6 +3,8 @@ Description=Libbitcoin Server
 Documentation=https://libbitcoin.org/configuration/index.html
 After=network-online.target
 Wants=network-online.target
+Conflicts=bs.service
+After=bs.service
 
 [Service]
 Type=notify
