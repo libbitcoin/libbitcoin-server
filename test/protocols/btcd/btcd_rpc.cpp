@@ -513,6 +513,32 @@ BC_AUTO_TEST_CASE(btcd_rpc__rescanblocks__address_match__matched_transaction)
     BC_REQUIRE_EQUAL(result.front().at("transactions").as_array().size(), 1u);
 }
 
+BC_AUTO_TEST_CASE(btcd_rpc__rescanblocks__unconfirmed_block__not_found)
+{
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    rpc("loadtxfilter", std::format(R"([true,["{}"],[]])", found_address));
+
+    const auto result = rpc_error("rescanblocks", std::format(R"([["{}"]])", encode_hash(test::mock_block10.hash())));
+    BC_REQUIRE_EQUAL(result, block_not_found.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescanblocks__linked_blocks__empty_result)
+{
+    rpc("loadtxfilter", std::format(R"([true,["{}"],[]])", found_address));
+
+    const auto response = rpc("rescanblocks", std::format(R"([["{}","{}"]])", encode_hash(test::block1_hash), encode_hash(test::block2_hash)));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").as_array().empty());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescanblocks__unlinked_blocks__invalid_parameter)
+{
+    rpc("loadtxfilter", std::format(R"([true,["{}"],[]])", found_address));
+
+    const auto result = rpc_error("rescanblocks", std::format(R"([["{}","{}"]])", encode_hash(test::block2_hash), encode_hash(test::block1_hash)));
+    BC_REQUIRE_EQUAL(result, invalid_parameter.value());
+}
+
 BC_AUTO_TEST_CASE(btcd_rpc__filteredblockconnected__address_match__delivered)
 {
     rpc("notifyblocks");

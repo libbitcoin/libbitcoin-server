@@ -430,6 +430,7 @@ void protocol_btcd::do_rescan_watches(const hashes_ptr& block_hashes,
 
     sizes heights{};
     const auto& query = archive();
+    std::vector<database::header_link> links{};
     std::vector<std::pair<hash_digest, size_t>> named{};
 
     // Resolve named blocks to heights (result retains request order).
@@ -439,13 +440,22 @@ void protocol_btcd::do_rescan_watches(const hashes_ptr& block_hashes,
             return;
 
         size_t height{};
-        if (!query.get_height(height, query.to_header(hash)))
+        const auto link = query.to_header(hash);
+        if (!query.is_confirmed_block(link) || !query.get_height(height, link))
         {
-            POST_BTCD(complete_rescan_blocks, error::btcd::invalid_address_or_key,
-                to_shared<array_t>(), gate);
+            constexpr auto code = error::btcd::invalid_address_or_key;
+            POST_BTCD(complete_rescan_blocks, code, nullptr, gate);
             return;
         }
 
+        if (!links.empty() && query.to_parent(link) != links.back())
+        {
+            constexpr auto code = error::btcd::invalid_parameter;
+            POST_BTCD(complete_rescan_blocks, code, nullptr, gate);
+            return;
+        }
+
+        links.push_back(link);
         heights.insert(height);
         named.emplace_back(std::move(hash), height);
     }
@@ -470,6 +480,17 @@ void protocol_btcd::do_rescan_watches(const hashes_ptr& block_hashes,
 
         outpoint_watch replay{};
         match_outpoints(matched, replay, prevout, heights);
+    }
+
+    // Matches are by height, so each named block must still be confirmed.
+    for (const auto& link: links)
+    {
+        if (!query.is_confirmed_block(link))
+        {
+            constexpr auto code = error::btcd::invalid_address_or_key;
+            POST_BTCD(complete_rescan_blocks, code, nullptr, gate);
+            return;
+        }
     }
 
     array_t discovered{};
