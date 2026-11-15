@@ -114,6 +114,17 @@ jobs:
           install -m 0755 "binaries/${{ matrix.baseline }}" "${LIBRARY}/${{ matrix.baseline }}"
           install -m 0755 "binaries/${{ matrix.optimized }}" "${LIBRARY}/${{ matrix.optimized }}"
 
+          # The service runs /usr/bin/bs, so it survives variant changes.
+          SYSTEMD="libbitcoin-server/.github/packaging/systemd"
+          install -D -m 0644 "${SYSTEMD}/bs.cfg" package/etc/libbitcoin-server/bs.cfg
+          install -D -m 0644 "${SYSTEMD}/libbitcoin-server.service" \
+            package/usr/lib/systemd/system/libbitcoin-server.service
+          install -D -m 0644 "${SYSTEMD}/libbitcoin-server.sysusers" \
+            package/usr/lib/sysusers.d/libbitcoin-server.conf
+          install -D -m 0644 "${SYSTEMD}/libbitcoin-server.tmpfiles" \
+            package/usr/lib/tmpfiles.d/libbitcoin-server.conf
+          echo /etc/libbitcoin-server/bs.cfg > package/DEBIAN/conffiles
+
           sed -e "s|@VERSION@|${VERSION}|" \
               -e "s|@ARCHITECTURE@|${{ matrix.architecture }}|" \
               -e "s|@INSTALLED_SIZE@|$(du -sk package/usr | cut -f1)|" \
@@ -126,6 +137,7 @@ jobs:
               "${PACKAGING}/postinst.in" > package/DEBIAN/postinst
 
           install -m 0755 "${PACKAGING}/prerm" package/DEBIAN/prerm
+          install -m 0755 "${PACKAGING}/postrm" package/DEBIAN/postrm
           chmod 0755 package/DEBIAN/postinst
 
           dpkg-deb --root-owner-group --build package \

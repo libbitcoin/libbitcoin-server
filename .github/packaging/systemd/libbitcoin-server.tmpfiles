@@ -1,0 +1,5 @@
+# On btrfs the store is a subvolume (excluded from root snapshots) without
+# copy-on-write (which fragments its memory-mapped tables). Elsewhere it is a
+# plain directory and the attribute is ignored.
+v /var/lib/libbitcoin-server 0755 libbitcoin libbitcoin -
+h /var/lib/libbitcoin-server - - - - +C
