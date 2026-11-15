@@ -152,6 +152,7 @@ jobs:
     environment: release
     permissions:
       contents: write
+      id-token: write
     runs-on: ubuntu-latest
 
     steps:
@@ -160,6 +161,96 @@ jobs:
         with:
           path: artifacts
           pattern: "{bs,selector,symbols}-*"
+
+      - name: Log in to Azure
+        if: ${{ vars.AZURE_CLIENT_ID != '' }}
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Authenticode signature
+        if: ${{ vars.AZURE_CLIENT_ID != '' }}
+        working-directory: artifacts
+        shell: bash
+        env:
+          ENDPOINT: ${{ vars.TRUSTED_SIGNING_ENDPOINT }}
+          ACCOUNT: ${{ vars.TRUSTED_SIGNING_ACCOUNT }}
+          PROFILE: ${{ vars.TRUSTED_SIGNING_PROFILE }}
+        run: |
+          JSIGN="${RUNNER_TEMP}/jsign.jar"
+          curl -sSfL -o "${JSIGN}" \
+            https://github.com/ebourg/jsign/releases/download/7.6/jsign-7.6.jar
+          echo "6cf58aa080e7ff82656f320cff8d4a3bff30408df8766806dcba3740dd839fa5  ${JSIGN}" | \
+            sha256sum --check
+
+          TOKEN=$(az account get-access-token --resource https://codesigning.azure.net \
+            --query accessToken --output tsv)
+          echo "::add-mask::${TOKEN}"
+
+          shopt -s nullglob
+          FILES=(bs-windows-*/*.exe selector-windows-*/*.exe)
+          if [ ${#FILES[@]} -eq 0 ]; then
+            echo "No Windows executables found."
+            exit 1
+          fi
+
+          java -jar "${JSIGN}" \
+            --storetype TRUSTEDSIGNING \
+            --keystore "${ENDPOINT}" \
+            --storepass "${TOKEN}" \
+            --alias "${ACCOUNT}/${PROFILE}" \
+            --tsaurl http://timestamp.acs.microsoft.com \
+            --tsmode RFC3161 \
+            "${FILES[@]}"
+
+      - name: Apple signature
+        if: ${{ vars.APPLE_API_KEY_ID != '' }}
+        working-directory: artifacts
+        shell: bash
+        env:
+          CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          API_ISSUER: ${{ vars.APPLE_API_ISSUER }}
+          API_KEY_ID: ${{ vars.APPLE_API_KEY_ID }}
+          API_KEY: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          RELEASE="apple-codesign-0.29.0-x86_64-unknown-linux-musl"
+          curl -sSfL -o "${RUNNER_TEMP}/rcodesign.tar.gz" \
+            "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F0.29.0/${RELEASE}.tar.gz"
+          echo "dbe85cedd8ee4217b64e9a0e4c2aef92ab8bcaaa41f20bde99781ff02e600002  ${RUNNER_TEMP}/rcodesign.tar.gz" | \
+            sha256sum --check
+          tar -xzf "${RUNNER_TEMP}/rcodesign.tar.gz" -C "${RUNNER_TEMP}"
+          RCODESIGN="${RUNNER_TEMP}/${RELEASE}/rcodesign"
+
+          KEYS="${RUNNER_TEMP}/apple"
+          mkdir -m 0700 "${KEYS}"
+          trap 'rm -rf "${KEYS}"' EXIT
+          echo "${CERTIFICATE}" | base64 --decode > "${KEYS}/certificate.p12"
+          printf '%s' "${CERTIFICATE_PASSWORD}" > "${KEYS}/password"
+          printf '%s\n' "${API_KEY}" > "${KEYS}/key.p8"
+          "${RCODESIGN}" encode-app-store-connect-api-key -o "${KEYS}/key.json" \
+            "${API_ISSUER}" "${API_KEY_ID}" "${KEYS}/key.p8"
+
+          shopt -s nullglob
+          FILES=(bs-macos-*/* selector-macos-*/*)
+          if [ ${#FILES[@]} -eq 0 ]; then
+            echo "No macOS executables found."
+            exit 1
+          fi
+
+          for FILE in "${FILES[@]}"; do
+            "${RCODESIGN}" sign \
+              --p12-file "${KEYS}/certificate.p12" \
+              --p12-password-file "${KEYS}/password" \
+              --for-notarization \
+              "${FILE}"
+          done
+
+          zip -j "${KEYS}/notarize.zip" "${FILES[@]}"
+          "${RCODESIGN}" notary-submit --api-key-file "${KEYS}/key.json" --wait \
+            "${KEYS}/notarize.zip"
 
       - name: GPG Keyring Initialization
         id: gpg-init
