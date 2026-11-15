@@ -97,13 +97,16 @@ const request_cptr& protocol_http::get_request() const NOEXCEPT
     return request_;
 }
 
-response protocol_http::to_response(status status) NOEXCEPT
+response protocol_http::to_response(status status, bool coded) NOEXCEPT
 {
     BC_ASSERT(stranded());
     const auto request = reset_request();
     response message{ status, request->version() };
     add_common_headers(message, *request);
     add_access_control_headers(message, *request);
+    if (coded)
+        add_coding_headers(message, *request);
+
     return message;
 }
 
@@ -113,7 +116,7 @@ response protocol_http::to_response(status status) NOEXCEPT
 void protocol_http::send_json(system::json::value&& model) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    auto message = to_response(status::ok);
+    auto message = to_response(status::ok, true);
     message.set(field::content_type,
         from_media_type(media_type::application_json));
     message.body() = json_value{ .model = std::move(model) };
@@ -124,7 +127,7 @@ void protocol_http::send_json(system::json::value&& model) NOEXCEPT
 void protocol_http::send_text(std::string&& text) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    auto message = to_response(status::ok);
+    auto message = to_response(status::ok, true);
     message.set(field::content_type, from_media_type(media_type::text_plain));
     message.body() = std::move(text);
     message.prepare_payload();
@@ -134,7 +137,7 @@ void protocol_http::send_text(std::string&& text) NOEXCEPT
 void protocol_http::send_chunk(system::data_chunk&& bytes) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    auto message = to_response(status::ok);
+    auto message = to_response(status::ok, true);
     message.set(field::content_type,
         from_media_type(media_type::application_octet_stream));
     message.body() = std::move(bytes);
@@ -188,7 +191,7 @@ void protocol_http::send_stream(size_t size, wire_writer&& writer,
     media_type type) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    auto message = to_response(status::ok);
+    auto message = to_response(status::ok, true);
     message.set(field::content_type, from_media_type(type));
     message.body() = stream_value
     {

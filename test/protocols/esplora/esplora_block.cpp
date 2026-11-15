@@ -207,6 +207,51 @@ BC_AUTO_TEST_CASE(esplora__block_txids__unknown_hash__not_found)
     BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(null_hash) + "/txids"), http::status::not_found);
 }
 
+// compression
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(esplora__compression__gzip__decoded)
+{
+    const auto target = "/block/" + encode_hash(test::block1.hash()) + "/txids";
+    const auto response = get_response(target, http::field::accept_encoding, "gzip");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response[http::field::content_encoding], "gzip");
+    BC_REQUIRE_EQUAL(response[http::field::vary], "accept-encoding");
+    BC_REQUIRE_EQUAL(response.body(), get_text(target));
+}
+
+BC_AUTO_TEST_CASE(esplora__compression__deflate__decoded)
+{
+    const auto response = get_response("/blocks/tip/height", http::field::accept_encoding, "deflate");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response[http::field::content_encoding], "deflate");
+    BC_REQUIRE_EQUAL(response.body(), "9");
+}
+
+BC_AUTO_TEST_CASE(esplora__compression__identity__not_coded)
+{
+    const auto response = get_response("/blocks/tip/height", http::field::accept_encoding, "identity");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE(response.find(http::field::content_encoding) == response.end());
+    BC_REQUIRE_EQUAL(response[http::field::vary], "accept-encoding");
+    BC_REQUIRE_EQUAL(response.body(), "9");
+}
+
+BC_AUTO_TEST_CASE(esplora__compression__no_accept_encoding__not_coded)
+{
+    const auto response = get_response("/blocks/tip/height", http::field::user_agent, "libbitcoin");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE(response.find(http::field::content_encoding) == response.end());
+    BC_REQUIRE_EQUAL(response.body(), "9");
+}
+
+BC_AUTO_TEST_CASE(esplora__compression__not_found__not_coded)
+{
+    const auto response = get_response("/block-height/10", http::field::accept_encoding, "gzip");
+    BC_REQUIRE_EQUAL(response.result(), http::status::not_found);
+    BC_REQUIRE(response.find(http::field::content_encoding) == response.end());
+}
+
 BC_AUTO_TEST_SUITE_END()
 
 // unassociated block
@@ -319,6 +364,19 @@ BC_AUTO_TEST_CASE(esplora__block_txid__v2_10__not_found)
 BC_AUTO_TEST_CASE(esplora__block_txids__v2_10__ok)
 {
     BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(test::block1.hash()) + "/txids"), http::status::ok);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(esplora_uncompressed_tests, esplora_uncompressed_setup_fixture)
+
+BC_AUTO_TEST_CASE(esplora__compression__disabled__not_coded)
+{
+    const auto response = get_response("/blocks/tip/height", http::field::accept_encoding, "gzip");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE(response.find(http::field::content_encoding) == response.end());
+    BC_REQUIRE(response.find(http::field::vary) == response.end());
+    BC_REQUIRE_EQUAL(response.body(), "9");
 }
 
 BC_AUTO_TEST_SUITE_END()
