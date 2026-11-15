@@ -12,12 +12,18 @@ depends=('bash' 'glibc' 'grep')
 provides=('libbitcoin-server')
 conflicts=('libbitcoin-server')
 options=('!strip' '!debug')
+backup=('etc/libbitcoin-server/bs.cfg')
 validpgpkeys=('@PGP_FINGERPRINT@')
 
 _release="${url}/releases/download/${_tag}"
 _prefix="${pkgname}-${pkgver}"
 
-source=("bs")
+source=(
+    "bs"
+    "bs.cfg"
+    "libbitcoin-server.service"
+    "libbitcoin-server.sysusers"
+    "libbitcoin-server.tmpfiles")
 source_x86_64=(
     "${_prefix}-selector-linux-x64::${_release}/selector-linux-x64"
     "${_prefix}-selector-linux-x64.asc::${_release}/selector-linux-x64.asc"
@@ -33,7 +39,12 @@ source_aarch64=(
     "${_prefix}-bs-linux-arm64-sha2::${_release}/bs-linux-arm64-sha2"
     "${_prefix}-bs-linux-arm64-sha2.asc::${_release}/bs-linux-arm64-sha2.asc")
 
-sha256sums=('@SHA256_BS@')
+sha256sums=(
+    '@SHA256_BS@'
+    '@SHA256_CONFIG@'
+    '@SHA256_SERVICE@'
+    '@SHA256_SYSUSERS@'
+    '@SHA256_TMPFILES@')
 sha256sums_x86_64=(
     '@SHA256_SELECTOR_X64@' 'SKIP'
     '@SHA256_BASELINE_X64@' 'SKIP'
@@ -75,4 +86,13 @@ package()
     chmod 0644 "${directory}/variants"
 
     install -Dm0755 bs "${pkgdir}/usr/bin/bs"
+
+    # The service runs /usr/bin/bs, so it survives variant changes.
+    install -Dm0644 bs.cfg "${pkgdir}/etc/libbitcoin-server/bs.cfg"
+    install -Dm0644 libbitcoin-server.service \
+        "${pkgdir}/usr/lib/systemd/system/libbitcoin-server.service"
+    install -Dm0644 libbitcoin-server.sysusers \
+        "${pkgdir}/usr/lib/sysusers.d/libbitcoin-server.conf"
+    install -Dm0644 libbitcoin-server.tmpfiles \
+        "${pkgdir}/usr/lib/tmpfiles.d/libbitcoin-server.conf"
 }
