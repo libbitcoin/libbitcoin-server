@@ -1,7 +1,7 @@
+import type { ReactNode } from 'react';
 import { getEventDefinition } from '@/lib/admin-contract';
-import type { EndpointConfiguration } from '@/lib/endpoints';
+import { toWebSocketUrl, type EndpointConfiguration } from '@/lib/endpoints';
 import {
-  compactEndpoint,
   formatElapsed,
   formatEventValue,
   formatInteger,
@@ -9,11 +9,10 @@ import {
   formatTimestamp,
 } from '@/lib/format';
 import { detectNodeActivity, type MetricsSnapshot } from '@/lib/live-metrics';
-import type { ConnectionStatus } from '@/lib/reconnecting-websocket';
+import type { ConnectionPhase, ConnectionStatus } from '@/lib/reconnecting-websocket';
 import { eventSignalId } from '@/lib/signal-catalog';
 import { type SyncEstimate, SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS } from '@/lib/sync-status';
 import type { NativeTelemetry } from '@/lib/use-telemetry';
-import { ConnectionPill } from './connection-pill';
 import { MetricItem } from './metric-item';
 import { NodeSyncProgress } from './node-sync-progress';
 import { TelemetryDashboard } from './telemetry-dashboard';
@@ -37,7 +36,7 @@ const lifecycleEvents: ReadonlyArray<{ event: number; label: string }> = [
 export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate }: OverviewProps) {
   const activity = detectNodeActivity(metrics, 10);
   const configuration = native.configuration;
-  const confirmedSignal = eventSignalId(6);
+  const connection = combineStatus(adminStatus, native.status);
   const warnings = [
     adminStatus.error ? `Admin: ${adminStatus.error}` : null,
     native.status.error ? `Native: ${native.status.error}` : null,
@@ -92,43 +91,25 @@ export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate
           numeric={false}
         />
         <MetricItem
-          label="Highest confirmed"
-          value={
-            metrics.signalMaximums[confirmedSignal] === undefined
-              ? '—'
-              : formatInteger(metrics.signalMaximums[confirmedSignal])
-          }
-          detail={`${formatInteger(metrics.signalTotals[confirmedSignal] ?? 0)} confirmations observed`}
-        />
-        <MetricItem
           label="Collection uptime"
           value={formatElapsed(metrics.now - metrics.sessionStartedAt)}
           detail={`${formatInteger(metrics.totalEvents)} events · ${formatInteger(metrics.totalLogs)} logs`}
         />
-      </dl>
-
-      <section className="grid gap-4 lg:grid-cols-2">
-        <ConnectionCard
-          title="Admin stream"
-          endpoint={endpoints.adminUrl}
-          status={adminStatus}
-          detail={
-            adminStatus.lastMessageAt
-              ? `Last frame ${formatTimestamp(adminStatus.lastMessageAt)}`
+        <MetricItem
+          label="Connection"
+          value={
+            connection.phase === 'connected'
+              ? toWebSocketUrl(endpoints.adminUrl).replace(/\/$/u, '')
+              : '[disconnected]'
+          }
+          detail={`${
+            connection.lastMessageAt
+              ? `Last frame ${formatTimestamp(connection.lastMessageAt)}`
               : 'Waiting for the first frame'
-          }
+          } · ${String(connection.reconnects)} reconnect${connection.reconnects === 1 ? '' : 's'}`}
+          numeric={false}
         />
-        <ConnectionCard
-          title="Native interface"
-          endpoint={endpoints.nativeUrl}
-          status={native.status}
-          detail={
-            native.receivedAt
-              ? `Last state ${formatTimestamp(native.receivedAt)} · ${native.transport}`
-              : 'Waiting for node state'
-          }
-        />
-      </section>
+      </dl>
 
       <TelemetryDashboard metrics={metrics} />
 
@@ -163,36 +144,84 @@ export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate
             <h2 className="text-accent mt-1 text-lg font-semibold">Native configuration</h2>
           </header>
           {configuration ? (
-            <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 text-sm">
-              <Capability label="Address index" enabled={configuration.store.address} />
-              <Capability label="Client filters" enabled={configuration.store.filter} />
-              <Capability label="Turbo" enabled={configuration.store.turbo} />
-              <Capability label="Witness" enabled={configuration.store.witness} />
-              <div className="border-accentSecondary/20 col-span-2 border-t pt-3">
-                <span className="text-textMuted">Network</span>
-                <span className="text-textPrimary float-right font-mono">
-                  {configuration.node.network}
-                </span>
-              </div>
-              <div className="col-span-2">
-                <span className="text-textMuted">Silent payments from</span>
-                <span className="text-textPrimary float-right font-mono">
-                  {configuration.store.silent === null
-                    ? 'Disabled'
-                    : formatInteger(configuration.store.silent)}
-                </span>
-              </div>
-              <div className="col-span-2">
-                <span className="text-textMuted">Pruned below</span>
-                <span className="text-textPrimary float-right font-mono">
-                  {configuration.store.pruned > 0
-                    ? formatInteger(configuration.store.pruned)
-                    : 'Not pruned'}
-                </span>
-              </div>
-              <div className="border-accentSecondary/20 col-span-2 border-t pt-3">
-                <span className="text-textMuted">Forks</span>
-                <div className="mt-2 flex flex-wrap gap-2">
+            <div className="space-y-4 p-5 text-sm">
+              <ConfigGroup title="Store">
+                <Flags
+                  items={[
+                    ['Address index', configuration.store.address],
+                    ['Client filters', configuration.store.filter],
+                    ['Turbo', configuration.store.turbo],
+                    ['Witness', configuration.store.witness],
+                  ]}
+                />
+                <Values
+                  items={[
+                    [
+                      'Silent payments from',
+                      configuration.store.silent === null
+                        ? 'Disabled'
+                        : formatInteger(configuration.store.silent),
+                    ],
+                    [
+                      'Pruned below',
+                      configuration.store.pruned > 0
+                        ? formatInteger(configuration.store.pruned)
+                        : 'Not pruned',
+                    ],
+                  ]}
+                />
+              </ConfigGroup>
+              <ConfigGroup title="Node services">
+                <Flags
+                  items={[
+                    ['Blocks', configuration.node.blocks],
+                    ['Limited', configuration.node.limited],
+                    ['Witness', configuration.node.witness],
+                    ['Filters', configuration.node.filters],
+                    ['Privacy', configuration.node.privacy],
+                    ['Fees', configuration.node.fees],
+                  ]}
+                />
+              </ConfigGroup>
+              {configuration.network && (
+                <ConfigGroup title="Peer protocol">
+                  <Flags
+                    items={[
+                      ['Relay', configuration.network.relay],
+                      ['Compact', configuration.network.compact],
+                      ['Address', configuration.network.address],
+                      ['Witness tx', configuration.network.witness_tx],
+                      ['Memory pool', configuration.network.memory_pool],
+                      ['Not found', configuration.network.not_found],
+                      ['Reject', configuration.network.reject],
+                      ['Alert', configuration.network.alert],
+                    ]}
+                  />
+                  <Values
+                    items={[
+                      ['Protocol minimum', String(configuration.network.protocol_minimum)],
+                      ['Protocol maximum', String(configuration.network.protocol_maximum)],
+                    ]}
+                  />
+                </ConfigGroup>
+              )}
+              {configuration.wallet && (
+                <ConfigGroup title="Wallet">
+                  <Values
+                    items={[
+                      ['P2PKH version', String(configuration.wallet.p2kh)],
+                      ['P2SH version', String(configuration.wallet.p2sh)],
+                      ['WIF version', String(configuration.wallet.wif)],
+                      ['Witness prefix', configuration.wallet.witness],
+                      ['Silent prefix', configuration.wallet.silent],
+                      ['HD private', toHex32(configuration.wallet.hd_private)],
+                      ['HD public', toHex32(configuration.wallet.hd_public)],
+                    ]}
+                  />
+                </ConfigGroup>
+              )}
+              <ConfigGroup title="Configured forks">
+                <div className="flex flex-wrap gap-1.5">
                   {configuration.forks.map((fork) => (
                     <span
                       key={fork}
@@ -202,7 +231,7 @@ export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate
                     </span>
                   ))}
                 </div>
-              </div>
+              </ConfigGroup>
             </div>
           ) : (
             <p className="text-textMuted px-5 py-10 text-center text-sm">
@@ -242,47 +271,63 @@ export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate
   );
 }
 
-function ConnectionCard({
-  title,
-  endpoint,
-  status,
-  detail,
-}: {
-  title: string;
-  endpoint: string;
-  status: ConnectionStatus;
-  detail: string;
-}) {
+const PHASE_RANK: Record<ConnectionPhase, number> = {
+  connected: 0,
+  connecting: 1,
+  reconnecting: 2,
+  idle: 3,
+};
+
+function combineStatus(admin: ConnectionStatus, native: ConnectionStatus): ConnectionStatus {
+  const worse = PHASE_RANK[native.phase] > PHASE_RANK[admin.phase] ? native : admin;
+  const last = Math.max(admin.lastMessageAt ?? 0, native.lastMessageAt ?? 0);
+  return {
+    ...worse,
+    reconnects: admin.reconnects + native.reconnects,
+    lastMessageAt: last > 0 ? last : null,
+  };
+}
+
+function ConfigGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <article className="border-accent/30 bg-surface/80 min-w-0 rounded-2xl border p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-accentSecondary text-xs tracking-wide uppercase">{title}</p>
-          <p className="text-textPrimary mt-2 font-mono text-sm break-all">
-            {compactEndpoint(endpoint)}
-          </p>
-        </div>
-        <ConnectionPill phase={status.phase} label={status.phase} />
-      </div>
-      <div className="text-textMuted border-accentSecondary/20 mt-4 flex flex-wrap justify-between gap-2 border-t pt-3 text-xs">
-        <span>{detail}</span>
-        <span>
-          {String(status.reconnects)} reconnect{status.reconnects === 1 ? '' : 's'}
-        </span>
-      </div>
-    </article>
+    <section className="border-accentSecondary/20 space-y-2 border-t pt-3 first:border-t-0 first:pt-0">
+      <h3 className="text-accentSecondary text-xs tracking-wide uppercase">{title}</h3>
+      {children}
+    </section>
   );
 }
 
-function Capability({ label, enabled }: { label: string; enabled: boolean }) {
+function Flags({ items }: { items: ReadonlyArray<readonly [string, boolean | undefined]> }) {
+  const reported = items.filter(([, enabled]) => enabled !== undefined);
   return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-textMuted">{label}</span>
-      <span className={enabled ? 'text-emerald-300' : 'text-textMuted'}>
-        {enabled ? 'Enabled' : 'Disabled'}
-      </span>
+    <div className="flex flex-wrap gap-1.5">
+      {reported.map(([label, enabled]) => (
+        <span
+          key={label}
+          className={`rounded-full border px-2 py-0.5 text-xs ${enabled ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300' : 'text-textMuted border-slate-500/40'}`}
+        >
+          {label}
+        </span>
+      ))}
     </div>
   );
+}
+
+function Values({ items }: { items: ReadonlyArray<readonly [string, string]> }) {
+  return (
+    <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+      {items.map(([label, value]) => (
+        <div key={label} className="flex items-baseline justify-between gap-3">
+          <dt className="text-textMuted">{label}</dt>
+          <dd className="text-textPrimary font-mono">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function toHex32(value: number) {
+  return `0x${value.toString(16).padStart(8, '0')}`;
 }
 
 function EmptyRow({ text }: { text: string }) {

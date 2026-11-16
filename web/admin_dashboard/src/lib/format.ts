@@ -77,12 +77,3 @@ export function formatRate(value: number): string {
   return `${formatNumber(value, 2)}/s`;
 }
 
-export function compactEndpoint(endpoint: string): string {
-  try {
-    const url = new URL(endpoint);
-    const path = url.pathname === '/' ? '' : url.pathname.replace(/\/$/u, '');
-    return `${url.host}${path}`;
-  } catch {
-    return endpoint;
-  }
-}
