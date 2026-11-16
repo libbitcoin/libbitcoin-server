@@ -119,6 +119,12 @@ protected:
         return true;
     }
 
+    /// bitcoind clients send json-rpc v1 batch elements (tolerated laxness).
+    inline bool lax_batch() const NOEXCEPT override
+    {
+        return true;
+    }
+
     /// Overridden to retain the request in dispatch (see set_opener).
     inline void dispatch(
         const network::http::request_ptr& request) NOEXCEPT override
