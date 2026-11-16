@@ -64,15 +64,20 @@ export function App() {
       <header className="border-accent/30 bg-surface/90 border-b backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 py-4">
           <div className="flex flex-wrap items-center gap-4">
-            <button
-              type="button"
-              onClick={() => {
-                setView('overview');
-              }}
-              className="text-accent order-1 text-lg font-semibold tracking-tight"
-            >
-              Libbitcoin Server
-            </button>
+            <div className="order-1 flex flex-col">
+              <button
+                type="button"
+                onClick={() => {
+                  setView('overview');
+                }}
+                className="text-accent text-left text-lg font-semibold tracking-tight"
+              >
+                Libbitcoin Server
+              </button>
+              {native.configuration && (
+                <span className="text-textMuted text-sm">{native.configuration.node.network}</span>
+              )}
+            </div>
 
             <nav className="text-textMuted order-3 flex w-full items-center gap-3 text-sm md:order-2 md:w-auto">
               {navigation.map((item) => (
@@ -102,10 +107,6 @@ export function App() {
             </nav>
 
             <div className="order-2 ml-auto flex items-center gap-3 md:order-3">
-              <div className="hidden items-center gap-2 lg:flex" aria-label="Connection summary">
-                <StatusDot connected={adminStatus.phase === 'connected'} label="Admin" />
-                <StatusDot connected={native.transport !== 'none'} label="Native" />
-              </div>
               <button
                 type="button"
                 onClick={() => {
@@ -184,14 +185,3 @@ export function App() {
   );
 }
 
-function StatusDot({ connected, label }: { connected: boolean; label: string }) {
-  return (
-    <span className="text-textMuted inline-flex items-center gap-1.5 text-xs">
-      <span
-        className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-amber-400'}`}
-        aria-hidden="true"
-      />
-      {label}
-    </span>
-  );
-}

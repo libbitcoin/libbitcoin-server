@@ -11,7 +11,38 @@ const nativeConfigurationSchema = z.object({
   }),
   node: z.object({
     network: z.string(),
+    limited: z.boolean().optional(),
+    blocks: z.boolean().optional(),
+    witness: z.boolean().optional(),
+    filters: z.boolean().optional(),
+    privacy: z.boolean().optional(),
+    fees: z.boolean().optional(),
   }),
+  wallet: z
+    .object({
+      p2kh: z.number().int(),
+      p2sh: z.number().int(),
+      wif: z.number().int(),
+      witness: z.string(),
+      silent: z.string(),
+      hd_private: z.number().int(),
+      hd_public: z.number().int(),
+    })
+    .optional(),
+  network: z
+    .object({
+      relay: z.boolean(),
+      alert: z.boolean(),
+      reject: z.boolean(),
+      compact: z.boolean(),
+      address: z.boolean(),
+      witness_tx: z.boolean(),
+      memory_pool: z.boolean(),
+      not_found: z.boolean(),
+      protocol_maximum: z.number().int(),
+      protocol_minimum: z.number().int(),
+    })
+    .optional(),
   forks: z
     .record(z.string(), z.boolean())
     .transform((forks) => Object.keys(forks).filter((fork) => forks[fork])),
