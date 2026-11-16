@@ -1,27 +1,14 @@
 import { useLayoutEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { SearchBar } from '@/components/search-bar';
-import { StatusPill } from '@/components/status-pill';
 import { ThemeSelect } from '@/components/theme-select';
 import { CommandPalette } from '@/components/command-palette';
 import { RouteContent } from './route-navigation';
-import { useProviderInfo, useProviderSwitcher, useTurbo } from '@/lib/api/client';
+import { useProviderSwitcher, useTurbo } from '@/lib/api/client';
 import { useProviderConfiguration } from '@/lib/hooks/useBlockchainData';
 import { blocksPath, dashboardPath, investigationsPath } from '@/lib/utils/routes';
 
-function formatEndpointLabel(endpoint: string) {
-  try {
-    const url = new URL(endpoint);
-    const path = url.pathname.replace(/\/$/u, '');
-    if (path && path !== '/') return `${url.host}${path}`;
-    return url.host;
-  } catch {
-    return endpoint;
-  }
-}
-
 export function AppShell() {
-  const info = useProviderInfo();
   const { provider, setProvider, availableProviders, selectorVisible } = useProviderSwitcher();
   const { turbo, setTurbo } = useTurbo();
   const { data: configuration } = useProviderConfiguration();
@@ -30,11 +17,6 @@ export function AppShell() {
   const isLibbitcoin = provider === 'libbitcoin';
   const turboAvailable = isLibbitcoin && configuration?.turbo === true;
   const turboActive = turbo && turboAvailable;
-  const endpointLabel = info.endpoint ? formatEndpointLabel(info.endpoint) : info.label;
-  const statusTitle =
-    info.endpoint && info.description
-      ? `${info.endpoint} — ${info.description}`
-      : (info.endpoint ?? info.description);
 
   useLayoutEffect(() => {
     if (isLibbitcoin && !configuration) return;
@@ -54,12 +36,19 @@ export function AppShell() {
       <header className="border-accent/30 bg-surface/90 border-b backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 py-4">
           <div className="flex flex-wrap items-center gap-4">
-            <NavLink
-              to={dashboardPath()}
-              className="text-accent order-1 text-lg font-semibold tracking-tight"
-            >
-              Libbitcoin Server
-            </NavLink>
+            <div className="order-1 flex flex-col">
+              <NavLink
+                to={dashboardPath()}
+                className="text-accent text-lg font-semibold tracking-tight"
+              >
+                Libbitcoin Server
+              </NavLink>
+              {configuration && (
+                <span className="text-textMuted text-sm">
+                  {configuration.network ?? '[unknown]'}
+                </span>
+              )}
+            </div>
             <nav className="text-textMuted order-3 flex w-full items-center gap-3 text-sm md:order-2 md:w-auto">
               <NavLink
                 to={dashboardPath()}
@@ -96,12 +85,6 @@ export function AppShell() {
             </div>
             <div className="order-3 flex w-full flex-wrap items-center gap-3 md:order-3 md:ml-auto md:w-auto md:flex-nowrap">
               <ThemeSelect />
-              <StatusPill
-                label={endpointLabel}
-                status={info.connectionState}
-                title={statusTitle}
-                labelClassName={info.endpoint ? 'font-mono normal-case' : undefined}
-              />
               {isLibbitcoin && (
                 <label
                   className={`text-textMuted flex items-center gap-2 text-xs tracking-wide uppercase ${

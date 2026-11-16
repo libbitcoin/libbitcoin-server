@@ -142,7 +142,6 @@ const DEFAULT_CONFIGURATION: BlockchainClientConfiguration = {
   filter: false,
   turbo: true,
   witness: true,
-  network: 'mainnet',
   forks: [],
   wallet: MAINNET_PARAMS,
 };
@@ -157,8 +156,7 @@ function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
     typeof record[key] === 'boolean' ? record[key] : DEFAULT_CONFIGURATION[key];
 
   const node = isRecord(raw.node) ? raw.node : {};
-  const network =
-    typeof node.network === 'string' ? node.network : DEFAULT_CONFIGURATION.network;
+  const network = typeof node.network === 'string' ? node.network : undefined;
   const forks = isRecord(raw.forks)
     ? Object.entries(raw.forks)
         .filter(([, enabled]) => enabled === true)
@@ -204,8 +202,9 @@ function extractHeaderContextState(context: unknown): BlockHeaderContextState | 
 }
 
 function getHeaderContextMaximalSize(state: BlockHeaderContextState | null) {
-  // In header context, size is nominal bytes and weight is maximal serialized bytes.
-  return state?.weight ?? state?.size;
+  // In header context, size is nominal bytes and weight is (3 * nominal + maximal).
+  if (state?.size === undefined || state.weight === undefined) return undefined;
+  return state.weight - 3 * state.size;
 }
 
 function computeFeeRate(feeSats: number, weight: number) {

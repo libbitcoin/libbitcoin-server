@@ -1,7 +1,6 @@
 import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  type BlockchainEventTransport,
   type BlockSummary,
   useProviderInfo,
 } from '@/lib/api/client';
@@ -31,6 +30,8 @@ export function DashboardPage() {
   const info = useProviderInfo();
   const now = useNow();
   const eventStatus = useBlockchainEventStatus();
+  const connected = eventStatus.transport === 'websocket';
+  const websocketUrl = info.endpoint?.replace(/^http/u, 'ws');
   const { data: configuration } = useProviderConfiguration();
   const {
     data: blocks,
@@ -201,20 +202,15 @@ export function DashboardPage() {
         <div className="grid gap-6">
           <div className="border-accent/30 bg-surface/80 space-y-5 rounded-2xl border p-6">
             <div className="space-y-2">
-              <p className="text-accentSecondary text-xs tracking-wide uppercase">Provider</p>
-              <h2 className="text-accent text-xl font-semibold">Provider Status</h2>
-              <p className="text-textMuted text-sm">
-                {info.label}
-                {info.endpoint ? ` · ${formatEndpointLabel(info.endpoint)}` : ''}
-              </p>
+              <p className="text-accentSecondary text-xs tracking-wide uppercase">Server</p>
+              <h2 className="text-accent text-xl font-semibold">Server Status</h2>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <PanelStat label="Connection" value={formatLabelValue(info.connectionState)} />
-              <PanelStat label="Top Updates" value={formatTopUpdateMode(eventStatus.transport)} />
-              <PanelStat label="Transport" value={formatEventTransport(eventStatus.transport)} />
-              <PanelStat label="Provider ID" value={info.id} />
-              <PanelStat label="Network" value={configuration?.network ?? '—'} />
+            <div className="space-y-3">
+              <p className="text-accentSecondary text-xs tracking-wide uppercase">Connection</p>
+              <p className="text-textPrimary font-mono text-sm">
+                {connected ? websocketUrl : '[disconnected]'}
+              </p>
             </div>
 
             <div className="space-y-3">
@@ -223,13 +219,12 @@ export function DashboardPage() {
                 <CapabilityPill label="Address Index" enabled={configuration?.address} />
                 <CapabilityPill label="Witness Node" enabled={configuration?.witness} />
                 <CapabilityPill label="Client Filters" enabled={configuration?.filter} />
-                <CapabilityPill label="Turbo API" enabled={configuration?.turbo} />
               </div>
             </div>
 
             {configuration && configuration.forks.length > 0 && (
               <div className="space-y-3">
-                <p className="text-accentSecondary text-xs tracking-wide uppercase">Forks</p>
+                <p className="text-accentSecondary text-xs tracking-wide uppercase">Configured Forks</p>
                 <div className="flex flex-wrap gap-2">
                   {configuration.forks.map((fork) => (
                     <span
@@ -375,35 +370,6 @@ function formatIntervalSampleDetail(intervalCount: number) {
   return `Last ${formatNumber(intervalCount, { maximumFractionDigits: 0 })} ${
     intervalCount === 1 ? 'interval' : 'intervals'
   }`;
-}
-
-function formatEndpointLabel(endpoint: string) {
-  try {
-    const url = new URL(endpoint);
-    const path = url.pathname.replace(/\/$/u, '');
-    if (path && path !== '/') return `${url.host}${path}`;
-    return url.host;
-  } catch {
-    return endpoint;
-  }
-}
-
-function formatLabelValue(value: string) {
-  if (!value) return value;
-  return `${value[0].toUpperCase()}${value.slice(1)}`;
-}
-
-function formatTopUpdateMode(transport: BlockchainEventTransport) {
-  if (transport === 'websocket' || transport === 'connecting') return 'Push';
-  if (transport === 'polling') return 'Polling';
-  return 'Idle';
-}
-
-function formatEventTransport(transport: BlockchainEventTransport) {
-  if (transport === 'websocket') return 'WebSocket';
-  if (transport === 'connecting') return 'WebSocket connecting';
-  if (transport === 'polling') return 'HTTP';
-  return 'Idle';
 }
 
 function OverviewCard({
