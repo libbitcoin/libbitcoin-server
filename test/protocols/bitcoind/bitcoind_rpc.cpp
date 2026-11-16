@@ -2661,12 +2661,23 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__v1__result_null_error_no_jsonrpc)
 BC_AUTO_TEST_CASE(bitcoind_rpc__batch__empty__invalid_request)
 {
     const auto response = rpc_body("[]");
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE_EQUAL(as_text(response.at("jsonrpc")), "2.0");
+    BC_REQUIRE(response.at("id").is_null());
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), network::rpc::reserved::invalid_request);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__missing_method_element__invalid_request_element_in_order)
+{
+    const auto response = rpc_body(R"([{"jsonrpc":"2.0","id":1,"method":"getblockcount","params":[]},{"jsonrpc":"2.0","id":2,"params":[]},{"jsonrpc":"2.0","id":3,"method":"getblockcount","params":[]}])");
     BC_REQUIRE(response.is_array());
 
     const auto& batch = response.as_array();
-    BC_REQUIRE_EQUAL(batch.size(), 1u);
-    BC_REQUIRE(batch.at(0).at("id").is_null());
-    BC_REQUIRE_EQUAL(batch.at(0).at("error").at("code").as_int64(), network::rpc::reserved::invalid_request);
+    BC_REQUIRE_EQUAL(batch.size(), 3u);
+    BC_REQUIRE_EQUAL(batch.at(0).at("result").as_int64(), 9);
+    BC_REQUIRE_EQUAL(batch.at(1).at("id").as_int64(), 2);
+    BC_REQUIRE_EQUAL(batch.at(1).at("error").at("code").as_int64(), network::rpc::reserved::invalid_request);
+    BC_REQUIRE_EQUAL(batch.at(2).at("result").as_int64(), 9);
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__batch__empty__ok)
