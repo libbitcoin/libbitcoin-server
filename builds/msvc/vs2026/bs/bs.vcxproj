@@ -134,7 +134,6 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\app\app.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\app\providers.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\chart-editor.tsx" />
-    <None Include="..\..\..\..\web\admin_dashboard\src\components\connection-pill.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\event-view.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\log-view.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\metric-item.tsx" />
@@ -144,6 +143,7 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\components\settings.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\sync-status-notifier.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\telemetry-dashboard.tsx" />
+    <None Include="..\..\..\..\web\admin_dashboard\src\components\theme-select.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\time-series-chart.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\index.css" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\admin-client.ts" />
@@ -152,6 +152,7 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\chart-config.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\chart-data.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\chart-scale.ts" />
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\chart-theme.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\endpoints.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\event-window.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\fee-histogram.ts" />
@@ -168,10 +169,12 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\telemetry-worker-protocol.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\telemetry-worker-runtime.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\telemetry.worker.ts" />
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\theme.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\use-current-time.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\use-telemetry.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\worker-metrics-store.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\main.tsx" />
+    <None Include="..\..\..\..\web\admin_dashboard\src\themes.css" />
     <None Include="..\..\..\..\web\admin_dashboard\src\vite-env.d.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\tailwind.config.js" />
     <None Include="..\..\..\..\web\admin_dashboard\tsconfig.json" />
@@ -191,12 +194,13 @@
     <None Include="..\..\..\..\web\native\src\components\block-validation-inspector.tsx" />
     <None Include="..\..\..\..\web\native\src\components\command-palette.tsx" />
     <None Include="..\..\..\..\web\native\src\components\hash-text.tsx" />
+    <None Include="..\..\..\..\web\native\src\components\miner-value.tsx" />
     <None Include="..\..\..\..\web\native\src\components\qr-code.tsx" />
     <None Include="..\..\..\..\web\native\src\components\save-bookmark.tsx" />
     <None Include="..\..\..\..\web\native\src\components\script-explainer.tsx" />
     <None Include="..\..\..\..\web\native\src\components\script-lookup-status.tsx" />
     <None Include="..\..\..\..\web\native\src\components\search-bar.tsx" />
-    <None Include="..\..\..\..\web\native\src\components\status-pill.tsx" />
+    <None Include="..\..\..\..\web\native\src\components\theme-select.tsx" />
     <None Include="..\..\..\..\web\native\src\index.css" />
     <None Include="..\..\..\..\web\native\src\lib\api\client.tsx" />
     <None Include="..\..\..\..\web\native\src\lib\api\providers\blockstream.ts" />
@@ -208,11 +212,13 @@
     <None Include="..\..\..\..\web\native\src\lib\hooks\usePageTitle.ts" />
     <None Include="..\..\..\..\web\native\src\lib\hooks\usePaginatedList.ts" />
     <None Include="..\..\..\..\web\native\src\lib\hooks\useWindowScrollToBottom.ts" />
+    <None Include="..\..\..\..\web\native\src\lib\theme.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\address.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\clipboard.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\format.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\investigations.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\libbitcoin-address-alias.ts" />
+    <None Include="..\..\..\..\web\native\src\lib\utils\miner.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\routes.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\script-explainer.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\script-opcodes.ts" />
@@ -227,6 +233,9 @@
     <None Include="..\..\..\..\web\native\src\routes\search.tsx" />
     <None Include="..\..\..\..\web\native\src\routes\top-block.tsx" />
     <None Include="..\..\..\..\web\native\src\routes\transaction.tsx" />
+    <None Include="..\..\..\..\web\native\src\themes.css" />
+    <None Include="..\..\..\..\web\native\src\vendor\mining-pools\package.json" />
+    <None Include="..\..\..\..\web\native\src\vendor\mining-pools\pools.json" />
     <None Include="..\..\..\..\web\native\src\vite-env.d.ts" />
     <None Include="..\..\..\..\web\native\tailwind.config.js" />
     <None Include="..\..\..\..\web\native\tsconfig.json" />
