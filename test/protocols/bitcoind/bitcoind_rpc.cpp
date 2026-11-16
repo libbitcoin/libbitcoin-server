@@ -2583,7 +2583,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__batch__parameter_fault__type_error_in_order)
     BC_REQUIRE_EQUAL(batch.at(2).at("result").as_int64(), 9);
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__batch__query_notification__empty_element)
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__query_notification__omitted)
 {
     const auto response = rpc_body(
         R"([{"jsonrpc":"2.0","method":"getblockhash","params":[10]},)"
@@ -2591,13 +2591,12 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__batch__query_notification__empty_element)
 
     BC_REQUIRE(response.is_array());
     const auto& batch = response.as_array();
-    BC_REQUIRE_EQUAL(batch.size(), 2u);
-    BC_REQUIRE_EQUAL(batch.at(0).as_object().size(), 1u);
-    BC_REQUIRE_EQUAL(as_text(batch.at(0).at("jsonrpc")), "2.0");
-    BC_REQUIRE_EQUAL(batch.at(1).at("result").as_int64(), 9);
+    BC_REQUIRE_EQUAL(batch.size(), 1u);
+    BC_REQUIRE_EQUAL(batch.at(0).at("id").as_int64(), 1);
+    BC_REQUIRE_EQUAL(batch.at(0).at("result").as_int64(), 9);
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__batch__command_notification__executed_empty_element)
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__command_notification__executed_omitted)
 {
     const auto response = rpc_body(
         R"([{"jsonrpc":"2.0","method":"setnetworkactive","params":[false]},)"
@@ -2606,10 +2605,17 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__batch__command_notification__executed_empty_elem
 
     BC_REQUIRE(response.is_array());
     const auto& batch = response.as_array();
-    BC_REQUIRE_EQUAL(batch.size(), 3u);
-    BC_REQUIRE_EQUAL(batch.at(0).as_object().size(), 1u);
-    BC_REQUIRE(!batch.at(1).at("result").at("networkactive").as_bool());
-    BC_REQUIRE_EQUAL(batch.at(2).as_object().size(), 1u);
+    BC_REQUIRE_EQUAL(batch.size(), 1u);
+    BC_REQUIRE(!batch.at(0).at("result").at("networkactive").as_bool());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__notifications_only__ok)
+{
+    const auto result = rpc_body_status(
+        R"([{"jsonrpc":"2.0","method":"getblockcount","params":[]},)"
+        R"({"jsonrpc":"2.0","method":"getblockhash","params":[10]}])");
+
+    BC_REQUIRE(result == bitcoind_setup_fixture::status::ok);
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__batch__unversioned_second_element__results)
