@@ -2,6 +2,7 @@ import { useLayoutEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { SearchBar } from '@/components/search-bar';
 import { StatusPill } from '@/components/status-pill';
+import { ThemeSelect } from '@/components/theme-select';
 import { CommandPalette } from '@/components/command-palette';
 import { RouteContent } from './route-navigation';
 import { useProviderInfo, useProviderSwitcher, useTurbo } from '@/lib/api/client';
@@ -94,6 +95,7 @@ export function AppShell() {
               <SearchBar />
             </div>
             <div className="order-3 flex w-full flex-wrap items-center gap-3 md:order-3 md:ml-auto md:w-auto md:flex-nowrap">
+              <ThemeSelect />
               <StatusPill
                 label={endpointLabel}
                 status={info.connectionState}

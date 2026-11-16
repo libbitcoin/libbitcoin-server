@@ -240,7 +240,7 @@ function FlagValue({
 }) {
   return (
     <span
-      className={`inline-flex shrink-0 rounded-md px-2 py-0.5 text-xs ${value === undefined ? 'text-textMuted bg-white/5' : 'bg-accent/10 text-textPrimary'}`}
+      className={`inline-flex shrink-0 rounded-md px-2 py-0.5 text-xs ${value === undefined ? 'text-textMuted bg-textMuted/5' : 'bg-accent/10 text-textPrimary'}`}
     >
       {value === undefined ? 'Not reported' : value ? positive : negative}
     </span>

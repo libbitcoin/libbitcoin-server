@@ -1,9 +1,6 @@
 @import 'tailwindcss';
+@import './themes.css';
 @config '../tailwind.config.js';
-
-:root {
-  color-scheme: dark;
-}
 
 body {
   @apply bg-background text-textPrimary font-sans;

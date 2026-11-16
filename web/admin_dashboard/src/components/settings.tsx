@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ThemeSelect } from './theme-select';
 import {
   browserNotificationPermission,
   requestBrowserNotificationPermission,
@@ -75,6 +76,7 @@ export function Settings({
         </header>
 
         <div className="space-y-5 p-5">
+          <ThemeSelect />
           <div className="border-accentSecondary/20 bg-accent/5 space-y-3 rounded-xl border p-4">
             <div>
               <h3 className="text-textPrimary text-sm font-medium">Browser notifications</h3>

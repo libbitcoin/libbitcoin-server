@@ -1,9 +1,6 @@
 @import 'tailwindcss';
+@import './themes.css';
 @config '../tailwind.config.js';
-
-:root {
-  color-scheme: dark;
-}
 
 body {
   @apply bg-background text-textPrimary font-sans;
@@ -28,6 +25,6 @@ body {
 }
 
 .uplot .u-select {
-  background: rgb(255 160 34 / 12%);
-  border: 1px solid rgb(255 160 34 / 35%);
+  background: color-mix(in srgb, var(--theme-accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 35%, transparent);
 }

@@ -414,7 +414,11 @@ function TransactionInputRow({
         {input.scriptType && <span>{input.scriptType}</span>}
         {input.address &&
           (() => {
-            const canonical = canonicalizeAddressForProvider(providerId, input.address, networkParams);
+            const canonical = canonicalizeAddressForProvider(
+              providerId,
+              input.address,
+              networkParams
+            );
             return (
               <Link
                 to={addressPath(canonical)}
@@ -473,7 +477,7 @@ function TransactionInputRow({
                   {input.witness.map((item, idx) => (
                     <code
                       key={`${key}-witness-${String(idx)}`}
-                      className="text-textMuted block rounded bg-black/30 px-2 py-1 font-mono text-[11px] break-all"
+                      className="text-textMuted bg-inset block rounded px-2 py-1 font-mono text-[11px] break-all"
                     >
                       {item || '(empty byte string)'}
                     </code>
@@ -543,7 +547,9 @@ function TransactionOutputRow({
         <p className="text-textMuted min-w-0 flex-1 text-xs">
           {output.address ? (
             <Link
-              to={addressPath(canonicalizeAddressForProvider(providerId, output.address, networkParams))}
+              to={addressPath(
+                canonicalizeAddressForProvider(providerId, output.address, networkParams)
+              )}
               className="text-accent hover:text-accentSecondary"
               state={providerId === 'libbitcoin' ? { displayAddress: output.address } : undefined}
             >
@@ -641,7 +647,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
       <p className="text-accentSecondary text-[10px] tracking-wide uppercase">{label}</p>
-      <code className="text-textMuted block rounded bg-black/30 px-2 py-1 font-mono text-[11px] break-all">
+      <code className="text-textMuted bg-inset block rounded px-2 py-1 font-mono text-[11px] break-all">
         {value}
       </code>
     </div>

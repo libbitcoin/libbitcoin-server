@@ -1,8 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import { initializeTheme } from '@/lib/theme';
 import { AppProviders } from './app/providers';
 import { AppRouter } from './app/router';
+
+initializeTheme();
 
 const rootElement = document.querySelector('#root');
 if (!rootElement) {

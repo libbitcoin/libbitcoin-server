@@ -1,0 +1,66 @@
+:root {
+  color-scheme: dark;
+  --theme-background: #272822;
+  --theme-surface: #1f211c;
+  --theme-accent: #ffa022;
+  --theme-accent-secondary: #c85637;
+  --theme-text-primary: #ededed;
+  --theme-text-muted: #cfcfcf;
+  --theme-inset: rgb(0 0 0 / 30%);
+  --theme-notice-success: #022c22;
+  --theme-notice-warning: #451a03;
+  --theme-notice-text: #ffffff;
+  --chart-grid: #c8563733;
+  --chart-ticks: #ffa0224d;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --theme-background: #f5f3ed;
+  --theme-surface: #ffffff;
+  --theme-accent: #9c4a04;
+  --theme-accent-secondary: #9b4430;
+  --theme-text-primary: #222923;
+  --theme-text-muted: #526052;
+  --theme-inset: rgb(34 41 35 / 5%);
+  --theme-notice-success: #ecfdf5;
+  --theme-notice-warning: #fffbeb;
+  --theme-notice-text: #222923;
+  --chart-grid: #52605226;
+  --chart-ticks: #52605266;
+  --chart-color-0: #9c4a04;
+  --chart-color-1: #0369a1;
+  --chart-color-2: #047857;
+  --chart-color-3: #7e22ce;
+  --chart-color-4: #be123c;
+  --chart-color-5: #a21caf;
+  --chart-color-6: #854d0e;
+  --chart-color-7: #1d4ed8;
+
+  /* Keep status labels readable on their tinted surfaces in the light theme. */
+  --color-emerald-200: #065f46;
+  --color-emerald-300: #065f46;
+  --color-amber-200: #92400e;
+  --color-amber-300: #92400e;
+  --color-red-300: #991b1b;
+  --color-rose-300: #9f1239;
+  --color-orange-300: #9a3412;
+  --color-sky-300: #075985;
+  --color-cyan-300: #155e75;
+  --color-blue-300: #1e40af;
+  --color-violet-300: #5b21b6;
+  --color-slate-300: #475569;
+}
+
+:root[data-theme='midnight'] {
+  color-scheme: dark;
+  --theme-background: #0e1525;
+  --theme-surface: #141e32;
+  --theme-accent: #7dd3fc;
+  --theme-accent-secondary: #a5b4fc;
+  --theme-text-primary: #e6edf7;
+  --theme-text-muted: #a9bad0;
+  --theme-inset: rgb(0 0 0 / 25%);
+  --chart-grid: #a5b4fc33;
+  --chart-ticks: #7dd3fc4d;
+}

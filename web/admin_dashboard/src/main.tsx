@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client';
 import { App } from '@/app/app';
 import { AppProviders } from '@/app/providers';
 import './index.css';
+import { initializeTheme } from '@/lib/theme';
+
+initializeTheme();
 
 const rootElement = document.querySelector('#root');
 if (!rootElement) {

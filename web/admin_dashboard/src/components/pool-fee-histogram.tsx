@@ -3,6 +3,8 @@ import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import type { ChartScale } from '@/lib/chart-config';
 import { compressedAxisSplits } from '@/lib/chart-scale';
+import { chartColor } from '@/lib/chart-theme';
+import { useTheme } from '@/lib/theme';
 import {
   feeHistogramBins,
   formatFeeRate,
@@ -99,6 +101,7 @@ function HistogramPlot({
   color: string;
   scale: ChartScale;
 }) {
+  const activeTheme = useTheme();
   const containerReference = useRef<HTMLDivElement>(null);
   const chartReference = useRef<uPlot | null>(null);
   const binsReference = useRef(bins);
@@ -116,6 +119,7 @@ function HistogramPlot({
     const container = containerReference.current;
     if (!container) return;
     const theme = getComputedStyle(container);
+    const barColor = chartColor(color, theme);
     const font = `12px ${theme.fontFamily}`;
     const data: uPlot.AlignedData = [
       binsReference.current.map((_, index) => index),
@@ -141,7 +145,7 @@ function HistogramPlot({
           stroke: theme.color,
           font,
           grid: { show: false },
-          ticks: { stroke: '#ffa0224d', width: 1 },
+          ticks: { stroke: theme.getPropertyValue('--chart-ticks').trim(), width: 1 },
           // X values are group indexes, not continuous fee-rate intervals.
           splits: (chart) => {
             const groups = binsReference.current;
@@ -158,8 +162,8 @@ function HistogramPlot({
           size: 76,
           stroke: theme.color,
           font,
-          grid: { stroke: '#c8563733', width: 1 },
-          ticks: { stroke: '#ffa0224d', width: 1 },
+          grid: { stroke: theme.getPropertyValue('--chart-grid').trim(), width: 1 },
+          ticks: { stroke: theme.getPropertyValue('--chart-ticks').trim(), width: 1 },
           values: (_self, values: number[]) => values.map((value) => formatInteger(value)),
           ...(scale === 'compressed'
             ? { splits: compressedAxisSplits, filter: (_self: uPlot, values: number[]) => values }
@@ -176,8 +180,8 @@ function HistogramPlot({
         },
         {
           label: 'Virtual size',
-          stroke: color,
-          fill: `${color}90`,
+          stroke: barColor,
+          fill: `${barColor}90`,
           width: 1,
           points: { show: false },
           paths: uPlot.paths.bars?.({ size: [0.85, 48] }),
@@ -197,7 +201,7 @@ function HistogramPlot({
       chart.destroy();
       chartReference.current = null;
     };
-  }, [color, scale]);
+  }, [color, scale, activeTheme]);
 
   return (
     <div
