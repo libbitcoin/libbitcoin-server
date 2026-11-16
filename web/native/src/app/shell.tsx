@@ -5,8 +5,8 @@ import { StatusPill } from '@/components/status-pill';
 import { ThemeSelect } from '@/components/theme-select';
 import { CommandPalette } from '@/components/command-palette';
 import { RouteContent } from './route-navigation';
-import { useProviderInfo, useProviderSwitcher, useTurbo } from '@/lib/api/client';
-import { useProviderConfiguration } from '@/lib/hooks/useBlockchainData';
+import { useServerInfo, useTurbo } from '@/lib/api/client';
+import { useServerConfiguration } from '@/lib/hooks/useBlockchainData';
 import { blocksPath, dashboardPath, investigationsPath } from '@/lib/utils/routes';
 
 function formatEndpointLabel(endpoint: string) {
@@ -21,14 +21,12 @@ function formatEndpointLabel(endpoint: string) {
 }
 
 export function AppShell() {
-  const info = useProviderInfo();
-  const { provider, setProvider, availableProviders, selectorVisible } = useProviderSwitcher();
+  const info = useServerInfo();
   const { turbo, setTurbo } = useTurbo();
-  const { data: configuration } = useProviderConfiguration();
+  const { data: configuration } = useServerConfiguration();
   const location = useLocation();
   const navigate = useNavigate();
-  const isLibbitcoin = provider === 'libbitcoin';
-  const turboAvailable = isLibbitcoin && configuration?.turbo === true;
+  const turboAvailable = configuration?.turbo === true;
   const turboActive = turbo && turboAvailable;
   const endpointLabel = info.endpoint ? formatEndpointLabel(info.endpoint) : info.label;
   const statusTitle =
@@ -37,7 +35,7 @@ export function AppShell() {
       : (info.endpoint ?? info.description);
 
   useLayoutEffect(() => {
-    if (isLibbitcoin && !configuration) return;
+    if (!configuration) return;
     const parameters = new URLSearchParams(location.search);
     if ((parameters.get('turbo') === 'true') === turboActive) return;
     if (turboActive) parameters.set('turbo', 'true');
@@ -47,7 +45,7 @@ export function AppShell() {
       { pathname: location.pathname, search: search ? `?${search}` : '', hash: location.hash },
       { replace: true, state: location.state as unknown }
     );
-  }, [configuration, isLibbitcoin, location, navigate, turboActive]);
+  }, [configuration, location, navigate, turboActive]);
 
   return (
     <div className="bg-background text-textPrimary min-h-screen">
@@ -102,46 +100,25 @@ export function AppShell() {
                 title={statusTitle}
                 labelClassName={info.endpoint ? 'font-mono normal-case' : undefined}
               />
-              {isLibbitcoin && (
-                <label
-                  className={`text-textMuted flex items-center gap-2 text-xs tracking-wide uppercase ${
-                    turboAvailable ? '' : 'opacity-50'
-                  }`}
-                  title={
-                    configuration && !turboAvailable ? 'Turbo is disabled by the server' : undefined
-                  }
-                >
-                  <input
-                    type="checkbox"
-                    className="border-accent/50 bg-surface/80 text-accent focus:ring-accent h-4 w-4 rounded disabled:cursor-not-allowed"
-                    checked={turboActive}
-                    disabled={!turboAvailable}
-                    onChange={(event) => {
-                      setTurbo(event.target.checked);
-                    }}
-                  />
-                  Turbo
-                </label>
-              )}
-              {selectorVisible && (
-                <select
-                  value={provider}
+              <label
+                className={`text-textMuted flex items-center gap-2 text-xs tracking-wide uppercase ${
+                  turboAvailable ? '' : 'opacity-50'
+                }`}
+                title={
+                  configuration && !turboAvailable ? 'Turbo is disabled by the server' : undefined
+                }
+              >
+                <input
+                  type="checkbox"
+                  className="border-accent/50 bg-surface/80 text-accent focus:ring-accent h-4 w-4 rounded disabled:cursor-not-allowed"
+                  checked={turboActive}
+                  disabled={!turboAvailable}
                   onChange={(event) => {
-                    setProvider(event.target.value);
+                    setTurbo(event.target.checked);
                   }}
-                  className="border-accent/40 bg-surface/80 text-textPrimary hover:border-accent focus:border-accent rounded-md border px-2 py-1 text-xs tracking-wide uppercase focus:outline-none"
-                  title="Switch data provider"
-                >
-                  {availableProviders.map((p) => {
-                    const label = p === 'libbitcoin' ? 'server' : p;
-                    return (
-                      <option key={p} value={p}>
-                        {label}
-                      </option>
-                    );
-                  })}
-                </select>
-              )}
+                />
+                Turbo
+              </label>
             </div>
           </div>
         </div>

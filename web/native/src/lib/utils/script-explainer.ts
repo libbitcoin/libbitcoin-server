@@ -221,7 +221,7 @@ export interface InputExplanation {
   witnessItems: WitnessItemExplanation[];
 }
 
-// Witness stack roles: BIP 141, BIP 341. Roles use the provider's funding-output
+// Witness stack roles: BIP 141, BIP 341. Roles use the server's funding-output
 // type and item positions; signatures and commitments are not verified here.
 export function explainInput(
   script: DecodedScript | undefined,
@@ -252,13 +252,7 @@ export function explainInput(
       };
     return result;
   }
-  let type = scriptType?.replace(/^v0_/u, '').replace(/^v1_/u, '');
-  const aliases: Partial<Record<string, string>> = {
-    witness_v0_keyhash: 'p2wpkh',
-    witness_v0_scripthash: 'p2wsh',
-    witness_v1_taproot: 'p2tr',
-  };
-  type = type && Object.hasOwn(aliases, type) ? aliases[type] : type;
+  let type = scriptType;
   if (
     type === 'p2pkh' &&
     script &&

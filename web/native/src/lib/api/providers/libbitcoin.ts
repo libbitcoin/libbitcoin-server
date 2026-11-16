@@ -157,8 +157,7 @@ function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
     typeof record[key] === 'boolean' ? record[key] : DEFAULT_CONFIGURATION[key];
 
   const node = isRecord(raw.node) ? raw.node : {};
-  const network =
-    typeof node.network === 'string' ? node.network : DEFAULT_CONFIGURATION.network;
+  const network = typeof node.network === 'string' ? node.network : DEFAULT_CONFIGURATION.network;
   const forks = isRecord(raw.forks)
     ? Object.entries(raw.forks)
         .filter(([, enabled]) => enabled === true)
@@ -1042,7 +1041,6 @@ export function createLibbitcoinClient({
     metadata: {
       id: 'libbitcoin',
       label: 'Server',
-      type: 'local',
       connectionState: 'connected',
       supportsWebsocket,
       endpoint: baseUrl,

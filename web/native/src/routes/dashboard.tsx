@@ -1,15 +1,11 @@
 import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  type BlockchainEventTransport,
-  type BlockSummary,
-  useProviderInfo,
-} from '@/lib/api/client';
+import { type BlockchainEventTransport, type BlockSummary, useServerInfo } from '@/lib/api/client';
 import {
   useBlockStats,
   useBlockchainEventStatus,
   useLiveLatestBlocks,
-  useProviderConfiguration,
+  useServerConfiguration,
 } from '@/lib/hooks/useBlockchainData';
 import { useNow } from '@/lib/hooks/useNow';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
@@ -28,10 +24,10 @@ const LATEST_BLOCK_TABLE_LIMIT = 8;
 
 export function DashboardPage() {
   usePageTitle();
-  const info = useProviderInfo();
+  const info = useServerInfo();
   const now = useNow();
   const eventStatus = useBlockchainEventStatus();
-  const { data: configuration } = useProviderConfiguration();
+  const { data: configuration } = useServerConfiguration();
   const {
     data: blocks,
     isLoading: blocksLoading,
@@ -201,8 +197,8 @@ export function DashboardPage() {
         <div className="grid gap-6">
           <div className="border-accent/30 bg-surface/80 space-y-5 rounded-2xl border p-6">
             <div className="space-y-2">
-              <p className="text-accentSecondary text-xs tracking-wide uppercase">Provider</p>
-              <h2 className="text-accent text-xl font-semibold">Provider Status</h2>
+              <p className="text-accentSecondary text-xs tracking-wide uppercase">Server</p>
+              <h2 className="text-accent text-xl font-semibold">Server Status</h2>
               <p className="text-textMuted text-sm">
                 {info.label}
                 {info.endpoint ? ` · ${formatEndpointLabel(info.endpoint)}` : ''}
@@ -213,7 +209,6 @@ export function DashboardPage() {
               <PanelStat label="Connection" value={formatLabelValue(info.connectionState)} />
               <PanelStat label="Top Updates" value={formatTopUpdateMode(eventStatus.transport)} />
               <PanelStat label="Transport" value={formatEventTransport(eventStatus.transport)} />
-              <PanelStat label="Provider ID" value={info.id} />
               <PanelStat label="Network" value={configuration?.network ?? '—'} />
             </div>
 

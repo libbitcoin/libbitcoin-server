@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
-import { useProviderInfo, type BlockValidation } from '@/lib/api/client';
+import { useServerInfo, type BlockValidation } from '@/lib/api/client';
 import { useBlockValidation } from '@/lib/hooks/useBlockchainData';
 import { blockValidationPath } from '@/lib/utils/routes';
 
@@ -40,7 +40,7 @@ export function BlockValidationInspector({
   const [expanded, setExpanded] = useState(initiallyExpanded);
   const regionId = useId();
   const headingId = useId();
-  const provider = useProviderInfo();
+  const server = useServerInfo();
   const query = useBlockValidation(blockHash, { enabled: expanded });
 
   return (
@@ -69,7 +69,7 @@ export function BlockValidationInspector({
         {expanded && (
           <div className="border-accent/20 space-y-6 border-t p-6">
             <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-              <p className="text-textMuted">Reported by {provider.label} for this block.</p>
+              <p className="text-textMuted">Reported by {server.label} for this block.</p>
               <div className="flex flex-wrap items-center gap-4">
                 <Link
                   className="text-accent hover:text-accentSecondary"
@@ -143,14 +143,6 @@ function ValidationDetails({ validation }: { validation: BlockValidation }) {
             )}
           </dd>
         </div>
-        {validation.inBestChain !== undefined && (
-          <div>
-            <dt className="text-accentSecondary text-xs tracking-wide uppercase">In best chain</dt>
-            <dd className="mt-1">
-              <FlagValue value={validation.inBestChain} />
-            </dd>
-          </div>
-        )}
       </dl>
 
       <div className="space-y-3">
@@ -167,9 +159,7 @@ function ValidationDetails({ validation }: { validation: BlockValidation }) {
             ))}
           </dl>
         ) : (
-          <p className="text-textMuted text-sm">
-            Validation flags are not reported by this provider.
-          </p>
+          <p className="text-textMuted text-sm">Validation flags are not reported by the server.</p>
         )}
       </div>
 
@@ -220,7 +210,7 @@ function ValidationDetails({ validation }: { validation: BlockValidation }) {
         ) : (
           <p className="text-textMuted text-sm">
             {validation.rules === undefined
-              ? 'Consensus rules are not reported by this provider.'
+              ? 'Consensus rules are not reported by the server.'
               : 'No consensus rule flags were returned for this block.'}
           </p>
         )}

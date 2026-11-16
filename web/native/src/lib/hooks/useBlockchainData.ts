@@ -157,7 +157,7 @@ function useBlockchainQuery<T>({
 }: BlockchainQueryOptions<T>) {
   const client = useBlockchainClient();
 
-  // The provider client comes from context and includes methods; cache identity should track metadata.
+  // The server client comes from context and includes methods; cache identity should track metadata.
   return useQuery<T>({
     queryKey: [getBlockchainQueryScope(client), ...queryKey],
     queryFn: () => queryFn(client),
@@ -176,7 +176,7 @@ export function useLatestBlocks(limit = 10) {
   });
 }
 
-export function useProviderConfiguration() {
+export function useServerConfiguration() {
   return useBlockchainQuery<BlockchainClientConfiguration>({
     queryKey: ['configuration'],
     queryFn: (client) => client.getConfiguration(),
@@ -185,7 +185,7 @@ export function useProviderConfiguration() {
 }
 
 export function useNetwork() {
-  const { data } = useProviderConfiguration();
+  const { data } = useServerConfiguration();
   return { network: data?.network, params: data?.wallet };
 }
 
@@ -307,10 +307,10 @@ export function useAddressUtxos(address: string) {
   });
 }
 
-export function useAddressTransactions(address: string, lastSeenTxid?: string) {
+export function useAddressTransactions(address: string, cursor?: string) {
   return useBlockchainQuery<AddressActivityItem[]>({
-    queryKey: ['address', address, 'transactions', { lastSeenTxid: lastSeenTxid ?? null }],
-    queryFn: (client) => client.getAddressTransactions(address, lastSeenTxid),
+    queryKey: ['address', address, 'transactions', { cursor: cursor ?? null }],
+    queryFn: (client) => client.getAddressTransactions(address, cursor),
     enabled: Boolean(address.trim()),
     blockRefresh: 'always',
   });

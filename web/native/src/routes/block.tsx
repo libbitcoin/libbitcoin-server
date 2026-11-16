@@ -41,10 +41,9 @@ export function BlockPage() {
     error: blockError,
   } = useBlockHeader(identifier);
   usePageTitle(block ? `Block #${String(block.height)}` : 'Block');
-  const isLibbitcoin = client.metadata.id === 'libbitcoin';
-  const statsTarget = isLibbitcoin && block?.hash ? block.hash : '';
+  const statsTarget = block?.hash ?? '';
   const { data: stats, isLoading: statsLoading } = useBlockStats(statsTarget, {
-    enabled: isLibbitcoin && Boolean(block?.hash),
+    enabled: Boolean(block?.hash),
   });
   const {
     data: initialTransactions,
@@ -129,7 +128,7 @@ export function BlockPage() {
   const subsidySats = stats?.subsidySats ?? block?.subsidySats;
   const weight = stats?.weight ?? block?.weight;
   const size = stats?.size ?? block?.size;
-  const showStatsPlaceholder = isLibbitcoin && Boolean(block) && statsLoading;
+  const showStatsPlaceholder = Boolean(block) && statsLoading;
 
   return (
     <div className="space-y-8">

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useSavedInvestigations } from '@/app/saved-investigations';
-import { useProviderInfo } from '@/lib/api/client';
+import { useServerInfo } from '@/lib/api/client';
 import { useNetwork } from '@/lib/hooks/useBlockchainData';
 import {
   bookmarkIdentity,
@@ -73,7 +73,7 @@ export function SaveBookmarkButton({
   target: BookmarkTarget;
   compact?: boolean;
 }) {
-  const metadata = useProviderInfo();
+  const metadata = useServerInfo();
   const { network } = useNetwork();
   const source = bookmarkSource(metadata, network);
   const { bookmarksByTarget } = useSavedInvestigations();
@@ -114,7 +114,7 @@ export function SaveBookmarkButton({
 }
 
 function SaveBookmarkForm({ target, onClose }: { target: BookmarkTarget; onClose: () => void }) {
-  const metadata = useProviderInfo();
+  const metadata = useServerInfo();
   const { network } = useNetwork();
   const source = bookmarkSource(metadata, network);
   const { bookmarksByTarget, saveBookmark, error } = useSavedInvestigations();

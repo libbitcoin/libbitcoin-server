@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSavedInvestigations } from '@/app/saved-investigations';
 import {
@@ -6,7 +6,7 @@ import {
   bookmarkButtonClass,
   bookmarkFieldClass,
 } from '@/components/save-bookmark';
-import { createBlockchainClient, useProviderSwitcher } from '@/lib/api/client';
+import { useServerInfo } from '@/lib/api/client';
 import { scriptHashFromAddress } from '@/lib/api/providers/libbitcoin-mapper';
 import { useNetwork } from '@/lib/hooks/useBlockchainData';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
@@ -24,7 +24,7 @@ export function InvestigationsPage() {
   usePageTitle('Saved investigations');
   const store = useSavedInvestigations();
   const { data, error } = store;
-  const { availableProviders, setProvider } = useProviderSwitcher();
+  const info = useServerInfo();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const selected = data.investigations.find((item) => item.id === params.get('investigation'));
@@ -41,15 +41,7 @@ export function InvestigationsPage() {
     label: string;
   } | null>(null);
   const { network, params: networkParams } = useNetwork();
-  const sources = useMemo(
-    () =>
-      new Set(
-        availableProviders.map((id) =>
-          sourceKey(bookmarkSource(createBlockchainClient(id).metadata, network))
-        )
-      ),
-    [availableProviders, network]
-  );
+  const currentSource = sourceKey(bookmarkSource(info, network));
   const matching = data.bookmarks
     .filter((item) => {
       if (selected && item.investigationId !== selected.id) return false;
@@ -72,14 +64,13 @@ export function InvestigationsPage() {
     setLimit(30);
   };
   const openBookmark = (item: SavedBookmark) => {
-    if (!sources.has(sourceKey(item.source))) return;
+    if (sourceKey(item.source) !== currentSource) return;
     let state: { displayAddress: string } | undefined;
     if (item.target.kind === 'address' && item.target.displayAddress && networkParams) {
       const decoded = scriptHashFromAddress(item.target.displayAddress, networkParams);
       if (decoded?.hash === item.target.address)
         state = { displayAddress: item.target.displayAddress };
     }
-    setProvider(item.source.providerId);
     void navigate(bookmarkPath(item.target), { state });
   };
   const exportData = () => {
@@ -326,7 +317,7 @@ export function InvestigationsPage() {
                     <button
                       type="button"
                       className={bookmarkButtonClass}
-                      disabled={!sources.has(sourceKey(item.source))}
+                      disabled={sourceKey(item.source) !== currentSource}
                       onClick={() => {
                         openBookmark(item);
                       }}
@@ -356,10 +347,10 @@ export function InvestigationsPage() {
                   {item.source.providerId} {item.source.network ? `· ${item.source.network}` : ''} ·{' '}
                   {item.source.endpoint || 'Default endpoint'}
                 </p>
-                {!sources.has(sourceKey(item.source)) && (
+                {sourceKey(item.source) !== currentSource && (
                   <p className="text-accentSecondary text-xs">
-                    The saved provider, endpoint, or network is not configured. Restore that source
-                    to open this bookmark.
+                    This bookmark does not match the current server and network. Connect to the
+                    saved node to open this bookmark.
                   </p>
                 )}
               </li>

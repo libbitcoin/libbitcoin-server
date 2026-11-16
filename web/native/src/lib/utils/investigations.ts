@@ -96,7 +96,7 @@ export function bookmarkSource(
   return {
     providerId: metadata.id,
     endpoint: (metadata.endpoint ?? '').replace(/\/+$/u, ''),
-    ...(metadata.id === 'libbitcoin' && network ? { network } : {}),
+    ...(network ? { network } : {}),
   };
 }
 

@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { classifySearchQuery } from '@/lib/utils/search';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
 import { useBlockHeader, useNetwork, useTransactionHeader } from '@/lib/hooks/useBlockchainData';
-import { useProviderInfo } from '@/lib/api/client';
+import { useServerInfo } from '@/lib/api/client';
 import { scriptHashFromAddress } from '@/lib/api/providers/libbitcoin-mapper';
 import {
   addressPath,
@@ -30,7 +30,7 @@ function retryHashLookup(failureCount: number, error: Error) {
 }
 
 function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Unknown provider error';
+  return error instanceof Error ? error.message : 'Unknown server error';
 }
 
 export function SearchPage() {
@@ -38,7 +38,7 @@ export function SearchPage() {
   const rawQuery = params.get('q') ?? '';
   const query = rawQuery.trim();
   const navigate = useNavigate();
-  const provider = useProviderInfo();
+  const server = useServerInfo();
   const { network, params: networkParams } = useNetwork();
 
   const classification = useMemo(() => classifySearchQuery(query), [query]);
@@ -63,24 +63,22 @@ export function SearchPage() {
       void navigate(transactionOutputPath(value, classification.outputIndex), { replace: true });
       return;
     }
-    const isLibbitcoin = provider.id === 'libbitcoin';
-    if (classification.type === 'address' && isLibbitcoin && (!network || !networkParams)) return;
+    if (classification.type === 'address' && (!network || !networkParams)) return;
     const addressScriptInfo =
-      classification.type === 'address' && isLibbitcoin && networkParams
+      classification.type === 'address' && networkParams
         ? scriptHashFromAddress(value, networkParams)
         : null;
     const scriptHash = addressScriptInfo?.hash ?? null;
-    if (classification.type === 'address' && isLibbitcoin && network && scriptHash) {
+    if (classification.type === 'address' && network && scriptHash) {
       rememberLibbitcoinAddressAlias(network, scriptHash, value);
     }
     const target =
       classification.type === 'block-height'
         ? blockByHeightPath(value)
         : addressPath(scriptHash ?? value);
-    const state =
-      classification.type === 'address' && isLibbitcoin ? { displayAddress: value } : undefined;
+    const state = classification.type === 'address' ? { displayAddress: value } : undefined;
     void navigate(target, { replace: true, state });
-  }, [classification, navigate, network, networkParams, provider.id, query]);
+  }, [classification, navigate, network, networkParams, query]);
 
   const blockLookupSettled = blockLookup.isSuccess || blockLookup.isError;
   const transactionLookupSettled = transactionLookup.isSuccess || transactionLookup.isError;
@@ -184,7 +182,7 @@ export function SearchPage() {
             Hash not found
           </h1>
           <p className="text-textMuted break-all">
-            No block or transaction matched “{hashValue}” on {provider.label}.
+            No block or transaction matched “{hashValue}” on {server.label}.
           </p>
           <Link to={dashboardPath()} className="text-accent hover:text-accentSecondary">
             Return to dashboard
@@ -200,7 +198,7 @@ export function SearchPage() {
           Hash lookup incomplete
         </h1>
         <p className="text-textMuted">
-          The provider could not conclusively check both blocks and transactions.
+          The server could not conclusively check both blocks and transactions.
         </p>
         {blockLookup.isSuccess ? (
           <Link
