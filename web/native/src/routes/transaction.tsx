@@ -24,6 +24,7 @@ import {
 } from '@/lib/utils/format';
 import { copyTextToClipboard } from '@/lib/utils/clipboard';
 import { HashText } from '@/components/hash-text';
+import { MinerValue } from '@/components/miner-value';
 import { ScriptExplainer } from '@/components/script-explainer';
 import { ScriptLookupStatus } from '@/components/script-lookup-status';
 import { SaveBookmarkButton } from '@/components/save-bookmark';
@@ -242,6 +243,9 @@ export function TransactionPage() {
         />
         <InfoItem label="Version" value={tx?.version ?? '—'} />
         <InfoItem label="Locktime" value={tx?.locktime ?? '—'} />
+        {tx?.inputs[0]?.isCoinbase && (
+          <InfoItem label="Miner" value={<MinerValue coinbase={tx} />} />
+        )}
       </section>
 
       {tx && targetKind && !targetAvailable && (

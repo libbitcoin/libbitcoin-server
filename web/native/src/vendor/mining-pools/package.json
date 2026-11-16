@@ -1,0 +1,7 @@
+{
+  "name": "mempool/mining-pools",
+  "version": "0a285e241f8a",
+  "private": true,
+  "license": "MIT",
+  "homepage": "https://github.com/mempool/mining-pools"
+}

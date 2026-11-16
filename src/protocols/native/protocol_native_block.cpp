@@ -245,6 +245,7 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
     // All modern configurable forks.
     object["forks"] = system::json::object
     {
+        { "bip16",  context.is_enabled(chain::flags::bip16_rule) },
         { "bip30",  context.is_enabled(chain::flags::bip30_rule) },
         { "bip34",  context.is_enabled(chain::flags::bip34_rule) },
         { "bip66",  context.is_enabled(chain::flags::bip66_rule) },
