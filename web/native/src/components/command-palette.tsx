@@ -1118,7 +1118,7 @@ export function CommandPalette() {
             className="text-textPrimary placeholder:text-textMuted w-full bg-transparent text-sm outline-none"
             aria-label="Command input"
           />
-          <kbd className="text-textMuted hidden rounded border border-white/10 bg-black/30 px-2 py-1 text-[10px] tracking-wide uppercase sm:block">
+          <kbd className="text-textMuted border-textMuted/10 bg-inset hidden rounded border px-2 py-1 text-[10px] tracking-wide uppercase sm:block">
             Esc
           </kbd>
         </div>

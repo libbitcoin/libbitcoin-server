@@ -65,8 +65,8 @@ export function SyncStatusNotifier({
       aria-atomic="true"
       className={`fixed right-4 bottom-4 left-4 z-[60] rounded-xl border p-4 shadow-2xl shadow-black/50 sm:left-auto sm:w-96 ${
         nearCurrent
-          ? 'border-emerald-400/35 bg-emerald-950/95'
-          : 'border-amber-400/35 bg-amber-950/95'
+          ? 'bg-noticeSuccess/95 border-emerald-400/35'
+          : 'bg-noticeWarning/95 border-amber-400/35'
       }`}
     >
       <div className="flex items-start gap-4">
@@ -78,7 +78,7 @@ export function SyncStatusNotifier({
           >
             {nearCurrent ? 'Node near current (estimated)' : 'Node fell behind (estimated)'}
           </p>
-          <p className="mt-1 text-sm text-white/75">{noticeDescription(notice)}</p>
+          <p className="text-noticeText/75 mt-1 text-sm">{noticeDescription(notice)}</p>
         </div>
         <button
           type="button"
@@ -86,7 +86,7 @@ export function SyncStatusNotifier({
           onClick={() => {
             setNotice(null);
           }}
-          className="text-lg leading-none text-white/60 hover:text-white"
+          className="text-noticeText/60 hover:text-noticeText text-lg leading-none"
         >
           ×
         </button>

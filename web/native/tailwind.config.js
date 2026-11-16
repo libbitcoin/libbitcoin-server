@@ -5,12 +5,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#272822',
-        surface: '#1f211c',
-        accent: '#ffa022',
-        accentSecondary: '#c85637',
-        textPrimary: '#ededed',
-        textMuted: '#cfcfcf',
+        background: 'var(--theme-background)',
+        surface: 'var(--theme-surface)',
+        accent: 'var(--theme-accent)',
+        accentSecondary: 'var(--theme-accent-secondary)',
+        textPrimary: 'var(--theme-text-primary)',
+        textMuted: 'var(--theme-text-muted)',
+        inset: 'var(--theme-inset)',
+        noticeSuccess: 'var(--theme-notice-success)',
+        noticeWarning: 'var(--theme-notice-warning)',
+        noticeText: 'var(--theme-notice-text)',
       },
     },
   },

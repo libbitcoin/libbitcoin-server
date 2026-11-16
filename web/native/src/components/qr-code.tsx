@@ -14,7 +14,7 @@ export function AddressQRCode({ value, size = 128 }: AddressQRCodeProps) {
         size={size}
         style={{ height: 'auto', maxWidth: '100%', width: '100%' }}
         bgColor="transparent"
-        fgColor="#ffa022"
+        fgColor="var(--theme-accent)"
         level="Q"
       />
     </div>

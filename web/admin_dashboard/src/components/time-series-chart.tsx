@@ -4,6 +4,8 @@ import 'uplot/dist/uPlot.min.css';
 import type { ChartType } from '@/lib/signal-catalog';
 import type { ChartScale } from '@/lib/chart-config';
 import { compressedAxisSplits } from '@/lib/chart-scale';
+import { chartColor } from '@/lib/chart-theme';
+import { useTheme } from '@/lib/theme';
 
 export interface ChartSeries {
   label: string;
@@ -37,6 +39,7 @@ export function TimeSeriesChart({
   scale = 'linear',
   forceEmpty = false,
 }: TimeSeriesChartProps) {
+  const activeTheme = useTheme();
   const containerReference = useRef<HTMLDivElement>(null);
   const chartReference = useRef<uPlot | null>(null);
   const isZoomedReference = useRef(false);
@@ -103,15 +106,15 @@ export function TimeSeriesChart({
       axes: [
         {
           stroke: theme.color,
-          grid: { stroke: '#c8563733', width: 1 },
-          ticks: { stroke: '#ffa0224d', width: 1 },
+          grid: { stroke: theme.getPropertyValue('--chart-grid').trim(), width: 1 },
+          ticks: { stroke: theme.getPropertyValue('--chart-ticks').trim(), width: 1 },
           font: axisFont,
         },
         {
           size: 72,
           stroke: theme.color,
-          grid: { stroke: '#c8563733', width: 1 },
-          ticks: { stroke: '#ffa0224d', width: 1 },
+          grid: { stroke: theme.getPropertyValue('--chart-grid').trim(), width: 1 },
+          ticks: { stroke: theme.getPropertyValue('--chart-ticks').trim(), width: 1 },
           font: axisFont,
           values: (_self, values: Array<number | null>) =>
             values.map((value) =>
@@ -128,6 +131,7 @@ export function TimeSeriesChart({
       series: [
         {},
         ...series.map((item, seriesIndex) => {
+          const color = chartColor(item.color, theme);
           const paths =
             visualization === 'step'
               ? uPlot.paths.stepped?.({ align: 1 })
@@ -136,10 +140,10 @@ export function TimeSeriesChart({
                 : undefined;
           return {
             label: item.label,
-            stroke: item.color,
+            stroke: color,
             fill:
               visualization === 'area' || visualization === 'bar'
-                ? (item.fill ?? `${item.color}24`)
+                ? (item.fill ?? `${color}24`)
                 : item.fill,
             width: item.width ?? 2,
             paths,
@@ -170,7 +174,7 @@ export function TimeSeriesChart({
       chart.destroy();
       chartReference.current = null;
     };
-  }, [height, series, valueFormatter, valueSuffix, visualization, zeroBased, scale]);
+  }, [height, series, valueFormatter, valueSuffix, visualization, zeroBased, scale, activeTheme]);
 
   useEffect(() => {
     const chart = chartReference.current;
