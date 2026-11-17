@@ -17,6 +17,7 @@ export function AppShell() {
   const isLibbitcoin = provider === 'libbitcoin';
   const turboAvailable = isLibbitcoin && configuration?.turbo === true;
   const turboActive = turbo && turboAvailable;
+  const network = configuration ? (configuration.network ?? '[unknown]') : ' ';
 
   useLayoutEffect(() => {
     if (isLibbitcoin && !configuration) return;
@@ -43,11 +44,7 @@ export function AppShell() {
               >
                 Libbitcoin Server
               </NavLink>
-              {configuration && (
-                <span className="text-textMuted text-sm">
-                  {configuration.network ?? '[unknown]'}
-                </span>
-              )}
+              <span className="text-textMuted text-sm">{network}</span>
             </div>
             <nav className="text-textMuted order-3 flex w-full items-center gap-3 text-sm md:order-2 md:w-auto">
               <NavLink

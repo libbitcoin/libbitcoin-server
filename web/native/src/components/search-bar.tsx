@@ -15,17 +15,17 @@ export function SearchBar() {
   };
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="border-accent/30 bg-surface/80 focus-within:border-accent flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-sm shadow-inner md:w-auto"
-    >
-      <MagnifyingGlassIcon className="text-accent h-4 w-4" aria-hidden="true" />
+    <form onSubmit={onSubmit} className="relative w-full md:w-auto">
+      <MagnifyingGlassIcon
+        className="text-accent pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
+        aria-hidden="true"
+      />
       <input
         type="search"
         aria-label="Search blocks, transactions, and addresses"
         placeholder="Search blocks, transactions, addresses"
         title="Search by block height, hash, address, or outpoint (txid:vout)"
-        className="text-textPrimary placeholder:text-textMuted w-full bg-transparent focus:outline-none md:w-72"
+        className="border-accent/40 bg-surface text-textPrimary placeholder:text-textMuted focus:border-accent focus:ring-accent w-full rounded-md border py-1.5 pr-3 pl-9 text-sm md:w-72"
         value={value}
         onChange={(event) => {
           setValue(event.target.value);

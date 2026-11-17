@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
 export const THEMES = [
-  { id: 'current', label: 'Theme' },
+  { id: 'current', label: 'Classic' },
   { id: 'light', label: 'Light' },
   { id: 'midnight', label: 'Midnight' },
 ] as const;
