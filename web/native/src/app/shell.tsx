@@ -96,7 +96,7 @@ export function AppShell() {
                 >
                   <input
                     type="checkbox"
-                    className="border-accent/50 bg-surface/80 text-accent focus:ring-accent h-4 w-4 rounded disabled:cursor-not-allowed"
+                    className="border-accent/50 bg-surface/80 checked:bg-accent text-accent focus:ring-accent h-4 w-4 rounded disabled:cursor-not-allowed"
                     checked={turboActive}
                     disabled={!turboAvailable}
                     onChange={(event) => {
