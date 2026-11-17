@@ -26,6 +26,7 @@ export interface BlockchainClientConfiguration {
   filter: boolean;
   turbo: boolean;
   witness: boolean;
+  coin: string;
   network?: string;
   forks: string[];
   wallet: NetworkParams;

@@ -6,7 +6,6 @@ const nativeConfigurationSchema = z.object({
     filter: z.boolean(),
     silent: z.number().int().nonnegative().nullable(),
     turbo: z.boolean(),
-    witness: z.boolean(),
     pruned: z.number().int().nonnegative(),
   }),
   node: z.object({
@@ -16,7 +15,6 @@ const nativeConfigurationSchema = z.object({
     witness: z.boolean().optional(),
     filters: z.boolean().optional(),
     privacy: z.boolean().optional(),
-    fees: z.boolean().optional(),
   }),
   wallet: z
     .object({

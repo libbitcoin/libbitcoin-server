@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
+import { coinOf, describePrefix } from '@/lib/wallet-prefixes';
 import { getEventDefinition } from '@/lib/admin-contract';
 import { toWebSocketUrl, type EndpointConfiguration } from '@/lib/endpoints';
 import {
@@ -36,6 +37,7 @@ const lifecycleEvents: ReadonlyArray<{ event: number; label: string }> = [
 export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate }: OverviewProps) {
   const activity = detectNodeActivity(metrics, 10);
   const configuration = native.configuration;
+  const coin = coinOf(configuration?.forks ?? []);
   const connection = combineStatus(adminStatus, native.status);
   const warnings = [
     adminStatus.error ? `Admin: ${adminStatus.error}` : null,
@@ -69,7 +71,7 @@ export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate
 
       <dl aria-label="Node summary" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricItem
-          label="Canonical top"
+          label="Current top"
           value={native.top === null ? '—' : formatInteger(native.top)}
           detail={
             native.transport === 'none'
@@ -145,13 +147,13 @@ export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate
           </header>
           {configuration ? (
             <div className="space-y-4 p-5 text-sm">
-              <ConfigGroup title="Store">
+              <ConfigGroup title="Store configuration">
                 <Flags
                   items={[
                     ['Address index', configuration.store.address],
-                    ['Client filters', configuration.store.filter],
+                    ['Client filters index', configuration.store.filter],
+                    ['Silent payments index', configuration.store.silent !== null],
                     ['Turbo', configuration.store.turbo],
-                    ['Witness', configuration.store.witness],
                   ]}
                 />
                 <Values
@@ -159,14 +161,8 @@ export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate
                     [
                       'Silent payments from',
                       configuration.store.silent === null
-                        ? 'Disabled'
+                        ? 'Not indexed'
                         : formatInteger(configuration.store.silent),
-                    ],
-                    [
-                      'Pruned below',
-                      configuration.store.pruned > 0
-                        ? formatInteger(configuration.store.pruned)
-                        : 'Not pruned',
                     ],
                   ]}
                 />
@@ -179,7 +175,16 @@ export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate
                     ['Witness', configuration.node.witness],
                     ['Filters', configuration.node.filters],
                     ['Privacy', configuration.node.privacy],
-                    ['Fees', configuration.node.fees],
+                  ]}
+                />
+                <Values
+                  items={[
+                    [
+                      'Inputs pruned below',
+                      configuration.store.pruned > 0
+                        ? formatInteger(configuration.store.pruned)
+                        : 'Not pruned',
+                    ],
                   ]}
                 />
               </ConfigGroup>
@@ -209,13 +214,41 @@ export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate
                 <ConfigGroup title="Wallet">
                   <Values
                     items={[
-                      ['P2PKH version', String(configuration.wallet.p2kh)],
-                      ['P2SH version', String(configuration.wallet.p2sh)],
-                      ['WIF version', String(configuration.wallet.wif)],
-                      ['Witness prefix', configuration.wallet.witness],
-                      ['Silent prefix', configuration.wallet.silent],
-                      ['HD private', toHex32(configuration.wallet.hd_private)],
-                      ['HD public', toHex32(configuration.wallet.hd_public)],
+                      [
+                        'P2PKH version',
+                        String(configuration.wallet.p2kh),
+                        describePrefix(coin, 'p2kh', configuration.wallet.p2kh),
+                      ],
+                      [
+                        'P2SH version',
+                        String(configuration.wallet.p2sh),
+                        describePrefix(coin, 'p2sh', configuration.wallet.p2sh),
+                      ],
+                      [
+                        'WIF version',
+                        String(configuration.wallet.wif),
+                        describePrefix(coin, 'wif', configuration.wallet.wif),
+                      ],
+                      [
+                        'Witness prefix',
+                        configuration.wallet.witness,
+                        describePrefix(coin, 'witness', configuration.wallet.witness),
+                      ],
+                      [
+                        'Silent prefix',
+                        configuration.wallet.silent,
+                        describePrefix(coin, 'silent', configuration.wallet.silent),
+                      ],
+                      [
+                        'HD private',
+                        toHex32(configuration.wallet.hd_private),
+                        describePrefix(coin, 'hdPrivate', configuration.wallet.hd_private),
+                      ],
+                      [
+                        'HD public',
+                        toHex32(configuration.wallet.hd_public),
+                        describePrefix(coin, 'hdPublic', configuration.wallet.hd_public),
+                      ],
                     ]}
                   />
                 </ConfigGroup>
@@ -313,14 +346,23 @@ function Flags({ items }: { items: ReadonlyArray<readonly [string, boolean | und
   );
 }
 
-function Values({ items }: { items: ReadonlyArray<readonly [string, string]> }) {
+function Values({
+  items,
+}: {
+  items: ReadonlyArray<readonly [string, string] | readonly [string, string, string]>;
+}) {
+  const described = items.some((item) => item.length > 2);
+  const columns = described
+    ? 'grid-cols-[10rem_max-content_auto]'
+    : 'grid-cols-[10rem_max-content]';
   return (
-    <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
-      {items.map(([label, value]) => (
-        <div key={label} className="flex items-baseline justify-between gap-3">
+    <dl className={`grid ${columns} items-baseline gap-x-4 gap-y-1`}>
+      {items.map(([label, value, meaning]) => (
+        <Fragment key={label}>
           <dt className="text-textMuted">{label}</dt>
           <dd className="text-textPrimary font-mono">{value}</dd>
-        </div>
+          {described && <dd className="text-textMuted">{meaning}</dd>}
+        </Fragment>
       ))}
     </dl>
   );
