@@ -2,6 +2,10 @@
 @import './themes.css';
 @config '../tailwind.config.js';
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   @apply bg-background text-textPrimary font-sans;
 }

@@ -74,9 +74,9 @@ export function App() {
               >
                 Libbitcoin Server
               </button>
-              {native.configuration && (
-                <span className="text-textMuted text-sm">{native.configuration.node.network}</span>
-              )}
+              <span className="text-textMuted text-sm">
+                {native.configuration?.node.network ?? ' '}
+              </span>
             </div>
 
             <nav className="text-textMuted order-3 flex w-full items-center gap-3 text-sm md:order-2 md:w-auto">
