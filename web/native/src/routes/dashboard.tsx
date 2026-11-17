@@ -213,29 +213,56 @@ export function DashboardPage() {
               </p>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-accentSecondary text-xs tracking-wide uppercase">Capabilities</p>
-              <div className="flex flex-wrap gap-2">
-                <CapabilityPill label="Address Index" enabled={configuration?.address} />
-                <CapabilityPill label="Witness Node" enabled={configuration?.witness} />
-                <CapabilityPill label="Client Filters" enabled={configuration?.filter} />
-              </div>
-            </div>
-
-            {configuration && configuration.forks.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-accentSecondary text-xs tracking-wide uppercase">Configured Forks</p>
-                <div className="flex flex-wrap gap-2">
-                  {configuration.forks.map((fork) => (
-                    <span
-                      key={fork}
-                      className="text-textPrimary bg-accentSecondary/15 rounded-full px-3 py-1 font-mono text-xs"
-                    >
-                      {fork}
-                    </span>
-                  ))}
-                </div>
-              </div>
+            {configuration && (
+              <>
+                <ConfigGroup title="Store configuration">
+                  <Flags
+                    items={[
+                      ['Address index', configuration.address],
+                      ['Client filters index', configuration.filter],
+                      ['Silent payments index', configuration.silent],
+                      ['Turbo', configuration.turbo],
+                    ]}
+                  />
+                </ConfigGroup>
+                <ConfigGroup title="Node services">
+                  <Flags
+                    items={[
+                      ['Blocks', configuration.services.blocks],
+                      ['Limited', configuration.services.limited],
+                      ['Witness', configuration.services.witness],
+                      ['Filters', configuration.services.filters],
+                      ['Privacy', configuration.services.privacy],
+                    ]}
+                  />
+                </ConfigGroup>
+                <ConfigGroup title="Peer protocol">
+                  <Flags
+                    items={[
+                      ['Relay', configuration.protocol.relay],
+                      ['Compact', configuration.protocol.compact],
+                      ['Address', configuration.protocol.address],
+                      ['Witness tx', configuration.protocol.witness_tx],
+                      ['Memory pool', configuration.protocol.memory_pool],
+                      ['Not found', configuration.protocol.not_found],
+                      ['Reject', configuration.protocol.reject],
+                      ['Alert', configuration.protocol.alert],
+                    ]}
+                  />
+                </ConfigGroup>
+                <ConfigGroup title="Configured forks">
+                  <div className="flex flex-wrap gap-1.5">
+                    {configuration.forks.map((fork) => (
+                      <span
+                        key={fork}
+                        className="text-textPrimary bg-accentSecondary/15 rounded-full px-2 py-0.5 font-mono text-xs"
+                      >
+                        {fork}
+                      </span>
+                    ))}
+                  </div>
+                </ConfigGroup>
+              </>
             )}
           </div>
         </div>
@@ -399,21 +426,27 @@ function PanelStat({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
-function CapabilityPill({ label, enabled }: { label: string; enabled?: boolean }) {
-  const active = enabled === true;
-  const stateLabel = enabled === undefined ? 'Unknown' : active ? 'On' : 'Off';
-
+function ConfigGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <span
-      className={`rounded-full px-3 py-1 text-xs tracking-wide uppercase ${
-        active
-          ? 'bg-emerald-500/15 text-emerald-300'
-          : enabled === undefined
-            ? 'bg-slate-500/15 text-slate-300'
-            : 'bg-rose-500/15 text-rose-300'
-      }`}
-    >
-      {label}: {stateLabel}
-    </span>
+    <section className="space-y-2">
+      <h3 className="text-accentSecondary text-xs tracking-wide uppercase">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+function Flags({ items }: { items: ReadonlyArray<readonly [string, boolean | undefined]> }) {
+  const reported = items.filter(([, enabled]) => enabled !== undefined);
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {reported.map(([label, enabled]) => (
+        <span
+          key={label}
+          className={`rounded-full border px-2 py-0.5 text-xs ${enabled ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300' : 'text-textMuted border-slate-500/40'}`}
+        >
+          {label}
+        </span>
+      ))}
+    </div>
   );
 }
