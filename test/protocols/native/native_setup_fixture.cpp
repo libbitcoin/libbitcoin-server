@@ -120,6 +120,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
         // Settings files are read and derived values packed, as by the executor.
         ec = config_.initialize();
         BC_REQUIRE_MESSAGE(!ec, ec.message());
+        test::ephemeral(config_);
 
         BC_REQUIRE(setup(query_));
 
@@ -430,6 +431,7 @@ code server_node_setup_fixture::run(const configurator& configure)
 
     const auto ec = config_.initialize();
     BC_REQUIRE_MESSAGE(!ec, ec.message());
+    test::ephemeral(config_);
     BC_REQUIRE(test::setup_ten_block_store(query_));
 
     std::promise<code> running{};
