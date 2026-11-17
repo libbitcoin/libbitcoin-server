@@ -70,8 +70,14 @@
     <Filter Include="web\native\src\vendor\mining-pools">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\shared">
+    <Filter Include="web\native\src\vendor">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\src\vendor\mining-pools">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\shared">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
