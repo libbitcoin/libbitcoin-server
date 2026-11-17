@@ -172,6 +172,7 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\theme.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\use-current-time.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\use-telemetry.ts" />
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\wallet-prefixes.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\worker-metrics-store.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\main.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\themes.css" />
