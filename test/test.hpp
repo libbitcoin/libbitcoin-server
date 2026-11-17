@@ -163,6 +163,9 @@ bool remove(const std::filesystem::path& file_path) NOEXCEPT;
 /// Set explicit values, independent of the defaults.
 void configure(server::configuration& out) NOEXCEPT;
 
+/// Rebind default-port inbound and service bindings to ephemeral ports.
+void ephemeral(server::configuration& out) NOEXCEPT;
+
 struct directory_setup_fixture
 {
     DELETE_COPY_MOVE(directory_setup_fixture);
