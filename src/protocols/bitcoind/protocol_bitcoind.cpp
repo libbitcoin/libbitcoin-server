@@ -350,7 +350,7 @@ void protocol_bitcoind::send_rpc(response_t&& model,
     const auto batched = body.batch || body.changed;
     reset_rpc_context();
 
-    // A batched notification is answered (response parts are sequenced).
+    // A batched notification is sent unwritten (response parts are sequenced).
     if (notification && !batched)
     {
         auto message = to_response(status::no_content);
