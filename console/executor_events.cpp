@@ -62,6 +62,19 @@ const std::unordered_map<uint8_t, std::string> executor::fired_
     { events::silent_secs,          "silent_secs........." },
     { events::validate_usecs,       "validate_usecs......" },
 
+    { events::pool_submit_usecs,    "pool_submit_usecs..." },
+    { events::pool_coverage_usecs,  "pool_coverage_usecs." },
+    { events::pool_connect_usecs,   "pool_connect_usecs.." },
+    { events::pool_admit_usecs,     "pool_admit_usecs...." },
+    { events::pool_compact_usecs,   "pool_compact_usecs.." },
+    { events::pool_block_in_usecs,  "pool_block_in_usecs." },
+    { events::pool_block_out_usecs, "pool_block_out_usecs" },
+    { events::pool_context_usecs,   "pool_context_usecs.." },
+    { events::pool_template_usecs,  "pool_template_usecs." },
+    { events::pool_project_usecs,   "pool_project_usecs.." },
+
+    { events::tx_dropped,           "tx_dropped.........." },
+
     { events::unknown,              "unknown............." }
 };
 
