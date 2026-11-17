@@ -135,7 +135,8 @@ static_assert(bitcoind_control_methods::names ==
     "help getmemoryinfo getopenrpcinfo getrpcinfo logging uptime "
     "rpc.discover");
 static_assert(bitcoind_mining_methods::names ==
-    "getnetworkhashps getmininginfo submitblock submitheader");
+    "getnetworkhashps getmininginfo submitblock submitheader "
+    "getblocktemplate");
 static_assert(bitcoind_network_methods::names ==
     "getnetworkinfo addnode disconnectnode exportasmap getaddednodeinfo "
     "getaddrmaninfo getconnectioncount getnettotals getnodeaddresses "

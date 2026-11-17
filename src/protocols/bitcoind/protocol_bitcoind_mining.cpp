@@ -56,7 +56,7 @@ void protocol_bitcoind_mining::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_mining_info, _1, _2);
     SUBSCRIBE_BITCOIND(handle_submit_block, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_submit_header, _1, _2, _3);
-    SUBSCRIBE_BITCOIND(handle_get_block_template, _1, _2);
+    SUBSCRIBE_BITCOIND(handle_get_block_template, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_prioritised_transactions, _1, _2);
     SUBSCRIBE_BITCOIND(handle_prioritise_transaction, _1, _2);
     protocol_bitcoind_dispatch<rpc_interface>::start();
@@ -215,7 +215,6 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     return true;
 }
 
-// Submission pairs with getblocktemplate, which is disabled (no mempool).
 // The node accepts only blocks that it requests, so there is no path for a
 // client block, and a submitted block is by construction unrequested.
 bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
@@ -277,12 +276,209 @@ void protocol_bitcoind_mining::do_submit_header(const code& ec) NOEXCEPT
         send_result(null_t{});
 }
 
+// bip22: the template mode only (not bip23 proposals), without long polling.
+// bip145: the client must declare the segwit rule.
 bool protocol_bitcoind_mining::handle_get_block_template(const code& ec,
-    rpc_interface::get_block_template) NOEXCEPT
+    rpc_interface::get_block_template,
+    const object_t& template_request) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::client_mempool_disabled);
+    if (stopped(ec))
+        return false;
+
+    const auto mode = template_request.find("mode");
+    if (mode != template_request.end())
+    {
+        const auto name = std::get_if<string_t>(&mode->second.value());
+        if (is_null(name) || *name != "template")
+        {
+            send_error(error::bitcoind::invalid_parameter);
+            return true;
+        }
+    }
+
+    auto segwit = false;
+    const auto rules = template_request.find("rules");
+    if (rules != template_request.end())
+    {
+        const auto names = std::get_if<array_t>(&rules->second.value());
+        if (!is_null(names))
+        {
+            segwit = std::ranges::any_of(*names, [](const auto& rule) NOEXCEPT
+            {
+                const auto name = std::get_if<string_t>(&rule.value());
+                return !is_null(name) && *name == "segwit";
+            });
+        }
+    }
+
+    if (!segwit)
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    get_template(BIND(handle_template, _1, _2, _3));
     return true;
+}
+
+void protocol_bitcoind_mining::handle_template(const code& ec, size_t height,
+    const database::tx_links& links) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    POST(do_template, ec, height, links);
+}
+
+// The template is of the block above the confirmed top, so one built for
+// another height is requested again.
+void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
+    const database::tx_links& links) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    using namespace chain;
+
+    if (stopped())
+        return;
+
+    if (ec == node::error::pooling_disabled)
+    {
+        send_error(error::bitcoind::client_in_initial_download);
+        return;
+    }
+
+    if (ec)
+    {
+        send_error(error::bitcoind::internal_error);
+        return;
+    }
+
+    size_t top{};
+    const auto& query = archive();
+    const auto& bitcoin = system_settings();
+    const auto link = query.to_top_confirmed();
+    const auto key = query.get_header_key(link);
+    const auto state = query.get_confirmed_chain_state(bitcoin, key);
+    if (!state || !query.get_height(top, link))
+    {
+        send_error(error::bitcoind::internal_error);
+        return;
+    }
+
+    if (add1(top) != height)
+    {
+        get_template(BIND(handle_template, _1, _2, _3));
+        return;
+    }
+
+    const chain_state pool{ *state, bitcoin };
+    const auto ctx = pool.context();
+    const auto bip141 = ctx.is_enabled(flags::bip141_rule);
+
+    // A tx depends on the txs of the template that it spends, by position
+    // from one (the coinbase is zero).
+    uint64_t fees{};
+    array_t transactions{};
+    hashes witnesses{ null_hash };
+    std::unordered_map<hash_digest, size_t> positions{};
+    for (const auto& tx_link: links)
+    {
+        system::pool::algorithm::totals_t totals{};
+        const auto tx = query.get_transaction(tx_link, true);
+        if (!tx || !query.get_pooled_totals(totals, tx_link))
+        {
+            send_error(error::bitcoind::internal_error);
+            return;
+        }
+
+        std::vector<size_t> parents{};
+        for (const auto& input: *tx->inputs_ptr())
+        {
+            const auto it = positions.find(input->point().hash());
+            if (it != positions.end() &&
+                std::ranges::find(parents, it->second) == parents.end())
+                parents.push_back(it->second);
+        }
+
+        array_t depends{};
+        for (const auto parent: parents)
+            depends.emplace_back(to64(parent));
+
+        positions.emplace(tx->hash(false), add1(transactions.size()));
+        witnesses.push_back(tx->hash(true));
+        fees = ceilinged_add(fees, totals.fee);
+        transactions.emplace_back(object_t
+        {
+            { "data", encode_base16(tx->to_data(bip141)) },
+            { "txid", encode_hash(tx->hash(false)) },
+            { "hash", encode_hash(tx->hash(true)) },
+            { "depends", std::move(depends) },
+            { "fee", totals.fee },
+            { "sigops", totals.sigops },
+            { "weight", to64(tx->weight()) }
+        });
+    }
+
+    // bitcoind names the bip9 bit zero rules csv, and marks as required (!)
+    // a rule that a client cannot ignore.
+    array_t rules{};
+    if (ctx.is_enabled(flags::bip68_rule))
+        rules.emplace_back(string_t{ "csv" });
+
+    if (bip141)
+        rules.emplace_back(string_t{ "!segwit" });
+
+    if (ctx.is_enabled(flags::bip341_rule))
+        rules.emplace_back(string_t{ "taproot" });
+
+    const auto bits = pool.work_required();
+    const auto minimum = add1(ctx.median_time_past);
+    const auto subsidy = block::subsidy(height,
+        bitcoin.subsidy_interval_blocks, bitcoin.initial_subsidy(),
+        bitcoin.forks.bip42);
+
+    object_t result
+    {
+        { "capabilities", array_t{} },
+        { "version", chain_state::signal_version(bitcoin) },
+        { "rules", std::move(rules) },
+        { "vbavailable", object_t{} },
+        { "vbrequired", to64(zero) },
+        { "previousblockhash", encode_hash(key) },
+        { "transactions", std::move(transactions) },
+        { "coinbaseaux", object_t{} },
+        { "coinbasevalue", ceilinged_add(subsidy, fees) },
+        { "longpollid", encode_hash(key) + std::to_string(links.size()) },
+        { "target", encode_hash(from_uintx(chain::compact::expand(bits))) },
+        { "mintime", minimum },
+        { "mutable", array_t
+            {
+                string_t{ "time" },
+                string_t{ "transactions" },
+                string_t{ "prevblock" }
+            }
+        },
+        { "noncerange", string_t{ "00000000ffffffff" } },
+        { "sigoplimit", to64(bip141 ? max_fast_sigops : max_block_sigops) },
+        { "sizelimit", to64(bip141 ? max_block_weight : max_block_size) },
+        { "curtime", std::max(unix_time(), minimum) },
+        { "bits", encode_base16(to_big_endian(bits)) },
+        { "height", to64(height) }
+    };
+
+    // bip141: the commitment output script of the coinbase, over the witness
+    // hashes of the template with the reserved value of zero.
+    if (bip141)
+    {
+        const auto root = merkle_root(std::move(witnesses));
+        const auto commitment = sha256::double_hash(root, null_hash);
+        const data_chunk prefix{ 0x6a, 0x24, 0xaa, 0x21, 0xa9, 0xed };
+        result.emplace("weightlimit", to64(max_block_weight));
+        result.emplace("default_witness_commitment",
+            encode_base16(splice(prefix, commitment)));
+    }
+
+    send_result(std::move(result));
 }
 
 bool protocol_bitcoind_mining::handle_get_prioritised_transactions(const code& ec,

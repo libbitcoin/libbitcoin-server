@@ -184,7 +184,6 @@ const std::vector<method_code> pending_methods
     { "abortprivatebroadcast", R"([""])", -32601 },
     { "getprivatebroadcastinfo", "[]", -32601 },
     { "submitblock", R"([""])", -33 },
-    { "getblocktemplate", R"([{}])", -33 },
     { "getprioritisedtransactions", "[]", -33 },
     { "prioritisetransaction", R"([""])", -33 }
 };
@@ -2023,10 +2022,8 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__verbose_and_sequence__invalid_par
 BC_AUTO_TEST_CASE(bitcoind_rpc__pending__core_shaped_params__expected_code)
 {
     const auto prioritise = rpc("prioritisetransaction", R"(["0000000000000000000000000000000000000000000000000000000000000001",null,100])");
-    const auto blocktemplate = rpc("getblocktemplate", R"([{"rules":["segwit"]}])");
 
     BC_REQUIRE(has_code(prioritise, -33));
-    BC_REQUIRE(has_code(blocktemplate, -33));
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__submitpackage__empty__invalid_parameter)
@@ -4583,6 +4580,69 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__spendable__txid)
     const auto response = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]");
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     BC_REQUIRE_EQUAL(as_text(response.at("result")), encode_hash(test::tx1c.hash(false)));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__no_segwit_rule__invalid_parameter)
+{
+    BC_REQUIRE(has_code(rpc("getblocktemplate", R"([{}])"), -8));
+    BC_REQUIRE(has_code(rpc("getblocktemplate", R"([{"rules":["csv"]}])"), -8));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__proposal_mode__invalid_parameter)
+{
+    BC_REQUIRE(has_code(rpc("getblocktemplate", R"([{"mode":"proposal","rules":["segwit"]}])"), -8));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__empty_pool__next_block_without_transactions)
+{
+    const auto best = rpc("getbestblockhash");
+    const auto count = rpc("getblockcount");
+    const auto response = rpc("getblocktemplate", R"([{"rules":["segwit"]}])");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& result = response.at("result");
+    BC_REQUIRE(result.at("transactions").as_array().empty());
+    BC_REQUIRE_EQUAL(as_text(result.at("previousblockhash")), as_text(best.at("result")));
+    BC_REQUIRE_EQUAL(result.at("height").as_int64(), add1(count.at("result").as_int64()));
+    BC_REQUIRE_EQUAL(result.at("coinbasevalue").as_int64(), 5'000'000'000);
+    BC_REQUIRE_EQUAL(as_text(result.at("noncerange")), "00000000ffffffff");
+    BC_REQUIRE_EQUAL(result.at("mutable").as_array().size(), 3u);
+    BC_REQUIRE_EQUAL(result.at("vbrequired").as_int64(), 0);
+    BC_REQUIRE(result.at("curtime").as_int64() >= result.at("mintime").as_int64());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__before_segwit__csv_rule_and_legacy_limits)
+{
+    const auto response = rpc("getblocktemplate", R"([{"rules":["segwit"]}])");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& result = response.at("result");
+    BC_REQUIRE_EQUAL(result.at("rules").as_array().size(), 1u);
+    BC_REQUIRE_EQUAL(as_text(result.at("rules").as_array().front()), "csv");
+    BC_REQUIRE_EQUAL(result.at("sigoplimit").as_int64(), 20'000);
+    BC_REQUIRE_EQUAL(result.at("sizelimit").as_int64(), 1'000'000);
+    BC_REQUIRE(!result.as_object().contains("default_witness_commitment"));
+    BC_REQUIRE(!result.as_object().contains("weightlimit"));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__broadcast__transaction_with_fee)
+{
+    const auto sent = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]");
+    BC_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto response = rpc("getblocktemplate", R"([{"rules":["segwit"]}])");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& result = response.at("result");
+    const auto& txs = result.at("transactions").as_array();
+    BC_REQUIRE_EQUAL(txs.size(), 1u);
+    BC_REQUIRE_EQUAL(as_text(txs.front().at("txid")), encode_hash(test::tx1c.hash(false)));
+    BC_REQUIRE_EQUAL(as_text(txs.front().at("hash")), encode_hash(test::tx1c.hash(true)));
+    BC_REQUIRE_EQUAL(as_text(txs.front().at("data")), encode_base16(test::tx1c.to_data(false)));
+    BC_REQUIRE_EQUAL(txs.front().at("fee").as_int64(), 10);
+    BC_REQUIRE_EQUAL(txs.front().at("weight").as_int64(), to_signed(test::tx1c.weight()));
+    BC_REQUIRE(txs.front().at("depends").as_array().empty());
+    BC_REQUIRE_EQUAL(result.at("coinbasevalue").as_int64(), 5'000'000'010);
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolentry__broadcast__expected)
