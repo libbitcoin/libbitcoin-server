@@ -493,6 +493,7 @@ export function createBlockstreamClient({ baseUrl }: BlockstreamClientOptions): 
         filter: false,
         turbo: false,
         witness: true,
+        coin: 'bitcoin',
         network: 'mainnet',
         forks: [],
         wallet: MAINNET_PARAMS,

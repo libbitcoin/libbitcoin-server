@@ -321,7 +321,7 @@ const declaredSignals: SignalDefinition[] = [
     source: 'native',
     sourceId: 'top',
     name: 'canonical_top',
-    label: 'Canonical top',
+    label: 'Current top',
     category: 'native',
     payloadKind: 'height',
     allowedMeasures: ['payload-latest', 'payload-maximum', 'payload-change-rate'],

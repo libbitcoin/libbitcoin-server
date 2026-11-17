@@ -142,6 +142,7 @@ const DEFAULT_CONFIGURATION: BlockchainClientConfiguration = {
   filter: false,
   turbo: true,
   witness: true,
+  coin: 'bitcoin',
   forks: [],
   wallet: MAINNET_PARAMS,
 };
@@ -152,10 +153,12 @@ function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
   }
 
   const record = raw.store;
-  const coerceBoolean = (key: 'address' | 'filter' | 'turbo' | 'witness') =>
+  const coerceBoolean = (key: 'address' | 'filter' | 'turbo') =>
     typeof record[key] === 'boolean' ? record[key] : DEFAULT_CONFIGURATION[key];
 
   const node = isRecord(raw.node) ? raw.node : {};
+  const witness =
+    typeof node.witness === 'boolean' ? node.witness : DEFAULT_CONFIGURATION.witness;
   const network = typeof node.network === 'string' ? node.network : undefined;
   const forks = isRecord(raw.forks)
     ? Object.entries(raw.forks)
@@ -174,7 +177,8 @@ function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
     address: coerceBoolean('address'),
     filter: coerceBoolean('filter'),
     turbo: coerceBoolean('turbo'),
-    witness: coerceBoolean('witness'),
+    witness,
+    coin: forks.includes('ltc_scrypt_proof_of_work') ? 'litecoin' : 'bitcoin',
     network,
     forks,
     wallet,

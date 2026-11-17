@@ -25,7 +25,7 @@ export function SearchBar() {
         aria-label="Search blocks, transactions, and addresses"
         placeholder="Search blocks, transactions, addresses"
         title="Search by block height, hash, address, or outpoint (txid:vout)"
-        className="border-accent/40 bg-surface text-textPrimary placeholder:text-textMuted focus:border-accent focus:ring-accent w-full rounded-md border py-1.5 pr-3 pl-9 text-sm md:w-72"
+        className="border-accent/40 bg-surface text-textPrimary placeholder:text-textMuted focus:border-accent focus:ring-accent w-full rounded-md border py-1.5 pr-3 pl-9 text-sm md:w-[19rem]"
         value={value}
         onChange={(event) => {
           setValue(event.target.value);

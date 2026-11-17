@@ -14,6 +14,7 @@ import { loadLogFilter, saveLogFilter } from '@/lib/log-settings';
 import { estimateSyncProgress } from '@/lib/sync-status';
 import { useAdminTelemetry, useNativeTelemetry } from '@/lib/use-telemetry';
 import { useCurrentTime } from '@/lib/use-current-time';
+import { coinOf } from '@/lib/wallet-prefixes';
 
 type DashboardView = 'overview' | 'logs' | 'events';
 
@@ -47,6 +48,9 @@ export function App() {
     logFilter
   );
   const native = useNativeTelemetry(endpoints.nativeUrl, metrics, now);
+  const network = native.configuration
+    ? `${coinOf(native.configuration.forks)} ${native.configuration.node.network}`
+    : ' ';
   const syncEstimate = estimateSyncProgress(native.top, native.topHeader, now);
 
   function updateBrowserNotifications(enabled: boolean) {
@@ -63,7 +67,7 @@ export function App() {
     <div className="bg-background text-textPrimary min-h-screen">
       <header className="border-accent/30 bg-surface/90 border-b backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 py-4">
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-4">
             <div className="order-1 flex flex-col">
               <button
                 type="button"
@@ -75,7 +79,7 @@ export function App() {
                 Libbitcoin Server
               </button>
               <span className="text-textMuted text-sm">
-                {native.configuration?.node.network ?? ' '}
+                {network}
               </span>
             </div>
 

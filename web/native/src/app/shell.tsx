@@ -17,7 +17,9 @@ export function AppShell() {
   const isLibbitcoin = provider === 'libbitcoin';
   const turboAvailable = isLibbitcoin && configuration?.turbo === true;
   const turboActive = turbo && turboAvailable;
-  const network = configuration ? (configuration.network ?? '[unknown]') : ' ';
+  const network = configuration
+    ? `${configuration.coin} ${configuration.network ?? '[unknown]'}`
+    : ' ';
 
   useLayoutEffect(() => {
     if (isLibbitcoin && !configuration) return;
@@ -36,7 +38,7 @@ export function AppShell() {
     <div className="bg-background text-textPrimary min-h-screen">
       <header className="border-accent/30 bg-surface/90 border-b backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 py-4">
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-4">
             <div className="order-1 flex flex-col">
               <NavLink
                 to={dashboardPath()}
@@ -74,7 +76,7 @@ export function AppShell() {
                   `text-textMuted hover:text-accent rounded-md px-3 py-1 transition ${isActive ? 'bg-accentSecondary/20 text-accent' : ''}`
                 }
               >
-                Investigations
+                Saved
               </NavLink>
             </nav>
             <div className="order-2 min-w-[12rem] flex-1 md:order-4 md:flex-none">
