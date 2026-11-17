@@ -124,7 +124,7 @@ BC_AUTO_TEST_CASE(native__ws_configuration__default__json)
 
     const auto response = ws_get_json("/v1/configuration");
     BC_REQUIRE(response.is_object());
-    BC_REQUIRE(response.as_object().at("store").as_object().at("witness").as_bool());
+    BC_REQUIRE(response.as_object().at("node").as_object().at("witness").as_bool());
 }
 
 BC_AUTO_TEST_SUITE_END()
