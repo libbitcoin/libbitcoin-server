@@ -442,6 +442,18 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__named_verbosity__hex)
     REQUIRE_NO_THROW_TRUE(response.at("result").is_string());
 }
 
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__misnamed_optional__invalid_parameter)
+{
+    const auto response = rpc("getblock", "{\"blockhash\":\"" + block9 + "\",\"verbosty\":0}");
+    BC_REQUIRE_MESSAGE(has_code(response, -8), serialize(response));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__both_aliases__invalid_parameter)
+{
+    const auto response = rpc("getblock", "{\"blockhash\":\"" + block9 + "\",\"verbose\":0,\"verbosity\":0}");
+    BC_REQUIRE_MESSAGE(has_code(response, -8), serialize(response));
+}
+
 BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__unknown__invalid_address)
 {
     const std::string unknown(64, '1');
@@ -2103,6 +2115,31 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__extra_positional__misc_error)
 BC_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__unknown_named__invalid_parameter)
 {
     const auto response = rpc("getblockhash", R"({"height":1,"nonsense":2})");
+    BC_REQUIRE_MESSAGE(has_code(response, -8), serialize(response));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__args__block5)
+{
+    const auto response = rpc("getblockhash", R"({"args":[5]})");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(as_text(response.at("result")), block5);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__args_and_named__invalid_parameter)
+{
+    const auto response = rpc("getblockhash", R"({"args":[5],"height":5})");
+    BC_REQUIRE_MESSAGE(has_code(response, -8), serialize(response));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__args_extra__misc_error)
+{
+    const auto response = rpc("getblockhash", R"({"args":[5,6]})");
+    BC_REQUIRE_MESSAGE(has_code(response, -1), serialize(response));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblockhash__args_not_array__invalid_parameter)
+{
+    const auto response = rpc("getblockhash", R"({"height":5,"args":5})");
     BC_REQUIRE_MESSAGE(has_code(response, -8), serialize(response));
 }
 
@@ -4886,6 +4923,28 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__broadcast_spender__spendin
     BC_REQUIRE_EQUAL(as_text(result.at("spendingtxid")), encode_hash(test::tx1c.hash(false)));
     BC_REQUIRE_EQUAL(as_text(result.at("spendingtx")), encode_base16(test::tx1c.to_data(true)));
     BC_REQUIRE(!result.contains("blockhash"));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__named_option__spending_tx)
+{
+    const auto sent = rpc("sendrawtransaction", send_param(test::tx1c));
+    BC_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto funder = test::block1c.transactions_ptr()->front()->hash(false);
+    const auto outputs = "[{\"txid\":\"" + encode_hash(funder) + "\",\"vout\":0}]";
+    const auto response = rpc("gettxspendingprevout", "{\"outputs\":" + outputs + ",\"return_spending_tx\":true}");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& result = response.at("result").as_array().front().as_object();
+    BC_REQUIRE_EQUAL(as_text(result.at("spendingtx")), encode_base16(test::tx1c.to_data(true)));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__named_option_and_options__invalid_parameter)
+{
+    const auto funder = test::block1c.transactions_ptr()->front()->hash(false);
+    const auto outputs = "[{\"txid\":\"" + encode_hash(funder) + "\",\"vout\":0}]";
+    const auto response = rpc("gettxspendingprevout", "{\"outputs\":" + outputs + ",\"options\":{},\"mempool_only\":true}");
+    BC_REQUIRE_MESSAGE(has_code(response, -8), serialize(response));
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__confirmed_spender__blockhash)

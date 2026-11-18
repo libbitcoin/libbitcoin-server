@@ -495,6 +495,13 @@ BC_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__invalid_boolean__bad_request)
     BC_REQUIRE_EQUAL(rest_status("/rest/mempool/contents.json?verbose=1"), status::bad_request);
 }
 
+BC_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__undeclared_query__ignored)
+{
+    const auto result = rest_json("/rest/mempool/contents.json?count=1");
+    BC_REQUIRE(result.is_object());
+    BC_REQUIRE(result.as_object().empty());
+}
+
 BC_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__binary__not_found)
 {
     BC_REQUIRE_EQUAL(rest_status("/rest/mempool/contents.bin"), status::not_found);

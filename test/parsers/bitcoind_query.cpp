@@ -110,4 +110,14 @@ BC_AUTO_TEST_CASE(parsers__bitcoind_query__offset_and_size__overlaid)
     BC_REQUIRE_EQUAL(std::get<uint32_t>(params_of(out).at("size").value()), 1u);
 }
 
+BC_AUTO_TEST_CASE(parsers__bitcoind_query__undeclared__ignored)
+{
+    request_t out{};
+    const auto target = "/rest/mempool/contents.json?count=1&offset=x";
+    BC_REQUIRE(!bitcoind_target(out, target));
+    BC_REQUIRE(bitcoind_query(out, target));
+    BC_REQUIRE(!params_of(out).contains("count"));
+    BC_REQUIRE(!params_of(out).contains("offset"));
+}
+
 BC_AUTO_TEST_SUITE_END()
