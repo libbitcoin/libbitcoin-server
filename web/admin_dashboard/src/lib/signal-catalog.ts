@@ -304,7 +304,7 @@ const declaredSignals: SignalDefinition[] = [
     description: signal.description,
   })),
   ...EVENT_DEFINITIONS.map((definition) => createEventSignal(definition.id)),
-  ...LOG_LEVELS.map((level) => ({
+  ...LOG_LEVELS.filter((level) => !level.disabled).map((level) => ({
     id: logSignalId(level.id),
     source: 'log' as const,
     sourceId: level.id,

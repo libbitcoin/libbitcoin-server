@@ -109,14 +109,18 @@ export function LogView({
         </p>
         <div className="flex flex-wrap gap-x-5 gap-y-3">
           {LOG_LEVELS.map((item) => (
-            <label key={item.id} className="text-textPrimary flex items-center gap-2 text-sm">
+            <label
+              key={item.id}
+              className={`text-textPrimary flex items-center gap-2 text-sm ${item.disabled ? 'opacity-50' : ''}`}
+            >
               <input
                 type="checkbox"
                 checked={includesLogLevel(logFilter, item.id)}
+                disabled={item.disabled}
                 onChange={() => {
-                  onLogFilterChange(logFilter ^ (1 << item.id));
+                  onLogFilterChange((logFilter ^ (1 << item.id)) & ALL_LOG_FILTER);
                 }}
-                className="border-accent/35 bg-background text-accent focus:ring-accent rounded"
+                className="border-accent/35 bg-background text-accent focus:ring-accent rounded disabled:cursor-not-allowed"
               />
               {item.label}
             </label>

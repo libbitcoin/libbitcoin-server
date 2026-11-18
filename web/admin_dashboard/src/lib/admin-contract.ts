@@ -1,17 +1,24 @@
 import { z } from 'zod';
 
-export const LOG_LEVELS = [
+interface LogLevel {
+  id: number;
+  name: string;
+  label: string;
+  disabled?: boolean;
+}
+
+// Disabled levels are shown but never requested from the server.
+export const LOG_LEVELS: readonly LogLevel[] = [
   { id: 0, name: 'application', label: 'Application' },
   { id: 1, name: 'news', label: 'News' },
   { id: 2, name: 'session', label: 'Session' },
   { id: 3, name: 'protocol', label: 'Protocol' },
-  { id: 4, name: 'proxy', label: 'Proxy' },
+  { id: 4, name: 'proxy', label: 'Proxy', disabled: true },
   { id: 5, name: 'remote', label: 'Remote' },
   { id: 6, name: 'fault', label: 'Fault' },
   { id: 7, name: 'quitting', label: 'Quitting' },
-  { id: 8, name: 'objects', label: 'Objects' },
-  { id: 9, name: 'verbose', label: 'Verbose' },
-] as const;
+  { id: 9, name: 'verbose', label: 'Verbose', disabled: true },
+];
 
 export type EventCategory = 'headers' | 'blocks' | 'transactions' | 'chain' | 'mining' | 'timing';
 export type EventValueKind =
@@ -255,8 +262,11 @@ export type AdminEventFrame = z.infer<typeof adminEventFrameSchema>;
 export type AdminAckFrame = z.infer<typeof adminAckFrameSchema>;
 export type AdminFrame = z.infer<typeof adminFrameSchema>;
 
-export const ALL_LOG_FILTER = 2 ** LOG_LEVELS.length - 1;
-export const DEFAULT_LOG_FILTER = ALL_LOG_FILTER;
+export const ALL_LOG_FILTER = LOG_LEVELS.reduce(
+  (filter, level) => (level.disabled ? filter : filter | (1 << level.id)),
+  0
+);
+export const DEFAULT_LOG_FILTER = 2 ** 0 + 2 ** 1 + 2 ** 2 + 2 ** 5 + 2 ** 6;
 export const OPERATIONAL_LOG_FILTER = 2 ** 0 + 2 ** 1 + 2 ** 2 + 2 ** 6 + 2 ** 7;
 export const ALL_EVENT_FILTER = 2 ** EVENT_DEFINITIONS.length - 1;
 
@@ -264,8 +274,8 @@ export function includesLogLevel(filter: number, level: number): boolean {
   return (
     Number.isInteger(level) &&
     level >= 0 &&
-    level < LOG_LEVELS.length &&
-    (filter & (1 << level)) !== 0
+    level < 31 &&
+    (filter & ALL_LOG_FILTER & (1 << level)) !== 0
   );
 }
 

@@ -44,6 +44,7 @@ export function TimeSeriesChart({
   const chartReference = useRef<uPlot | null>(null);
   const isZoomedReference = useRef(false);
   const zoomReference = useRef<{ min: number; max: number } | null>(null);
+  const visibilityReference = useRef(new Map<string, boolean>());
   const normalizedData = useMemo(() => ensureTwoPoints(data), [data]);
   const latestDataReference = useRef(normalizedData);
   const hasData = !forceEmpty && data[0]?.length > 0;
@@ -58,13 +59,14 @@ export function TimeSeriesChart({
 
     const theme = getComputedStyle(container);
     const axisFont = `12px ${theme.fontFamily}`;
+    const labels: HTMLSpanElement[] = [];
     const options: uPlot.Options = {
       width: Math.max(240, container.clientWidth),
       height,
       padding: [12, 8, 0, 0],
       cursor: {
         drag: { x: true, y: false, setScale: true },
-        focus: { prox: 24 },
+        focus: { prox: 8 },
       },
       hooks: {
         setSelect: [
@@ -72,10 +74,19 @@ export function TimeSeriesChart({
             if (chart.select.width > 0) isZoomedReference.current = true;
           },
         ],
+        setCursor: [(chart) => placeValueLabels(chart, labels, valueFormatter, valueSuffix)],
+        setSeries: [
+          (chart, index) => {
+            const item = index === null ? undefined : chart.series[index];
+            if (typeof item?.label === 'string') {
+              visibilityReference.current.set(item.label, item.show !== false);
+            }
+          },
+        ],
       },
       legend: {
         show: true,
-        live: true,
+        live: false,
       },
       scales: {
         x: { time: true },
@@ -88,17 +99,19 @@ export function TimeSeriesChart({
           asinh: 1,
           ...(zeroBased
             ? {
-                range: (_self: uPlot, minimum: number, maximum: number) => [
-                  Math.min(0, minimum),
-                  maximum === 0 ? 1 : maximum * 1.08,
-                ],
+                range: (_self: uPlot, minimum: number | null, maximum: number | null) =>
+                  minimum === null || maximum === null
+                    ? [0, 1]
+                    : [Math.min(0, minimum), maximum === 0 ? 1 : maximum * 1.08],
               }
             : {
-                range: (_self: uPlot, minimum: number, maximum: number) => {
+                range: (_self: uPlot, minimum: number | null, maximum: number | null) => {
+                  if (minimum === null || maximum === null) return [0, 1];
                   const span = maximum - minimum;
                   const padding =
                     span === 0 ? Math.max(1, Math.abs(maximum) * 0.0005) : span * 0.08;
-                  return [minimum - padding, maximum + padding];
+                  const floor = minimum - padding;
+                  return [minimum >= 0 ? Math.max(0, floor) : floor, maximum + padding];
                 },
               }),
         },
@@ -140,6 +153,7 @@ export function TimeSeriesChart({
                 : undefined;
           return {
             label: item.label,
+            show: visibilityReference.current.get(item.label) ?? true,
             stroke: color,
             fill:
               visualization === 'area' || visualization === 'bar'
@@ -148,14 +162,24 @@ export function TimeSeriesChart({
             width: item.width ?? 2,
             paths,
             points: { show: visualization === 'line' ? (item.points ?? false) : false },
-            value: (_self: uPlot, value: number | null) =>
-              value === null ? '—' : `${valueFormatter(value)}${valueSuffix}`,
           };
         }),
       ],
     };
 
     const chart = new uPlot(options, latestDataReference.current, container);
+    chart.root.querySelectorAll<HTMLElement>('.u-legend .u-label').forEach((label) => {
+      const item = series.find((candidate) => candidate.label === label.textContent);
+      if (item) label.style.color = chartColor(item.color, theme);
+    });
+    for (const item of series) {
+      const label = document.createElement('span');
+      label.className =
+        'pointer-events-none absolute z-20 hidden whitespace-nowrap text-xs font-semibold';
+      label.style.color = chartColor(item.color, theme);
+      chart.over.appendChild(label);
+      labels.push(label);
+    }
     const zoom = zoomReference.current;
     if (zoom) chart.setScale('x', zoom);
     chartReference.current = chart;
@@ -182,7 +206,7 @@ export function TimeSeriesChart({
 
     const shouldResetScales = !isZoomedReference.current;
     chart.setData(normalizedData, shouldResetScales);
-    if (!shouldResetScales) chart.redraw();
+    if (!shouldResetScales && chart.status === 1) chart.redraw();
   }, [normalizedData]);
 
   return (
@@ -195,6 +219,31 @@ export function TimeSeriesChart({
       )}
     </div>
   );
+}
+
+function placeValueLabels(
+  chart: uPlot,
+  labels: readonly HTMLSpanElement[],
+  formatter: (value: number) => string,
+  suffix: string
+) {
+  const { idx, left } = chart.cursor;
+  const width = chart.over.clientWidth;
+  labels.forEach((label, index) => {
+    const series = chart.series[index + 1];
+    const value = idx == null ? null : chart.data[index + 1]?.[idx];
+    if (left == null || left < 0 || series?.show === false || value == null) {
+      label.classList.add('hidden');
+      return;
+    }
+
+    const flip = left > width - 96;
+    label.textContent = `${formatter(value)}${suffix}`;
+    label.style.left = `${String(flip ? left - 8 : left + 8)}px`;
+    label.style.top = `${String(chart.valToPos(value, 'y'))}px`;
+    label.style.transform = `translate(${flip ? '-100%' : '0'}, -100%)`;
+    label.classList.remove('hidden');
+  });
 }
 
 function groupedBarPaths(seriesIndex: number, seriesCount: number) {

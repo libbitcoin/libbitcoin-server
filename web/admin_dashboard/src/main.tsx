@@ -7,6 +7,10 @@ import { initializeTheme } from '@/lib/theme';
 
 initializeTheme();
 
+// The site is a single page, so any other address is shown as the root.
+if (window.location.pathname !== '/' || window.location.search || window.location.hash)
+  window.history.replaceState(null, '', '/');
+
 const rootElement = document.querySelector('#root');
 if (!rootElement) {
   throw new Error('Root element not found');

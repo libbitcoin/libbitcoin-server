@@ -7,6 +7,7 @@ import {
   isAdminLogFrame,
 } from './admin-contract';
 import { POOL_STALE_AFTER_MS, type NativeFees, type NativeFeesSnapshot } from './native-contract';
+import { SyncFillTracker, type SyncFill } from './sync-fill';
 import {
   NATIVE_TOP_SIGNAL_ID,
   POOL_SIGNALS,
@@ -86,6 +87,7 @@ export interface MetricsSnapshot {
   lastLogAt: number | null;
   lastEventAt: number | null;
   poolSnapshot: NativeFeesSnapshot | null;
+  syncFill: SyncFill;
 }
 
 interface MutableSignalBucket {
@@ -187,6 +189,7 @@ export class LiveMetricsStore {
   #logs = new RingBuffer<RecentLog>(RECENT_LOG_LIMIT);
   #events = new RingBuffer<RecentEvent>(RECENT_EVENT_LIMIT);
   #buckets = new Map<number, MutableBucket>();
+  #lastBucketTime = Number.NEGATIVE_INFINITY;
   #priorSignalCounts: Partial<Record<string, number>> = {};
   #priorSignalSums: Partial<Record<string, number>> = {};
   #priorSignalLatest: Partial<Record<string, SignalValueSnapshot>> = {};
@@ -207,6 +210,7 @@ export class LiveMetricsStore {
   #lastEventAt: number | null = null;
   #poolSnapshot: MetricsSnapshot['poolSnapshot'] = null;
   #sequence = 0;
+  #syncFill = new SyncFillTracker();
   #publishTimer: ReturnType<typeof setTimeout> | null = null;
   #clockTimer: ReturnType<typeof setInterval> | null = null;
   #snapshot: MetricsSnapshot;
@@ -312,6 +316,7 @@ export class LiveMetricsStore {
     this.#logs.clear();
     this.#events.clear();
     this.#buckets.clear();
+    this.#lastBucketTime = Number.NEGATIVE_INFINITY;
     this.#priorSignalCounts = {};
     this.#priorSignalSums = {};
     this.#priorSignalLatest = {};
@@ -331,8 +336,13 @@ export class LiveMetricsStore {
     this.#lastEventAt = null;
     this.#poolSnapshot = null;
     this.#sequence = 0;
+    this.#syncFill.reset();
     this.#ensureBucket(this.#sessionStartedAt);
     this.flush();
+  }
+
+  resetSyncFill(): void {
+    this.#syncFill.reset();
   }
 
   tick(): void {
@@ -356,7 +366,7 @@ export class LiveMetricsStore {
     this.#lastLogAt = receivedAt;
     this.#sequence += 1;
     if (this.#logs.push({ ...frame, id: this.#sequence, receivedAt })) this.#evictedLogs += 1;
-    this.#recordSignal(logSignalId(frame.level), receivedAt, null);
+    this.#recordSignal(logSignalId(frame.level), frame.time, null);
   }
 
   #ingestEvent(frame: AdminEventFrame, receivedAt: number): void {
@@ -364,9 +374,10 @@ export class LiveMetricsStore {
     this.#lastEventAt = receivedAt;
     this.#sequence += 1;
     this.#events.push({ ...frame, id: this.#sequence, receivedAt });
+    this.#syncFill.record(frame.event, frame.value, receivedAt);
     this.#recordSignal(
       eventSignalId(frame.event),
-      receivedAt,
+      frame.time,
       normalizeEventPayload(frame.event, frame.value)
     );
   }
@@ -412,6 +423,13 @@ export class LiveMetricsStore {
     if (existing) return existing;
     const bucket: MutableBucket = { time: bucketTime, signals: new Map(), snapshot: null };
     this.#buckets.set(bucketTime, bucket);
+    if (bucketTime < this.#lastBucketTime) {
+      const ordered = [...this.#buckets].sort(([left], [right]) => left - right);
+      this.#buckets.clear();
+      for (const [time, value] of ordered) this.#buckets.set(time, value);
+    } else {
+      this.#lastBucketTime = bucketTime;
+    }
     return bucket;
   }
 
@@ -442,8 +460,8 @@ export class LiveMetricsStore {
   }
 
   #createSnapshot(): MetricsSnapshot {
-    // Collection time is monotonic, so insertion order is chronological. Reuse
-    // immutable closed buckets instead of cloning an hour of history each update.
+    // Buckets are kept in chronological order. Reuse immutable closed buckets
+    // instead of cloning an hour of history each update.
     const buckets = [...this.#buckets.values()].map((bucket) => {
       bucket.snapshot ??= {
         time: bucket.time,
@@ -476,6 +494,7 @@ export class LiveMetricsStore {
       lastLogAt: this.#lastLogAt,
       lastEventAt: this.#lastEventAt,
       poolSnapshot: this.#poolSnapshot,
+      syncFill: this.#syncFill.snapshot(),
     };
   }
 }

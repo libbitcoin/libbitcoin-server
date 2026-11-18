@@ -286,6 +286,9 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\stream-window.ts">
       <Filter>web\admin_dashboard\src\lib</Filter>
     </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\sync-fill.ts">
+      <Filter>web\admin_dashboard\src\lib</Filter>
+    </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\sync-status.ts">
       <Filter>web\admin_dashboard\src\lib</Filter>
     </None>
@@ -403,16 +406,10 @@
     <None Include="..\..\..\..\web\native\src\lib\api\client.tsx">
       <Filter>web\native\src\lib\api</Filter>
     </None>
-    <None Include="..\..\..\..\web\native\src\lib\api\providers\blockstream.ts">
-      <Filter>web\native\src\lib\api\providers</Filter>
-    </None>
     <None Include="..\..\..\..\web\native\src\lib\api\providers\libbitcoin-mapper.ts">
       <Filter>web\native\src\lib\api\providers</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\api\providers\libbitcoin.ts">
-      <Filter>web\native\src\lib\api\providers</Filter>
-    </None>
-    <None Include="..\..\..\..\web\native\src\lib\api\providers\mempool.ts">
       <Filter>web\native\src\lib\api\providers</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\hooks\useBlockchainData.ts">

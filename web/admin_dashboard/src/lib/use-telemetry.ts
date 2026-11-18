@@ -24,6 +24,7 @@ export interface NativeTelemetry {
   top: number | null;
   tops: NativeLiveState['tops'];
   branch: NativeLiveState['branch'];
+  tip: NativeLiveState['tip'];
   configuration: NativeLiveState['configuration'];
   receivedAt: number | null;
   transport: 'websocket' | 'rest' | 'none';
@@ -32,7 +33,7 @@ export interface NativeTelemetry {
 
 type NativeTelemetrySelection = Pick<
   NativeTelemetry,
-  'top' | 'tops' | 'branch' | 'configuration' | 'receivedAt' | 'transport'
+  'top' | 'tops' | 'branch' | 'tip' | 'configuration' | 'receivedAt' | 'transport'
 >;
 
 export function useAdminTelemetry(
@@ -161,6 +162,7 @@ export function selectNativeTelemetrySource(
         live.branchReceivedAt !== null && isNativeStateFresh(live.branchReceivedAt, now)
           ? live.branch
           : null,
+      tip: live.tip,
       configuration: live.configuration,
       receivedAt: live.topReceivedAt,
       transport: 'websocket',
@@ -172,6 +174,7 @@ export function selectNativeTelemetrySource(
       top: rest.tops.confirmed.height,
       tops: rest.tops,
       branch: rest.branch,
+      tip: null,
       configuration: rest.configuration,
       receivedAt: rest.receivedAt,
       transport: 'rest',
@@ -182,6 +185,7 @@ export function selectNativeTelemetrySource(
     top: null,
     tops: null,
     branch: null,
+    tip: null,
     configuration: null,
     receivedAt: null,
     transport: 'none',

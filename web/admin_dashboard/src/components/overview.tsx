@@ -39,9 +39,11 @@ export function Overview({ adminStatus, endpoints, metrics, native, sync }: Over
   const configuration = native.configuration;
   const coin = coinOf(configuration?.forks ?? []);
   const connection = combineStatus(adminStatus, native.status);
+  // Admin and native share one socket when their endpoints match.
+  const shared = endpoints.adminUrl === endpoints.nativeUrl;
   const warnings = [
-    adminStatus.error ? `Admin: ${adminStatus.error}` : null,
-    native.status.error ? `Native: ${native.status.error}` : null,
+    adminStatus.error ? `${shared ? 'Connection' : 'Admin'}: ${adminStatus.error}` : null,
+    native.status.error && !shared ? `Native: ${native.status.error}` : null,
     native.transport === 'none' && native.restError ? `Native REST: ${native.restError}` : null,
     metrics.invalidFrames > 0
       ? `${String(metrics.invalidFrames)} malformed admin frame${metrics.invalidFrames === 1 ? '' : 's'} ignored`

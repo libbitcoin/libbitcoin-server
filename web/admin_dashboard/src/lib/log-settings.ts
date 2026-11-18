@@ -15,11 +15,8 @@ export function loadLogFilter(storage: Storage | null = browserStorage()): numbe
     const saved = storage?.getItem(STORAGE_KEY);
     if (!saved) return DEFAULT_LOG_FILTER;
     const filter: unknown = JSON.parse(saved) as unknown;
-    return typeof filter === 'number' &&
-      Number.isInteger(filter) &&
-      filter >= 0 &&
-      filter <= ALL_LOG_FILTER
-      ? filter
+    return typeof filter === 'number' && Number.isInteger(filter) && filter >= 0
+      ? filter & ALL_LOG_FILTER
       : DEFAULT_LOG_FILTER;
   } catch {
     return DEFAULT_LOG_FILTER;
