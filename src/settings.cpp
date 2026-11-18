@@ -179,6 +179,17 @@ code settings::initialize() NOEXCEPT
     stratum_v1.default_ports();
     stratum_v2.default_ports();
 
+    admin.default_buffers();
+    native.default_buffers();
+    bitcoind.default_buffers();
+    zmq.default_buffers();
+    btcd.default_buffers();
+    electrum.default_buffers();
+    sparrow.default_buffers();
+    esplora.default_buffers();
+    stratum_v1.default_buffers();
+    stratum_v2.default_buffers();
+
     const auto initialize = [this](auto& service) NOEXCEPT
     {
         const auto ec = service.initialize_context();
