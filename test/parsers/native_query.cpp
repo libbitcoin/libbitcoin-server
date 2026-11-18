@@ -241,6 +241,39 @@ BC_AUTO_TEST_CASE(parsers__native_query__turbo_true__true)
     BC_REQUIRE(params.find(native::token::turbo) == params.end());
 }
 
+BC_AUTO_TEST_CASE(parsers__native_query__candidate_true__true)
+{
+    request_t out{};
+    out.params = object_t{};
+    const media_types accepts{ media_type::application_json };
+    BC_REQUIRE(native_query(out, "/?candidate=true", accepts));
+
+    const auto& params = std::get<object_t>(out.params.value());
+    const auto it = params.find(native::token::candidate);
+    BC_REQUIRE(it != params.end());
+    BC_REQUIRE(std::holds_alternative<bool>(it->second.value()));
+    BC_REQUIRE(std::get<bool>(it->second.value()));
+}
+
+BC_AUTO_TEST_CASE(parsers__native_query__candidate_false__true)
+{
+    request_t out{};
+    out.params = object_t{};
+    const media_types accepts{ media_type::application_json };
+    BC_REQUIRE(native_query(out, "/?candidate=false", accepts));
+
+    const auto& params = std::get<object_t>(out.params.value());
+    BC_REQUIRE(params.find(native::token::candidate) == params.end());
+}
+
+BC_AUTO_TEST_CASE(parsers__native_query__candidate_invalid__false)
+{
+    request_t out{};
+    out.params = object_t{};
+    const media_types accepts{ media_type::application_json };
+    BC_REQUIRE(!native_query(out, "/?candidate=maybe", accepts));
+}
+
 BC_AUTO_TEST_CASE(parsers__native_query__stop_true__true)
 {
     request_t out{};

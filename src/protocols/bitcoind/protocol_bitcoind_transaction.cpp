@@ -280,8 +280,8 @@ void protocol_bitcoind_transaction::complete_submit_tx(const code& ec,
     if (stopped())
         return;
 
-    // A stored unconfirmed tx is accepted, and a stored confirmed tx has only
-    // spent outputs (any unspent output is reported before submission).
+    // A pooled tx is accepted, and a confirmed tx has only spent outputs (any
+    // unspent output is reported before submission).
     if (ec == node::error::duplicate_transaction)
     {
         const auto& query = archive();

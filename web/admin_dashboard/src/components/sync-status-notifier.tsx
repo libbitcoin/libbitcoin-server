@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { showBrowserNotification } from '@/lib/browser-notifications';
 import { formatInteger } from '@/lib/format';
-import { type SyncEstimate, SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS } from '@/lib/sync-status';
+import { type ChainSync, SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS } from '@/lib/sync-status';
 
 type SyncState = 'behind' | 'near-current';
 
@@ -11,19 +11,16 @@ interface SyncNotice {
 }
 
 interface SyncStatusNotifierProps {
-  estimate: SyncEstimate | null;
+  sync: ChainSync | null;
   browserNotificationsEnabled: boolean;
 }
 
 const NOTICE_DURATION_MS = 8_000;
 
-export function SyncStatusNotifier({
-  estimate,
-  browserNotificationsEnabled,
-}: SyncStatusNotifierProps) {
+export function SyncStatusNotifier({ sync, browserNotificationsEnabled }: SyncStatusNotifierProps) {
   const previousStateReference = useRef<SyncState | null>(null);
   const [notice, setNotice] = useState<SyncNotice | null>(null);
-  const blocksRemaining = estimate?.blocksRemaining ?? null;
+  const blocksRemaining = sync?.blocksRemaining ?? null;
 
   useEffect(() => {
     const next = currentSyncState(blocksRemaining);
@@ -76,7 +73,7 @@ export function SyncStatusNotifier({
               nearCurrent ? 'font-semibold text-emerald-200' : 'font-semibold text-amber-200'
             }
           >
-            {nearCurrent ? 'Node near current (estimated)' : 'Node fell behind (estimated)'}
+            {nearCurrent ? 'Node near current' : 'Node fell behind'}
           </p>
           <p className="text-noticeText/75 mt-1 text-sm">{noticeDescription(notice)}</p>
         </div>
@@ -98,13 +95,13 @@ export function SyncStatusNotifier({
 function notificationContent(notice: SyncNotice): { title: string; body: string } {
   if (notice.state === 'near-current') {
     return {
-      title: 'Libbitcoin node near current (estimated)',
+      title: 'Libbitcoin node near current',
       body: noticeDescription(notice),
     };
   }
 
   return {
-    title: 'Libbitcoin node fell behind (estimated)',
+    title: 'Libbitcoin node fell behind',
     body: noticeDescription(notice),
   };
 }
@@ -120,7 +117,7 @@ function currentSyncState(blocksBehind: number | null): SyncNotice | null {
 
 function noticeDescription(notice: SyncNotice): string {
   if (notice.state === 'near-current') {
-    return `Confirmed top is approximately ${String(SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS)} blocks from the top candidate header, based on block time.`;
+    return `Confirmed top is within ${String(SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS)} blocks of the top candidate header.`;
   }
-  return `Confirmed top is approximately ${formatInteger(notice.blocksBehind)} blocks from the top candidate header, based on block time.`;
+  return `Confirmed top is ${formatInteger(notice.blocksBehind)} blocks below the top candidate header.`;
 }

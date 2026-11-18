@@ -3,9 +3,10 @@ import {
   type NativeFrame,
   type NativeHeader,
   type NativeFeesSnapshot,
+  type NativeTops,
   NATIVE_FEES_PATH,
   POOL_POLL_INTERVAL_MS,
-  nativeHeaderPath,
+  nativeBranchPath,
   parseNativeFrame,
 } from './native-contract';
 import {
@@ -17,10 +18,10 @@ import {
 export interface NativeLiveState {
   configuration: NativeConfiguration | null;
   configurationReceivedAt: number | null;
-  top: number | null;
+  tops: NativeTops | null;
   topReceivedAt: number | null;
-  topHeader: NativeHeader | null;
-  headerReceivedAt: number | null;
+  branch: NativeHeader | null;
+  branchReceivedAt: number | null;
   fees: NativeFeesSnapshot | null;
   invalidFrames: number;
 }
@@ -36,10 +37,10 @@ export const NATIVE_STATE_STALE_AFTER_MS = 3 * NATIVE_POLL_INTERVAL_MS;
 export const INITIAL_LIVE_STATE: NativeLiveState = {
   configuration: null,
   configurationReceivedAt: null,
-  top: null,
+  tops: null,
   topReceivedAt: null,
-  topHeader: null,
-  headerReceivedAt: null,
+  branch: null,
+  branchReceivedAt: null,
   fees: null,
   invalidFrames: 0,
 };
@@ -147,19 +148,21 @@ export class NativeClient {
       return;
     }
     if (frame.type === 'top') {
-      const reorganized = this.#state.top !== null && frame.payload < this.#state.top;
-      if (reorganized) {
+      const { confirmed, candidate } = frame.payload;
+      const branching = candidate.height > confirmed.height;
+      const retained = branching && this.#state.branch?.height === confirmed.height;
+      if (!branching) {
         this.#headerRequest = null;
         this.#lastHeaderRequestedAt = null;
       }
       this.#setState({
         ...this.#state,
-        top: frame.payload,
+        tops: frame.payload,
         topReceivedAt: receivedAt,
-        topHeader: reorganized ? null : this.#state.topHeader,
-        headerReceivedAt: reorganized ? null : this.#state.headerReceivedAt,
+        branch: retained ? this.#state.branch : null,
+        branchReceivedAt: retained ? this.#state.branchReceivedAt : null,
       });
-      this.#requestHeader(frame.payload, receivedAt);
+      if (branching) this.#requestBranch(confirmed.height, receivedAt);
       return;
     }
     if (frame.type === 'header') {
@@ -167,8 +170,8 @@ export class NativeClient {
       this.#headerRequest = null;
       this.#setState({
         ...this.#state,
-        topHeader: frame.payload,
-        headerReceivedAt: receivedAt,
+        branch: frame.payload,
+        branchReceivedAt: receivedAt,
       });
       return;
     }
@@ -179,7 +182,7 @@ export class NativeClient {
     });
   }
 
-  #requestHeader(height: number, now: number): void {
+  #requestBranch(height: number, now: number): void {
     if (
       this.#headerRequest !== null &&
       now - this.#headerRequest.requestedAt < NATIVE_STATE_STALE_AFTER_MS
@@ -191,10 +194,10 @@ export class NativeClient {
     )
       return;
 
-    // Sample headers at the polling cadence, even during rapid top announcements.
+    // Sample the branch at the polling cadence, even during rapid top announcements.
     this.#headerRequest = { height, requestedAt: now };
     this.#lastHeaderRequestedAt = now;
-    if (!this.#socket.send(nativeHeaderPath(height))) this.#headerRequest = null;
+    if (!this.#socket.send(nativeBranchPath(height))) this.#headerRequest = null;
   }
 
   #requestPool(): void {
@@ -208,10 +211,10 @@ export class NativeClient {
     if (
       this.#state.configuration === null &&
       this.#state.configurationReceivedAt === null &&
-      this.#state.top === null &&
+      this.#state.tops === null &&
       this.#state.topReceivedAt === null &&
-      this.#state.topHeader === null &&
-      this.#state.headerReceivedAt === null &&
+      this.#state.branch === null &&
+      this.#state.branchReceivedAt === null &&
       this.#state.fees === null
     ) {
       return;

@@ -34,7 +34,7 @@ struct bitcoind_mining_methods
         method<"getmininginfo">{},
         method<"submitblock", string_t, nullopt<""_t>, command>{ "hexdata", "dummy" },
         method<"submitheader", string_t, command>{ "hexdata" },
-        method<"getblocktemplate", object_t>{ unimplemented, "template_request" },
+        method<"getblocktemplate", object_t>{ "template_request" },
         method<"getprioritisedtransactions">{ unimplemented },
         method<"prioritisetransaction", string_t, nullable<number_t>, nullopt<0.0>>{ unimplemented, "txid", "dummy", "fee_delta" }
     };

@@ -12,7 +12,7 @@ import {
 import { detectNodeActivity, type MetricsSnapshot } from '@/lib/live-metrics';
 import type { ConnectionPhase, ConnectionStatus } from '@/lib/reconnecting-websocket';
 import { eventSignalId } from '@/lib/signal-catalog';
-import { type SyncEstimate, SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS } from '@/lib/sync-status';
+import { type ChainSync, SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS } from '@/lib/sync-status';
 import type { NativeTelemetry } from '@/lib/use-telemetry';
 import { MetricItem } from './metric-item';
 import { NodeSyncProgress } from './node-sync-progress';
@@ -23,7 +23,7 @@ interface OverviewProps {
   endpoints: EndpointConfiguration;
   metrics: MetricsSnapshot;
   native: NativeTelemetry;
-  syncEstimate: SyncEstimate | null;
+  sync: ChainSync | null;
 }
 const lifecycleEvents: ReadonlyArray<{ event: number; label: string }> = [
   { event: 0, label: 'Header archived' },
@@ -34,7 +34,7 @@ const lifecycleEvents: ReadonlyArray<{ event: number; label: string }> = [
   { event: 14, label: 'Block reorganized' },
 ];
 
-export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate }: OverviewProps) {
+export function Overview({ adminStatus, endpoints, metrics, native, sync }: OverviewProps) {
   const activity = detectNodeActivity(metrics, 10);
   const configuration = native.configuration;
   const coin = coinOf(configuration?.forks ?? []);
@@ -67,7 +67,7 @@ export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate
         </section>
       )}
 
-      <NodeSyncProgress confirmed={native.top} estimate={syncEstimate} />
+      <NodeSyncProgress sync={sync} />
 
       <dl aria-label="Node summary" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricItem
@@ -76,7 +76,7 @@ export function Overview({ adminStatus, endpoints, metrics, native, syncEstimate
           detail={
             native.transport === 'none'
               ? 'Waiting for native API'
-              : `${nativeSyncDescription(syncEstimate)} · via ${
+              : `${nativeSyncDescription(sync)} · via ${
                   native.transport === 'websocket' ? 'native WebSocket' : 'REST fallback'
                 }`
           }
@@ -376,9 +376,11 @@ function EmptyRow({ text }: { text: string }) {
   return <p className="text-textMuted px-5 py-10 text-center text-sm">{text}</p>;
 }
 
-function nativeSyncDescription(estimate: SyncEstimate | null): string {
-  if (!estimate) return 'Waiting for confirmed block timestamp';
-  return estimate.blocksRemaining <= SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS
-    ? 'Near current (estimated)'
-    : `${formatInteger(estimate.blocksRemaining)} blocks remaining (estimated)`;
+function nativeSyncDescription(sync: ChainSync | null): string {
+  if (!sync) return 'Waiting for chain tops';
+  if (sync.diverged) return 'Candidate branch diverges';
+  if (sync.blocksRemaining === 0) return 'At top candidate header';
+  return sync.blocksRemaining <= SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS
+    ? `Near current, ${formatInteger(sync.blocksRemaining)} blocks remaining`
+    : `${formatInteger(sync.blocksRemaining)} blocks remaining`;
 }

@@ -324,49 +324,27 @@ async function fetchJsonOrNullOnNotFound<T>(
 
 async function fetchTopHeight(baseUrl: string, turbo?: boolean) {
   const raw = await fetchJson<unknown>(baseUrl, '/v1/top?format=json', turbo);
-  const height = typeof raw === 'number' ? raw : Number(raw);
-  if (!Number.isFinite(height)) throw new Error('Invalid top height');
-  return height;
+  const top = parseConfirmedTop(raw);
+  if (!top) throw new Error('Invalid top height');
+  return top.height;
 }
 
 function isHexHash(value: string) {
   return /^[0-9a-f]{64}$/iu.test(value);
 }
 
-function parseNumericHeight(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isInteger(value) && value >= 0) return value;
-  if (typeof value === 'string' && /^\d+$/u.test(value.trim())) return Number(value.trim());
-  return null;
+interface ChainTop {
+  height: number;
+  hash: string;
 }
 
-function extractTopSubscriptionIdentifier(message: unknown): string | number | null {
-  const height = parseNumericHeight(message);
-  if (height !== null) return height;
-
-  if (typeof message === 'string') {
-    const trimmed = message.trim();
-    return isHexHash(trimmed) ? trimmed : null;
-  }
-
-  if (!message || typeof message !== 'object' || Array.isArray(message)) return null;
-
-  const record = message as Record<string, unknown>;
-  const candidates = [
-    record.payload,
-    record.top,
-    record.block,
-    record.header,
-    record.hash,
-    record.height,
-  ];
-
-  for (const candidate of candidates) {
-    if (candidate === message) continue;
-    const identifier = extractTopSubscriptionIdentifier(candidate);
-    if (identifier !== null) return identifier;
-  }
-
-  return null;
+// Top responses and notifications carry both the confirmed and candidate tops.
+function parseConfirmedTop(value: unknown): ChainTop | null {
+  if (!isRecord(value) || !isRecord(value.confirmed)) return null;
+  const { height, hash } = value.confirmed;
+  if (typeof height !== 'number' || !Number.isInteger(height) || height < 0) return null;
+  if (typeof hash !== 'string' || !isHexHash(hash)) return null;
+  return { height, hash };
 }
 
 function normalizeTextMessage(data: MessageEvent['data']): Promise<string | null> {
@@ -380,14 +358,14 @@ function normalizeTextMessage(data: MessageEvent['data']): Promise<string | null
   return Promise.resolve(null);
 }
 
-function parseTopSubscriptionMessage(text: string): string | number | null {
+function parseTopSubscriptionMessage(text: string): string | null {
   const trimmed = text.trim();
   if (!trimmed) return null;
 
   try {
-    return extractTopSubscriptionIdentifier(JSON.parse(trimmed));
+    return parseConfirmedTop(JSON.parse(trimmed))?.hash ?? null;
   } catch {
-    return extractTopSubscriptionIdentifier(trimmed);
+    return null;
   }
 }
 

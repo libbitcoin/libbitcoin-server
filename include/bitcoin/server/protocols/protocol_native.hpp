@@ -89,35 +89,35 @@ protected:
 
     bool handle_get_block(const code& ec, interface::block,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
-        std::optional<uint32_t> height, bool witness) NOEXCEPT;
+        std::optional<uint32_t> height, bool witness, bool candidate) NOEXCEPT;
     bool handle_get_block_header(const code& ec, interface::block_header,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
-        std::optional<uint32_t> height) NOEXCEPT;
+        std::optional<uint32_t> height, bool candidate) NOEXCEPT;
     bool handle_get_block_header_context(const code& ec, interface::block_header_context,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
-        std::optional<uint32_t> height) NOEXCEPT;
+        std::optional<uint32_t> height, bool candidate) NOEXCEPT;
     bool handle_get_block_details(const code& ec, interface::block_details,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
-        std::optional<uint32_t> height) NOEXCEPT;
+        std::optional<uint32_t> height, bool candidate) NOEXCEPT;
     bool handle_get_block_txs(const code& ec, interface::block_txs,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
-        std::optional<uint32_t> height) NOEXCEPT;
+        std::optional<uint32_t> height, bool candidate) NOEXCEPT;
     bool handle_get_block_filter(const code& ec, interface::block_filter,
         uint8_t version, uint8_t media, uint8_t type,
         std::optional<system::hash_cptr> hash,
-        std::optional<uint32_t> height) NOEXCEPT;
+        std::optional<uint32_t> height, bool candidate) NOEXCEPT;
     bool handle_get_block_filter_hash(const code& ec,
         interface::block_filter_hash, uint8_t version, uint8_t media,
         uint8_t type, std::optional<system::hash_cptr> hash,
-        std::optional<uint32_t> height) NOEXCEPT;
+        std::optional<uint32_t> height, bool candidate) NOEXCEPT;
     bool handle_get_block_filter_header(const code& ec,
         interface::block_filter_header, uint8_t version, uint8_t media,
         uint8_t type, std::optional<system::hash_cptr> hash,
-        std::optional<uint32_t> height) NOEXCEPT;
+        std::optional<uint32_t> height, bool candidate) NOEXCEPT;
     bool handle_get_block_tx(const code& ec, interface::block_tx,
         uint8_t version, uint8_t media, uint32_t position,
         std::optional<system::hash_cptr> hash,
-        std::optional<uint32_t> height, bool witness) NOEXCEPT;
+        std::optional<uint32_t> height, bool witness, bool candidate) NOEXCEPT;
     bool handle_get_block_subscribe(const code& ec, interface::block_subscribe,
         uint8_t version, uint8_t media, bool stop) NOEXCEPT;
 
@@ -189,7 +189,7 @@ protected:
 
     /// Notification event handlers.
     /// -----------------------------------------------------------------------
-    void do_top(node::header_t link, media_type media) NOEXCEPT;
+    void do_top(media_type media) NOEXCEPT;
     void do_block(node::header_t link, media_type media) NOEXCEPT;
     void do_transaction(node::transaction_t link, media_type media) NOEXCEPT;
 
@@ -260,8 +260,12 @@ private:
     void inject(system::json::value& out, std::optional<uint32_t> height,
         const database::header_link& link) const NOEXCEPT;
 
+    system::chain::checkpoint get_top(bool candidate) const NOEXCEPT;
+    system::data_chunk to_tops() const NOEXCEPT;
+    system::json::value to_tops_json() const NOEXCEPT;
     database::header_link to_header(const std::optional<uint32_t>& height,
-        const std::optional<system::hash_cptr>& hash) NOEXCEPT;
+        const std::optional<system::hash_cptr>& hash,
+        bool candidate = false) NOEXCEPT;
 
     // These are thread safe, strand uses network threadpool.
     network::io::strand notification_strand_;
