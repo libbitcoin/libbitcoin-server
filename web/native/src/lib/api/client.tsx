@@ -23,8 +23,11 @@ export interface BlockchainClientConfiguration {
   address: boolean;
   filter: boolean;
   turbo: boolean;
-  witness: boolean;
-  network: string;
+  silent: boolean;
+  services: Readonly<Partial<Record<string, boolean>>>;
+  protocol: Readonly<Partial<Record<string, boolean>>>;
+  coin: string;
+  network?: string;
   forks: string[];
   wallet: NetworkParams;
 }

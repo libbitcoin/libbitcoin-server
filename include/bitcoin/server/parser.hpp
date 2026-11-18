@@ -75,7 +75,8 @@ public:
     virtual bool parse(int argc, const char* argv[],
         std::ostream& error) THROWS;
 
-    /// Read the envelope of an existing store and reset defaults to its network.
+    /// Read the envelope of an existing store, reset defaults to its network,
+    /// and apply its stored values to configuration.
     virtual void read_envelope() NOEXCEPT;
 
     /// The populated configuration settings values.
@@ -84,6 +85,9 @@ public:
     /// The envelope of an existing store and the result of reading it.
     database::envelope stored{};
     code stored_code{};
+
+    /// The names of configured values overridden by the stored envelope.
+    system::string_list overrides{};
 
 protected:
     /// Select the network and reset the defaults to it when it differs.

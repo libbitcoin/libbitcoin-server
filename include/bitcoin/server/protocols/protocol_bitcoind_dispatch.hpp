@@ -74,6 +74,8 @@ protected:
 
 private:
     static bool is_ignored(const network::rpc::request_t& message) NOEXCEPT;
+    static code transform(std::optional<network::rpc::request_t>& out,
+        const network::rpc::request_t& in) NOEXCEPT;
 };
 
 } // namespace server

@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { type BlockchainEventTransport, type BlockSummary, useServerInfo } from '@/lib/api/client';
+import { type BlockSummary, useServerInfo } from '@/lib/api/client';
 import {
   useBlockStats,
   useBlockchainEventStatus,
@@ -27,6 +27,20 @@ export function DashboardPage() {
   const info = useServerInfo();
   const now = useNow();
   const eventStatus = useBlockchainEventStatus();
+  const websocket = eventStatus.transport === 'websocket';
+  const connectionUrl = websocket ? info.endpoint?.replace(/^http/u, 'ws') : info.endpoint;
+  const connectionLabel =
+    info.connectionState === 'offline'
+      ? '[disconnected]'
+      : info.connectionState === 'unknown'
+        ? '[connecting]'
+        : `${connectionUrl ?? info.label}${
+            websocket
+              ? info.connectionState === 'degraded'
+                ? ' [HTTP unavailable]'
+                : ''
+              : ' [HTTP polling]'
+          }`;
   const {
     data: configuration,
     isError: configurationError,
@@ -204,58 +218,85 @@ export function DashboardPage() {
             <div className="space-y-2">
               <p className="text-accentSecondary text-xs tracking-wide uppercase">Server</p>
               <h2 className="text-accent text-xl font-semibold">Server Status</h2>
-              <p className="text-textMuted text-sm">
-                {info.label}
-                {info.endpoint ? ` · ${formatEndpointLabel(info.endpoint)}` : ''}
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <PanelStat label="Connection" value={formatLabelValue(info.connectionState)} />
-              <PanelStat label="Top Updates" value={formatTopUpdateMode(eventStatus.transport)} />
-              <PanelStat label="Transport" value={formatEventTransport(eventStatus.transport)} />
-              <PanelStat label="Network" value={configuration?.network ?? '—'} />
             </div>
 
             <div className="space-y-3">
-              <p className="text-accentSecondary text-xs tracking-wide uppercase">Capabilities</p>
-              {configurationError && (
-                <div role="status" className="text-textMuted space-y-2 text-sm">
-                  <p>Server configuration unavailable. Retrying automatically.</p>
-                  <button
-                    type="button"
-                    disabled={configurationFetching}
-                    onClick={() => {
-                      void retryConfiguration();
-                    }}
-                    className="text-accent hover:text-accentSecondary disabled:opacity-50"
-                  >
-                    {configurationFetching ? 'Retrying…' : 'Retry configuration'}
-                  </button>
-                </div>
-              )}
-              <div className="flex flex-wrap gap-2">
-                <CapabilityPill label="Address Index" enabled={configuration?.address} />
-                <CapabilityPill label="Witness Node" enabled={configuration?.witness} />
-                <CapabilityPill label="Client Filters" enabled={configuration?.filter} />
-                <CapabilityPill label="Turbo API" enabled={configuration?.turbo} />
-              </div>
+              <p className="text-accentSecondary text-xs tracking-wide uppercase">Connection</p>
+              <p
+                role="status"
+                aria-label={`Server connection: ${info.connectionState}`}
+                className="text-textPrimary font-mono text-sm break-all"
+              >
+                {connectionLabel}
+              </p>
             </div>
 
-            {configuration && configuration.forks.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-accentSecondary text-xs tracking-wide uppercase">Forks</p>
-                <div className="flex flex-wrap gap-2">
-                  {configuration.forks.map((fork) => (
-                    <span
-                      key={fork}
-                      className="text-textPrimary bg-accentSecondary/15 rounded-full px-3 py-1 font-mono text-xs"
-                    >
-                      {fork}
-                    </span>
-                  ))}
-                </div>
+            {configurationError && (
+              <div role="status" className="text-textMuted space-y-2 text-sm">
+                <p>Server configuration unavailable. Retrying automatically.</p>
+                <button
+                  type="button"
+                  disabled={configurationFetching}
+                  onClick={() => {
+                    void retryConfiguration();
+                  }}
+                  className="text-accent hover:text-accentSecondary disabled:opacity-50"
+                >
+                  {configurationFetching ? 'Retrying…' : 'Retry configuration'}
+                </button>
               </div>
+            )}
+
+            {configuration && (
+              <>
+                <ConfigGroup title="Store configuration">
+                  <Flags
+                    items={[
+                      ['Address index', configuration.address],
+                      ['Client filters index', configuration.filter],
+                      ['Silent payments index', configuration.silent],
+                      ['Turbo', configuration.turbo],
+                    ]}
+                  />
+                </ConfigGroup>
+                <ConfigGroup title="Node services">
+                  <Flags
+                    items={[
+                      ['Blocks', configuration.services.blocks],
+                      ['Limited', configuration.services.limited],
+                      ['Witness', configuration.services.witness],
+                      ['Filters', configuration.services.filters],
+                      ['Privacy', configuration.services.privacy],
+                    ]}
+                  />
+                </ConfigGroup>
+                <ConfigGroup title="Peer protocol">
+                  <Flags
+                    items={[
+                      ['Relay', configuration.protocol.relay],
+                      ['Compact', configuration.protocol.compact],
+                      ['Address', configuration.protocol.address],
+                      ['Witness tx', configuration.protocol.witness_tx],
+                      ['Memory pool', configuration.protocol.memory_pool],
+                      ['Not found', configuration.protocol.not_found],
+                      ['Reject', configuration.protocol.reject],
+                      ['Alert', configuration.protocol.alert],
+                    ]}
+                  />
+                </ConfigGroup>
+                <ConfigGroup title="Configured forks">
+                  <div className="flex flex-wrap gap-1.5">
+                    {configuration.forks.map((fork) => (
+                      <span
+                        key={fork}
+                        className="text-textPrimary bg-accentSecondary/15 rounded-full px-2 py-0.5 font-mono text-xs"
+                      >
+                        {fork}
+                      </span>
+                    ))}
+                  </div>
+                </ConfigGroup>
+              </>
             )}
           </div>
         </div>
@@ -392,35 +433,6 @@ function formatIntervalSampleDetail(intervalCount: number) {
   }`;
 }
 
-function formatEndpointLabel(endpoint: string) {
-  try {
-    const url = new URL(endpoint);
-    const path = url.pathname.replace(/\/$/u, '');
-    if (path && path !== '/') return `${url.host}${path}`;
-    return url.host;
-  } catch {
-    return endpoint;
-  }
-}
-
-function formatLabelValue(value: string) {
-  if (!value) return value;
-  return `${value[0].toUpperCase()}${value.slice(1)}`;
-}
-
-function formatTopUpdateMode(transport: BlockchainEventTransport) {
-  if (transport === 'websocket' || transport === 'connecting') return 'Push';
-  if (transport === 'polling') return 'Polling';
-  return 'Idle';
-}
-
-function formatEventTransport(transport: BlockchainEventTransport) {
-  if (transport === 'websocket') return 'WebSocket';
-  if (transport === 'connecting') return 'WebSocket connecting';
-  if (transport === 'polling') return 'HTTP';
-  return 'Idle';
-}
-
 function OverviewCard({
   label,
   value,
@@ -448,21 +460,28 @@ function PanelStat({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
-function CapabilityPill({ label, enabled }: { label: string; enabled?: boolean }) {
-  const active = enabled === true;
-  const stateLabel = enabled === undefined ? 'Unknown' : active ? 'On' : 'Off';
-
+function ConfigGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <span
-      className={`rounded-full px-3 py-1 text-xs tracking-wide uppercase ${
-        active
-          ? 'bg-emerald-500/15 text-emerald-300'
-          : enabled === undefined
-            ? 'bg-slate-500/15 text-slate-300'
-            : 'bg-rose-500/15 text-rose-300'
-      }`}
-    >
-      {label}: {stateLabel}
-    </span>
+    <section className="space-y-2">
+      <h3 className="text-accentSecondary text-xs tracking-wide uppercase">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+function Flags({ items }: { items: ReadonlyArray<readonly [string, boolean | undefined]> }) {
+  const reported = items.filter(([, enabled]) => enabled !== undefined);
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {reported.map(([label, enabled]) => (
+        <span
+          key={label}
+          title={`${label}: ${enabled ? 'On' : 'Off'}`}
+          className={`rounded-full border px-2 py-0.5 text-xs ${enabled ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300' : 'text-textMuted border-slate-500/40'}`}
+        >
+          {label}
+        </span>
+      ))}
+    </div>
   );
 }

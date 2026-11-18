@@ -38,17 +38,16 @@ bool protocol_native::handle_get_top(const code& ec, interface::top,
     if (stopped(ec))
         return false;
 
-    const auto height = archive().get_top_confirmed();
     switch (media)
     {
         case data:
-            send_chunk(to_bin(height));
+            send_chunk(to_tops());
             return true;
         case text:
-            send_text(encode_base16(to_bin(height)));
+            send_text(encode_base16(to_tops()));
             return true;
         case json:
-            send_json(height);
+            send_json(to_tops_json());
             return true;
     }
 
@@ -75,34 +74,33 @@ bool protocol_native::handle_get_top_subscribe(const code& ec,
 }
 
 // notify
-void protocol_native::do_top(node::header_t link, media_type media) NOEXCEPT
+void protocol_native::do_top(media_type media) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    const auto height = archive().get_height(link).value;
     switch (to_value(media))
     {
         case data:
-            notify_chunk(to_bin(height));
+            notify_chunk(to_tops());
             return;
         case text:
-            notify_text(encode_base16(to_bin(height)));
+            notify_text(encode_base16(to_tops()));
             return;
         case json:
-            notify_json(height);
+            notify_json(to_tops_json());
             return;
     }
 }
 
 bool protocol_native::handle_get_block(const code& ec, interface::block,
     uint8_t, uint8_t media, std::optional<hash_cptr> hash,
-    std::optional<uint32_t> height, bool witness) NOEXCEPT
+    std::optional<uint32_t> height, bool witness, bool candidate) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
     const auto& query = archive();
-    const auto link = to_header(height, hash);
+    const auto link = to_header(height, hash, candidate);
     if (link.is_terminal())
     {
         send_not_found();
@@ -159,12 +157,13 @@ bool protocol_native::handle_get_block(const code& ec, interface::block,
 
 bool protocol_native::handle_get_block_header(const code& ec,
     interface::block_header, uint8_t, uint8_t media,
-    std::optional<hash_cptr> hash, std::optional<uint32_t> height) NOEXCEPT
+    std::optional<hash_cptr> hash, std::optional<uint32_t> height,
+    bool candidate) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
-    const auto link = to_header(height, hash);
+    const auto link = to_header(height, hash, candidate);
     if (const auto header = archive().get_header(link))
     {
         constexpr auto size = chain::header::serialized_size();
@@ -190,7 +189,8 @@ bool protocol_native::handle_get_block_header(const code& ec,
 
 bool protocol_native::handle_get_block_header_context(const code& ec,
     interface::block_header_context, uint8_t, uint8_t media,
-    std::optional<hash_cptr> hash, std::optional<uint32_t> height) NOEXCEPT
+    std::optional<hash_cptr> hash, std::optional<uint32_t> height,
+    bool candidate) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -203,7 +203,7 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
 
     database::context context{};
     const auto& query = archive();
-    const auto link = to_header(height, hash);
+    const auto link = to_header(height, hash, candidate);
     if (!query.get_context(context, link))
     {
         send_not_found();
@@ -245,6 +245,7 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
     // All modern configurable forks.
     object["forks"] = system::json::object
     {
+        { "bip16",  context.is_enabled(chain::flags::bip16_rule) },
         { "bip30",  context.is_enabled(chain::flags::bip30_rule) },
         { "bip34",  context.is_enabled(chain::flags::bip34_rule) },
         { "bip66",  context.is_enabled(chain::flags::bip66_rule) },
@@ -272,7 +273,8 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
 
 bool protocol_native::handle_get_block_details(const code& ec,
     interface::block_details, uint8_t, uint8_t media,
-    std::optional<hash_cptr> hash, std::optional<uint32_t> height) NOEXCEPT
+    std::optional<hash_cptr> hash, std::optional<uint32_t> height,
+    bool candidate) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -284,7 +286,7 @@ bool protocol_native::handle_get_block_details(const code& ec,
     }
 
     const auto& query = archive();
-    const auto link = to_header(height, hash);
+    const auto link = to_header(height, hash, candidate);
 
     // Missing block.
     if (!query.is_associated(link))
@@ -342,13 +344,14 @@ bool protocol_native::handle_get_block_details(const code& ec,
 
 bool protocol_native::handle_get_block_txs(const code& ec,
     interface::block_txs, uint8_t, uint8_t media,
-    std::optional<hash_cptr> hash, std::optional<uint32_t> height) NOEXCEPT
+    std::optional<hash_cptr> hash, std::optional<uint32_t> height,
+    bool candidate) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
     const auto& query = archive();
-    if (const auto hashes = query.get_tx_keys(to_header(height, hash));
+    if (const auto hashes = query.get_tx_keys(to_header(height, hash, candidate));
         !hashes.empty())
     {
         const auto size = hashes.size() * hash_size;
@@ -383,7 +386,8 @@ bool protocol_native::handle_get_block_txs(const code& ec,
 
 bool protocol_native::handle_get_block_filter(const code& ec,
     interface::block_filter, uint8_t, uint8_t media, uint8_t type,
-    std::optional<hash_cptr> hash, std::optional<uint32_t> height) NOEXCEPT
+    std::optional<hash_cptr> hash, std::optional<uint32_t> height,
+    bool candidate) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -396,7 +400,7 @@ bool protocol_native::handle_get_block_filter(const code& ec,
     }
 
     data_chunk filter{};
-    if (query.get_filter_body(filter, to_header(height, hash)))
+    if (query.get_filter_body(filter, to_header(height, hash, candidate)))
     {
         switch (media)
         {
@@ -418,7 +422,8 @@ bool protocol_native::handle_get_block_filter(const code& ec,
 
 bool protocol_native::handle_get_block_filter_hash(const code& ec,
     interface::block_filter_hash, uint8_t, uint8_t media, uint8_t type,
-    std::optional<hash_cptr> hash, std::optional<uint32_t> height) NOEXCEPT
+    std::optional<hash_cptr> hash, std::optional<uint32_t> height,
+    bool candidate) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -431,7 +436,7 @@ bool protocol_native::handle_get_block_filter_hash(const code& ec,
     }
 
     hash_digest filter_hash{ hash_size };
-    if (query.get_filter_hash(filter_hash, to_header(height, hash)))
+    if (query.get_filter_hash(filter_hash, to_header(height, hash, candidate)))
     {
         switch (media)
         {
@@ -453,7 +458,8 @@ bool protocol_native::handle_get_block_filter_hash(const code& ec,
 
 bool protocol_native::handle_get_block_filter_header(const code& ec,
     interface::block_filter_header, uint8_t, uint8_t media, uint8_t type,
-    std::optional<hash_cptr> hash, std::optional<uint32_t> height) NOEXCEPT
+    std::optional<hash_cptr> hash, std::optional<uint32_t> height,
+    bool candidate) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -466,7 +472,7 @@ bool protocol_native::handle_get_block_filter_header(const code& ec,
     }
 
     hash_digest filter_head{ hash_size };
-    if (query.get_filter_head(filter_head, to_header(height, hash)))
+    if (query.get_filter_head(filter_head, to_header(height, hash, candidate)))
     {
         switch (media)
         {
@@ -488,14 +494,14 @@ bool protocol_native::handle_get_block_filter_header(const code& ec,
 
 bool protocol_native::handle_get_block_tx(const code& ec, interface::block_tx,
     uint8_t, uint8_t media, uint32_t position, std::optional<hash_cptr> hash,
-    std::optional<uint32_t> height, bool witness) NOEXCEPT
+    std::optional<uint32_t> height, bool witness, bool candidate) NOEXCEPT
 {
     if (stopped(ec))
         return false;
 
     const auto& query = archive();
     if (const auto tx = query.get_transaction(query.to_transaction(
-        to_header(height, hash), position), witness))
+        to_header(height, hash, candidate), position), witness))
     {
         const auto size = tx->serialized_size(witness);
         switch (media)

@@ -56,15 +56,15 @@ void protocol_native::start() NOEXCEPT
     SUBSCRIBE_NATIVE(handle_get_top_subscribe, _1, _2, _3, _4, _5);
 
     // Block methods.
-    SUBSCRIBE_NATIVE(handle_get_block, _1, _2, _3, _4, _5, _6, _7);
-    SUBSCRIBE_NATIVE(handle_get_block_header, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_NATIVE(handle_get_block_header_context, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_NATIVE(handle_get_block_details, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_NATIVE(handle_get_block_txs, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_NATIVE(handle_get_block_filter, _1, _2, _3, _4, _5, _6, _7);
-    SUBSCRIBE_NATIVE(handle_get_block_filter_hash, _1, _2, _3, _4, _5, _6, _7);
-    SUBSCRIBE_NATIVE(handle_get_block_filter_header, _1, _2, _3, _4, _5, _6, _7);
-    SUBSCRIBE_NATIVE(handle_get_block_tx, _1, _2, _3, _4, _5, _6, _7, _8);
+    SUBSCRIBE_NATIVE(handle_get_block, _1, _2, _3, _4, _5, _6, _7, _8);
+    SUBSCRIBE_NATIVE(handle_get_block_header, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_NATIVE(handle_get_block_header_context, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_NATIVE(handle_get_block_details, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_NATIVE(handle_get_block_txs, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_NATIVE(handle_get_block_filter, _1, _2, _3, _4, _5, _6, _7, _8);
+    SUBSCRIBE_NATIVE(handle_get_block_filter_hash, _1, _2, _3, _4, _5, _6, _7, _8);
+    SUBSCRIBE_NATIVE(handle_get_block_filter_header, _1, _2, _3, _4, _5, _6, _7, _8);
+    SUBSCRIBE_NATIVE(handle_get_block_tx, _1, _2, _3, _4, _5, _6, _7, _8, _9);
     SUBSCRIBE_NATIVE(handle_get_block_subscribe, _1, _2, _3, _4, _5);
 
     // Transaction methods.
@@ -245,11 +245,10 @@ bool protocol_native::handle_chase(const code&,
         {
             const auto block = node::to_payload<node::chase::block>(value);
 
-            // Increments height above a fork point (start/reorg).
             auto media = top_subscribe_.load(relaxed);
             if (media != media_type::unknown)
             {
-                POST(do_top, block.link, media);
+                POST(do_top, media);
             }
 
             // No block emission for a fork point (start/reorg).
@@ -262,14 +261,14 @@ bool protocol_native::handle_chase(const code&,
             break;
         }
         case node::chase::reorganized:
+        case node::chase::headers:
+        case node::chase::regressed:
+        case node::chase::disorganized:
         {
-            // Resets subscriber height to the fork point.
             const auto media = top_subscribe_.load(relaxed);
             if (media != media_type::unknown)
             {
-                POST(do_top,
-                    node::to_payload<node::chase::reorganized>(value).link,
-                    media);
+                POST(do_top, media);
             }
 
             break;
@@ -310,21 +309,46 @@ void protocol_native::inject(value& out, std::optional<uint32_t> height,
         archive().get_height(link).value);
 }
 
+chain::checkpoint protocol_native::get_top(bool candidate) const NOEXCEPT
+{
+    const auto& query = archive();
+    const auto height = candidate ? query.get_top_candidate() :
+        query.get_top_confirmed();
+    const auto link = candidate ? query.to_candidate(height) :
+        query.to_confirmed(height);
+    return { query.get_header_key(link), height };
+}
+
+data_chunk protocol_native::to_tops() const NOEXCEPT
+{
+    return splice(get_top(false).to_data(), get_top(true).to_data());
+}
+
+value protocol_native::to_tops_json() const NOEXCEPT
+{
+    return
+    {
+        { "confirmed", value_from(get_top(false)) },
+        { "candidate", value_from(get_top(true)) }
+    };
+}
+
 BC_POP_WARNING()
 
 database::header_link protocol_native::to_header(
     const std::optional<uint32_t>& height,
-    const std::optional<hash_cptr>& hash) NOEXCEPT
+    const std::optional<hash_cptr>& hash, bool candidate) NOEXCEPT
 {
     const auto& query = archive();
 
     if (hash.has_value())
         return query.to_header(*(hash.value()));
 
-    if (height.has_value())
-        return query.to_confirmed(height.value());
+    if (!height.has_value())
+        return {};
 
-    return {};
+    return candidate ? query.to_candidate(height.value()) :
+        query.to_confirmed(height.value());
 }
 
 // Use if deserialization is required.

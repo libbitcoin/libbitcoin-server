@@ -312,7 +312,7 @@ BC_AUTO_TEST_CASE(bitcoind_rest__blockhashbyheight_bin__height_five__block5)
 
 BC_AUTO_TEST_CASE(bitcoind_rest__blockhashbyheight_hex__height_five__block5)
 {
-    BC_REQUIRE_EQUAL(rest_text("/rest/blockhashbyheight/5.hex"), encode_base16(test::block5_hash) + "\n");
+    BC_REQUIRE_EQUAL(rest_text("/rest/blockhashbyheight/5.hex"), block5 + "\n");
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rest__blockhashbyheight_above_top__not_found)
@@ -493,6 +493,13 @@ BC_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__verbose_sequence__bad_request
 BC_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__invalid_boolean__bad_request)
 {
     BC_REQUIRE_EQUAL(rest_status("/rest/mempool/contents.json?verbose=1"), status::bad_request);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__undeclared_query__ignored)
+{
+    const auto result = rest_json("/rest/mempool/contents.json?count=1");
+    BC_REQUIRE(result.is_object());
+    BC_REQUIRE(result.as_object().empty());
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__binary__not_found)

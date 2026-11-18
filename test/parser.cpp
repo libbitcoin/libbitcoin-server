@@ -481,9 +481,10 @@ BC_AUTO_TEST_CASE(parser__read_envelope__specified_network__stored_defaults_spec
     BC_REQUIRE(instance.stored.network == selection::regtest);
 
     const auto& configured = instance.configured;
-    BC_REQUIRE(configured.bitcoin.network == selection::testnet4);
+    BC_REQUIRE(configured.bitcoin.network == selection::regtest);
     BC_REQUIRE_EQUAL(configured.network.identifier, 3669344250u);
     BC_REQUIRE_EQUAL(configured.database.strong.buckets, 100'000u);
+    BC_REQUIRE(instance.overrides == system::string_list{ "network" });
 }
 
 BC_AUTO_TEST_CASE(parser__read_envelope__make__unchanged)

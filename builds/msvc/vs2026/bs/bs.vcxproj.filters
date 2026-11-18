@@ -70,8 +70,14 @@
     <Filter Include="web\native\src\routes">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\shared">
+    <Filter Include="web\native\src\vendor">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\src\vendor\mining-pools">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\shared">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -187,9 +193,6 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\components\chart-editor.tsx">
       <Filter>web\admin_dashboard\src\components</Filter>
     </None>
-    <None Include="..\..\..\..\web\admin_dashboard\src\components\connection-pill.tsx">
-      <Filter>web\admin_dashboard\src\components</Filter>
-    </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\components\event-view.tsx">
       <Filter>web\admin_dashboard\src\components</Filter>
     </None>
@@ -217,6 +220,9 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\components\telemetry-dashboard.tsx">
       <Filter>web\admin_dashboard\src\components</Filter>
     </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\components\theme-select.tsx">
+      <Filter>web\admin_dashboard\src\components</Filter>
+    </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\components\time-series-chart.tsx">
       <Filter>web\admin_dashboard\src\components</Filter>
     </None>
@@ -239,6 +245,9 @@
       <Filter>web\admin_dashboard\src\lib</Filter>
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\chart-scale.ts">
+      <Filter>web\admin_dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\chart-theme.ts">
       <Filter>web\admin_dashboard\src\lib</Filter>
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\endpoints.ts">
@@ -289,16 +298,25 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\telemetry.worker.ts">
       <Filter>web\admin_dashboard\src\lib</Filter>
     </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\theme.ts">
+      <Filter>web\admin_dashboard\src\lib</Filter>
+    </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\use-current-time.ts">
       <Filter>web\admin_dashboard\src\lib</Filter>
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\use-telemetry.ts">
       <Filter>web\admin_dashboard\src\lib</Filter>
     </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\wallet-prefixes.ts">
+      <Filter>web\admin_dashboard\src\lib</Filter>
+    </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\worker-metrics-store.ts">
       <Filter>web\admin_dashboard\src\lib</Filter>
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\main.tsx">
+      <Filter>web\admin_dashboard\src</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\themes.css">
       <Filter>web\admin_dashboard\src</Filter>
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\vite-env.d.ts">
@@ -358,6 +376,9 @@
     <None Include="..\..\..\..\web\native\src\components\hash-text.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\components\miner-value.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\components\qr-code.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
@@ -373,7 +394,7 @@
     <None Include="..\..\..\..\web\native\src\components\search-bar.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
-    <None Include="..\..\..\..\web\native\src\components\status-pill.tsx">
+    <None Include="..\..\..\..\web\native\src\components\theme-select.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\index.css">
@@ -409,6 +430,9 @@
     <None Include="..\..\..\..\web\native\src\lib\hooks\useWindowScrollToBottom.ts">
       <Filter>web\native\src\lib\hooks</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\lib\theme.ts">
+      <Filter>web\native\src\lib</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\address.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
@@ -422,6 +446,9 @@
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\libbitcoin-address-alias.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\miner.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\routes.ts">
@@ -465,6 +492,15 @@
     </None>
     <None Include="..\..\..\..\web\native\src\routes\transaction.tsx">
       <Filter>web\native\src\routes</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\themes.css">
+      <Filter>web\native\src</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\vendor\mining-pools\package.json">
+      <Filter>web\native\src\vendor\mining-pools</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\vendor\mining-pools\pools.json">
+      <Filter>web\native\src\vendor\mining-pools</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\vite-env.d.ts">
       <Filter>web\native\src</Filter>

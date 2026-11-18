@@ -36,23 +36,21 @@ BC_AUTO_TEST_CASE(native__configuration__json__expected)
     BC_REQUIRE_EQUAL(object.size(), 5u);
 
     const auto& store = object.at("store").as_object();
-    BC_REQUIRE_EQUAL(store.size(), 6u);
+    BC_REQUIRE_EQUAL(store.size(), 5u);
     BC_REQUIRE(store.at("address").as_bool());
     BC_REQUIRE(store.at("filter").as_bool());
     BC_REQUIRE(store.at("silent").is_null());
     BC_REQUIRE(!store.at("turbo").as_bool());
-    BC_REQUIRE(store.at("witness").as_bool());
     BC_REQUIRE_EQUAL(store.at("pruned").as_int64(), 0);
 
     const auto& node = object.at("node").as_object();
-    BC_REQUIRE_EQUAL(node.size(), 7u);
+    BC_REQUIRE_EQUAL(node.size(), 6u);
     BC_REQUIRE_EQUAL(node.at("network").as_string(), "mainnet");
     BC_REQUIRE(!node.at("limited").as_bool());
     BC_REQUIRE(node.at("blocks").as_bool());
     BC_REQUIRE(node.at("witness").as_bool());
     BC_REQUIRE(!node.at("filters").as_bool());
     BC_REQUIRE(node.at("privacy").as_bool());
-    BC_REQUIRE_EQUAL(node.at("fees").as_bool(), config_.network.enable_relay);
 
     const auto& wallet = object.at("wallet").as_object();
     BC_REQUIRE_EQUAL(wallet.size(), 7u);
@@ -126,7 +124,7 @@ BC_AUTO_TEST_CASE(native__ws_configuration__default__json)
 
     const auto response = ws_get_json("/v1/configuration");
     BC_REQUIRE(response.is_object());
-    BC_REQUIRE(response.as_object().at("store").as_object().at("witness").as_bool());
+    BC_REQUIRE(response.as_object().at("node").as_object().at("witness").as_bool());
 }
 
 BC_AUTO_TEST_SUITE_END()

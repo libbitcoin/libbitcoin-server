@@ -130,9 +130,14 @@ code executor::open_store_coded(bool details)
         return metadata_.stored_code;
     }
 
+    // The pool compaction is the open's only pruning, and its last step.
+    std::optional<logger::time> compacting{};
     ////logger(BS_DATABASE_STARTING);
     if (const auto ec = store_.open([&](auto event_, auto table)
     {
+        if (!compacting && event_ == database::event_t::prune_table)
+            compacting = logger::now();
+
         if (details)
             logger(std::format(BS_OPEN,
                 server_node::store::events.at(event_),
@@ -142,6 +147,19 @@ code executor::open_store_coded(bool details)
         logger(std::format(BS_DATABASE_START_FAIL, ec.message()));
         return ec;
     }
+
+    if (compacting)
+    {
+        const auto span = duration_cast<milliseconds>(logger::now() -
+            compacting.value());
+        logger(std::format(BS_POOL_COMPACTED, query_.pool_records(),
+            span.count()));
+    }
+
+    if (metadata_.stored.schema != database::envelope::compiled)
+        logger(std::format(BS_DATABASE_MIGRATED,
+            metadata_.stored.schema.to_string(),
+            database::envelope::compiled.to_string()));
 
     apply_envelope();
     logger(BS_DATABASE_STARTED);
@@ -341,10 +359,16 @@ void executor::apply_envelope()
         configured.bitcoin,
         configured.database,
         configured.node.limited_blocks,
+        configured.node.require_witness,
         configured.node.silent_start_height);
-        
+
+    for (const auto& name: metadata_.overrides)
+        logger(std::format(BS_DATABASE_ENVELOPE_OVERRIDE, name));
+
     for (const auto& name: applied)
         logger(std::format(BS_DATABASE_ENVELOPE_OVERRIDE, name));
+
+    metadata_.overrides.clear();
 }
 
 } // namespace server

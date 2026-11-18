@@ -19,6 +19,7 @@ import {
 } from '@/lib/utils/format';
 import { HashText } from '@/components/hash-text';
 import { BlockSizeBar } from '@/components/block-size-bar';
+import { MinerValue } from '@/components/miner-value';
 import { BlockValidationInspector } from '@/components/block-validation-inspector';
 import { SaveBookmarkButton } from '@/components/save-bookmark';
 
@@ -220,6 +221,7 @@ export function BlockPage() {
             </span>
           }
         />
+        <InfoItem label="Miner" value={<MinerValue coinbase={initialTransactions?.[0]} />} />
       </section>
 
       {(typeof size === 'number' ||

@@ -74,6 +74,7 @@ admin_setup_fixture::admin_setup_fixture(const initializer& setup,
         // Settings files are read and derived values packed, as by the executor.
         ec = config_.initialize();
         BC_REQUIRE_MESSAGE(!ec, ec.message());
+        test::ephemeral(config_);
 
         setup(query_);
 

@@ -94,7 +94,10 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
                 configure(config_);
 
             config_.database.initialize(config_.bitcoin,
-                config_.node.limited_blocks, config_.node.silent_start_height);
+                config_.node.limited_blocks,
+                config_.database.envelope.provide_filters,
+                config_.node.require_witness,
+                config_.node.silent_start_height);
             return config_.database;
         }()
     },
@@ -120,6 +123,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
         // Settings files are read and derived values packed, as by the executor.
         ec = config_.initialize();
         BC_REQUIRE_MESSAGE(!ec, ec.message());
+        test::ephemeral(config_);
 
         BC_REQUIRE(setup(query_));
 
@@ -430,6 +434,7 @@ code server_node_setup_fixture::run(const configurator& configure)
 
     const auto ec = config_.initialize();
     BC_REQUIRE_MESSAGE(!ec, ec.message());
+    test::ephemeral(config_);
     BC_REQUIRE(test::setup_ten_block_store(query_));
 
     std::promise<code> running{};

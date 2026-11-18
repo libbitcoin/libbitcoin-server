@@ -61,7 +61,6 @@ bool protocol_native::handle_get_configuration(const code& ec,
                 { "filter", query.filter_enabled() },
                 { "silent", silent },
                 { "turbo", database_settings().turbo },
-                { "witness", node.require_witness },
                 { "pruned", get_pruned_height() }
             }
         },
@@ -72,8 +71,7 @@ bool protocol_native::handle_get_configuration(const code& ec,
                 { "blocks", node.provide_blocks },
                 { "witness", node.provide_witness },
                 { "filters", node.provide_filters },
-                { "privacy", node.provide_privacy },
-                { "fees", peer.enable_relay }
+                { "privacy", node.provide_privacy }
             }
         },
         { "wallet", json::object

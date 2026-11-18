@@ -141,9 +141,10 @@ const configurationSchema = z.object({
     address: z.boolean(),
     filter: z.boolean(),
     turbo: z.boolean(),
-    witness: z.boolean(),
+    silent: z.number().int().nonnegative().nullable(),
   }),
-  node: z.object({ network: z.string().trim().min(1) }),
+  node: z.object({ network: z.string().trim().min(1) }).catchall(z.unknown()),
+  network: z.record(z.string(), z.unknown()),
   wallet: z.object({
     p2kh: z.number().int().min(0).max(255),
     p2sh: z.number().int().min(0).max(255),
@@ -157,13 +158,26 @@ function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
   if (!parsed.success) {
     throw new Error('Invalid server configuration');
   }
-  const { store, node, wallet, forks } = parsed.data;
+  const { store, node, wallet, forks, network } = parsed.data;
+  const flags = (source: Record<string, unknown>) =>
+    Object.fromEntries(
+      Object.entries(source).filter(
+        (entry): entry is [string, boolean] => typeof entry[1] === 'boolean'
+      )
+    );
+  const enabledForks = Object.entries(forks)
+    .filter(([, enabled]) => enabled)
+    .map(([fork]) => fork);
   return {
-    ...store,
+    address: store.address,
+    filter: store.filter,
+    turbo: store.turbo,
+    silent: store.silent !== null,
+    services: flags(node),
+    protocol: flags(network),
+    coin: enabledForks.includes('ltc_scrypt_proof_of_work') ? 'litecoin' : 'bitcoin',
     network: node.network,
-    forks: Object.entries(forks)
-      .filter(([, enabled]) => enabled)
-      .map(([fork]) => fork),
+    forks: enabledForks,
     wallet: { p2pkh: wallet.p2kh, p2sh: wallet.p2sh, hrp: wallet.witness },
   };
 }
@@ -189,8 +203,9 @@ function extractHeaderContextState(context: unknown): BlockHeaderContextState | 
 }
 
 function getHeaderContextMaximalSize(state: BlockHeaderContextState | null) {
-  // In header context, size is nominal bytes and weight is maximal serialized bytes.
-  return state?.weight ?? state?.size;
+  // In header context, size is nominal bytes and weight is (3 * nominal + maximal).
+  if (state?.size === undefined || state.weight === undefined) return;
+  return state.weight - 3 * state.size;
 }
 
 function computeFeeRate(feeSats: number, weight: number) {
@@ -297,49 +312,27 @@ async function fetchJsonOrNullOnNotFound<T>(
 
 async function fetchTopHeight(baseUrl: string, turbo?: boolean) {
   const raw = await fetchJson<unknown>(baseUrl, '/v1/top?format=json', turbo);
-  const height = typeof raw === 'number' ? raw : Number(raw);
-  if (!Number.isFinite(height)) throw new Error('Invalid top height');
-  return height;
+  const top = parseConfirmedTop(raw);
+  if (!top) throw new Error('Invalid top height');
+  return top.height;
 }
 
 function isHexHash(value: string) {
   return /^[0-9a-f]{64}$/iu.test(value);
 }
 
-function parseNumericHeight(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isInteger(value) && value >= 0) return value;
-  if (typeof value === 'string' && /^\d+$/u.test(value.trim())) return Number(value.trim());
-  return null;
+interface ChainTop {
+  height: number;
+  hash: string;
 }
 
-function extractTopSubscriptionIdentifier(message: unknown): string | number | null {
-  const height = parseNumericHeight(message);
-  if (height !== null) return height;
-
-  if (typeof message === 'string') {
-    const trimmed = message.trim();
-    return isHexHash(trimmed) ? trimmed : null;
-  }
-
-  if (!message || typeof message !== 'object' || Array.isArray(message)) return null;
-
-  const record = message as Record<string, unknown>;
-  const candidates = [
-    record.payload,
-    record.top,
-    record.block,
-    record.header,
-    record.hash,
-    record.height,
-  ];
-
-  for (const candidate of candidates) {
-    if (candidate === message) continue;
-    const identifier = extractTopSubscriptionIdentifier(candidate);
-    if (identifier !== null) return identifier;
-  }
-
-  return null;
+// Top responses and notifications carry both the confirmed and candidate tops.
+function parseConfirmedTop(value: unknown): ChainTop | null {
+  if (!isRecord(value) || !isRecord(value.confirmed)) return null;
+  const { height, hash } = value.confirmed;
+  if (typeof height !== 'number' || !Number.isInteger(height) || height < 0) return null;
+  if (typeof hash !== 'string' || !isHexHash(hash)) return null;
+  return { height, hash };
 }
 
 function normalizeTextMessage(data: MessageEvent['data']): Promise<string | null> {
@@ -353,14 +346,14 @@ function normalizeTextMessage(data: MessageEvent['data']): Promise<string | null
   return Promise.resolve(null);
 }
 
-function parseTopSubscriptionMessage(text: string): string | number | null {
+function parseTopSubscriptionMessage(text: string): string | null {
   const trimmed = text.trim();
   if (!trimmed) return null;
 
   try {
-    return extractTopSubscriptionIdentifier(JSON.parse(trimmed));
+    return parseConfirmedTop(JSON.parse(trimmed))?.hash ?? null;
   } catch {
-    return extractTopSubscriptionIdentifier(trimmed);
+    return null;
   }
 }
 

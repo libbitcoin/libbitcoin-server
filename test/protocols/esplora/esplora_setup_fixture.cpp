@@ -47,6 +47,12 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup,
             config_.node.delay_inbound = false;
             config_.node.pool.minimum_fee_rate = 0.0;
             config_.network.enable_relay = true;
+
+            // The pool opens only under bip113.
+            using deployment = system::chain::chain_state::deployment;
+            config_.bitcoin.bip9_bit0_deployment.start =
+                deployment::always_active;
+
             config_.network.inbound.connections = 0;
             config_.network.outbound.connections = 0;
             config_.database.path = TEST_DIRECTORY;
@@ -71,6 +77,7 @@ esplora_setup_fixture::esplora_setup_fixture(const initializer& setup,
         // Settings files are read and derived values packed, as by the executor.
         ec = config_.initialize();
         BC_REQUIRE_MESSAGE(!ec, ec.message());
+        test::ephemeral(config_);
 
         BC_REQUIRE(setup(query_));
 

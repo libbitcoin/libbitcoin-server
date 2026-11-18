@@ -146,6 +146,7 @@ static database::settings database_settings() NOEXCEPT
     bucket(out.filter_tx);
 
     out.envelope.set(out);
+    out.envelope.provide_filters = true;
     return out;
 }
 
@@ -223,6 +224,37 @@ void configure(server::configuration& out) NOEXCEPT
 
     services.admin.connections = 0;
     services.admin.binds.clear();
+}
+
+void ephemeral(server::configuration& out) NOEXCEPT
+{
+    const auto zero = [](network::config::authorities& binds,
+        uint16_t port) NOEXCEPT
+    {
+        for (auto& bind: binds)
+            if (bind.port() == port)
+                bind = { bind.ip(), uint16_t{}, bind.cidr() };
+    };
+
+    const auto service = [&](network::settings::secure_server& value) NOEXCEPT
+    {
+        zero(value.binds, value.bind_port);
+        zero(value.safes, value.safe_port);
+    };
+
+    auto& inbound = out.network.inbound;
+    auto& services = out.server;
+    zero(inbound.binds, inbound.bind_port);
+    service(services.admin);
+    service(services.native);
+    service(services.bitcoind);
+    service(services.btcd);
+    service(services.electrum);
+    service(services.sparrow);
+    service(services.esplora);
+    service(services.stratum_v1);
+    service(services.stratum_v2);
+    service(services.zmq);
 }
 
 } // namespace test

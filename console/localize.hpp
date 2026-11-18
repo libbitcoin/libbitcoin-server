@@ -314,6 +314,8 @@
     "Press CTRL-C to stop the node."
 #define BS_DATABASE_STARTED \
     "Database is started."
+#define BS_POOL_COMPACTED \
+    "Pool compacted to ({}) rows in ({}) ms."
 #define BS_NETWORK_STARTING \
     "Please wait while network is starting..."
 #define BS_NODE_START_FAIL \
@@ -368,6 +370,8 @@
     "Database schema {} does not match compiled schema {}."
 #define BS_DATABASE_ENVELOPE_OVERRIDE \
     "Database envelope [{}] overrides configuration."
+#define BS_DATABASE_MIGRATED \
+    "Database schema {} migrated to compiled schema {}."
 #define BS_NETWORK_OVERRIDE \
     "Network [{}] overrides configured network [{}]."
 #define BS_DATABASE_STOPPING \

@@ -1,12 +1,13 @@
 import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
-import { useServerInfo, type BlockValidation } from '@/lib/api/client';
+import { type BlockValidation } from '@/lib/api/client';
 import { useBlockValidation } from '@/lib/hooks/useBlockchainData';
 import { blockValidationPath } from '@/lib/utils/routes';
 
 // Descriptions refer to https://github.com/bitcoin/bips. Activation comes only from the node.
 const RULE_DESCRIPTIONS: Partial<Record<string, string>> = {
+  bip16: 'Pay to script hash',
   bip30: 'Duplicate transaction protection',
   bip34: 'Coinbase block height',
   bip42: 'Finite subsidy supply',
@@ -21,7 +22,27 @@ const RULE_DESCRIPTIONS: Partial<Record<string, string>> = {
   bip147: 'Empty multisig dummy element',
   bip341: 'Taproot spending rules',
   bip342: 'Tapscript validation',
+  bip54_timewarp: 'Retarget timestamp limit',
+  bip54_timespan: 'Retarget period ordering',
+  bip54_sigops: 'Legacy sigops limit',
+  bip54_txsize: '64-byte transactions invalid',
+  bip54_coinbase: 'Coinbase locktime height',
 };
+
+const RULE_QUALIFIERS: Partial<Record<string, string>> = {
+  bip90: 'hard fork',
+};
+
+function ruleLabel(rule: string) {
+  const match = /^bip(\d+)(?:_(\w+))?$/u.exec(rule);
+  if (!match) return;
+  const number = match[1];
+  const fixed = Object.hasOwn(RULE_QUALIFIERS, rule) ? RULE_QUALIFIERS[rule] : undefined;
+  const qualifier = match.at(2) ?? fixed;
+  const name = qualifier ? `BIP ${number} (${qualifier})` : `BIP ${number}`;
+  const href = `https://github.com/bitcoin/bips/blob/master/bip-${number.padStart(4, '0')}.mediawiki`;
+  return { name, href };
+}
 
 const VALIDATION_FLAGS = [
   ['validated', 'Validated'],
@@ -40,7 +61,6 @@ export function BlockValidationInspector({
   const [expanded, setExpanded] = useState(initiallyExpanded);
   const regionId = useId();
   const headingId = useId();
-  const server = useServerInfo();
   const query = useBlockValidation(blockHash, { enabled: expanded });
 
   return (
@@ -69,7 +89,7 @@ export function BlockValidationInspector({
         {expanded && (
           <div className="border-accent/20 space-y-6 border-t p-6">
             <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-              <p className="text-textMuted">Reported by {server.label} for this block.</p>
+              {query.data ? <MedianTimePast value={query.data.medianTimePast} /> : <span />}
               <div className="flex flex-wrap items-center gap-4">
                 <Link
                   className="text-accent hover:text-accentSecondary"
@@ -122,32 +142,12 @@ function ValidationDetails({ validation }: { validation: BlockValidation }) {
     left.localeCompare(right, 'en', { numeric: true })
   );
   const activeCount = rules.filter(([, active]) => active).length;
-  const medianTime = validation.medianTimePast;
-  const isoTime = medianTime === undefined ? undefined : new Date(medianTime * 1000).toISOString();
 
   return (
     <>
-      <dl className="grid gap-4 text-sm sm:grid-cols-2">
-        <div>
-          <dt className="text-accentSecondary text-xs tracking-wide uppercase">Median time past</dt>
-          <dd className="text-textPrimary mt-1">
-            {isoTime ? (
-              <>
-                <time dateTime={isoTime}>{isoTime.replace('T', ' ').replace('.000Z', ' UTC')}</time>
-                <span className="text-textMuted mt-1 block text-xs">
-                  Unix timestamp: {medianTime}
-                </span>
-              </>
-            ) : (
-              'Not reported'
-            )}
-          </dd>
-        </div>
-      </dl>
-
-      <div className="space-y-3">
-        <h3 className="text-accent text-sm font-semibold">Validation state</h3>
-        {validation.state ? (
+      {validation.state && (
+        <div className="space-y-3">
+          <h3 className="text-accent text-sm font-semibold">Validation state</h3>
           <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
             {VALIDATION_FLAGS.map(([key, label]) => (
               <div key={key}>
@@ -158,10 +158,8 @@ function ValidationDetails({ validation }: { validation: BlockValidation }) {
               </div>
             ))}
           </dl>
-        ) : (
-          <p className="text-textMuted text-sm">Validation flags are not reported by the server.</p>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -173,9 +171,9 @@ function ValidationDetails({ validation }: { validation: BlockValidation }) {
           )}
         </div>
         <p className="text-textMuted text-sm">
-          Flags apply to this block’s context on the selected node. Missing flags are not inferred.
+          Flags apply to this block’s context on the selected node.
         </p>
-        {rules.length > 0 ? (
+        {rules.length > 0 && (
           <ul
             className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
             aria-label="Reported consensus rules"
@@ -184,38 +182,59 @@ function ValidationDetails({ validation }: { validation: BlockValidation }) {
               const description = Object.hasOwn(RULE_DESCRIPTIONS, rule)
                 ? RULE_DESCRIPTIONS[rule]
                 : undefined;
-              const bipNumber = /^bip(\d+)$/u.exec(rule)?.[1];
+              const label = ruleLabel(rule);
               return (
-                <li key={rule} className="border-accent/20 min-w-0 rounded-lg border p-3 text-sm">
+                <li
+                  key={rule}
+                  className={`min-w-0 rounded-lg border p-3 text-sm ${active ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-accent/20 opacity-70'}`}
+                >
                   <div className="flex items-start justify-between gap-3">
-                    {description && bipNumber ? (
+                    {label ? (
                       <a
-                        href={`https://github.com/bitcoin/bips/blob/master/bip-${bipNumber.padStart(4, '0')}.mediawiki`}
+                        href={label.href}
                         target="_blank"
                         rel="noreferrer"
                         className="text-accent hover:text-accentSecondary font-medium"
                       >
-                        BIP {bipNumber}
+                        {label.name}
                       </a>
                     ) : (
                       <span className="text-textPrimary break-all">{rule}</span>
                     )}
-                    <FlagValue value={active} positive="Active" negative="Inactive" />
+                    <RuleState active={active} />
                   </div>
                   {description && <p className="text-textMuted mt-2 text-xs">{description}</p>}
                 </li>
               );
             })}
           </ul>
-        ) : (
-          <p className="text-textMuted text-sm">
-            {validation.rules === undefined
-              ? 'Consensus rules are not reported by the server.'
-              : 'No consensus rule flags were returned for this block.'}
-          </p>
         )}
       </div>
     </>
+  );
+}
+
+function MedianTimePast({ value }: { value?: number }) {
+  if (value === undefined) return <span />;
+  const isoTime = new Date(value * 1000).toISOString();
+  return (
+    <div>
+      <p className="text-accentSecondary text-xs tracking-wide uppercase">Median time past</p>
+      <p className="text-textPrimary mt-1">
+        <time dateTime={isoTime}>{isoTime.replace('T', ' ').replace('.000Z', ' UTC')}</time>
+        <span className="text-textMuted mt-1 block text-xs">Unix timestamp: {value}</span>
+      </p>
+    </div>
+  );
+}
+
+function RuleState({ active }: { active: boolean }) {
+  return (
+    <span
+      className={`inline-flex shrink-0 rounded-md border px-2 py-0.5 text-xs font-semibold ${active ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300' : 'border-slate-500/50 bg-slate-500/15 text-slate-300'}`}
+    >
+      {active ? 'Active' : 'Inactive'}
+    </span>
   );
 }
 

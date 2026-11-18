@@ -37,6 +37,13 @@ function package_root(path)
     return match ? match[1] : undefined;
 }
 
+// A third-party source kept in the tree, beside its package.json and notice.
+function vendor_root(path)
+{
+    const match = normal(path).match(/^(.*\/vendor\/[^/]+)\//);
+    return match && existsSync(join(match[1], 'package.json')) ? match[1] : undefined;
+}
+
 function find_package(name, from)
 {
     for (let directory = from; ; directory = dirname(directory))
@@ -157,7 +164,8 @@ function collect_module(entries, id, base)
     if (id.startsWith('\0') && !package_root(id.slice(1)))
         fail(`unattributed generated module ${JSON.stringify(id)}`);
 
-    const root = package_root(id.replace(/^\0/, '').split('?')[0]);
+    const path = id.replace(/^\0/, '').split('?')[0];
+    const root = package_root(path) ?? vendor_root(path);
     if (root)
         add(entries, package_entry(root));
 }

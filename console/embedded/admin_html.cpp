@@ -33,6 +33,17 @@ R"DELIM(<!doctype html>
       content="An embedded administration dashboard for Libbitcoin Server."
     />
     <meta name="theme-color" content="#272822" />
+    <script>
+      // Apply the saved palette before the page paints; the app handles later changes.
+      try {
+        const theme = localStorage.getItem('libbitcoinTheme');
+        if (theme === 'light' || theme === 'midnight') {
+          document.documentElement.dataset.theme = theme;
+        }
+      } catch {
+        // Use the current theme when browser storage is unavailable.
+      }
+    </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>Libbitcoin Server Admin</title>
     <script type="module" crossorigin src="/script.js"></script>
