@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type Query, type QueryClient, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import {
+  type Query,
+  type QueryClient,
+  type UseQueryOptions,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   AddressActivityItem,
   AddressSummary,
@@ -37,6 +43,7 @@ interface BlockchainQueryOptions<T> {
   enabled?: boolean;
   retry?: boolean | number | ((failureCount: number, error: Error) => boolean);
   staleTime?: number;
+  refetchInterval?: UseQueryOptions<T>['refetchInterval'];
   initialData?: T;
   blockRefresh?: BlockRefreshMode;
 }
@@ -152,6 +159,7 @@ function useBlockchainQuery<T>({
   enabled,
   retry,
   staleTime,
+  refetchInterval,
   initialData,
   blockRefresh,
 }: BlockchainQueryOptions<T>) {
@@ -164,6 +172,7 @@ function useBlockchainQuery<T>({
     enabled,
     ...(retry === undefined ? {} : { retry }),
     staleTime,
+    refetchInterval,
     initialData,
     meta: blockRefresh ? ({ blockRefresh } satisfies BlockchainQueryMeta) : undefined,
   });
@@ -181,6 +190,7 @@ export function useServerConfiguration() {
     queryKey: ['configuration'],
     queryFn: (client) => client.getConfiguration(),
     staleTime: 60_000,
+    refetchInterval: (query) => (query.state.status === 'error' ? 15_000 : false),
   });
 }
 
@@ -338,22 +348,22 @@ export function useBlockchainEventStatus(): BlockchainEventStatus {
   const client = useBlockchainClient();
   const fallbackStatus = useMemo<BlockchainEventStatus>(
     () => ({
-      transport: client.metadata.supportsWebsocket ? 'websocket' : 'polling',
+      transport: 'idle',
       websocketAvailable: client.metadata.supportsWebsocket,
+      connectionState: client.metadata.connectionState,
     }),
-    [client.metadata.supportsWebsocket]
+    [client.metadata.supportsWebsocket, client.metadata.connectionState]
   );
-  const [status, setStatus] = useState<BlockchainEventStatus>(() =>
-    client.getEventStatus ? client.getEventStatus() : fallbackStatus
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      return client.subscribeToEventStatus?.(onChange) ?? (() => {});
+    },
+    [client]
   );
-
-  useEffect(() => {
-    const initialStatus = client.getEventStatus ? client.getEventStatus() : fallbackStatus;
-    setStatus(initialStatus);
-    return client.subscribeToEventStatus?.(setStatus);
+  const getSnapshot = useCallback(() => {
+    return client.getEventStatus?.() ?? fallbackStatus;
   }, [client, fallbackStatus]);
-
-  return status;
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
 export function BlockchainEventCacheUpdater() {

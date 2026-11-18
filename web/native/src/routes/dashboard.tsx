@@ -27,7 +27,12 @@ export function DashboardPage() {
   const info = useServerInfo();
   const now = useNow();
   const eventStatus = useBlockchainEventStatus();
-  const { data: configuration } = useServerConfiguration();
+  const {
+    data: configuration,
+    isError: configurationError,
+    isFetching: configurationFetching,
+    refetch: retryConfiguration,
+  } = useServerConfiguration();
   const {
     data: blocks,
     isLoading: blocksLoading,
@@ -214,6 +219,21 @@ export function DashboardPage() {
 
             <div className="space-y-3">
               <p className="text-accentSecondary text-xs tracking-wide uppercase">Capabilities</p>
+              {configurationError && (
+                <div role="status" className="text-textMuted space-y-2 text-sm">
+                  <p>Server configuration unavailable. Retrying automatically.</p>
+                  <button
+                    type="button"
+                    disabled={configurationFetching}
+                    onClick={() => {
+                      void retryConfiguration();
+                    }}
+                    className="text-accent hover:text-accentSecondary disabled:opacity-50"
+                  >
+                    {configurationFetching ? 'Retrying…' : 'Retry configuration'}
+                  </button>
+                </div>
+              )}
               <div className="flex flex-wrap gap-2">
                 <CapabilityPill label="Address Index" enabled={configuration?.address} />
                 <CapabilityPill label="Witness Node" enabled={configuration?.witness} />

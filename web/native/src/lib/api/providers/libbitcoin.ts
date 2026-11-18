@@ -23,7 +23,6 @@ import {
   TxOutputResponse,
   TxPoint,
   TxResponse,
-  MAINNET_PARAMS,
   scriptHashFromAddress,
   toBlockSummary,
   mapTransaction,
@@ -137,48 +136,35 @@ class LibbitcoinApiError extends Error {
   }
 }
 
-const DEFAULT_CONFIGURATION: BlockchainClientConfiguration = {
-  address: true,
-  filter: false,
-  turbo: true,
-  witness: true,
-  network: 'mainnet',
-  forks: [],
-  wallet: MAINNET_PARAMS,
-};
+const configurationSchema = z.object({
+  store: z.object({
+    address: z.boolean(),
+    filter: z.boolean(),
+    turbo: z.boolean(),
+    witness: z.boolean(),
+  }),
+  node: z.object({ network: z.string().trim().min(1) }),
+  wallet: z.object({
+    p2kh: z.number().int().min(0).max(255),
+    p2sh: z.number().int().min(0).max(255),
+    witness: z.string().trim().min(1),
+  }),
+  forks: z.record(z.string(), z.boolean()),
+});
 
 function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
-  if (!isRecord(raw) || !isRecord(raw.store)) {
-    return DEFAULT_CONFIGURATION;
+  const parsed = configurationSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new Error('Invalid server configuration');
   }
-
-  const record = raw.store;
-  const coerceBoolean = (key: 'address' | 'filter' | 'turbo' | 'witness') =>
-    typeof record[key] === 'boolean' ? record[key] : DEFAULT_CONFIGURATION[key];
-
-  const node = isRecord(raw.node) ? raw.node : {};
-  const network = typeof node.network === 'string' ? node.network : DEFAULT_CONFIGURATION.network;
-  const forks = isRecord(raw.forks)
-    ? Object.entries(raw.forks)
-        .filter(([, enabled]) => enabled === true)
-        .map(([fork]) => fork)
-    : DEFAULT_CONFIGURATION.forks;
-  const wallet =
-    isRecord(raw.wallet) &&
-    typeof raw.wallet.p2kh === 'number' &&
-    typeof raw.wallet.p2sh === 'number' &&
-    typeof raw.wallet.witness === 'string'
-      ? { p2pkh: raw.wallet.p2kh, p2sh: raw.wallet.p2sh, hrp: raw.wallet.witness }
-      : DEFAULT_CONFIGURATION.wallet;
-
+  const { store, node, wallet, forks } = parsed.data;
   return {
-    address: coerceBoolean('address'),
-    filter: coerceBoolean('filter'),
-    turbo: coerceBoolean('turbo'),
-    witness: coerceBoolean('witness'),
-    network,
-    forks,
-    wallet,
+    ...store,
+    network: node.network,
+    forks: Object.entries(forks)
+      .filter(([, enabled]) => enabled)
+      .map(([fork]) => fork),
+    wallet: { p2pkh: wallet.p2kh, p2sh: wallet.p2sh, hrp: wallet.witness },
   };
 }
 
@@ -717,6 +703,12 @@ export function createLibbitcoinClient({
   let configurationPromise: Promise<BlockchainClientConfiguration> | null = null;
   const websocketUrl = resolveWebSocketUrl(baseUrl);
   const supportsWebsocket = Boolean(websocketUrl && globalThis.WebSocket);
+  let httpAvailable: boolean | null = null;
+  let eventStatus: BlockchainEventStatus = {
+    transport: 'idle',
+    websocketAvailable: supportsWebsocket,
+    connectionState: 'unknown',
+  };
   const addressOutputsCache = new Map<string, { outputs: AddressOutpoint[]; expiresAt: number }>();
   const confirmedUtxosCache = new Map<
     string,
@@ -767,16 +759,15 @@ export function createLibbitcoinClient({
 
   function ensureConfiguration(): Promise<BlockchainClientConfiguration> {
     if (configurationPromise) return configurationPromise;
-    configurationPromise = fetchJson<unknown>(baseUrl, '/v1/configuration?format=json')
+    configurationPromise = observeHttp(fetchJson<unknown>(baseUrl, '/v1/configuration?format=json'))
       .then((raw) => {
         const cfg = normalizeConfiguration(raw);
         configuration = cfg;
         return cfg;
       })
       .catch((error: unknown) => {
-        console.warn('Libbitcoin configuration fetch failed', error);
-        configuration = DEFAULT_CONFIGURATION;
-        return DEFAULT_CONFIGURATION;
+        configurationPromise = null;
+        throw error;
       });
     return configurationPromise;
   }
@@ -795,19 +786,49 @@ export function createLibbitcoinClient({
   }
 
   function getEventStatus(): BlockchainEventStatus {
-    return {
+    return eventStatus;
+  }
+
+  function getConnectionState(): BlockchainEventStatus['connectionState'] {
+    if (eventTransport === 'websocket') return httpAvailable === false ? 'degraded' : 'connected';
+    if (httpAvailable === false) return 'offline';
+    if (httpAvailable === null) return 'unknown';
+    return supportsWebsocket && poller !== null ? 'degraded' : 'connected';
+  }
+
+  function publishEventStatus() {
+    const next: BlockchainEventStatus = {
       transport: eventTransport,
       websocketAvailable: supportsWebsocket && !websocketUnavailable,
+      connectionState: getConnectionState(),
     };
+    if (
+      next.transport === eventStatus.transport &&
+      next.websocketAvailable === eventStatus.websocketAvailable &&
+      next.connectionState === eventStatus.connectionState
+    )
+      return;
+    eventStatus = next;
+    for (const listener of statusListeners) listener(eventStatus);
+  }
+
+  async function observeHttp<T>(request: Promise<T>): Promise<T> {
+    try {
+      const value = await request;
+      httpAvailable = true;
+      publishEventStatus();
+      return value;
+    } catch (error) {
+      // A missing block or unsupported request still proves HTTP is reachable.
+      httpAvailable = error instanceof LibbitcoinApiError && error.status < 500;
+      publishEventStatus();
+      throw error;
+    }
   }
 
   function setEventTransport(transport: BlockchainEventTransport) {
-    if (eventTransport === transport) return;
     eventTransport = transport;
-    const status = getEventStatus();
-    for (const listener of statusListeners) {
-      listener(status);
-    }
+    publishEventStatus();
   }
 
   async function emitBlockEvent(identifier: string | number) {
@@ -816,7 +837,7 @@ export function createLibbitcoinClient({
         ? `/v1/block/height/${String(identifier)}`
         : `/v1/block/hash/${identifier}`;
     const [header, context] = await Promise.all([
-      fetchJson<BlockHeaderResponse>(baseUrl, `${path}/header?format=json`),
+      observeHttp(fetchJson<BlockHeaderResponse>(baseUrl, `${path}/header?format=json`)),
       tryFetchJson<unknown>(baseUrl, `${path}/header/context?format=json`),
     ]);
 
@@ -842,7 +863,7 @@ export function createLibbitcoinClient({
 
   async function checkForNewTop() {
     try {
-      const height = await fetchTopHeight(baseUrl);
+      const height = await observeHttp(fetchTopHeight(baseUrl));
       if (lastHeight === null) {
         lastHeight = height;
         return;
@@ -861,6 +882,7 @@ export function createLibbitcoinClient({
       poller = setInterval(() => {
         void checkForNewTop();
       }, pollIntervalMs);
+      void checkForNewTop();
     }
     setEventTransport('polling');
   }
@@ -966,6 +988,8 @@ export function createLibbitcoinClient({
         websocketUnavailable = false;
         websocketRetryDelayMs = WEBSOCKET_RETRY_MIN_DELAY_MS;
         setEventTransport('websocket');
+        // Verify HTTP has also recovered before clearing a degraded state.
+        if (httpAvailable === false) void checkForNewTop();
       } catch (error) {
         console.warn('Libbitcoin websocket subscribe failed, falling back to polling', error);
         handleWebSocketFailure();
@@ -1041,7 +1065,9 @@ export function createLibbitcoinClient({
     metadata: {
       id: 'libbitcoin',
       label: 'Server',
-      connectionState: 'connected',
+      get connectionState() {
+        return eventStatus.connectionState;
+      },
       supportsWebsocket,
       endpoint: baseUrl,
       description: 'Adapter for the libbitcoin embedded REST API.',
@@ -1052,7 +1078,7 @@ export function createLibbitcoinClient({
     },
 
     async getLatestBlocks(limit = 10): Promise<BlockSummary[]> {
-      const tip = await fetchTopHeightCached(baseUrl);
+      const tip = await observeHttp(fetchTopHeightCached(baseUrl));
       lastHeight = tip;
       const heights = Array.from({ length: limit }, (_, idx) => tip - idx).filter((h) => h >= 0);
       const summaries = await fetchBlockSummaries(baseUrl, heights);

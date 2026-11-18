@@ -373,14 +373,17 @@ export function CommandPalette() {
       }
 
       if (commandToken === 'turbo') {
-        if (configuration && !configuration.turbo) {
+        if (!configuration?.turbo) {
+          const reason = configuration
+            ? 'Turbo is disabled by the server'
+            : 'Server configuration unavailable';
           return [
             {
               id: 'cmd.turbo.disabled',
               section: 'Server',
-              label: 'Turbo is disabled by the server',
+              label: reason,
               onSelect: () => {
-                showStatus('Turbo is disabled by the server');
+                showStatus(reason);
               },
             },
           ];
@@ -731,21 +734,20 @@ export function CommandPalette() {
       },
     ];
 
-    const turboActions: PaletteItem[] =
-      configuration && !configuration.turbo
-        ? []
-        : [
-            {
-              id: 'turbo.toggle',
-              section: 'Server',
-              label: `Toggle Turbo (${turbo ? 'on' : 'off'})`,
-              keywords: ['turbo', 'fast', 'libbitcoin'],
-              onSelect: () => {
-                dismissPalette();
-                setTurbo(!turbo);
-              },
+    const turboActions: PaletteItem[] = configuration?.turbo
+      ? [
+          {
+            id: 'turbo.toggle',
+            section: 'Server',
+            label: `Toggle Turbo (${turbo ? 'on' : 'off'})`,
+            keywords: ['turbo', 'fast', 'libbitcoin'],
+            onSelect: () => {
+              dismissPalette();
+              setTurbo(!turbo);
             },
-          ];
+          },
+        ]
+      : [];
 
     const clipboardActions: PaletteItem[] = [
       {

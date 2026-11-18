@@ -23,7 +23,8 @@ export function StatusPill({ status, label, title, labelClassName }: StatusPillP
   return (
     <span
       tabIndex={0}
-      title={title}
+      title={`${status}: ${title ?? label}`}
+      aria-label={`${label}: ${status}`}
       className={`group flex min-w-0 items-center justify-center gap-0 overflow-hidden rounded-full border px-2 py-1 text-xs font-medium tracking-wide uppercase outline-none select-none focus-within:justify-start focus-within:gap-2 focus-within:px-3 hover:justify-start hover:gap-2 hover:px-3 motion-safe:transition-[padding,gap] motion-safe:duration-200 motion-safe:ease-out ${STATUS_STYLES[status]}`}
     >
       <span className={`h-2 w-2 rounded-full ${STATUS_DOT[status]}`} aria-hidden="true" />

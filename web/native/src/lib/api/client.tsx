@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useCallback, useContext, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import { createLibbitcoinClient } from './providers/libbitcoin';
 
@@ -166,6 +166,7 @@ export type BlockchainEventTransport = 'idle' | 'connecting' | 'websocket' | 'po
 export interface BlockchainEventStatus {
   transport: BlockchainEventTransport;
   websocketAvailable: boolean;
+  connectionState: BlockchainClientMetadata['connectionState'];
 }
 
 export type BlockchainEventStatusHandler = (status: BlockchainEventStatus) => void;
@@ -248,7 +249,16 @@ export function useBlockchainClient(): BlockchainClient {
 
 export function useServerInfo() {
   const client = useBlockchainClient();
-  return client.metadata;
+  const subscribe = useCallback(
+    (onChange: () => void) => client.subscribeToEventStatus?.(onChange) ?? (() => {}),
+    [client]
+  );
+  const getConnectionState = useCallback(
+    () => client.getEventStatus?.().connectionState ?? client.metadata.connectionState,
+    [client]
+  );
+  const connectionState = useSyncExternalStore(subscribe, getConnectionState, getConnectionState);
+  return { ...client.metadata, connectionState };
 }
 
 export function useTurbo() {
