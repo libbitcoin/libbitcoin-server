@@ -63,6 +63,8 @@ const std::unordered_map<uint8_t, std::string> executor::fired_
     { events::validate_usecs,       "validate_usecs......" },
     { events::top_usecs,            "top_usecs..........." },
 
+    { events::pool_rows,            "pool_rows..........." },
+
     { events::pool_submit_usecs,    "pool_submit_usecs..." },
     { events::pool_coverage_usecs,  "pool_coverage_usecs." },
     { events::pool_connect_usecs,   "pool_connect_usecs.." },
