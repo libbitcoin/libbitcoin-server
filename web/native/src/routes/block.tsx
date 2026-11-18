@@ -231,12 +231,7 @@ export function BlockPage() {
 
       {block && (
         <BlockValidationInspector
-          key={JSON.stringify([
-            client.metadata.id,
-            client.metadata.endpoint,
-            block.hash,
-            inspectValidation,
-          ])}
+          key={JSON.stringify([client.metadata.endpoint, block.hash, inspectValidation])}
           blockHash={block.hash}
           initiallyExpanded={inspectValidation}
         />

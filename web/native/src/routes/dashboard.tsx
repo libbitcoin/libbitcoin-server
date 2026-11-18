@@ -4,7 +4,7 @@ import { type BlockSummary, useServerInfo } from '@/lib/api/client';
 import {
   useBlockStats,
   useBlockchainEventStatus,
-  useLiveLatestBlocks,
+  useLatestBlocks,
   useServerConfiguration,
 } from '@/lib/hooks/useBlockchainData';
 import { useNow } from '@/lib/hooks/useNow';
@@ -52,17 +52,16 @@ export function DashboardPage() {
     isLoading: blocksLoading,
     isError: blocksError,
     error: blocksErrorValue,
-  } = useLiveLatestBlocks(DASHBOARD_BLOCK_SAMPLE_SIZE);
+  } = useLatestBlocks(DASHBOARD_BLOCK_SAMPLE_SIZE);
   const latestBlock = blocks?.[0];
   const visibleBlocks = blocks?.slice(0, LATEST_BLOCK_TABLE_LIMIT);
-  const statsTarget = info.id === 'libbitcoin' && latestBlock ? latestBlock.hash : '';
+  const statsTarget = latestBlock?.hash ?? '';
   const { data: latestStats, isLoading: latestStatsLoading } = useBlockStats(statsTarget, {
-    enabled: info.id === 'libbitcoin' && latestBlock !== undefined,
+    enabled: latestBlock !== undefined,
   });
   const summary = summarizeBlocks(blocks ?? []);
   const sampleSize = blocks?.length ?? 0;
-  const showStatsPlaceholder =
-    info.id === 'libbitcoin' && latestBlock !== undefined && latestStatsLoading;
+  const showStatsPlaceholder = latestBlock !== undefined && latestStatsLoading;
 
   return (
     <div className="space-y-8">

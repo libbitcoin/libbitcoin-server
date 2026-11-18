@@ -28,7 +28,6 @@ interface RecentItem {
   id: string;
   path: string;
   seenAtMs: number;
-  providerId: string;
 }
 
 interface PaletteItem {
@@ -61,7 +60,7 @@ function parseRecents(raw: string | null): RecentItem[] {
     const parsed: RecentItem[] = [];
     for (const entry of data) {
       if (!entry || typeof entry !== 'object') continue;
-      const record = entry as Partial<RecentItem>;
+      const record = entry as Partial<RecentItem> & { providerId?: unknown };
       if (record.kind !== 'block' && record.kind !== 'tx' && record.kind !== 'address') continue;
       if (typeof record.id !== 'string' || !record.id.trim()) continue;
       if (typeof record.path !== 'string' || !record.path.trim()) continue;
@@ -72,7 +71,6 @@ function parseRecents(raw: string | null): RecentItem[] {
         id: record.id,
         path: record.path,
         seenAtMs: record.seenAtMs,
-        providerId: record.providerId,
       });
     }
     parsed.sort((a, b) => b.seenAtMs - a.seenAtMs);
@@ -84,7 +82,13 @@ function parseRecents(raw: string | null): RecentItem[] {
 
 function saveRecents(storage: Storage, items: RecentItem[]) {
   try {
-    storage.setItem(RECENTS_STORAGE_KEY, JSON.stringify(items.slice(0, MAX_RECENTS)));
+    // Preserve the stored source marker so older history can still be filtered safely.
+    storage.setItem(
+      RECENTS_STORAGE_KEY,
+      JSON.stringify(
+        items.slice(0, MAX_RECENTS).map((item) => ({ ...item, providerId: 'libbitcoin' }))
+      )
+    );
   } catch {
     // ignore storage failures
   }
@@ -248,14 +252,13 @@ export function CommandPalette() {
       id: derived.id,
       path: location.pathname,
       seenAtMs: Date.now(),
-      providerId: serverInfo.id,
     };
     setRecents((prev) => {
       const merged = upsertRecent(prev, next);
       saveRecents(storage, merged);
       return merged;
     });
-  }, [location.pathname, serverInfo.id, storage]);
+  }, [location.pathname, storage]);
 
   useEffect(() => {
     const window_ = (globalThis as unknown as { window?: Window }).window;
@@ -628,11 +631,8 @@ export function CommandPalette() {
           if (kindFilter && item.kind !== kindFilter) return false;
           if (!filterText) return true;
           const id = item.id.toLowerCase();
-          const providerId = item.providerId.toLowerCase();
           const path = item.path.toLowerCase();
-          return (
-            id.includes(filterText) || providerId.includes(filterText) || path.includes(filterText)
-          );
+          return id.includes(filterText) || path.includes(filterText);
         })
         .slice(0, 25)
         .map(
@@ -641,8 +641,7 @@ export function CommandPalette() {
               id: `recent.${item.kind}.${item.path}`,
               section: 'Recently Viewed',
               label: labelForRecent(item),
-              detail: item.providerId,
-              keywords: [item.kind, item.id, item.providerId],
+              keywords: [item.kind, item.id],
               onSelect: () => {
                 dismissPalette();
                 void navigate(item.path);
@@ -803,8 +802,7 @@ export function CommandPalette() {
       id: `recent.${item.kind}.${item.path}`,
       section: 'Recently Viewed',
       label: labelForRecent(item),
-      detail: item.providerId,
-      keywords: [item.kind, item.id, item.providerId],
+      keywords: [item.kind, item.id],
       onSelect: () => {
         dismissPalette();
         void navigate(item.path);

@@ -94,7 +94,8 @@ export function bookmarkSource(
   network: string | undefined
 ): BookmarkSource {
   return {
-    providerId: metadata.id,
+    // Keep the persisted source identity compatible with existing bookmarks.
+    providerId: 'libbitcoin',
     endpoint: (metadata.endpoint ?? '').replace(/\/+$/u, ''),
     ...(network ? { network } : {}),
   };

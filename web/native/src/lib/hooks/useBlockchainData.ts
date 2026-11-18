@@ -24,12 +24,10 @@ import {
 } from '@/lib/api/client';
 
 type BlockchainQueryScope = {
-  providerId: string;
-  endpoint?: string;
+  endpoint: string;
 };
 
 const DEFAULT_LIVE_BLOCK_LIMIT = 10;
-const RECENT_TRANSACTION_LIMIT = 20;
 
 type BlockRefreshMode = 'always' | 'while-unconfirmed';
 
@@ -44,24 +42,17 @@ interface BlockchainQueryOptions<T> {
   retry?: boolean | number | ((failureCount: number, error: Error) => boolean);
   staleTime?: number;
   refetchInterval?: UseQueryOptions<T>['refetchInterval'];
-  initialData?: T;
   blockRefresh?: BlockRefreshMode;
 }
 
 function getBlockchainQueryScope(client: BlockchainClient): BlockchainQueryScope {
-  return client.metadata.endpoint
-    ? { providerId: client.metadata.id, endpoint: client.metadata.endpoint }
-    : { providerId: client.metadata.id };
+  return { endpoint: client.metadata.endpoint ?? '' };
 }
 
 function isMatchingQueryScope(value: unknown, scope: BlockchainQueryScope) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const candidate = value as Partial<BlockchainQueryScope>;
-  return candidate.providerId === scope.providerId && candidate.endpoint === scope.endpoint;
-}
-
-function getQueryScopeKey(scope: BlockchainQueryScope) {
-  return JSON.stringify([scope.providerId, scope.endpoint ?? null]);
+  return candidate.endpoint === scope.endpoint;
 }
 
 function getQueryLimit(value: unknown, fallback: number) {
@@ -106,18 +97,6 @@ function updateLatestBlocksCache(
   );
 }
 
-function updateRecentTransactionsCache(
-  queryClient: QueryClient,
-  queryScope: BlockchainQueryScope,
-  tx: TransactionSummary
-) {
-  queryClient.setQueryData<TransactionSummary[]>([queryScope, 'transactions', 'recent'], (prev) => {
-    const existing = prev ?? [];
-    const next = [tx, ...existing.filter((item) => item.txid !== tx.txid)];
-    return next.slice(0, RECENT_TRANSACTION_LIMIT);
-  });
-}
-
 function shouldRefreshQueryAfterBlock(query: Query, queryScope: BlockchainQueryScope) {
   if (!isMatchingQueryScope(query.queryKey[0], queryScope)) return false;
 
@@ -140,19 +119,6 @@ function invalidateBlockDependentQueries(
   });
 }
 
-function applyBlockchainEventToCache(
-  queryClient: QueryClient,
-  queryScope: BlockchainQueryScope,
-  event: BlockchainEvent
-) {
-  if (event.type === 'block.new') {
-    updateLatestBlocksCache(queryClient, queryScope, event.payload);
-  }
-  if (event.type === 'tx.new') {
-    updateRecentTransactionsCache(queryClient, queryScope, event.payload);
-  }
-}
-
 function useBlockchainQuery<T>({
   queryKey,
   queryFn,
@@ -160,12 +126,11 @@ function useBlockchainQuery<T>({
   retry,
   staleTime,
   refetchInterval,
-  initialData,
   blockRefresh,
 }: BlockchainQueryOptions<T>) {
   const client = useBlockchainClient();
 
-  // The server client comes from context and includes methods; cache identity should track metadata.
+  // Keep data isolated by node endpoint without tying it to the client instance.
   return useQuery<T>({
     queryKey: [getBlockchainQueryScope(client), ...queryKey],
     queryFn: () => queryFn(client),
@@ -173,7 +138,6 @@ function useBlockchainQuery<T>({
     ...(retry === undefined ? {} : { retry }),
     staleTime,
     refetchInterval,
-    initialData,
     meta: blockRefresh ? ({ blockRefresh } satisfies BlockchainQueryMeta) : undefined,
   });
 }
@@ -377,7 +341,7 @@ export function BlockchainEventCacheUpdater() {
 
   const scheduleBlockRefresh = useCallback(
     (scope: BlockchainQueryScope) => {
-      const scopeKey = getQueryScopeKey(scope);
+      const scopeKey = scope.endpoint;
       let refresh = blockRefreshByScope.current.get(scopeKey);
       if (!refresh) {
         refresh = { dirty: false, running: null };
@@ -406,10 +370,9 @@ export function BlockchainEventCacheUpdater() {
 
   const handleEvent = useCallback(
     (event: BlockchainEvent) => {
-      applyBlockchainEventToCache(queryClient, queryScope, event);
-      if (event.type !== 'block.new') return;
+      updateLatestBlocksCache(queryClient, queryScope, event.payload);
 
-      const scopeKey = getQueryScopeKey(queryScope);
+      const scopeKey = queryScope.endpoint;
       if (lastBlockHashByScope.current.get(scopeKey) === event.payload.hash) return;
       lastBlockHashByScope.current.set(scopeKey, event.payload.hash);
       scheduleBlockRefresh(queryScope);
@@ -419,17 +382,4 @@ export function BlockchainEventCacheUpdater() {
   useBlockchainEvents(handleEvent);
 
   return null;
-}
-
-export function useLiveLatestBlocks(limit = 10) {
-  const { data, isLoading, isError, error } = useLatestBlocks(limit);
-
-  const { data: recentTransactions = [] } = useBlockchainQuery<TransactionSummary[]>({
-    queryKey: ['transactions', 'recent'],
-    queryFn: () => Promise.resolve([]),
-    enabled: false,
-    initialData: [],
-  });
-
-  return { data, recentTransactions, isLoading, isError, error };
 }

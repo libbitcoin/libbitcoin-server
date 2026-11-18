@@ -96,7 +96,7 @@ export interface TransactionSummary {
   outputs: TransactionOutput[];
 }
 
-export interface BlockDetail extends BlockSummary {
+export interface BlockHeaderDetail extends BlockSummary {
   merkleRoot?: string;
   nonce?: number;
   bits?: number;
@@ -105,10 +105,7 @@ export interface BlockDetail extends BlockSummary {
   feesSats?: number;
   subsidySats?: number;
   sigops?: number;
-  transactions: TransactionSummary[];
 }
-
-export type BlockHeaderDetail = Omit<BlockDetail, 'transactions'>;
 
 export interface BlockValidation {
   medianTimePast?: number;
@@ -147,7 +144,7 @@ export interface AddressUtxo {
   timestamp?: number;
 }
 
-export interface AddressDetails {
+export interface AddressSummary {
   address: string;
   addressType?: string;
   balance: number;
@@ -155,13 +152,12 @@ export interface AddressDetails {
   totalSent?: number;
   txCount?: number;
   utxoCount?: number;
-  transactions: AddressActivityItem[];
 }
 
-export type AddressSummary = Omit<AddressDetails, 'transactions'>;
-
-export type BlockchainEvent =
-  { type: 'block.new'; payload: BlockSummary } | { type: 'tx.new'; payload: TransactionSummary };
+export interface BlockchainEvent {
+  type: 'block.new';
+  payload: BlockSummary;
+}
 
 export type BlockchainEventHandler = (event: BlockchainEvent) => void;
 export type BlockchainEventTransport = 'idle' | 'connecting' | 'websocket' | 'polling';
@@ -175,7 +171,6 @@ export interface BlockchainEventStatus {
 export type BlockchainEventStatusHandler = (status: BlockchainEventStatus) => void;
 
 export interface BlockchainClientMetadata {
-  id: string;
   label: string;
   connectionState: 'connected' | 'degraded' | 'offline' | 'unknown';
   supportsWebsocket: boolean;
@@ -192,7 +187,6 @@ export interface BlockchainClient {
   /** Query a specific block hash so a height lookup cannot switch blocks mid-request. */
   getBlockValidation(hash: string): Promise<BlockValidation>;
   getBlockStats(hashOrHeight: string): Promise<BlockStats>;
-  getBlock(hashOrHeight: string): Promise<BlockDetail>;
   getBlockTransactions(hashOrHeight: string, startIndex?: number): Promise<TransactionSummary[]>;
   getTransactionHeader(txid: string): Promise<TransactionSummary>;
   getTransaction(txid: string): Promise<TransactionSummary>;
@@ -204,7 +198,6 @@ export interface BlockchainClient {
     outputIndices: number[]
   ): Promise<TransactionOutputSpend[]>;
   getAddressSummary(address: string): Promise<AddressSummary>;
-  getAddress(address: string): Promise<AddressDetails>;
   getAddressUtxos(address: string): Promise<AddressUtxo[]>;
   getAddressTransactions(address: string, cursor?: string): Promise<AddressActivityItem[]>;
   subscribeToEvents(handler: BlockchainEventHandler): () => void;

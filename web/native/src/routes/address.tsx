@@ -168,7 +168,7 @@ export function AddressPage() {
   const receivedBtc = formatBtc(satsToBtc(data?.totalReceived));
   const sentBtc = formatBtc(satsToBtc(data?.totalSent));
 
-  const utxoPaginationKey = `${client.metadata.id}:${client.metadata.endpoint ?? ''}:${queryAddressKey}`;
+  const utxoPaginationKey = JSON.stringify([client.metadata.endpoint ?? '', queryAddressKey]);
   const visibleUtxoLimit =
     utxoPagination.key === utxoPaginationKey ? utxoPagination.limit : UTXO_PAGE_SIZE;
   const visibleUtxos = (utxos ?? []).slice(0, visibleUtxoLimit);

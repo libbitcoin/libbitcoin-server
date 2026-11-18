@@ -1,11 +1,9 @@
 import { z } from 'zod';
 import {
   AddressActivityItem,
-  AddressDetails,
   AddressSummary,
   AddressUtxo,
   BlockchainClientConfiguration,
-  BlockDetail,
   BlockHeaderDetail,
   BlockValidation,
   BlockStats,
@@ -1056,7 +1054,6 @@ export function createLibbitcoinClient({
 
   return {
     metadata: {
-      id: 'libbitcoin',
       label: 'Server',
       get connectionState() {
         return eventStatus.connectionState;
@@ -1150,80 +1147,6 @@ export function createLibbitcoinClient({
         feesSats: details?.fees,
         subsidySats: details?.subsidy,
         sigops: details?.sigops,
-      };
-    },
-
-    async getBlock(hashOrHeight: string): Promise<BlockDetail> {
-      const networkParams = await resolveNetworkParams();
-      const { path, height } = await resolveBlockPath(baseUrl, hashOrHeight);
-      const tipPromise =
-        height === undefined ? fetchTopHeightCached(baseUrl) : Promise.resolve(height);
-      const [header, tip, context, details] = await Promise.all([
-        fetchJson<BlockHeaderResponse>(baseUrl, `${path}/header?format=json`),
-        tipPromise,
-        tryFetchJson<unknown>(baseUrl, `${path}/header/context?format=json`),
-        tryFetchJson<BlockDetailsResponse>(baseUrl, `${path}/details?format=json`),
-      ]);
-      lastHeight = Math.max(lastHeight ?? 0, tip);
-
-      let nextBlockHash: string | null = null;
-      if (header.height < tip) {
-        const nextHeader = await tryFetchJson<BlockHeaderResponse>(
-          baseUrl,
-          `/v1/block/height/${String(header.height + 1)}/header?format=json`
-        );
-        nextBlockHash = nextHeader?.hash ?? null;
-      }
-
-      const state = extractHeaderContextState(context);
-      const txCount = state?.count ?? details?.count;
-      const summary = toBlockSummary(header, txCount);
-
-      const pageSize =
-        typeof txCount === 'number'
-          ? Math.min(TRANSACTION_PAGE_SIZE, txCount)
-          : TRANSACTION_PAGE_SIZE;
-      const positions = Array.from({ length: pageSize }, (_, idx) => idx);
-      const rawTxs = await fetchBlockTransactionPositions(
-        baseUrl,
-        path,
-        positions,
-        typeof txCount !== 'number'
-      );
-      const txDetails = await mapWithConcurrency(rawTxs, REQUEST_CONCURRENCY, (tx) =>
-        tryFetchJson<TxDetailsResponse>(baseUrl, `/v1/tx/${tx.hash}/details?format=json`)
-      );
-
-      const txs = rawTxs.map((tx, idx) => {
-        const detail = txDetails[idx];
-        const mapped = mapTransaction(
-          tx,
-          [], // No prevouts for block list
-          networkParams,
-          {
-            blockHeight: header.height,
-            blockHash: header.hash,
-            tipHeight: tip,
-            timestamp: header.timestamp,
-          },
-          typeof detail?.fee === 'number' ? detail.fee : undefined
-        );
-        return applyTxDetails(mapped, detail);
-      });
-
-      return {
-        ...summary,
-        size: details?.maximal ?? getHeaderContextMaximalSize(state),
-        weight: details?.weight,
-        merkleRoot: header.merkle_root,
-        nonce: header.nonce,
-        bits: header.bits,
-        version: header.version,
-        nextBlockHash,
-        feesSats: details?.fees,
-        subsidySats: details?.subsidy,
-        sigops: details?.sigops,
-        transactions: txs,
       };
     },
 
@@ -1379,37 +1302,6 @@ export function createLibbitcoinClient({
           return { outputIndex, status: 'unknown' };
         }
       });
-    },
-
-    async getAddress(address: string): Promise<AddressDetails> {
-      const networkParams = await resolveNetworkParams();
-      const scriptInfo = scriptHashFromAddress(address, networkParams);
-      if (!scriptInfo) throw new Error('Unsupported address format for libbitcoin adapter');
-
-      const config = configuration ?? (await ensureConfiguration());
-      if (!isAddressEnabled(config)) {
-        throw new Error('Address endpoints are disabled by server configuration');
-      }
-      const turbo = turboAddress && isTurboEnabled(config);
-
-      const [balanceRaw, utxos] = await Promise.all([
-        tryFetchJson<unknown>(baseUrl, `/v1/address/${scriptInfo.hash}/balance?format=json`, turbo),
-        getConfirmedUtxosCached(scriptInfo.hash, turbo),
-      ]);
-
-      const balance = resolveAddressBalance(balanceRaw, utxos);
-      const transactions = await buildAddressActivityPage(scriptInfo.hash, turbo);
-
-      return {
-        address,
-        addressType: scriptInfo.type,
-        balance,
-        totalReceived: undefined,
-        totalSent: undefined,
-        txCount: undefined,
-        utxoCount: utxos.length,
-        transactions,
-      };
     },
 
     async getAddressSummary(address: string): Promise<AddressSummary> {
