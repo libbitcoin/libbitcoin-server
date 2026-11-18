@@ -182,7 +182,7 @@ struct sparrow_silent_setup_fixture
         }, true, [](configuration& config)
         {
             config.node.silent_start_height = 0;
-            config.database.initialize(config.bitcoin, false, 0);
+            config.database.initialize(config.bitcoin, false, true, true, 0);
         }, service::sparrow)
     {
     }
@@ -247,7 +247,7 @@ struct sparrow_silent_mapped_setup_fixture
         }, true, [](configuration& config)
         {
             config.node.silent_start_height = 0;
-            config.database.initialize(config.bitcoin, false, 0);
+            config.database.initialize(config.bitcoin, false, true, true, 0);
         }, service::sparrow)
     {
     }

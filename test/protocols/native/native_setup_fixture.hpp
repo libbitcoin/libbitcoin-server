@@ -311,8 +311,7 @@ struct native_limited_setup_fixture
         }, [](server::configuration& config)
         {
             config.node.limited_blocks = true;
-            config.database.filter_bk.buckets = 0;
-            config.database.filter_tx.buckets = 0;
+            config.database.envelope.provide_filters = false;
         })
     {
     }

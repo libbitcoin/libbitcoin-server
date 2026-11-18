@@ -20,6 +20,7 @@
 
 #include <charconv>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/interfaces/interfaces.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -40,6 +41,18 @@ static bool to_number(Number& out, const std::string_view& token) NOEXCEPT
     return result.ec == std::errc{} && result.ptr == end;
 }
 
+// Query parameters not declared by the target method are ignored.
+static bool declares(const std::string& method,
+    const std::string_view& name) NOEXCEPT
+{
+    using rest = interface::bitcoind_rest;
+    const auto names = rpc::parameter_names<rest::methods>(method);
+    return std::ranges::any_of(names, [&](const auto& item) NOEXCEPT
+    {
+        return rpc::primary_name(item) == name;
+    });
+}
+
 bool bitcoind_query(rpc::request_t& out, const std::string& target) NOEXCEPT
 {
     wallet::uri uri{};
@@ -57,6 +70,9 @@ bool bitcoind_query(rpc::request_t& out, const std::string& target) NOEXCEPT
     // Decimal parameters, defaulted or required by the target interface.
     for (const auto& name: { "count", "offset", "size" })
     {
+        if (!declares(out.method, name))
+            continue;
+
         if (const auto it = query.find(name); it != query.cend())
         {
             uint32_t value{};
@@ -70,6 +86,9 @@ bool bitcoind_query(rpc::request_t& out, const std::string& target) NOEXCEPT
     // Boolean parameters, either "true" or "false".
     for (const auto& name: { "verbose", "mempool_sequence" })
     {
+        if (!declares(out.method, name))
+            continue;
+
         if (const auto it = query.find(name); it != query.cend())
         {
             if (it->second != "true" && it->second != "false")

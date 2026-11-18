@@ -173,19 +173,27 @@ void parser::read_envelope() NOEXCEPT
         return;
 
     server_node::store store{ configured.database };
+    stored.require_witness = configured.node.require_witness;
     stored_code = store.read_envelope(stored);
-    if (stored_code || stored.network == configured.node.network)
+    if (stored_code)
         return;
 
-    const chain::selection selected = configured.net;
-    const auto specified = selected != chain::selection::none;
+    if (stored.network != configured.node.network)
+    {
+        const chain::selection selected = configured.net;
+        const auto specified = selected != chain::selection::none;
 
-    reset_network(stored.network);
-    derive_buckets();
+        reset_network(stored.network);
+        derive_buckets();
 
-    // A specified network is retained as configured, for override reporting.
-    if (specified)
-        configured.bitcoin.network = selected;
+        // A specified network is retained as configured, for override reporting.
+        if (specified)
+            configured.bitcoin.network = selected;
+    }
+
+    overrides = stored.apply(configured.bitcoin, configured.database,
+        configured.node.limited_blocks, configured.node.require_witness,
+        configured.node.silent_start_height);
 }
 
 // Network defaults are reset, and then configured settings are reapplied.
@@ -2414,7 +2422,7 @@ options_metadata parser::load_settings() THROWS
     (
         "node.provide_filters",
         setting<bool>(&configured.node.provide_filters),
-        "Serve client filters to network connections, defaults to {}."
+        "Serve client filters to network connections, indexed only if set at store creation, defaults to {}."
     )
     (
         "node.provide_privacy",
@@ -2921,7 +2929,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.filter_bk.buckets",
         setting<uint32_t>(&configured.database.filter_bk.buckets),
-        "The number of buckets in the filter_bk table head, defaults to {} (0 disables)."
+        "The number of buckets in the filter_bk table head, defaults to {}."
     )
     (
         "table.filter_bk.size",
@@ -2938,7 +2946,7 @@ options_metadata parser::load_settings() THROWS
     (
         "table.filter_tx.buckets",
         setting<uint32_t>(&configured.database.filter_tx.buckets),
-        "The number of buckets in the filter_tx table head, defaults to {} (0 disables)."
+        "The number of buckets in the filter_tx table head, defaults to {}."
     )
     (
         "table.filter_tx.size",

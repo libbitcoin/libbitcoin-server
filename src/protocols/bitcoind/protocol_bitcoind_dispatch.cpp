@@ -38,6 +38,114 @@ bool CLASS::is_ignored(const network::rpc::request_t& message) NOEXCEPT
         !network::rpc::is_command<Interface::methods>(message.method);
 }
 
+// bitcoind accepts the members of these options objects as named arguments
+// (RPCArg::Type::OBJ_NAMED_PARAMS), collected into the options parameter.
+struct named_options
+{
+    std::string_view method;
+    std::array<std::string_view, 3> members;
+};
+
+static constexpr std::array<named_options, 4> options_members
+{{
+    { "dumptxoutset", { "rollback", "in_memory" } },
+    { "gettxspendingprevout", { "mempool_only", "return_spending_tx" } },
+    { "importmempool", { "use_current_time", "apply_fee_delta_priority",
+        "apply_unbroadcast_set" } },
+    { "scanblocks", { "filter_false_positives" } }
+}};
+
+// True if any alias of the parameter names a member.
+static bool is_named(const std::string_view& name,
+    const network::rpc::object_t& object) NOEXCEPT
+{
+    for (auto aliases = name; !aliases.empty();)
+    {
+        const auto bar = aliases.find('|');
+        if (object.contains(std::string{ aliases.substr(zero, bar) }))
+            return true;
+
+        aliases = (bar == std::string_view::npos) ? std::string_view{} :
+            aliases.substr(add1(bar));
+    }
+
+    return false;
+}
+
+// Named arguments are transformed as by bitcoind: options members are
+// collected into the options parameter, and the positional arguments of
+// "args" are named by the leading parameters. Otherwise out is not set.
+TEMPLATE
+code CLASS::transform(std::optional<network::rpc::request_t>& out,
+    const network::rpc::request_t& in) NOEXCEPT
+{
+    using namespace network::rpc;
+    if (!in.params.has_value() ||
+        !std::holds_alternative<object_t>(in.params.value()))
+        return error::success;
+
+    const auto& object = std::get<object_t>(in.params.value());
+    const auto entry = std::ranges::find(options_members, in.method,
+        &named_options::method);
+    const auto member = [&](const std::string_view& name) NOEXCEPT
+    {
+        return !name.empty() && object.contains(std::string{ name });
+    };
+
+    const auto optioned = (entry != options_members.end()) &&
+        std::ranges::any_of(entry->members, member);
+    const auto positioned = object.contains("args");
+    if (!optioned && !positioned)
+        return error::success;
+
+    out.emplace(in);
+    auto& params = std::get<object_t>(out->params.value());
+
+    if (optioned)
+    {
+        if (params.contains("options"))
+            return network::error::extra_named;
+
+        object_t options{};
+        for (const auto& name: entry->members)
+        {
+            if (const auto it = params.find(std::string{ name });
+                !name.empty() && it != params.end())
+            {
+                options.emplace(it->first, std::move(it->second));
+                params.erase(it);
+            }
+        }
+
+        params.emplace("options", std::move(options));
+    }
+
+    // A non-array "args" remains, refused as an unknown named argument.
+    const auto it = params.find("args");
+    if (it == params.end() ||
+        !std::holds_alternative<array_t>(it->second.value()))
+        return error::success;
+
+    auto args = std::get<array_t>(std::move(it->second.value()));
+    params.erase(it);
+
+    const auto names = parameter_names<Interface::methods>(in.method);
+    if (args.size() > names.size())
+        return network::error::extra_positional;
+
+    for (size_t index{}; index < args.size(); ++index)
+    {
+        const auto& name = names[index];
+        if (is_named(name, params))
+            return network::error::extra_named;
+
+        params.emplace(std::string{ primary_name(name) },
+            std::move(args[index]));
+    }
+
+    return error::success;
+}
+
 // Subscribe to the post and websocket transports of the interface.
 TEMPLATE
 void CLASS::start() NOEXCEPT
@@ -126,8 +234,16 @@ void CLASS::handle_receive_post(const code& ec,
         return;
     }
 
+    std::optional<network::rpc::request_t> transformed{};
+    if (const auto code = transform(transformed, message))
+    {
+        handle_dispatch_fault(code);
+        return;
+    }
+
     // Dispatch the request to the interface dispatcher.
-    if (const auto code = rpc_dispatcher_.notify(message))
+    const auto& dispatched = transformed ? *transformed : message;
+    if (const auto code = rpc_dispatcher_.notify(dispatched))
         handle_dispatch_fault(code);
 }
 
@@ -178,8 +294,16 @@ void CLASS::dispatch_websocket(
         return;
     }
 
+    std::optional<network::rpc::request_t> transformed{};
+    if (const auto code = transform(transformed, message))
+    {
+        handle_dispatch_fault(code);
+        return;
+    }
+
     // Dispatch the request to the interface dispatcher.
-    if (const auto code = rpc_dispatcher_.notify(message))
+    const auto& dispatched = transformed ? *transformed : message;
+    if (const auto code = rpc_dispatcher_.notify(dispatched))
         handle_dispatch_fault(code);
 }
 
