@@ -1,11 +1,9 @@
 import { z } from 'zod';
 import {
   AddressActivityItem,
-  AddressDetails,
   AddressSummary,
   AddressUtxo,
   BlockchainClientConfiguration,
-  BlockDetail,
   BlockHeaderDetail,
   BlockValidation,
   BlockStats,
@@ -23,7 +21,6 @@ import {
   TxOutputResponse,
   TxPoint,
   TxResponse,
-  MAINNET_PARAMS,
   scriptHashFromAddress,
   toBlockSummary,
   mapTransaction,
@@ -137,60 +134,49 @@ class LibbitcoinApiError extends Error {
   }
 }
 
-const DEFAULT_CONFIGURATION: BlockchainClientConfiguration = {
-  address: true,
-  filter: false,
-  turbo: true,
-  silent: false,
-  services: {},
-  protocol: {},
-  coin: 'bitcoin',
-  forks: [],
-  wallet: MAINNET_PARAMS,
-};
+const configurationSchema = z.object({
+  store: z.object({
+    address: z.boolean(),
+    filter: z.boolean(),
+    turbo: z.boolean(),
+    silent: z.number().int().nonnegative().nullable(),
+  }),
+  node: z.object({ network: z.string().trim().min(1) }).catchall(z.unknown()),
+  network: z.record(z.string(), z.unknown()),
+  wallet: z.object({
+    p2kh: z.number().int().min(0).max(255),
+    p2sh: z.number().int().min(0).max(255),
+    witness: z.string().trim().min(1),
+  }),
+  forks: z.record(z.string(), z.boolean()),
+});
 
 function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
-  if (!isRecord(raw) || !isRecord(raw.store)) {
-    return DEFAULT_CONFIGURATION;
+  const parsed = configurationSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new Error('Invalid server configuration');
   }
-
-  const record = raw.store;
-  const coerceBoolean = (key: 'address' | 'filter' | 'turbo') =>
-    typeof record[key] === 'boolean' ? record[key] : DEFAULT_CONFIGURATION[key];
-
-  const node = isRecord(raw.node) ? raw.node : {};
-  const peer = isRecord(raw.network) ? raw.network : {};
+  const { store, node, wallet, forks, network } = parsed.data;
   const flags = (source: Record<string, unknown>) =>
     Object.fromEntries(
       Object.entries(source).filter(
         (entry): entry is [string, boolean] => typeof entry[1] === 'boolean'
       )
     );
-  const network = typeof node.network === 'string' ? node.network : undefined;
-  const forks = isRecord(raw.forks)
-    ? Object.entries(raw.forks)
-        .filter(([, enabled]) => enabled === true)
-        .map(([fork]) => fork)
-    : DEFAULT_CONFIGURATION.forks;
-  const wallet =
-    isRecord(raw.wallet) &&
-    typeof raw.wallet.p2kh === 'number' &&
-    typeof raw.wallet.p2sh === 'number' &&
-    typeof raw.wallet.witness === 'string'
-      ? { p2pkh: raw.wallet.p2kh, p2sh: raw.wallet.p2sh, hrp: raw.wallet.witness }
-      : DEFAULT_CONFIGURATION.wallet;
-
+  const enabledForks = Object.entries(forks)
+    .filter(([, enabled]) => enabled)
+    .map(([fork]) => fork);
   return {
-    address: coerceBoolean('address'),
-    filter: coerceBoolean('filter'),
-    turbo: coerceBoolean('turbo'),
-    silent: typeof record.silent === 'number',
+    address: store.address,
+    filter: store.filter,
+    turbo: store.turbo,
+    silent: store.silent !== null,
     services: flags(node),
-    protocol: flags(peer),
-    coin: forks.includes('ltc_scrypt_proof_of_work') ? 'litecoin' : 'bitcoin',
-    network,
-    forks,
-    wallet,
+    protocol: flags(network),
+    coin: enabledForks.includes('ltc_scrypt_proof_of_work') ? 'litecoin' : 'bitcoin',
+    network: node.network,
+    forks: enabledForks,
+    wallet: { p2pkh: wallet.p2kh, p2sh: wallet.p2sh, hrp: wallet.witness },
   };
 }
 
@@ -216,7 +202,7 @@ function extractHeaderContextState(context: unknown): BlockHeaderContextState | 
 
 function getHeaderContextMaximalSize(state: BlockHeaderContextState | null) {
   // In header context, size is nominal bytes and weight is (3 * nominal + maximal).
-  if (state?.size === undefined || state.weight === undefined) return undefined;
+  if (state?.size === undefined || state.weight === undefined) return;
   return state.weight - 3 * state.size;
 }
 
@@ -708,6 +694,12 @@ export function createLibbitcoinClient({
   let configurationPromise: Promise<BlockchainClientConfiguration> | null = null;
   const websocketUrl = resolveWebSocketUrl(baseUrl);
   const supportsWebsocket = Boolean(websocketUrl && globalThis.WebSocket);
+  let httpAvailable: boolean | null = null;
+  let eventStatus: BlockchainEventStatus = {
+    transport: 'idle',
+    websocketAvailable: supportsWebsocket,
+    connectionState: 'unknown',
+  };
   const addressOutputsCache = new Map<string, { outputs: AddressOutpoint[]; expiresAt: number }>();
   const confirmedUtxosCache = new Map<
     string,
@@ -758,16 +750,15 @@ export function createLibbitcoinClient({
 
   function ensureConfiguration(): Promise<BlockchainClientConfiguration> {
     if (configurationPromise) return configurationPromise;
-    configurationPromise = fetchJson<unknown>(baseUrl, '/v1/configuration?format=json')
+    configurationPromise = observeHttp(fetchJson<unknown>(baseUrl, '/v1/configuration?format=json'))
       .then((raw) => {
         const cfg = normalizeConfiguration(raw);
         configuration = cfg;
         return cfg;
       })
       .catch((error: unknown) => {
-        console.warn('Libbitcoin configuration fetch failed', error);
-        configuration = DEFAULT_CONFIGURATION;
-        return DEFAULT_CONFIGURATION;
+        configurationPromise = null;
+        throw error;
       });
     return configurationPromise;
   }
@@ -786,19 +777,49 @@ export function createLibbitcoinClient({
   }
 
   function getEventStatus(): BlockchainEventStatus {
-    return {
+    return eventStatus;
+  }
+
+  function getConnectionState(): BlockchainEventStatus['connectionState'] {
+    if (eventTransport === 'websocket') return httpAvailable === false ? 'degraded' : 'connected';
+    if (httpAvailable === false) return 'offline';
+    if (httpAvailable === null) return 'unknown';
+    return supportsWebsocket && poller !== null ? 'degraded' : 'connected';
+  }
+
+  function publishEventStatus() {
+    const next: BlockchainEventStatus = {
       transport: eventTransport,
       websocketAvailable: supportsWebsocket && !websocketUnavailable,
+      connectionState: getConnectionState(),
     };
+    if (
+      next.transport === eventStatus.transport &&
+      next.websocketAvailable === eventStatus.websocketAvailable &&
+      next.connectionState === eventStatus.connectionState
+    )
+      return;
+    eventStatus = next;
+    for (const listener of statusListeners) listener(eventStatus);
+  }
+
+  async function observeHttp<T>(request: Promise<T>): Promise<T> {
+    try {
+      const value = await request;
+      httpAvailable = true;
+      publishEventStatus();
+      return value;
+    } catch (error) {
+      // A missing block or unsupported request still proves HTTP is reachable.
+      httpAvailable = error instanceof LibbitcoinApiError && error.status < 500;
+      publishEventStatus();
+      throw error;
+    }
   }
 
   function setEventTransport(transport: BlockchainEventTransport) {
-    if (eventTransport === transport) return;
     eventTransport = transport;
-    const status = getEventStatus();
-    for (const listener of statusListeners) {
-      listener(status);
-    }
+    publishEventStatus();
   }
 
   async function emitBlockEvent(identifier: string | number) {
@@ -807,7 +828,7 @@ export function createLibbitcoinClient({
         ? `/v1/block/height/${String(identifier)}`
         : `/v1/block/hash/${identifier}`;
     const [header, context] = await Promise.all([
-      fetchJson<BlockHeaderResponse>(baseUrl, `${path}/header?format=json`),
+      observeHttp(fetchJson<BlockHeaderResponse>(baseUrl, `${path}/header?format=json`)),
       tryFetchJson<unknown>(baseUrl, `${path}/header/context?format=json`),
     ]);
 
@@ -833,7 +854,7 @@ export function createLibbitcoinClient({
 
   async function checkForNewTop() {
     try {
-      const height = await fetchTopHeight(baseUrl);
+      const height = await observeHttp(fetchTopHeight(baseUrl));
       if (lastHeight === null) {
         lastHeight = height;
         return;
@@ -852,6 +873,7 @@ export function createLibbitcoinClient({
       poller = setInterval(() => {
         void checkForNewTop();
       }, pollIntervalMs);
+      void checkForNewTop();
     }
     setEventTransport('polling');
   }
@@ -957,6 +979,8 @@ export function createLibbitcoinClient({
         websocketUnavailable = false;
         websocketRetryDelayMs = WEBSOCKET_RETRY_MIN_DELAY_MS;
         setEventTransport('websocket');
+        // Verify HTTP has also recovered before clearing a degraded state.
+        if (httpAvailable === false) void checkForNewTop();
       } catch (error) {
         console.warn('Libbitcoin websocket subscribe failed, falling back to polling', error);
         handleWebSocketFailure();
@@ -1030,10 +1054,10 @@ export function createLibbitcoinClient({
 
   return {
     metadata: {
-      id: 'libbitcoin',
       label: 'Server',
-      type: 'local',
-      connectionState: 'connected',
+      get connectionState() {
+        return eventStatus.connectionState;
+      },
       supportsWebsocket,
       endpoint: baseUrl,
       description: 'Adapter for the libbitcoin embedded REST API.',
@@ -1044,7 +1068,7 @@ export function createLibbitcoinClient({
     },
 
     async getLatestBlocks(limit = 10): Promise<BlockSummary[]> {
-      const tip = await fetchTopHeightCached(baseUrl);
+      const tip = await observeHttp(fetchTopHeightCached(baseUrl));
       lastHeight = tip;
       const heights = Array.from({ length: limit }, (_, idx) => tip - idx).filter((h) => h >= 0);
       const summaries = await fetchBlockSummaries(baseUrl, heights);
@@ -1123,80 +1147,6 @@ export function createLibbitcoinClient({
         feesSats: details?.fees,
         subsidySats: details?.subsidy,
         sigops: details?.sigops,
-      };
-    },
-
-    async getBlock(hashOrHeight: string): Promise<BlockDetail> {
-      const networkParams = await resolveNetworkParams();
-      const { path, height } = await resolveBlockPath(baseUrl, hashOrHeight);
-      const tipPromise =
-        height === undefined ? fetchTopHeightCached(baseUrl) : Promise.resolve(height);
-      const [header, tip, context, details] = await Promise.all([
-        fetchJson<BlockHeaderResponse>(baseUrl, `${path}/header?format=json`),
-        tipPromise,
-        tryFetchJson<unknown>(baseUrl, `${path}/header/context?format=json`),
-        tryFetchJson<BlockDetailsResponse>(baseUrl, `${path}/details?format=json`),
-      ]);
-      lastHeight = Math.max(lastHeight ?? 0, tip);
-
-      let nextBlockHash: string | null = null;
-      if (header.height < tip) {
-        const nextHeader = await tryFetchJson<BlockHeaderResponse>(
-          baseUrl,
-          `/v1/block/height/${String(header.height + 1)}/header?format=json`
-        );
-        nextBlockHash = nextHeader?.hash ?? null;
-      }
-
-      const state = extractHeaderContextState(context);
-      const txCount = state?.count ?? details?.count;
-      const summary = toBlockSummary(header, txCount);
-
-      const pageSize =
-        typeof txCount === 'number'
-          ? Math.min(TRANSACTION_PAGE_SIZE, txCount)
-          : TRANSACTION_PAGE_SIZE;
-      const positions = Array.from({ length: pageSize }, (_, idx) => idx);
-      const rawTxs = await fetchBlockTransactionPositions(
-        baseUrl,
-        path,
-        positions,
-        typeof txCount !== 'number'
-      );
-      const txDetails = await mapWithConcurrency(rawTxs, REQUEST_CONCURRENCY, (tx) =>
-        tryFetchJson<TxDetailsResponse>(baseUrl, `/v1/tx/${tx.hash}/details?format=json`)
-      );
-
-      const txs = rawTxs.map((tx, idx) => {
-        const detail = txDetails[idx];
-        const mapped = mapTransaction(
-          tx,
-          [], // No prevouts for block list
-          networkParams,
-          {
-            blockHeight: header.height,
-            blockHash: header.hash,
-            tipHeight: tip,
-            timestamp: header.timestamp,
-          },
-          typeof detail?.fee === 'number' ? detail.fee : undefined
-        );
-        return applyTxDetails(mapped, detail);
-      });
-
-      return {
-        ...summary,
-        size: details?.maximal ?? getHeaderContextMaximalSize(state),
-        weight: details?.weight,
-        merkleRoot: header.merkle_root,
-        nonce: header.nonce,
-        bits: header.bits,
-        version: header.version,
-        nextBlockHash,
-        feesSats: details?.fees,
-        subsidySats: details?.subsidy,
-        sigops: details?.sigops,
-        transactions: txs,
       };
     },
 
@@ -1352,37 +1302,6 @@ export function createLibbitcoinClient({
           return { outputIndex, status: 'unknown' };
         }
       });
-    },
-
-    async getAddress(address: string): Promise<AddressDetails> {
-      const networkParams = await resolveNetworkParams();
-      const scriptInfo = scriptHashFromAddress(address, networkParams);
-      if (!scriptInfo) throw new Error('Unsupported address format for libbitcoin adapter');
-
-      const config = configuration ?? (await ensureConfiguration());
-      if (!isAddressEnabled(config)) {
-        throw new Error('Address endpoints are disabled by server configuration');
-      }
-      const turbo = turboAddress && isTurboEnabled(config);
-
-      const [balanceRaw, utxos] = await Promise.all([
-        tryFetchJson<unknown>(baseUrl, `/v1/address/${scriptInfo.hash}/balance?format=json`, turbo),
-        getConfirmedUtxosCached(scriptInfo.hash, turbo),
-      ]);
-
-      const balance = resolveAddressBalance(balanceRaw, utxos);
-      const transactions = await buildAddressActivityPage(scriptInfo.hash, turbo);
-
-      return {
-        address,
-        addressType: scriptInfo.type,
-        balance,
-        totalReceived: undefined,
-        totalSent: undefined,
-        txCount: undefined,
-        utxoCount: utxos.length,
-        transactions,
-      };
     },
 
     async getAddressSummary(address: string): Promise<AddressSummary> {

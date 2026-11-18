@@ -1,7 +1,5 @@
-import { createContext, useContext } from 'react';
+import { createContext, useCallback, useContext, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { createBlockstreamClient } from './providers/blockstream';
-import { createMempoolClient } from './providers/mempool';
 import { createLibbitcoinClient } from './providers/libbitcoin';
 
 export interface BlockSummary {
@@ -98,7 +96,7 @@ export interface TransactionSummary {
   outputs: TransactionOutput[];
 }
 
-export interface BlockDetail extends BlockSummary {
+export interface BlockHeaderDetail extends BlockSummary {
   merkleRoot?: string;
   nonce?: number;
   bits?: number;
@@ -107,14 +105,10 @@ export interface BlockDetail extends BlockSummary {
   feesSats?: number;
   subsidySats?: number;
   sigops?: number;
-  transactions: TransactionSummary[];
 }
-
-export type BlockHeaderDetail = Omit<BlockDetail, 'transactions'>;
 
 export interface BlockValidation {
   medianTimePast?: number;
-  inBestChain?: boolean;
   state?: {
     validated?: boolean;
     confirmed?: boolean;
@@ -127,15 +121,13 @@ export interface BlockValidation {
 
 export interface AddressActivityItem {
   txid: string;
-  timestamp?: number;
   valueChange: number;
-  blockHeight?: number;
-  /** Output index within the txid, when an activity row maps to a specific output (libbitcoin). */
+  /** Output index within the txid for received rows. */
   outputIndex?: number;
-  /** Stable unique row id when the provider can supply one (libbitcoin received/spent ledger). */
-  id?: string;
-  /** Direction relative to the address, when reconstructed as a ledger (libbitcoin). */
-  direction?: 'received' | 'sent';
+  /** Stable row ID in the received/spent ledger. */
+  id: string;
+  /** Direction relative to the address, in the received/spent ledger. */
+  direction: 'received' | 'sent';
   /** For received rows: whether that output has been spent (undefined = not determined). */
   spent?: boolean;
   /** Opaque cursor to fetch the page after this item; absent on the last page. */
@@ -152,7 +144,7 @@ export interface AddressUtxo {
   timestamp?: number;
 }
 
-export interface AddressDetails {
+export interface AddressSummary {
   address: string;
   addressType?: string;
   balance: number;
@@ -160,13 +152,12 @@ export interface AddressDetails {
   totalSent?: number;
   txCount?: number;
   utxoCount?: number;
-  transactions: AddressActivityItem[];
 }
 
-export type AddressSummary = Omit<AddressDetails, 'transactions'>;
-
-export type BlockchainEvent =
-  { type: 'block.new'; payload: BlockSummary } | { type: 'tx.new'; payload: TransactionSummary };
+export interface BlockchainEvent {
+  type: 'block.new';
+  payload: BlockSummary;
+}
 
 export type BlockchainEventHandler = (event: BlockchainEvent) => void;
 export type BlockchainEventTransport = 'idle' | 'connecting' | 'websocket' | 'polling';
@@ -174,14 +165,13 @@ export type BlockchainEventTransport = 'idle' | 'connecting' | 'websocket' | 'po
 export interface BlockchainEventStatus {
   transport: BlockchainEventTransport;
   websocketAvailable: boolean;
+  connectionState: BlockchainClientMetadata['connectionState'];
 }
 
 export type BlockchainEventStatusHandler = (status: BlockchainEventStatus) => void;
 
 export interface BlockchainClientMetadata {
-  id: string;
   label: string;
-  type: 'external' | 'local';
   connectionState: 'connected' | 'degraded' | 'offline' | 'unknown';
   supportsWebsocket: boolean;
   endpoint?: string;
@@ -197,7 +187,6 @@ export interface BlockchainClient {
   /** Query a specific block hash so a height lookup cannot switch blocks mid-request. */
   getBlockValidation(hash: string): Promise<BlockValidation>;
   getBlockStats(hashOrHeight: string): Promise<BlockStats>;
-  getBlock(hashOrHeight: string): Promise<BlockDetail>;
   getBlockTransactions(hashOrHeight: string, startIndex?: number): Promise<TransactionSummary[]>;
   getTransactionHeader(txid: string): Promise<TransactionSummary>;
   getTransaction(txid: string): Promise<TransactionSummary>;
@@ -209,23 +198,14 @@ export interface BlockchainClient {
     outputIndices: number[]
   ): Promise<TransactionOutputSpend[]>;
   getAddressSummary(address: string): Promise<AddressSummary>;
-  getAddress(address: string): Promise<AddressDetails>;
   getAddressUtxos(address: string): Promise<AddressUtxo[]>;
-  getAddressTransactions(address: string, lastSeenTxid?: string): Promise<AddressActivityItem[]>;
+  getAddressTransactions(address: string, cursor?: string): Promise<AddressActivityItem[]>;
   subscribeToEvents(handler: BlockchainEventHandler): () => void;
   getEventStatus?(): BlockchainEventStatus;
   subscribeToEventStatus?(handler: BlockchainEventStatusHandler): () => void;
 }
 
 const BlockchainClientContext = createContext<BlockchainClient | null>(null);
-const ProviderSwitcherContext = createContext<{
-  provider: string;
-  setProvider: (provider: string) => void;
-  availableProviders: string[];
-  /** Whether the provider dropdown is shown in the header (toggled via command palette). */
-  selectorVisible: boolean;
-  setSelectorVisible: (visible: boolean) => void;
-} | null>(null);
 const TurboContext = createContext<{
   turbo: boolean;
   setTurbo: (value: boolean) => void;
@@ -240,30 +220,6 @@ export function BlockchainClientProvider({
 }) {
   return (
     <BlockchainClientContext.Provider value={client}>{children}</BlockchainClientContext.Provider>
-  );
-}
-
-export function ProviderSwitcherProvider({
-  children,
-  provider,
-  setProvider,
-  availableProviders,
-  selectorVisible,
-  setSelectorVisible,
-}: {
-  children: ReactNode;
-  provider: string;
-  setProvider: (provider: string) => void;
-  availableProviders: string[];
-  selectorVisible: boolean;
-  setSelectorVisible: (visible: boolean) => void;
-}) {
-  return (
-    <ProviderSwitcherContext.Provider
-      value={{ provider, setProvider, availableProviders, selectorVisible, setSelectorVisible }}
-    >
-      {children}
-    </ProviderSwitcherContext.Provider>
   );
 }
 
@@ -287,17 +243,18 @@ export function useBlockchainClient(): BlockchainClient {
   return client;
 }
 
-export function useProviderInfo() {
+export function useServerInfo() {
   const client = useBlockchainClient();
-  return client.metadata;
-}
-
-export function useProviderSwitcher() {
-  const ctx = useContext(ProviderSwitcherContext);
-  if (!ctx) {
-    throw new Error('ProviderSwitcherProvider missing in component tree');
-  }
-  return ctx;
+  const subscribe = useCallback(
+    (onChange: () => void) => client.subscribeToEventStatus?.(onChange) ?? (() => {}),
+    [client]
+  );
+  const getConnectionState = useCallback(
+    () => client.getEventStatus?.().connectionState ?? client.metadata.connectionState,
+    [client]
+  );
+  const connectionState = useSyncExternalStore(subscribe, getConnectionState, getConnectionState);
+  return { ...client.metadata, connectionState };
 }
 
 export function useTurbo() {
@@ -317,47 +274,9 @@ function resolveLibbitcoinBaseUrl() {
   return 'http://localhost:8080';
 }
 
-export function createBlockchainClient(
-  provider: string,
-  options?: { turboEnabled?: boolean }
-): BlockchainClient {
-  if (provider === 'blockstream') {
-    const baseUrl = import.meta.env.VITE_BLOCKSTREAM_API_URL ?? 'https://blockstream.info/api';
-    return createBlockstreamClient({ baseUrl });
-  }
-  if (provider === 'mempool') {
-    const baseUrl = import.meta.env.VITE_MEMPOOL_API_URL ?? 'https://mempool.space/api';
-    return createMempoolClient({ baseUrl });
-  }
-  if (provider === 'libbitcoin') {
-    const baseUrl = resolveLibbitcoinBaseUrl();
-    return createLibbitcoinClient({ baseUrl, turbo: options?.turboEnabled });
-  }
-  if (provider === 'external') {
-    const baseUrl = import.meta.env.VITE_BLOCKCHAIN_API_URL;
-    if (!baseUrl) {
-      console.warn('No external API URL provided, falling back to libbitcoin provider');
-      const fallbackBaseUrl = resolveLibbitcoinBaseUrl();
-      return createLibbitcoinClient({ baseUrl: fallbackBaseUrl, turbo: options?.turboEnabled });
-    }
-    const client = createBlockstreamClient({ baseUrl });
-    return {
-      ...client,
-      metadata: {
-        ...client.metadata,
-        id: 'external',
-        label: 'External',
-        description: 'Read-only adapter using a custom REST API endpoint.',
-      },
-    };
-  }
-  console.warn(`Unknown provider "${provider}", falling back to libbitcoin provider`);
-  const fallbackBaseUrl = resolveLibbitcoinBaseUrl();
-  return createLibbitcoinClient({ baseUrl: fallbackBaseUrl, turbo: options?.turboEnabled });
-}
-
-export function getAvailableProviders(): string[] {
-  const providers = new Set<string>(['libbitcoin', 'blockstream', 'mempool']);
-  if (import.meta.env.VITE_BLOCKCHAIN_API_URL) providers.add('external');
-  return [...providers];
+export function createBlockchainClient(options?: { turboEnabled?: boolean }): BlockchainClient {
+  return createLibbitcoinClient({
+    baseUrl: resolveLibbitcoinBaseUrl(),
+    turbo: options?.turboEnabled,
+  });
 }

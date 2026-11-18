@@ -35,10 +35,10 @@ const RULE_QUALIFIERS: Partial<Record<string, string>> = {
 
 function ruleLabel(rule: string) {
   const match = /^bip(\d+)(?:_(\w+))?$/u.exec(rule);
-  if (!match) return undefined;
-  const [, number, part] = match;
+  if (!match) return;
+  const number = match[1];
   const fixed = Object.hasOwn(RULE_QUALIFIERS, rule) ? RULE_QUALIFIERS[rule] : undefined;
-  const qualifier = part ?? fixed;
+  const qualifier = match.at(2) ?? fixed;
   const name = qualifier ? `BIP ${number} (${qualifier})` : `BIP ${number}`;
   const href = `https://github.com/bitcoin/bips/blob/master/bip-${number.padStart(4, '0')}.mediawiki`;
   return { name, href };
@@ -145,15 +145,6 @@ function ValidationDetails({ validation }: { validation: BlockValidation }) {
 
   return (
     <>
-      {validation.inBestChain !== undefined && (
-        <dl className="text-sm">
-          <dt className="text-accentSecondary text-xs tracking-wide uppercase">In best chain</dt>
-          <dd className="mt-1">
-            <FlagValue value={validation.inBestChain} />
-          </dd>
-        </dl>
-      )}
-
       {validation.state && (
         <div className="space-y-3">
           <h3 className="text-accent text-sm font-semibold">Validation state</h3>

@@ -71,7 +71,7 @@ export function ScriptExplainer({
           </h4>
           {!isCoinbase && (
             <p className="text-textMuted">
-              Roles use the provider’s funding-output type and item positions. Script and public-key
+              Roles use the server’s funding-output type and item positions. Script and public-key
               commitments are not verified.
             </p>
           )}

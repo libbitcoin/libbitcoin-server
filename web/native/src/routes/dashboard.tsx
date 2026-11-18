@@ -1,14 +1,11 @@
 import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  type BlockSummary,
-  useProviderInfo,
-} from '@/lib/api/client';
+import { type BlockSummary, useServerInfo } from '@/lib/api/client';
 import {
   useBlockStats,
   useBlockchainEventStatus,
-  useLiveLatestBlocks,
-  useProviderConfiguration,
+  useLatestBlocks,
+  useServerConfiguration,
 } from '@/lib/hooks/useBlockchainData';
 import { useNow } from '@/lib/hooks/useNow';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
@@ -27,28 +24,44 @@ const LATEST_BLOCK_TABLE_LIMIT = 8;
 
 export function DashboardPage() {
   usePageTitle();
-  const info = useProviderInfo();
+  const info = useServerInfo();
   const now = useNow();
   const eventStatus = useBlockchainEventStatus();
-  const connected = eventStatus.transport === 'websocket';
-  const websocketUrl = info.endpoint?.replace(/^http/u, 'ws');
-  const { data: configuration } = useProviderConfiguration();
+  const websocket = eventStatus.transport === 'websocket';
+  const connectionUrl = websocket ? info.endpoint?.replace(/^http/u, 'ws') : info.endpoint;
+  const connectionLabel =
+    info.connectionState === 'offline'
+      ? '[disconnected]'
+      : info.connectionState === 'unknown'
+        ? '[connecting]'
+        : `${connectionUrl ?? info.label}${
+            websocket
+              ? info.connectionState === 'degraded'
+                ? ' [HTTP unavailable]'
+                : ''
+              : ' [HTTP polling]'
+          }`;
+  const {
+    data: configuration,
+    isError: configurationError,
+    isFetching: configurationFetching,
+    refetch: retryConfiguration,
+  } = useServerConfiguration();
   const {
     data: blocks,
     isLoading: blocksLoading,
     isError: blocksError,
     error: blocksErrorValue,
-  } = useLiveLatestBlocks(DASHBOARD_BLOCK_SAMPLE_SIZE);
+  } = useLatestBlocks(DASHBOARD_BLOCK_SAMPLE_SIZE);
   const latestBlock = blocks?.[0];
   const visibleBlocks = blocks?.slice(0, LATEST_BLOCK_TABLE_LIMIT);
-  const statsTarget = info.id === 'libbitcoin' && latestBlock ? latestBlock.hash : '';
+  const statsTarget = latestBlock?.hash ?? '';
   const { data: latestStats, isLoading: latestStatsLoading } = useBlockStats(statsTarget, {
-    enabled: info.id === 'libbitcoin' && latestBlock !== undefined,
+    enabled: latestBlock !== undefined,
   });
   const summary = summarizeBlocks(blocks ?? []);
   const sampleSize = blocks?.length ?? 0;
-  const showStatsPlaceholder =
-    info.id === 'libbitcoin' && latestBlock !== undefined && latestStatsLoading;
+  const showStatsPlaceholder = latestBlock !== undefined && latestStatsLoading;
 
   return (
     <div className="space-y-8">
@@ -208,10 +221,30 @@ export function DashboardPage() {
 
             <div className="space-y-3">
               <p className="text-accentSecondary text-xs tracking-wide uppercase">Connection</p>
-              <p className="text-textPrimary font-mono text-sm">
-                {connected ? websocketUrl : '[disconnected]'}
+              <p
+                role="status"
+                aria-label={`Server connection: ${info.connectionState}`}
+                className="text-textPrimary font-mono text-sm break-all"
+              >
+                {connectionLabel}
               </p>
             </div>
+
+            {configurationError && (
+              <div role="status" className="text-textMuted space-y-2 text-sm">
+                <p>Server configuration unavailable. Retrying automatically.</p>
+                <button
+                  type="button"
+                  disabled={configurationFetching}
+                  onClick={() => {
+                    void retryConfiguration();
+                  }}
+                  className="text-accent hover:text-accentSecondary disabled:opacity-50"
+                >
+                  {configurationFetching ? 'Retrying…' : 'Retry configuration'}
+                </button>
+              </div>
+            )}
 
             {configuration && (
               <>
@@ -442,6 +475,7 @@ function Flags({ items }: { items: ReadonlyArray<readonly [string, boolean | und
       {reported.map(([label, enabled]) => (
         <span
           key={label}
+          title={`${label}: ${enabled ? 'On' : 'Off'}`}
           className={`rounded-full border px-2 py-0.5 text-xs ${enabled ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300' : 'text-textMuted border-slate-500/40'}`}
         >
           {label}

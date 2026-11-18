@@ -33,7 +33,6 @@ import {
   type TransactionInput,
   type TransactionOutput,
   type TransactionOutputSpend,
-  useProviderInfo,
 } from '@/lib/api/client';
 import {
   addressPath,
@@ -45,12 +44,8 @@ import {
 } from '@/lib/utils/routes';
 import { rememberLibbitcoinAddressAlias } from '@/lib/utils/libbitcoin-address-alias';
 
-function canonicalizeAddressForProvider(
-  providerId: string,
-  address: string,
-  params: NetworkParams | undefined
-) {
-  if (providerId !== 'libbitcoin' || !params) return address;
+function canonicalizeAddress(address: string, params: NetworkParams | undefined) {
+  if (!params) return address;
   return scriptHashFromAddress(address, params)?.hash ?? address;
 }
 
@@ -59,7 +54,6 @@ export function TransactionPage() {
   const identifier = txid?.toLowerCase() ?? '';
   const location = useLocation();
   const navigate = useNavigate();
-  const provider = useProviderInfo();
   const { network, params: networkParams } = useNetwork();
   const now = useNow();
   const { data: latestBlocks } = useLatestBlocks(1);
@@ -69,13 +63,12 @@ export function TransactionPage() {
     isError: headerIsError,
     error: headerError,
   } = useTransactionHeader(identifier);
-  const enableDetail = provider.id === 'libbitcoin';
   const {
     data: detailTx,
     isLoading: detailLoading,
     isError: detailIsError,
     error: detailError,
-  } = useTransaction(identifier, { enabled: enableDetail });
+  } = useTransaction(identifier);
   const tx = detailTx ?? headerTx;
   const outputIndices = useMemo(
     () => tx?.outputs.map((output) => output.index) ?? [],
@@ -108,10 +101,9 @@ export function TransactionPage() {
   useEffect(() => {
     setExpandedInputs({});
     setExpandedOutputs({});
-  }, [identifier, provider.id]);
+  }, [identifier]);
 
   useEffect(() => {
-    if (provider.id !== 'libbitcoin') return;
     if (!tx || !network || !networkParams) return;
     const addresses = new Set<string>();
     for (const input of tx.inputs) {
@@ -125,7 +117,7 @@ export function TransactionPage() {
       if (!scriptInfo) continue;
       rememberLibbitcoinAddressAlias(network, scriptInfo.hash, address);
     }
-  }, [network, networkParams, provider.id, tx]);
+  }, [network, networkParams, tx]);
 
   useEffect(() => {
     if (!txid) return;
@@ -275,7 +267,6 @@ export function TransactionPage() {
                   txid={identifier}
                   input={input}
                   isHighlighted={targetKind === 'input' && targetIndex === input.index}
-                  providerId={provider.id}
                   isExpanded={Boolean(expandedInputs[key])}
                   onToggle={() => {
                     setExpandedInputs((prev) => ({
@@ -319,7 +310,6 @@ export function TransactionPage() {
                   isHighlighted={targetKind === 'output' && targetIndex === output.index}
                   spend={spendsQuery.isError ? undefined : spendsByIndex.get(output.index)}
                   spendLoading={spendsQuery.isPending}
-                  providerId={provider.id}
                   isExpanded={Boolean(expandedOutputs[key])}
                   onToggle={() => {
                     setExpandedOutputs((prev) => ({
@@ -350,14 +340,12 @@ function TransactionInputRow({
   txid,
   input,
   isHighlighted,
-  providerId,
   isExpanded,
   onToggle,
 }: {
   txid: string;
   input: TransactionInput;
   isHighlighted: boolean;
-  providerId: string;
   isExpanded: boolean;
   onToggle: () => void;
 }) {
@@ -418,16 +406,12 @@ function TransactionInputRow({
         {input.scriptType && <span>{input.scriptType}</span>}
         {input.address &&
           (() => {
-            const canonical = canonicalizeAddressForProvider(
-              providerId,
-              input.address,
-              networkParams
-            );
+            const canonical = canonicalizeAddress(input.address, networkParams);
             return (
               <Link
                 to={addressPath(canonical)}
                 className="text-accent hover:text-accentSecondary"
-                state={providerId === 'libbitcoin' ? { displayAddress: input.address } : undefined}
+                state={{ displayAddress: input.address }}
               >
                 <HashText value={input.address} truncate={12} className="font-mono" />
               </Link>
@@ -508,7 +492,6 @@ function TransactionOutputRow({
   isHighlighted,
   spend,
   spendLoading,
-  providerId,
   isExpanded,
   onToggle,
 }: {
@@ -517,7 +500,6 @@ function TransactionOutputRow({
   isHighlighted: boolean;
   spend?: TransactionOutputSpend;
   spendLoading: boolean;
-  providerId: string;
   isExpanded: boolean;
   onToggle: () => void;
 }) {
@@ -551,11 +533,9 @@ function TransactionOutputRow({
         <p className="text-textMuted min-w-0 flex-1 text-xs">
           {output.address ? (
             <Link
-              to={addressPath(
-                canonicalizeAddressForProvider(providerId, output.address, networkParams)
-              )}
+              to={addressPath(canonicalizeAddress(output.address, networkParams))}
               className="text-accent hover:text-accentSecondary"
-              state={providerId === 'libbitcoin' ? { displayAddress: output.address } : undefined}
+              state={{ displayAddress: output.address }}
             >
               <HashText value={output.address} truncate={12} className="font-mono" />
             </Link>

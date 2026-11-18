@@ -39,14 +39,12 @@ import {
 } from '@/lib/utils/libbitcoin-address-alias';
 const UTXO_PAGE_SIZE = 25;
 
-const activityKey = (item: AddressActivityItem) => item.id ?? item.txid;
+const activityKey = (item: AddressActivityItem) => item.id;
 
 function ledgerStatusLabel(item: AddressActivityItem): string {
   if (item.direction === 'sent') return 'Sent';
-  if (item.direction === 'received') {
-    if (item.spent === true) return 'Spent';
-    if (item.spent === false) return 'Unspent';
-  }
+  if (item.spent === true) return 'Spent';
+  if (item.spent === false) return 'Unspent';
   return '—';
 }
 
@@ -57,7 +55,6 @@ export function AddressPage() {
   const rawIdentifier = addressParam ?? '';
   const client = useBlockchainClient();
   const now = useNow();
-  const isLibbitcoin = client.metadata.id === 'libbitcoin';
   const { network, params: networkParams } = useNetwork();
   const stateDisplayAddress = (() => {
     const state = location.state as { displayAddress?: unknown } | null;
@@ -75,17 +72,13 @@ export function AddressPage() {
     const rememberedAddress =
       lookupHash && network ? lookupLibbitcoinAddressAlias(network, lookupHash) : null;
 
-    if (isLibbitcoin) {
-      return stateDisplayAddress ?? rememberedAddress ?? paramValue;
-    }
-
-    return rememberedAddress ?? paramValue;
-  }, [isLibbitcoin, network, paramValue, stateDisplayAddress]);
+    return stateDisplayAddress ?? rememberedAddress ?? paramValue;
+  }, [network, paramValue, stateDisplayAddress]);
   const canonicalLibbitcoinHash = useMemo(() => {
-    if (!isLibbitcoin || !networkParams) return null;
+    if (!networkParams) return null;
     const info = scriptHashFromAddress(queryAddressKey, networkParams);
     return info?.hash ?? null;
-  }, [isLibbitcoin, networkParams, queryAddressKey]);
+  }, [networkParams, queryAddressKey]);
   const {
     data,
     isLoading: summaryLoading,
@@ -116,8 +109,7 @@ export function AddressPage() {
       ? `Address ${/^[0-9a-f]{64}$/iu.test(titleValue) ? formatHash(titleValue, 8) : titleValue}`
       : 'Address'
   );
-  // Providers that page via an opaque per-row cursor (libbitcoin) expose it on the
-  // last item; otherwise fall back to the last txid + txCount scheme (blockstream).
+  // The last row carries an opaque cursor only when another ledger page exists.
   const {
     items: activity,
     isFetchingMore,
@@ -129,55 +121,28 @@ export function AddressPage() {
     getItemKey: activityKey,
     fetchNextPage: (items) => {
       const last = items.at(-1);
-      const cursor = last?.cursor ?? last?.txid;
+      const cursor = last?.cursor;
       if (!queryAddressKey || cursor === undefined) return Promise.resolve([]);
       return client.getAddressTransactions(queryAddressKey, cursor);
     },
     canFetchMore: (items) => {
       const last = items.at(-1);
-      const cursor = last?.cursor ?? last?.txid;
-      if (!queryAddressKey || !cursor) return false;
-      return (
-        last?.cursor != null || (data != null && items.length < (data.txCount ?? items.length))
-      );
+      const cursor = last?.cursor;
+      return Boolean(queryAddressKey && cursor);
     },
   });
 
   useEffect(() => {
-    if (!paramValue || !network) return;
-    if (isLibbitcoin) {
-      if (!canonicalLibbitcoinHash) return;
-      rememberLibbitcoinAddressAlias(network, canonicalLibbitcoinHash, queryAddressKey);
-      const normalizedParam = /^[0-9a-fA-F]{64}$/u.test(paramValue)
-        ? paramValue.toLowerCase()
-        : null;
-      if (normalizedParam !== canonicalLibbitcoinHash) {
-        void navigate(addressPath(canonicalLibbitcoinHash), {
-          replace: true,
-          state: inferAddressType(queryAddressKey)
-            ? { displayAddress: queryAddressKey }
-            : undefined,
-        });
-      }
-      return;
+    if (!paramValue || !network || !canonicalLibbitcoinHash) return;
+    rememberLibbitcoinAddressAlias(network, canonicalLibbitcoinHash, queryAddressKey);
+    const normalizedParam = /^[0-9a-fA-F]{64}$/u.test(paramValue) ? paramValue.toLowerCase() : null;
+    if (normalizedParam !== canonicalLibbitcoinHash) {
+      void navigate(addressPath(canonicalLibbitcoinHash), {
+        replace: true,
+        state: inferAddressType(queryAddressKey) ? { displayAddress: queryAddressKey } : undefined,
+      });
     }
-
-    if (/^[0-9a-fA-F]{64}$/u.test(paramValue)) {
-      const remembered = lookupLibbitcoinAddressAlias(network, paramValue);
-      const next = stateDisplayAddress ?? remembered;
-      if (next && next !== paramValue) {
-        void navigate(addressPath(next), { replace: true });
-      }
-    }
-  }, [
-    canonicalLibbitcoinHash,
-    isLibbitcoin,
-    navigate,
-    network,
-    paramValue,
-    queryAddressKey,
-    stateDisplayAddress,
-  ]);
+  }, [canonicalLibbitcoinHash, navigate, network, paramValue, queryAddressKey]);
 
   useWindowScrollToBottom({
     enabled: hasMore && !isFetchingMore,
@@ -203,9 +168,7 @@ export function AddressPage() {
   const receivedBtc = formatBtc(satsToBtc(data?.totalReceived));
   const sentBtc = formatBtc(satsToBtc(data?.totalSent));
 
-  const isLedger = activity.some((item) => item.direction !== undefined);
-  const activityColumnCount = isLedger ? 3 : 4;
-  const utxoPaginationKey = `${client.metadata.id}:${client.metadata.endpoint ?? ''}:${queryAddressKey}`;
+  const utxoPaginationKey = JSON.stringify([client.metadata.endpoint ?? '', queryAddressKey]);
   const visibleUtxoLimit =
     utxoPagination.key === utxoPaginationKey ? utxoPagination.limit : UTXO_PAGE_SIZE;
   const visibleUtxos = (utxos ?? []).slice(0, visibleUtxoLimit);
@@ -375,7 +338,7 @@ export function AddressPage() {
                     <td className="text-textMuted px-4 py-3 whitespace-nowrap">
                       {utxo.blockHeight === undefined ? (
                         utxo.status === 'unconfirmed' ? (
-                          'Mempool'
+                          'Unconfirmed'
                         ) : (
                           '—'
                         )
@@ -428,33 +391,20 @@ export function AddressPage() {
               <tr>
                 <th className="px-4 py-3 text-left">TxID</th>
                 <th className="px-4 py-3 text-right">Value change</th>
-                {isLedger ? (
-                  <th className="px-4 py-3 text-left">Status</th>
-                ) : (
-                  <>
-                    <th className="px-4 py-3 text-right">Block height</th>
-                    <th className="px-4 py-3 text-left">Timestamp</th>
-                  </>
-                )}
+                <th className="px-4 py-3 text-left">Status</th>
               </tr>
             </thead>
             <tbody>
               {initialTransactionsLoading && activity.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={activityColumnCount}
-                    className="text-textMuted px-4 py-6 text-center"
-                  >
+                  <td colSpan={3} className="text-textMuted px-4 py-6 text-center">
                     Loading transactions…
                   </td>
                 </tr>
               )}
               {initialTransactionsError && activity.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={activityColumnCount}
-                    className="text-accentSecondary px-4 py-6 text-center"
-                  >
+                  <td colSpan={3} className="text-accentSecondary px-4 py-6 text-center">
                     Could not load transactions.
                   </td>
                 </tr>
@@ -463,22 +413,13 @@ export function AddressPage() {
                 !initialTransactionsError &&
                 activity.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={activityColumnCount}
-                      className="text-textMuted px-4 py-6 text-center"
-                    >
+                    <td colSpan={3} className="text-textMuted px-4 py-6 text-center">
                       No transactions recorded.
                     </td>
                   </tr>
                 )}
               {activity.map((item) => (
-                <tr
-                  key={
-                    item.id ??
-                    `${item.txid}-${String(item.outputIndex ?? item.blockHeight ?? 'mempool')}`
-                  }
-                  className="hover:bg-accentSecondary/10"
-                >
+                <tr key={item.id} className="hover:bg-accentSecondary/10">
                   <td className="px-4 py-3">
                     <Link
                       to={transactionPath(item.txid)}
@@ -495,20 +436,7 @@ export function AddressPage() {
                     {item.valueChange >= 0 ? '+' : '-'}
                     {formatSats(Math.abs(item.valueChange))}
                   </td>
-                  {isLedger ? (
-                    <td className="text-textMuted px-4 py-3">{ledgerStatusLabel(item)}</td>
-                  ) : (
-                    <>
-                      <td className="text-textPrimary px-4 py-3 text-right">
-                        {item.blockHeight ?? 'Unconfirmed'}
-                      </td>
-                      <td className="text-textPrimary px-4 py-3">
-                        {item.timestamp
-                          ? `${formatRelativeTime(item.timestamp, now)} · ${formatTimestamp(item.timestamp)}`
-                          : '—'}
-                      </td>
-                    </>
-                  )}
+                  <td className="text-textMuted px-4 py-3">{ledgerStatusLabel(item)}</td>
                 </tr>
               ))}
             </tbody>

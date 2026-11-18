@@ -5,13 +5,8 @@ import { classifySearchQuery } from '@/lib/utils/search';
 import { copyTextToClipboard } from '@/lib/utils/clipboard';
 import { formatHash } from '@/lib/utils/format';
 import { scriptHashFromAddress } from '@/lib/api/providers/libbitcoin-mapper';
-import { useNetwork, useProviderConfiguration } from '@/lib/hooks/useBlockchainData';
-import {
-  useBlockchainClient,
-  useProviderInfo,
-  useProviderSwitcher,
-  useTurbo,
-} from '@/lib/api/client';
+import { useNetwork, useServerConfiguration } from '@/lib/hooks/useBlockchainData';
+import { useBlockchainClient, useServerInfo, useTurbo } from '@/lib/api/client';
 import {
   addressPath,
   blockByHashPath,
@@ -33,7 +28,6 @@ interface RecentItem {
   id: string;
   path: string;
   seenAtMs: number;
-  providerId: string;
 }
 
 interface PaletteItem {
@@ -66,18 +60,17 @@ function parseRecents(raw: string | null): RecentItem[] {
     const parsed: RecentItem[] = [];
     for (const entry of data) {
       if (!entry || typeof entry !== 'object') continue;
-      const record = entry as Partial<RecentItem>;
+      const record = entry as Partial<RecentItem> & { providerId?: unknown };
       if (record.kind !== 'block' && record.kind !== 'tx' && record.kind !== 'address') continue;
       if (typeof record.id !== 'string' || !record.id.trim()) continue;
       if (typeof record.path !== 'string' || !record.path.trim()) continue;
       if (typeof record.seenAtMs !== 'number' || !Number.isFinite(record.seenAtMs)) continue;
-      if (typeof record.providerId !== 'string' || !record.providerId.trim()) continue;
+      if (record.providerId !== 'libbitcoin') continue;
       parsed.push({
         kind: record.kind,
         id: record.id,
         path: record.path,
         seenAtMs: record.seenAtMs,
-        providerId: record.providerId,
       });
     }
     parsed.sort((a, b) => b.seenAtMs - a.seenAtMs);
@@ -89,7 +82,13 @@ function parseRecents(raw: string | null): RecentItem[] {
 
 function saveRecents(storage: Storage, items: RecentItem[]) {
   try {
-    storage.setItem(RECENTS_STORAGE_KEY, JSON.stringify(items.slice(0, MAX_RECENTS)));
+    // Preserve the stored source marker so older history can still be filtered safely.
+    storage.setItem(
+      RECENTS_STORAGE_KEY,
+      JSON.stringify(
+        items.slice(0, MAX_RECENTS).map((item) => ({ ...item, providerId: 'libbitcoin' }))
+      )
+    );
   } catch {
     // ignore storage failures
   }
@@ -178,11 +177,9 @@ export function CommandPalette() {
   const navigate = useNavigate();
   const location = useLocation();
   const client = useBlockchainClient();
-  const providerInfo = useProviderInfo();
+  const serverInfo = useServerInfo();
   const { network, params: networkParams } = useNetwork();
-  const { data: configuration } = useProviderConfiguration();
-  const { provider, setProvider, availableProviders, selectorVisible, setSelectorVisible } =
-    useProviderSwitcher();
+  const { data: configuration } = useServerConfiguration();
   const { turbo, setTurbo } = useTurbo();
   const { enabled: scriptExplainerEnabled, setEnabled: setScriptExplainerEnabled } =
     useScriptExplainerPreference();
@@ -255,14 +252,13 @@ export function CommandPalette() {
       id: derived.id,
       path: location.pathname,
       seenAtMs: Date.now(),
-      providerId: providerInfo.id,
     };
     setRecents((prev) => {
       const merged = upsertRecent(prev, next);
       saveRecents(storage, merged);
       return merged;
     });
-  }, [location.pathname, providerInfo.id, storage]);
+  }, [location.pathname, storage]);
 
   useEffect(() => {
     const window_ = (globalThis as unknown as { window?: Window }).window;
@@ -304,15 +300,6 @@ export function CommandPalette() {
       const argsText = args.join(' ').trim();
 
       const commandSuggestions: PaletteItem[] = [
-        {
-          id: 'cmd.provider',
-          section: 'Commands',
-          label: 'provider — switch provider',
-          keywords: ['provider', 'switch'],
-          onSelect: () => {
-            setQuery('>provider ');
-          },
-        },
         {
           id: 'cmd.turbo',
           section: 'Commands',
@@ -364,7 +351,7 @@ export function CommandPalette() {
         return commandSuggestions;
       }
 
-      const knownCommands = new Set(['provider', 'turbo', 'script', 'copy', 'nav']);
+      const knownCommands = new Set(['turbo', 'script', 'copy', 'nav']);
       if (!knownCommands.has(commandToken)) {
         const matches = commandSuggestions.filter((item) =>
           matchQuery(commandToken, {
@@ -380,7 +367,7 @@ export function CommandPalette() {
                 id: 'cmd.unknown',
                 section: 'Commands',
                 label: `Unknown command: ${commandToken}`,
-                detail: 'Try: provider, turbo, script, copy, nav',
+                detail: 'Try: turbo, script, copy, nav',
                 onSelect: () => {
                   setQuery('>');
                 },
@@ -388,75 +375,18 @@ export function CommandPalette() {
             ];
       }
 
-      if (commandToken === 'provider') {
-        const normalizedArg = argsText.toLowerCase();
-        const switchItems = availableProviders.map((p) => {
-          const label = p === 'libbitcoin' ? 'server' : p;
-          const isActive = p === provider;
-          return {
-            id: `cmd.provider.${p}`,
-            section: 'Provider',
-            label: `Switch provider to ${label}${isActive ? ' (current)' : ''}`,
-            keywords: ['provider', p, label],
-            onSelect: () => {
-              dismissPalette();
-              setProvider(p);
-            },
-          } satisfies PaletteItem;
-        });
-        const selectorToggle: PaletteItem = {
-          id: 'cmd.provider.selector',
-          section: 'Provider',
-          label: selectorVisible
-            ? 'Hide provider selector in header'
-            : 'Show provider selector in header',
-          keywords: ['provider', 'selector', 'dropdown', 'header', 'show', 'hide', 'toggle'],
-          onSelect: () => {
-            dismissPalette();
-            setSelectorVisible(!selectorVisible);
-          },
-        };
-        const matches = [...switchItems, selectorToggle].filter((item) => {
-          if (!normalizedArg) return true;
-          return matchQuery(normalizedArg, item);
-        });
-
-        return matches.length > 0
-          ? matches
-          : [
-              {
-                id: 'cmd.provider.none',
-                section: 'Provider',
-                label: 'No provider matches',
-                detail: argsText || '—',
-                onSelect: () => {},
-              },
-            ];
-      }
-
       if (commandToken === 'turbo') {
-        if (provider !== 'libbitcoin') {
-          return [
-            {
-              id: 'cmd.turbo.unavailable',
-              section: 'Provider',
-              label: 'Turbo is only available on the server provider',
-              detail: `Current provider: ${provider}`,
-              onSelect: () => {
-                showStatus('Turbo is only available when provider is server');
-              },
-            },
-          ];
-        }
-
-        if (configuration && !configuration.turbo) {
+        if (!configuration?.turbo) {
+          const reason = configuration
+            ? 'Turbo is disabled by the server'
+            : 'Server configuration unavailable';
           return [
             {
               id: 'cmd.turbo.disabled',
-              section: 'Provider',
-              label: 'Turbo is disabled by the server',
+              section: 'Server',
+              label: reason,
               onSelect: () => {
-                showStatus('Turbo is disabled by the server');
+                showStatus(reason);
               },
             },
           ];
@@ -466,7 +396,7 @@ export function CommandPalette() {
         const options: PaletteItem[] = [
           {
             id: 'cmd.turbo.on',
-            section: 'Provider',
+            section: 'Server',
             label: `Turbo on${turbo ? ' (current)' : ''}`,
             keywords: ['turbo', 'on'],
             onSelect: () => {
@@ -476,7 +406,7 @@ export function CommandPalette() {
           },
           {
             id: 'cmd.turbo.off',
-            section: 'Provider',
+            section: 'Server',
             label: `Turbo off${turbo ? '' : ' (current)'}`,
             keywords: ['turbo', 'off'],
             onSelect: () => {
@@ -486,7 +416,7 @@ export function CommandPalette() {
           },
           {
             id: 'cmd.turbo.toggle',
-            section: 'Provider',
+            section: 'Server',
             label: `Turbo toggle (${turbo ? 'on' : 'off'})`,
             keywords: ['turbo', 'toggle'],
             onSelect: () => {
@@ -580,16 +510,16 @@ export function CommandPalette() {
                   },
                 },
               ]),
-          ...(providerInfo.endpoint
+          ...(serverInfo.endpoint
             ? [
                 {
                   id: 'cmd.copy.endpoint',
                   section: 'Clipboard',
-                  label: 'Copy provider endpoint',
-                  detail: providerInfo.endpoint,
+                  label: 'Copy server endpoint',
+                  detail: serverInfo.endpoint,
                   keywords: ['copy', 'endpoint', 'api'],
                   onSelect: async () => {
-                    const ok = await copyTextToClipboard(providerInfo.endpoint ?? '');
+                    const ok = await copyTextToClipboard(serverInfo.endpoint ?? '');
                     showStatus(ok ? 'Copied endpoint' : 'Failed to copy endpoint');
                   },
                 } satisfies PaletteItem,
@@ -701,11 +631,8 @@ export function CommandPalette() {
           if (kindFilter && item.kind !== kindFilter) return false;
           if (!filterText) return true;
           const id = item.id.toLowerCase();
-          const providerId = item.providerId.toLowerCase();
           const path = item.path.toLowerCase();
-          return (
-            id.includes(filterText) || providerId.includes(filterText) || path.includes(filterText)
-          );
+          return id.includes(filterText) || path.includes(filterText);
         })
         .slice(0, 25)
         .map(
@@ -714,8 +641,7 @@ export function CommandPalette() {
               id: `recent.${item.kind}.${item.path}`,
               section: 'Recently Viewed',
               label: labelForRecent(item),
-              detail: item.providerId,
-              keywords: [item.kind, item.id, item.providerId],
+              keywords: [item.kind, item.id],
               onSelect: () => {
                 dismissPalette();
                 void navigate(item.path);
@@ -807,51 +733,20 @@ export function CommandPalette() {
       },
     ];
 
-    const providerActions: PaletteItem[] = [
-      ...availableProviders.map((p) => {
-        const label = p === 'libbitcoin' ? 'server' : p;
-        const isActive = p === provider;
-        return {
-          id: `provider.${p}`,
-          section: 'Provider',
-          label: `Switch provider to ${label}${isActive ? ' (current)' : ''}`,
-          keywords: ['provider', 'switch', p, label],
-          detail: providerInfo.endpoint,
-          onSelect: () => {
-            dismissPalette();
-            setProvider(p);
-          },
-        } satisfies PaletteItem;
-      }),
-      {
-        id: 'provider.selector',
-        section: 'Provider',
-        label: selectorVisible
-          ? 'Hide provider selector in header'
-          : 'Show provider selector in header',
-        keywords: ['provider', 'selector', 'dropdown', 'header', 'show', 'hide', 'toggle'],
-        onSelect: () => {
-          dismissPalette();
-          setSelectorVisible(!selectorVisible);
-        },
-      },
-    ];
-
-    const turboActions: PaletteItem[] =
-      provider === 'libbitcoin'
-        ? [
-            {
-              id: 'turbo.toggle',
-              section: 'Provider',
-              label: `Toggle Turbo (${turbo ? 'on' : 'off'})`,
-              keywords: ['turbo', 'fast', 'libbitcoin'],
-              onSelect: () => {
-                dismissPalette();
-                setTurbo(!turbo);
-              },
+    const turboActions: PaletteItem[] = configuration?.turbo
+      ? [
+          {
+            id: 'turbo.toggle',
+            section: 'Server',
+            label: `Toggle Turbo (${turbo ? 'on' : 'off'})`,
+            keywords: ['turbo', 'fast', 'libbitcoin'],
+            onSelect: () => {
+              dismissPalette();
+              setTurbo(!turbo);
             },
-          ]
-        : [];
+          },
+        ]
+      : [];
 
     const clipboardActions: PaletteItem[] = [
       {
@@ -886,16 +781,16 @@ export function CommandPalette() {
             } satisfies PaletteItem,
           ]
         : []),
-      ...(providerInfo.endpoint
+      ...(serverInfo.endpoint
         ? [
             {
               id: 'copy.endpoint',
               section: 'Clipboard',
-              label: 'Copy provider endpoint',
-              detail: providerInfo.endpoint,
-              keywords: ['copy', 'endpoint', 'api', 'provider', 'url'],
+              label: 'Copy server endpoint',
+              detail: serverInfo.endpoint,
+              keywords: ['copy', 'endpoint', 'api', 'server', 'url'],
               onSelect: async () => {
-                const ok = await copyTextToClipboard(providerInfo.endpoint ?? '');
+                const ok = await copyTextToClipboard(serverInfo.endpoint ?? '');
                 showStatus(ok ? 'Copied endpoint' : 'Failed to copy endpoint');
               },
             } satisfies PaletteItem,
@@ -907,8 +802,7 @@ export function CommandPalette() {
       id: `recent.${item.kind}.${item.path}`,
       section: 'Recently Viewed',
       label: labelForRecent(item),
-      detail: item.providerId,
-      keywords: [item.kind, item.id, item.providerId],
+      keywords: [item.kind, item.id],
       onSelect: () => {
         dismissPalette();
         void navigate(item.path);
@@ -993,17 +887,15 @@ export function CommandPalette() {
               keywords: ['go', 'goto', 'address'],
               onSelect: () => {
                 dismissPalette();
-                const isLibbitcoin = providerInfo.id === 'libbitcoin';
-                const scriptInfo =
-                  isLibbitcoin && networkParams
-                    ? scriptHashFromAddress(value, networkParams)
-                    : null;
+                const scriptInfo = networkParams
+                  ? scriptHashFromAddress(value, networkParams)
+                  : null;
                 const scriptHash = scriptInfo?.hash ?? null;
-                if (isLibbitcoin && network && scriptHash) {
+                if (network && scriptHash) {
                   rememberLibbitcoinAddressAlias(network, scriptHash, value);
                 }
                 void navigate(addressPath(scriptHash ?? value), {
-                  state: isLibbitcoin ? { displayAddress: value } : undefined,
+                  state: { displayAddress: value },
                 });
               },
             },
@@ -1032,7 +924,6 @@ export function CommandPalette() {
     const all = [
       ...goToActions,
       ...baseActions,
-      ...providerActions,
       ...turboActions,
       {
         id: 'script.toggle',
@@ -1110,7 +1001,7 @@ export function CommandPalette() {
             }}
             placeholder={
               getInputMode(query) === 'command'
-                ? 'Commands: >provider, >turbo, >script, >copy, >nav'
+                ? 'Commands: >turbo, >script, >copy, >nav'
                 : getInputMode(query) === 'recents'
                   ? 'Recents: # tx | # block | # address'
                   : 'Type a command or paste an identifier…'

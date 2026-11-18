@@ -6,13 +6,13 @@ import { identifyMiner } from '@/lib/utils/miner';
 export function MinerValue({ coinbase }: { coinbase?: TransactionSummary }) {
   const input = coinbase?.inputs[0];
   const isCoinbase = input?.isCoinbase === true;
-  const txid = isCoinbase ? coinbase?.txid ?? '' : '';
+  const txid = isCoinbase ? (coinbase?.txid ?? '') : '';
   const { data: fetchedHex, isError } = useTransactionInputScriptHex(txid, 0, {
-    enabled: isCoinbase && input?.script?.hex === undefined,
+    enabled: isCoinbase && input.script?.hex === undefined,
   });
   const scriptHex = input?.script?.hex ?? fetchedHex;
   const miner = useMemo(() => {
-    if (!coinbase || scriptHex === undefined) return undefined;
+    if (!coinbase || scriptHex === undefined) return;
     const addresses = coinbase.outputs.flatMap((output) => output.address ?? []);
     return identifyMiner(scriptHex, addresses) ?? null;
   }, [coinbase, scriptHex]);

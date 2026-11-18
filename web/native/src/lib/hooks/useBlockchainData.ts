@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type Query, type QueryClient, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import {
+  type Query,
+  type QueryClient,
+  type UseQueryOptions,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   AddressActivityItem,
   AddressSummary,
@@ -18,12 +24,10 @@ import {
 } from '@/lib/api/client';
 
 type BlockchainQueryScope = {
-  providerId: string;
-  endpoint?: string;
+  endpoint: string;
 };
 
 const DEFAULT_LIVE_BLOCK_LIMIT = 10;
-const RECENT_TRANSACTION_LIMIT = 20;
 
 type BlockRefreshMode = 'always' | 'while-unconfirmed';
 
@@ -37,24 +41,18 @@ interface BlockchainQueryOptions<T> {
   enabled?: boolean;
   retry?: boolean | number | ((failureCount: number, error: Error) => boolean);
   staleTime?: number;
-  initialData?: T;
+  refetchInterval?: UseQueryOptions<T>['refetchInterval'];
   blockRefresh?: BlockRefreshMode;
 }
 
 function getBlockchainQueryScope(client: BlockchainClient): BlockchainQueryScope {
-  return client.metadata.endpoint
-    ? { providerId: client.metadata.id, endpoint: client.metadata.endpoint }
-    : { providerId: client.metadata.id };
+  return { endpoint: client.metadata.endpoint ?? '' };
 }
 
 function isMatchingQueryScope(value: unknown, scope: BlockchainQueryScope) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const candidate = value as Partial<BlockchainQueryScope>;
-  return candidate.providerId === scope.providerId && candidate.endpoint === scope.endpoint;
-}
-
-function getQueryScopeKey(scope: BlockchainQueryScope) {
-  return JSON.stringify([scope.providerId, scope.endpoint ?? null]);
+  return candidate.endpoint === scope.endpoint;
 }
 
 function getQueryLimit(value: unknown, fallback: number) {
@@ -99,18 +97,6 @@ function updateLatestBlocksCache(
   );
 }
 
-function updateRecentTransactionsCache(
-  queryClient: QueryClient,
-  queryScope: BlockchainQueryScope,
-  tx: TransactionSummary
-) {
-  queryClient.setQueryData<TransactionSummary[]>([queryScope, 'transactions', 'recent'], (prev) => {
-    const existing = prev ?? [];
-    const next = [tx, ...existing.filter((item) => item.txid !== tx.txid)];
-    return next.slice(0, RECENT_TRANSACTION_LIMIT);
-  });
-}
-
 function shouldRefreshQueryAfterBlock(query: Query, queryScope: BlockchainQueryScope) {
   if (!isMatchingQueryScope(query.queryKey[0], queryScope)) return false;
 
@@ -133,38 +119,25 @@ function invalidateBlockDependentQueries(
   });
 }
 
-function applyBlockchainEventToCache(
-  queryClient: QueryClient,
-  queryScope: BlockchainQueryScope,
-  event: BlockchainEvent
-) {
-  if (event.type === 'block.new') {
-    updateLatestBlocksCache(queryClient, queryScope, event.payload);
-  }
-  if (event.type === 'tx.new') {
-    updateRecentTransactionsCache(queryClient, queryScope, event.payload);
-  }
-}
-
 function useBlockchainQuery<T>({
   queryKey,
   queryFn,
   enabled,
   retry,
   staleTime,
-  initialData,
+  refetchInterval,
   blockRefresh,
 }: BlockchainQueryOptions<T>) {
   const client = useBlockchainClient();
 
-  // The provider client comes from context and includes methods; cache identity should track metadata.
+  // Keep data isolated by node endpoint without tying it to the client instance.
   return useQuery<T>({
     queryKey: [getBlockchainQueryScope(client), ...queryKey],
     queryFn: () => queryFn(client),
     enabled,
     ...(retry === undefined ? {} : { retry }),
     staleTime,
-    initialData,
+    refetchInterval,
     meta: blockRefresh ? ({ blockRefresh } satisfies BlockchainQueryMeta) : undefined,
   });
 }
@@ -176,16 +149,17 @@ export function useLatestBlocks(limit = 10) {
   });
 }
 
-export function useProviderConfiguration() {
+export function useServerConfiguration() {
   return useBlockchainQuery<BlockchainClientConfiguration>({
     queryKey: ['configuration'],
     queryFn: (client) => client.getConfiguration(),
     staleTime: 60_000,
+    refetchInterval: (query) => (query.state.status === 'error' ? 15_000 : false),
   });
 }
 
 export function useNetwork() {
-  const { data } = useProviderConfiguration();
+  const { data } = useServerConfiguration();
   return { network: data?.network, params: data?.wallet };
 }
 
@@ -307,10 +281,10 @@ export function useAddressUtxos(address: string) {
   });
 }
 
-export function useAddressTransactions(address: string, lastSeenTxid?: string) {
+export function useAddressTransactions(address: string, cursor?: string) {
   return useBlockchainQuery<AddressActivityItem[]>({
-    queryKey: ['address', address, 'transactions', { lastSeenTxid: lastSeenTxid ?? null }],
-    queryFn: (client) => client.getAddressTransactions(address, lastSeenTxid),
+    queryKey: ['address', address, 'transactions', { cursor: cursor ?? null }],
+    queryFn: (client) => client.getAddressTransactions(address, cursor),
     enabled: Boolean(address.trim()),
     blockRefresh: 'always',
   });
@@ -338,22 +312,22 @@ export function useBlockchainEventStatus(): BlockchainEventStatus {
   const client = useBlockchainClient();
   const fallbackStatus = useMemo<BlockchainEventStatus>(
     () => ({
-      transport: client.metadata.supportsWebsocket ? 'websocket' : 'polling',
+      transport: 'idle',
       websocketAvailable: client.metadata.supportsWebsocket,
+      connectionState: client.metadata.connectionState,
     }),
-    [client.metadata.supportsWebsocket]
+    [client.metadata.supportsWebsocket, client.metadata.connectionState]
   );
-  const [status, setStatus] = useState<BlockchainEventStatus>(() =>
-    client.getEventStatus ? client.getEventStatus() : fallbackStatus
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      return client.subscribeToEventStatus?.(onChange) ?? (() => {});
+    },
+    [client]
   );
-
-  useEffect(() => {
-    const initialStatus = client.getEventStatus ? client.getEventStatus() : fallbackStatus;
-    setStatus(initialStatus);
-    return client.subscribeToEventStatus?.(setStatus);
+  const getSnapshot = useCallback(() => {
+    return client.getEventStatus?.() ?? fallbackStatus;
   }, [client, fallbackStatus]);
-
-  return status;
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
 export function BlockchainEventCacheUpdater() {
@@ -367,7 +341,7 @@ export function BlockchainEventCacheUpdater() {
 
   const scheduleBlockRefresh = useCallback(
     (scope: BlockchainQueryScope) => {
-      const scopeKey = getQueryScopeKey(scope);
+      const scopeKey = scope.endpoint;
       let refresh = blockRefreshByScope.current.get(scopeKey);
       if (!refresh) {
         refresh = { dirty: false, running: null };
@@ -396,10 +370,9 @@ export function BlockchainEventCacheUpdater() {
 
   const handleEvent = useCallback(
     (event: BlockchainEvent) => {
-      applyBlockchainEventToCache(queryClient, queryScope, event);
-      if (event.type !== 'block.new') return;
+      updateLatestBlocksCache(queryClient, queryScope, event.payload);
 
-      const scopeKey = getQueryScopeKey(queryScope);
+      const scopeKey = queryScope.endpoint;
       if (lastBlockHashByScope.current.get(scopeKey) === event.payload.hash) return;
       lastBlockHashByScope.current.set(scopeKey, event.payload.hash);
       scheduleBlockRefresh(queryScope);
@@ -409,17 +382,4 @@ export function BlockchainEventCacheUpdater() {
   useBlockchainEvents(handleEvent);
 
   return null;
-}
-
-export function useLiveLatestBlocks(limit = 10) {
-  const { data, isLoading, isError, error } = useLatestBlocks(limit);
-
-  const { data: recentTransactions = [] } = useBlockchainQuery<TransactionSummary[]>({
-    queryKey: ['transactions', 'recent'],
-    queryFn: () => Promise.resolve([]),
-    enabled: false,
-    initialData: [],
-  });
-
-  return { data, recentTransactions, isLoading, isError, error };
 }
