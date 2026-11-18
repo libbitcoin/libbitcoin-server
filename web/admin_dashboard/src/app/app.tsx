@@ -11,7 +11,7 @@ import {
 import { loadEndpointConfiguration } from '@/lib/endpoints';
 import { WorkerMetricsStore } from '@/lib/worker-metrics-store';
 import { loadLogFilter, saveLogFilter } from '@/lib/log-settings';
-import { estimateSyncProgress } from '@/lib/sync-status';
+import { chainSync } from '@/lib/sync-status';
 import { useAdminTelemetry, useNativeTelemetry } from '@/lib/use-telemetry';
 import { useCurrentTime } from '@/lib/use-current-time';
 import { coinOf } from '@/lib/wallet-prefixes';
@@ -51,7 +51,7 @@ export function App() {
   const network = native.configuration
     ? `${coinOf(native.configuration.forks)} ${native.configuration.node.network}`
     : ' ';
-  const syncEstimate = estimateSyncProgress(native.top, native.topHeader, now);
+  const sync = chainSync(native.tops, native.branch);
 
   function updateBrowserNotifications(enabled: boolean) {
     saveBrowserNotificationsEnabled(enabled);
@@ -136,7 +136,7 @@ export function App() {
             endpoints={endpoints}
             metrics={snapshot}
             native={native}
-            syncEstimate={syncEstimate}
+            sync={sync}
           />
         )}
         {view === 'logs' && (
@@ -172,7 +172,7 @@ export function App() {
       </main>
 
       <SyncStatusNotifier
-        estimate={syncEstimate}
+        sync={sync}
         browserNotificationsEnabled={browserNotificationsEnabled}
       />
 

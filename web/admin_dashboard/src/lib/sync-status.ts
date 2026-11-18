@@ -1,43 +1,32 @@
-import type { NativeHeader } from './native-contract';
+import type { NativeHeader, NativeTop, NativeTops } from './native-contract';
 
 export const SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS = 18;
-const EXPECTED_BLOCK_INTERVAL_MS = 10 * 60 * 1_000;
 
-export interface SyncEstimate {
+export interface ChainSync {
+  confirmed: NativeTop;
+  candidate: NativeTop;
   blocksRemaining: number;
-  estimatedTop: number;
   progress: number;
+  diverged: boolean;
 }
 
-export function estimateSyncProgress(
-  confirmed: number | null,
-  header: NativeHeader | null,
-  now: number
-): SyncEstimate | null {
-  if (
-    confirmed === null ||
-    !Number.isSafeInteger(confirmed) ||
-    confirmed < 0 ||
-    header === null ||
-    !Number.isSafeInteger(header.height) ||
-    header.height < 0 ||
-    header.height > confirmed ||
-    !Number.isFinite(header.timestamp) ||
-    header.timestamp <= 0 ||
-    !Number.isFinite(now) ||
-    now < 0
-  )
-    return null;
+// The branch header is the candidate header at the confirmed height, if known.
+export function chainSync(tops: NativeTops | null, branch: NativeHeader | null): ChainSync | null {
+  if (tops === null) return null;
 
-  const elapsed = Math.max(0, now - header.timestamp * 1_000);
-  const estimatedTop = Math.max(
-    confirmed,
-    header.height + Math.ceil(elapsed / EXPECTED_BLOCK_INTERVAL_MS)
-  );
-  const blocksRemaining = estimatedTop - confirmed;
+  const { confirmed, candidate } = tops;
   return {
-    blocksRemaining,
-    estimatedTop,
-    progress: estimatedTop === 0 ? 100 : (confirmed / estimatedTop) * 100,
+    confirmed,
+    candidate,
+    blocksRemaining: Math.max(0, candidate.height - confirmed.height),
+    progress:
+      candidate.height === 0 ? 100 : Math.min(100, (confirmed.height / candidate.height) * 100),
+    diverged: isDiverged(confirmed, candidate, branch),
   };
+}
+
+function isDiverged(confirmed: NativeTop, candidate: NativeTop, branch: NativeHeader | null) {
+  if (candidate.height < confirmed.height) return true;
+  if (candidate.height === confirmed.height) return candidate.hash !== confirmed.hash;
+  return branch !== null && branch.height === confirmed.height && branch.hash !== confirmed.hash;
 }

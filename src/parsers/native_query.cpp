@@ -90,6 +90,15 @@ bool native_query(rpc::request_t& out, const std::string& target,
             return false;
     }
 
+    // Candidate is optional<false> (where applicable), so only set if true.
+    if (const auto candidate = query.find(token::candidate); candidate != query.cend())
+    {
+        if (is_true(candidate->second))
+            params[token::candidate] = true;
+        else if (!is_false(candidate->second))
+            return false;
+    }
+
     // Stop is optional<false> (where applicable), so only set if true.
     if (const auto stop = query.find(token::stop); stop != query.cend())
     {

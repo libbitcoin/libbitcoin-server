@@ -48,12 +48,28 @@ const nativeConfigurationSchema = z.object({
 
 export type NativeConfiguration = z.infer<typeof nativeConfigurationSchema>;
 
+const hashSchema = z.string().regex(/^[0-9a-f]{64}$/u);
+
 const nativeHeaderSchema = z.object({
+  hash: hashSchema,
   height: z.number().int().nonnegative(),
   timestamp: z.number().int().positive().max(0xffff_ffff),
 });
 
 export type NativeHeader = z.infer<typeof nativeHeaderSchema>;
+
+const nativeTopSchema = z.object({
+  hash: hashSchema,
+  height: z.number().int().nonnegative(),
+});
+
+const nativeTopsSchema = z.object({
+  confirmed: nativeTopSchema,
+  candidate: nativeTopSchema,
+});
+
+export type NativeTop = z.infer<typeof nativeTopSchema>;
+export type NativeTops = z.infer<typeof nativeTopsSchema>;
 
 // Native /v1/fees returns existing pool gauges, not transaction arrival counters.
 const poolIntegerSchema = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -76,8 +92,8 @@ export const POOL_STALE_AFTER_MS = 15_000;
 
 export interface NativeSnapshot {
   configuration: NativeConfiguration;
-  top: number;
-  topHeader: NativeHeader | null;
+  tops: NativeTops;
+  branch: NativeHeader | null;
   receivedAt: number;
 }
 
@@ -85,9 +101,7 @@ export type NativeFrame =
   | { type: 'configuration'; payload: NativeConfiguration }
   | { type: 'header'; payload: NativeHeader }
   | { type: 'fees'; payload: NativeFees }
-  | { type: 'top'; payload: number };
-
-const nativeTopSchema = z.number().int().nonnegative();
+  | { type: 'top'; payload: NativeTops };
 
 export function parseNativeFrame(text: string): NativeFrame | null {
   try {
@@ -107,8 +121,8 @@ export function parseNativeFrame(text: string): NativeFrame | null {
       return { type: 'fees', payload: fees.data };
     }
 
-    const top = nativeTopSchema.safeParse(value);
-    return top.success ? { type: 'top', payload: top.data } : null;
+    const tops = nativeTopsSchema.safeParse(value);
+    return tops.success ? { type: 'top', payload: tops.data } : null;
   } catch {
     return null;
   }
@@ -139,23 +153,25 @@ export async function fetchNativeSnapshot(
   ]);
 
   const configuration = nativeConfigurationSchema.parse(configurationValue);
-  const top = nativeTopSchema.parse(topValue);
+  const tops = nativeTopsSchema.parse(topValue);
   const receivedAt = Date.now();
-  let topHeader: NativeHeader | null = null;
-  try {
-    const header = nativeHeaderSchema.parse(
-      await fetchJson(endpointUrl(baseUrl, nativeHeaderPath(top)), signal)
-    );
-    if (header.height === top) topHeader = header;
-  } catch {
-    // A missing timestamp must not hide an otherwise valid canonical top.
-    signal?.throwIfAborted();
+  let branch: NativeHeader | null = null;
+  if (tops.candidate.height > tops.confirmed.height) {
+    try {
+      const path = nativeBranchPath(tops.confirmed.height);
+      const header = nativeHeaderSchema.parse(await fetchJson(endpointUrl(baseUrl, path), signal));
+      if (header.height === tops.confirmed.height) branch = header;
+    } catch {
+      // An unresolved branch must not hide otherwise valid tops.
+      signal?.throwIfAborted();
+    }
   }
-  return { configuration, top, topHeader, receivedAt };
+  return { configuration, tops, branch, receivedAt };
 }
 
-export function nativeHeaderPath(height: number): string {
-  return `/v1/block/height/${String(height)}/header?format=json`;
+// The candidate header at the given height, compared against the confirmed top.
+export function nativeBranchPath(height: number): string {
+  return `/v1/block/height/${String(height)}/header?format=json&candidate=true`;
 }
 
 export async function fetchNativeFees(

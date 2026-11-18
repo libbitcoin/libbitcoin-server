@@ -1,20 +1,18 @@
 import { formatInteger } from '@/lib/format';
-import { type SyncEstimate, SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS } from '@/lib/sync-status';
+import { type ChainSync, SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS } from '@/lib/sync-status';
 
 interface NodeSyncProgressProps {
-  confirmed: number | null;
-  estimate: SyncEstimate | null;
+  sync: ChainSync | null;
 }
 
-export function NodeSyncProgress({ confirmed, estimate }: NodeSyncProgressProps) {
+export function NodeSyncProgress({ sync }: NodeSyncProgressProps) {
   if (
-    confirmed === null ||
-    estimate === null ||
-    estimate.blocksRemaining <= SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS
+    sync === null ||
+    (!sync.diverged && sync.blocksRemaining <= SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS)
   )
     return null;
 
-  const progress = Math.min(99.99, Math.max(0, estimate.progress));
+  const progress = Math.min(99.99, Math.max(0, sync.progress));
   const progressLabel = `${progress.toFixed(2)}%`;
 
   return (
@@ -28,7 +26,7 @@ export function NodeSyncProgress({ confirmed, estimate }: NodeSyncProgressProps)
             Node synchronization
           </p>
           <h2 id="node-sync-progress-title" className="text-accent mt-1 text-lg font-semibold">
-            Catching up to top candidate header
+            {sync.diverged ? 'Candidate branch diverges' : 'Catching up to top candidate header'}
           </h2>
         </div>
         <p className="text-accent text-2xl font-semibold tabular-nums">{progressLabel}</p>
@@ -41,7 +39,7 @@ export function NodeSyncProgress({ confirmed, estimate }: NodeSyncProgressProps)
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={Number(progress.toFixed(2))}
-          aria-valuetext={`Approximately ${formatInteger(estimate.blocksRemaining)} blocks remaining`}
+          aria-valuetext={`${formatInteger(sync.blocksRemaining)} blocks remaining`}
           className="bg-background border-accentSecondary/20 h-3 overflow-hidden rounded-full border"
         >
           <div
@@ -52,26 +50,38 @@ export function NodeSyncProgress({ confirmed, estimate }: NodeSyncProgressProps)
       </div>
 
       <dl className="bg-accentSecondary/10 mt-5 grid gap-px text-sm sm:grid-cols-3">
-        <SyncValue label="Top confirmed block" value={formatInteger(confirmed)} />
-        <SyncValue label="Top candidate header" value={formatInteger(estimate.estimatedTop)} />
         <SyncValue
-          label="Estimated blocks remaining"
-          value={formatInteger(estimate.blocksRemaining)}
+          label="Top confirmed block"
+          value={formatInteger(sync.confirmed.height)}
+          hash={sync.confirmed.hash}
         />
+        <SyncValue
+          label="Top candidate header"
+          value={formatInteger(sync.candidate.height)}
+          hash={sync.candidate.hash}
+        />
+        <SyncValue label="Blocks remaining" value={formatInteger(sync.blocksRemaining)} />
       </dl>
-      <p className="bg-surface text-textMuted border-accentSecondary/20 border-t px-5 py-2 text-[11px]">
-        Estimated from the confirmed block timestamp and your browser clock, assuming one block
-        every 10 minutes. Actual block counts may differ.
-      </p>
+      {sync.diverged && (
+        <p className="bg-surface border-accentSecondary/20 border-t px-5 py-2 text-[11px] text-amber-300">
+          The candidate chain does not extend the confirmed top, so the confirmed chain is
+          expected to reorganize.
+        </p>
+      )}
     </section>
   );
 }
 
-function SyncValue({ label, value }: { label: string; value: string }) {
+function SyncValue({ label, value, hash }: { label: string; value: string; hash?: string }) {
   return (
-    <div className="bg-surface px-5 py-3">
+    <div className="bg-surface min-w-0 px-5 py-3">
       <dt className="text-accentSecondary text-xs tracking-wide uppercase">{label}</dt>
       <dd className="text-textPrimary mt-1 text-lg font-semibold tabular-nums">{value}</dd>
+      {hash !== undefined && (
+        <dd className="text-textMuted truncate font-mono text-[11px]" title={hash}>
+          {hash}
+        </dd>
+      )}
     </div>
   );
 }

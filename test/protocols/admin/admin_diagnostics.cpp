@@ -128,8 +128,8 @@ BC_AUTO_TEST_CASE(admin__dispatch__html__bad_request)
 BC_AUTO_TEST_CASE(admin__native_top__json__expected)
 {
     const auto response = get_json("/v1/top?format=json");
-    BC_REQUIRE(response.is_int64());
-    BC_REQUIRE_EQUAL(response.as_int64(), 9);
+    BC_REQUIRE_EQUAL(response.at("confirmed").at("height").as_int64(), 9);
+    BC_REQUIRE_EQUAL(response.at("candidate").at("height").as_int64(), 0);
 }
 
 BC_AUTO_TEST_CASE(admin__native_configuration__json__object)
@@ -210,8 +210,8 @@ BC_AUTO_TEST_CASE(admin__ws_native_top__json__expected)
     BC_REQUIRE(!ws_upgrade());
 
     const auto response = ws_get_json("/v1/top");
-    BC_REQUIRE(response.is_int64());
-    BC_REQUIRE_EQUAL(response.as_int64(), 9);
+    BC_REQUIRE_EQUAL(response.at("confirmed").at("height").as_int64(), 9);
+    BC_REQUIRE_EQUAL(response.at("candidate").at("height").as_int64(), 0);
 }
 
 BC_AUTO_TEST_CASE(admin__ws_native_and_admin__same_connection__expected)
@@ -223,8 +223,7 @@ BC_AUTO_TEST_CASE(admin__ws_native_and_admin__same_connection__expected)
     BC_REQUIRE_EQUAL(ack.at("previous").as_int64(), 0);
 
     const auto top = ws_get_json("/v1/top");
-    BC_REQUIRE(top.is_int64());
-    BC_REQUIRE_EQUAL(top.as_int64(), 9);
+    BC_REQUIRE_EQUAL(top.at("confirmed").at("height").as_int64(), 9);
 }
 
 // streams (websockets)

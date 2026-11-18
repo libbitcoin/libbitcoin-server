@@ -23,6 +23,35 @@ using namespace system;
 namespace http = network::http;
 namespace ws = network::ws;
 
+static data_chunk to_tops(const hash_digest& confirmed, size_t confirmed_height,
+    const hash_digest& candidate, size_t candidate_height)
+{
+    return splice(chain::checkpoint{ confirmed, confirmed_height }.to_data(),
+        chain::checkpoint{ candidate, candidate_height }.to_data());
+}
+
+static bool is_top(const json::value& value, const hash_digest& hash,
+    int64_t height)
+{
+    return value.is_object() &&
+        value.as_object().at("hash").as_string() == encode_hash(hash) &&
+        value.as_object().at("height").as_int64() == height;
+}
+
+static bool is_tops(const json::value& value, const hash_digest& confirmed,
+    int64_t confirmed_height, const hash_digest& candidate,
+    int64_t candidate_height)
+{
+    return value.is_object() && value.as_object().size() == 2u &&
+        is_top(value.at("confirmed"), confirmed, confirmed_height) &&
+        is_top(value.at("candidate"), candidate, candidate_height);
+}
+
+static data_chunk default_tops()
+{
+    return to_tops(test::block9_hash, 9, test::block0_hash, 0);
+}
+
 BC_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
 
 // top (http)
@@ -30,21 +59,23 @@ BC_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
 
 BC_AUTO_TEST_CASE(native__top__json__expected)
 {
-    const auto response = get_json("/v1/top?format=json");
-    BC_REQUIRE(response.is_int64());
-    BC_REQUIRE_EQUAL(response.as_int64(), 9);
+    BC_REQUIRE(is_tops(get_json("/v1/top?format=json"), test::block9_hash, 9, test::block0_hash, 0));
 }
 
 BC_AUTO_TEST_CASE(native__top__text__expected)
 {
-    const auto body = get_text("/v1/top?format=text");
-    BC_REQUIRE_EQUAL(body, "09");
+    BC_REQUIRE_EQUAL(get_text("/v1/top?format=text"), encode_base16(default_tops()));
 }
 
 BC_AUTO_TEST_CASE(native__top__data__expected)
 {
-    const auto body = get_data("/v1/top?format=data");
-    BC_REQUIRE_EQUAL(body, base16_chunk("09"));
+    BC_REQUIRE_EQUAL(get_data("/v1/top?format=data"), default_tops());
+}
+
+BC_AUTO_TEST_CASE(native__top__pushed_candidate_json__candidate_top)
+{
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    BC_REQUIRE(is_tops(get_json("/v1/top?format=json"), test::block9_hash, 9, test::block1_hash, 1));
 }
 
 BC_AUTO_TEST_CASE(native__top__xml__bad_request)
@@ -63,9 +94,7 @@ BC_AUTO_TEST_CASE(native__top__default__not_acceptable)
 
 BC_AUTO_TEST_CASE(native__top_subscribe__json__expected)
 {
-    const auto response = get_json("/v1/top/subscribe?format=json");
-    BC_REQUIRE(response.is_int64());
-    BC_REQUIRE_EQUAL(response.as_int64(), 9);
+    BC_REQUIRE(is_tops(get_json("/v1/top/subscribe?format=json"), test::block9_hash, 9, test::block0_hash, 0));
 }
 
 // top (websockets)
@@ -73,33 +102,25 @@ BC_AUTO_TEST_CASE(native__top_subscribe__json__expected)
 
 BC_AUTO_TEST_CASE(native__ws_upgrade__always__success)
 {
-    const auto ec = ws_upgrade();
-    BC_REQUIRE_MESSAGE(!ec, ec.message());
+    BC_REQUIRE(!ws_upgrade());
 }
 
 BC_AUTO_TEST_CASE(native__ws_top__json__expected)
 {
     BC_REQUIRE(!ws_upgrade());
-
-    const auto response = ws_get_json("/v1/top?format=json");
-    BC_REQUIRE(response.is_int64());
-    BC_REQUIRE_EQUAL(response.as_int64(), 9);
+    BC_REQUIRE(is_tops(ws_get_json("/v1/top?format=json"), test::block9_hash, 9, test::block0_hash, 0));
 }
 
 BC_AUTO_TEST_CASE(native__ws_top__text__expected)
 {
     BC_REQUIRE(!ws_upgrade());
-
-    const auto response = ws_get_text("/v1/top?format=text");
-    BC_REQUIRE_EQUAL(response, "09");
+    BC_REQUIRE_EQUAL(ws_get_text("/v1/top?format=text"), encode_base16(default_tops()));
 }
 
 BC_AUTO_TEST_CASE(native__ws_top__data__expected)
 {
     BC_REQUIRE(!ws_upgrade());
-
-    const auto response = ws_get_data("/v1/top?format=data");
-    BC_REQUIRE_EQUAL(response, base16_chunk("09"));
+    BC_REQUIRE_EQUAL(ws_get_data("/v1/top?format=data"), default_tops());
 }
 
 BC_AUTO_TEST_CASE(native__ws_top__xml__bad_request)
@@ -113,10 +134,7 @@ BC_AUTO_TEST_CASE(native__ws_top__xml__bad_request)
 BC_AUTO_TEST_CASE(native__ws_top_subscribe__json__expected)
 {
     BC_REQUIRE(!ws_upgrade());
-
-    const auto response = ws_get_json("/v1/top/subscribe?format=json");
-    BC_REQUIRE(response.is_int64());
-    BC_REQUIRE_EQUAL(response.as_int64(), 9);
+    BC_REQUIRE(is_tops(ws_get_json("/v1/top/subscribe?format=json"), test::block9_hash, 9, test::block0_hash, 0));
 }
 
 BC_AUTO_TEST_CASE(native__ws_top_subscribe__stop__empty)
@@ -146,80 +164,80 @@ BC_AUTO_TEST_CASE(native__ws_block__not_found_text__empty)
 BC_AUTO_TEST_CASE(native__ws_top_subscribe__repeat__idempotent)
 {
     BC_REQUIRE(!ws_upgrade());
-
-    const auto response1 = ws_get_json("/v1/top/subscribe?format=json");
-    BC_REQUIRE(response1.is_int64());
-    BC_REQUIRE_EQUAL(response1.as_int64(), 9);
-
-    const auto response2 = ws_get_json("/v1/top/subscribe?format=json");
-    BC_REQUIRE(response2.is_int64());
-    BC_REQUIRE_EQUAL(response2.as_int64(), 9);
+    BC_REQUIRE(is_tops(ws_get_json("/v1/top/subscribe?format=json"), test::block9_hash, 9, test::block0_hash, 0));
+    BC_REQUIRE(is_tops(ws_get_json("/v1/top/subscribe?format=json"), test::block9_hash, 9, test::block0_hash, 0));
 }
 
-BC_AUTO_TEST_CASE(native__ws_top_subscribe__progressive_notify__expected)
-{
-    BC_REQUIRE(!ws_upgrade());
-
-    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
-
-    const auto response = ws_get_json("/v1/top/subscribe?format=json");
-    BC_REQUIRE(response.is_int64());
-    BC_REQUIRE_EQUAL(response.as_int64(), 9);
-
-    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
-    BC_REQUIRE_EQUAL(ws_get_text("/v1/top/subscribe?format=text"), "0a");
-
-    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
-    notify(node::chases::block{ 11 });
-
-    BC_REQUIRE_EQUAL(to_string(ws_receive()), "0b");
-}
-
-BC_AUTO_TEST_CASE(native__ws_top_subscribe__reorganized__emits_top_height)
-{
-    BC_REQUIRE(!ws_upgrade());
-
-    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
-    BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
-
-    const auto response = ws_get_json("/v1/top/subscribe?format=json");
-    BC_REQUIRE(response.is_int64());
-    BC_REQUIRE_EQUAL(response.as_int64(), 9);
-
-    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
-    BC_REQUIRE_EQUAL(ws_get_text("/v1/top/subscribe?format=text"), "0a");
-
-    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block11.hash()), true));
-    notify(node::chases::reorganized{ 11 });
-
-    BC_REQUIRE_EQUAL(to_string(ws_receive()), "0b");
-}
-
-BC_AUTO_TEST_CASE(native__ws_top_subscribe__notify_data__expected)
+BC_AUTO_TEST_CASE(native__ws_top_subscribe__block__emits_tops)
 {
     BC_REQUIRE(!ws_upgrade());
     BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BC_REQUIRE_EQUAL(ws_get_data("/v1/top/subscribe?format=data"), base16_chunk("09"));
+    BC_REQUIRE_EQUAL(ws_get_data("/v1/top/subscribe?format=data"), default_tops());
 
     BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
-    notify(node::chases::block{ 10 });
+    notify(node::chases::block{ node::header_t{ 10 } });
 
-    BC_REQUIRE_EQUAL(ws_receive(), base16_chunk("0a"));
+    BC_REQUIRE_EQUAL(ws_receive(), to_tops(test::mock_block10.hash(), 10, test::block0_hash, 0));
+}
+
+BC_AUTO_TEST_CASE(native__ws_top_subscribe__reorganized__emits_tops)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    BC_REQUIRE_EQUAL(ws_get_data("/v1/top/subscribe?format=data"), to_tops(test::mock_block10.hash(), 10, test::block0_hash, 0));
+
+    BC_REQUIRE(query_.pop_confirmed());
+    notify(node::chases::reorganized{ node::header_t{ 10 } });
+
+    BC_REQUIRE_EQUAL(ws_receive(), default_tops());
+}
+
+BC_AUTO_TEST_CASE(native__ws_top_subscribe__headers__emits_tops)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE_EQUAL(ws_get_data("/v1/top/subscribe?format=data"), default_tops());
+
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    notify(node::chases::headers{ node::height_t{ 0 } });
+
+    BC_REQUIRE_EQUAL(ws_receive(), to_tops(test::block9_hash, 9, test::block1_hash, 1));
+}
+
+BC_AUTO_TEST_CASE(native__ws_top_subscribe__regressed__emits_tops)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block2_hash)));
+    BC_REQUIRE_EQUAL(ws_get_data("/v1/top/subscribe?format=data"), to_tops(test::block9_hash, 9, test::block2_hash, 2));
+
+    BC_REQUIRE(query_.pop_candidate());
+    notify(node::chases::regressed{ node::height_t{ 1 } });
+
+    BC_REQUIRE_EQUAL(ws_receive(), to_tops(test::block9_hash, 9, test::block1_hash, 1));
+}
+
+BC_AUTO_TEST_CASE(native__ws_top_subscribe__notify_text__expected)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE_EQUAL(ws_get_text("/v1/top/subscribe?format=text"), encode_base16(default_tops()));
+
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    notify(node::chases::headers{ node::height_t{ 0 } });
+
+    BC_REQUIRE_EQUAL(to_string(ws_receive()), encode_base16(to_tops(test::block9_hash, 9, test::block1_hash, 1)));
 }
 
 BC_AUTO_TEST_CASE(native__ws_top_subscribe__notify_json__expected)
 {
     BC_REQUIRE(!ws_upgrade());
     BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BC_REQUIRE_EQUAL(ws_get_json("/v1/top/subscribe?format=json").as_int64(), 9);
+    BC_REQUIRE(is_tops(ws_get_json("/v1/top/subscribe?format=json"), test::block9_hash, 9, test::block0_hash, 0));
 
     BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
-    notify(node::chases::block{ 10 });
+    notify(node::chases::block{ node::header_t{ 10 } });
 
-    BC_REQUIRE_EQUAL(test::parse_json(to_string(ws_receive())).as_int64(), 10);
+    BC_REQUIRE(is_tops(test::parse_json(to_string(ws_receive())), test::mock_block10.hash(), 10, test::block0_hash, 0));
 }
 
 // dispatch
@@ -228,6 +246,16 @@ BC_AUTO_TEST_CASE(native__ws_top_subscribe__notify_json__expected)
 BC_AUTO_TEST_CASE(native__dispatch__invalid_witness__bad_request)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/block/height/1?format=data&witness=maybe"), http::status::bad_request);
+}
+
+BC_AUTO_TEST_CASE(native__dispatch__invalid_candidate__bad_request)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1?format=data&candidate=maybe"), http::status::bad_request);
+}
+
+BC_AUTO_TEST_CASE(native__dispatch__unsupported_candidate_top__bad_request)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/top?format=json&candidate=true"), http::status::bad_request);
 }
 
 BC_AUTO_TEST_CASE(native__dispatch__invalid_turbo__bad_request)
@@ -346,6 +374,17 @@ static const chain::transaction& coinbase1() NOEXCEPT
     return *test::block1.transactions_ptr()->front();
 }
 
+BC_AUTO_TEST_CASE(native__block__candidate_unpushed__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1?format=data&candidate=true"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block__candidate_pushed__expected)
+{
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    BC_REQUIRE_EQUAL(get_data("/v1/block/height/1?format=data&candidate=true"), to_chunk(test::block1_data));
+}
+
 BC_AUTO_TEST_CASE(native__block__height_data__expected)
 {
     BC_REQUIRE_EQUAL(get_data("/v1/block/height/1?format=data"), to_chunk(test::block1_data));
@@ -431,6 +470,27 @@ BC_AUTO_TEST_CASE(native__block_header__json__expected)
     BC_REQUIRE_EQUAL(object.at("height").as_int64(), 1);
 }
 
+BC_AUTO_TEST_CASE(native__block_header__candidate_genesis__expected)
+{
+    const auto response = get_json("/v1/block/height/0/header?format=json&candidate=true");
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE_EQUAL(response.as_object().at("hash").as_string(), encode_hash(test::block0_hash));
+}
+
+BC_AUTO_TEST_CASE(native__block_header__candidate_unpushed__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/header?format=data&candidate=true"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block_header__candidate_pushed__expected)
+{
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    const auto response = get_json("/v1/block/height/1/header?format=json&candidate=true");
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE_EQUAL(response.as_object().at("hash").as_string(), block1_hash);
+    BC_REQUIRE_EQUAL(response.as_object().at("height").as_int64(), 1);
+}
+
 BC_AUTO_TEST_CASE(native__block_header__above_top__not_found)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/block/height/10/header?format=data"), http::status::not_found);
@@ -470,6 +530,20 @@ BC_AUTO_TEST_CASE(native__block_header_context__json__expected)
     BC_REQUIRE(!forks.at("bip54_sigops").as_bool());
     BC_REQUIRE(!forks.at("bip54_txsize").as_bool());
     BC_REQUIRE(!forks.at("bip54_coinbase").as_bool());
+}
+
+BC_AUTO_TEST_CASE(native__block_header_context__candidate_unpushed__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/header/context?format=json&candidate=true"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block_header_context__candidate_pushed__expected)
+{
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    const auto response = get_json("/v1/block/height/1/header/context?format=json&candidate=true");
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE_EQUAL(response.as_object().at("hash").as_string(), block1_hash);
+    BC_REQUIRE_EQUAL(response.as_object().at("height").as_int64(), 1);
 }
 
 BC_AUTO_TEST_CASE(native__block_header_context__text__not_acceptable)
@@ -518,6 +592,17 @@ BC_AUTO_TEST_CASE(native__block_details__data__not_acceptable)
     BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/details?format=data"), http::status::not_acceptable);
 }
 
+BC_AUTO_TEST_CASE(native__block_details__candidate_unpushed__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/details?format=json&candidate=true"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block_details__candidate_pushed__expected)
+{
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    BC_REQUIRE(get_json("/v1/block/height/1/details?format=json&candidate=true").is_object());
+}
+
 BC_AUTO_TEST_CASE(native__block_details__above_top__not_found)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/block/height/10/details?format=json"), http::status::not_found);
@@ -544,6 +629,17 @@ BC_AUTO_TEST_CASE(native__block_txs__text__expected)
     BC_REQUIRE_EQUAL(get_text("/v1/block/height/1/txs?format=text"), encode_base16(coinbase1().hash(false)));
 }
 
+BC_AUTO_TEST_CASE(native__block_txs__candidate_unpushed__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/txs?format=data&candidate=true"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block_txs__candidate_pushed__expected)
+{
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    BC_REQUIRE_EQUAL(get_data("/v1/block/height/1/txs?format=data&candidate=true"), to_chunk(coinbase1().hash(false)));
+}
+
 BC_AUTO_TEST_CASE(native__block_txs__above_top__not_found)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/block/height/10/txs?format=json"), http::status::not_found);
@@ -555,6 +651,17 @@ BC_AUTO_TEST_CASE(native__block_txs__above_top__not_found)
 BC_AUTO_TEST_CASE(native__block_tx__data__expected)
 {
     BC_REQUIRE_EQUAL(get_data("/v1/block/height/1/tx/0?format=data"), coinbase1().to_data(true));
+}
+
+BC_AUTO_TEST_CASE(native__block_tx__candidate_unpushed__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/tx/0?format=data&candidate=true"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block_tx__candidate_pushed__expected)
+{
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    BC_REQUIRE_EQUAL(get_data("/v1/block/height/1/tx/0?format=data&candidate=true"), coinbase1().to_data(true));
 }
 
 BC_AUTO_TEST_CASE(native__block_tx__text__expected)
@@ -576,6 +683,26 @@ BC_AUTO_TEST_CASE(native__block_tx__position_above_count__not_found)
 
 // block/filter
 // ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(native__block_filter__candidate_genesis__expected)
+{
+    BC_REQUIRE_EQUAL(get_data("/v1/block/height/0/filter/0?format=data&candidate=true"), get_data("/v1/block/height/0/filter/0?format=data"));
+}
+
+BC_AUTO_TEST_CASE(native__block_filter__candidate_unpushed__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/filter/0?format=data&candidate=true"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block_filter_hash__candidate_unpushed__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/filter/0/hash?format=data&candidate=true"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block_filter_header__candidate_unpushed__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/filter/0/header?format=data&candidate=true"), http::status::not_found);
+}
 
 BC_AUTO_TEST_CASE(native__block_filter__genesis__hashes_to_filter_hash)
 {
@@ -812,7 +939,7 @@ BC_AUTO_TEST_CASE(native__embedded__unknown_type__not_found)
 
 BC_AUTO_TEST_CASE(native__embedded__api__expected)
 {
-    BC_REQUIRE_EQUAL(get_text("/v1/top?format=text"), "09");
+    BC_REQUIRE_EQUAL(get_text("/v1/top?format=text"), encode_base16(default_tops()));
 }
 
 BC_AUTO_TEST_SUITE_END()

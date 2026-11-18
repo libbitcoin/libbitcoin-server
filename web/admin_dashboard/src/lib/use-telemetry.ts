@@ -22,7 +22,8 @@ export interface NativeTelemetry {
   status: ConnectionStatus;
   live: NativeLiveState;
   top: number | null;
-  topHeader: NativeLiveState['topHeader'];
+  tops: NativeLiveState['tops'];
+  branch: NativeLiveState['branch'];
   configuration: NativeLiveState['configuration'];
   receivedAt: number | null;
   transport: 'websocket' | 'rest' | 'none';
@@ -31,7 +32,7 @@ export interface NativeTelemetry {
 
 type NativeTelemetrySelection = Pick<
   NativeTelemetry,
-  'top' | 'topHeader' | 'configuration' | 'receivedAt' | 'transport'
+  'top' | 'tops' | 'branch' | 'configuration' | 'receivedAt' | 'transport'
 >;
 
 export function useAdminTelemetry(
@@ -138,7 +139,7 @@ export function hasFreshNativeLiveState(
 ): boolean {
   return (
     status.phase === 'connected' &&
-    live.top !== null &&
+    live.tops !== null &&
     live.topReceivedAt !== null &&
     live.configuration !== null &&
     live.configurationReceivedAt !== null &&
@@ -152,12 +153,13 @@ export function selectNativeTelemetrySource(
   rest: NativeSnapshot | null,
   now: number
 ): NativeTelemetrySelection {
-  if (hasFreshNativeLiveState(status, live, now)) {
+  if (hasFreshNativeLiveState(status, live, now) && live.tops !== null) {
     return {
-      top: live.top,
-      topHeader:
-        live.headerReceivedAt !== null && isNativeStateFresh(live.headerReceivedAt, now)
-          ? live.topHeader
+      top: live.tops.confirmed.height,
+      tops: live.tops,
+      branch:
+        live.branchReceivedAt !== null && isNativeStateFresh(live.branchReceivedAt, now)
+          ? live.branch
           : null,
       configuration: live.configuration,
       receivedAt: live.topReceivedAt,
@@ -167,8 +169,9 @@ export function selectNativeTelemetrySource(
 
   if (rest && isNativeStateFresh(rest.receivedAt, now)) {
     return {
-      top: rest.top,
-      topHeader: rest.topHeader,
+      top: rest.tops.confirmed.height,
+      tops: rest.tops,
+      branch: rest.branch,
       configuration: rest.configuration,
       receivedAt: rest.receivedAt,
       transport: 'rest',
@@ -177,7 +180,8 @@ export function selectNativeTelemetrySource(
 
   return {
     top: null,
-    topHeader: null,
+    tops: null,
+    branch: null,
     configuration: null,
     receivedAt: null,
     transport: 'none',
