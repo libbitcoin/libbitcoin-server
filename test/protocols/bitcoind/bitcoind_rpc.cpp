@@ -4505,14 +4505,13 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__submitheader__mainnet_block10__null)
     BC_REQUIRE(response.at("result").is_null());
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__archived_unconfirmed__txid)
+BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__archived_unpooled__verify_rejected)
 {
     const auto& tx = *test::mock_block10.transactions_ptr()->at(1);
     BC_REQUIRE(query_.set(tx));
 
     const auto response = rpc("sendrawtransaction", "[\"" + encode_base16(tx.to_data(true)) + "\"]");
-    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    BC_REQUIRE_EQUAL(as_text(response.at("result")), encode_hash(tx.hash(false)));
+    BC_REQUIRE_MESSAGE(has_code(response, -26), response);
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__confirmed_spent__verify_error)
@@ -4578,6 +4577,16 @@ BC_FIXTURE_TEST_SUITE(bitcoind_broadcast_tests, bitcoind_broadcast_setup_fixture
 BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__spendable__txid)
 {
     const auto response = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(as_text(response.at("result")), encode_hash(test::tx1c.hash(false)));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__pooled__txid)
+{
+    const auto hex = encode_base16(test::tx1c.to_data(true));
+    BC_REQUIRE(rpc("sendrawtransaction", "[\"" + hex + "\"]").as_object().contains("result"));
+
+    const auto response = rpc("sendrawtransaction", "[\"" + hex + "\"]");
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     BC_REQUIRE_EQUAL(as_text(response.at("result")), encode_hash(test::tx1c.hash(false)));
 }
