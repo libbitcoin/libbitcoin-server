@@ -72,7 +72,6 @@ export function NodeSyncProgress({ sync }: NodeSyncProgressProps) {
                 className="inline-block h-2 w-3 rounded-sm"
                 style={{
                   background: `var(--chart-color-${String(layer.color)}, ${CHART_COLORS[layer.color]})`,
-                  opacity: layer.opacity,
                 }}
               />
               {layer.label}
@@ -105,17 +104,18 @@ export function NodeSyncProgress({ sync }: NodeSyncProgressProps) {
 }
 
 const FILL_LAYERS = [
-  { label: 'Confirmed', color: 2, opacity: 0.6 },
-  { label: 'Validated', color: 1, opacity: 0.9 },
-  { label: 'Archived', color: 0, opacity: 0.9 },
-  { label: 'Headers', color: 3, opacity: 0.35 },
+  { label: 'Confirmed', color: 2 },
+  { label: 'Validated', color: 1 },
+  { label: 'Archived', color: 0 },
+  { label: 'Headers', color: 3 },
 ] as const;
 
 type FillLayer = (typeof FILL_LAYERS)[number]['label'];
 
 // Headers and confirmed are contiguous, so each is solid to its frontier.
-// Archived and validated heights arrive out of order, so each bin is shaded by
-// the fraction of its heights reported. A focused layer is drawn alone.
+// Archived and validated heights arrive out of order, so each bin with any
+// reported height is filled. Layers are opaque, each drawn over those it
+// implies. A focused layer is drawn alone.
 function FillBar({
   fill,
   confirmed,
@@ -152,7 +152,7 @@ function FillBar({
       const scale = top > 0 ? width / top : 0;
       context.clearRect(0, 0, width, height);
 
-      const shade = (bins: Uint8Array, color: string, strength: number) => {
+      const shade = (bins: Uint8Array, color: string) => {
         if (!fill || scale === 0) return;
         const span = fill.height + 1;
         context.fillStyle = color;
@@ -164,21 +164,18 @@ function FillBar({
           const left = first * scale;
           const right = Math.max(left + 1, Math.min(width, last * scale));
           if (left >= width) break;
-          context.globalAlpha = (value / 255) * strength;
           context.fillRect(left, 0, right - left, height);
         }
       };
 
       const shown = (layer: FillLayer) => focus === null || focus === layer;
       if (shown('Headers')) {
-        context.globalAlpha = 0.35;
         context.fillStyle = color(3);
         context.fillRect(0, 0, Math.min(width, headers * scale), height);
       }
-      if (fill && shown('Archived')) shade(fill.archived, color(0), 0.9);
-      if (fill && shown('Validated')) shade(fill.validated, color(1), 0.9);
+      if (fill && shown('Archived')) shade(fill.archived, color(0));
+      if (fill && shown('Validated')) shade(fill.validated, color(1));
       if (shown('Confirmed')) {
-        context.globalAlpha = 0.6;
         context.fillStyle = color(2);
         context.fillRect(0, 0, Math.min(width, confirmed * scale), height);
       }
