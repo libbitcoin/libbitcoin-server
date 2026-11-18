@@ -1,11 +1,17 @@
+import { useEffect, useRef, useState } from 'react';
 import { formatInteger } from '@/lib/format';
+import { CHART_COLORS } from '@/lib/chart-config';
+import { chartColor } from '@/lib/chart-theme';
+import type { SyncFill } from '@/lib/sync-fill';
 import { type ChainSync, SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS } from '@/lib/sync-status';
+import { useTheme } from '@/lib/theme';
 
 interface NodeSyncProgressProps {
   sync: ChainSync | null;
 }
 
 export function NodeSyncProgress({ sync }: NodeSyncProgressProps) {
+  const [focus, setFocus] = useState<FillLayer | null>(null);
   if (
     sync === null ||
     (!sync.diverged && sync.blocksRemaining <= SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS)
@@ -40,12 +46,38 @@ export function NodeSyncProgress({ sync }: NodeSyncProgressProps) {
           aria-valuemax={100}
           aria-valuenow={Number(progress.toFixed(2))}
           aria-valuetext={`${formatInteger(sync.blocksRemaining)} blocks remaining`}
-          className="bg-background border-accentSecondary/20 h-3 overflow-hidden rounded-full border"
+          className="bg-background border-accentSecondary/20 h-4 overflow-hidden rounded-full border"
         >
-          <div
-            className="bg-accent h-full rounded-full transition-[width] duration-700"
-            style={{ width: `${String(progress)}%` }}
+          <FillBar
+            fill={sync.fill}
+            confirmed={sync.confirmed.height}
+            candidate={sync.candidate.height}
+            estimatedTop={sync.estimatedTop}
+            focus={focus}
           />
+        </div>
+        <div className="text-textMuted mt-2 flex flex-wrap gap-4 text-[11px]">
+          {FILL_LAYERS.map((layer) => (
+            <span
+              key={layer.label}
+              className="flex cursor-default items-center gap-1.5"
+              onMouseEnter={() => {
+                setFocus(layer.label);
+              }}
+              onMouseLeave={() => {
+                setFocus(null);
+              }}
+            >
+              <span
+                className="inline-block h-2 w-3 rounded-sm"
+                style={{
+                  background: `var(--chart-color-${String(layer.color)}, ${CHART_COLORS[layer.color]})`,
+                  opacity: layer.opacity,
+                }}
+              />
+              {layer.label}
+            </span>
+          ))}
         </div>
       </div>
 
@@ -55,12 +87,12 @@ export function NodeSyncProgress({ sync }: NodeSyncProgressProps) {
           value={formatInteger(sync.confirmed.height)}
           hash={sync.confirmed.hash}
         />
+        <SyncValue label="Blocks remaining" value={formatInteger(sync.blocksRemaining)} />
         <SyncValue
           label="Top candidate header"
           value={formatInteger(sync.candidate.height)}
           hash={sync.candidate.hash}
         />
-        <SyncValue label="Blocks remaining" value={formatInteger(sync.blocksRemaining)} />
       </dl>
       {sync.diverged && (
         <p className="bg-surface border-accentSecondary/20 border-t px-5 py-2 text-[11px] text-amber-300">
@@ -70,6 +102,97 @@ export function NodeSyncProgress({ sync }: NodeSyncProgressProps) {
       )}
     </section>
   );
+}
+
+const FILL_LAYERS = [
+  { label: 'Confirmed', color: 2, opacity: 0.6 },
+  { label: 'Validated', color: 1, opacity: 0.9 },
+  { label: 'Archived', color: 0, opacity: 0.9 },
+  { label: 'Headers', color: 3, opacity: 0.35 },
+] as const;
+
+type FillLayer = (typeof FILL_LAYERS)[number]['label'];
+
+// Headers and confirmed are contiguous, so each is solid to its frontier.
+// Archived and validated heights arrive out of order, so each bin is shaded by
+// the fraction of its heights reported. A focused layer is drawn alone.
+function FillBar({
+  fill,
+  confirmed,
+  candidate,
+  estimatedTop,
+  focus,
+}: {
+  fill: SyncFill | null;
+  confirmed: number;
+  candidate: number;
+  estimatedTop: number;
+  focus: FillLayer | null;
+}) {
+  const canvasReference = useRef<HTMLCanvasElement>(null);
+  const activeTheme = useTheme();
+
+  useEffect(() => {
+    const canvas = canvasReference.current;
+    if (!canvas) return;
+
+    const draw = () => {
+      const ratio = window.devicePixelRatio || 1;
+      const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
+      const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
+      if (canvas.width !== width) canvas.width = width;
+      if (canvas.height !== height) canvas.height = height;
+      const context = canvas.getContext('2d');
+      if (!context) return;
+
+      const style = getComputedStyle(canvas);
+      const color = (index: number) => chartColor(CHART_COLORS[index] ?? '', style);
+      const headers = Math.max(candidate, fill?.headers ?? 0);
+      const top = Math.max(headers, estimatedTop);
+      const scale = top > 0 ? width / top : 0;
+      context.clearRect(0, 0, width, height);
+
+      const shade = (bins: Uint8Array, color: string, strength: number) => {
+        if (!fill || scale === 0) return;
+        const span = fill.height + 1;
+        context.fillStyle = color;
+        for (let bin = 0; bin < bins.length; bin++) {
+          const value = bins[bin] ?? 0;
+          if (value === 0) continue;
+          const first = Math.floor((bin * span) / bins.length);
+          const last = Math.floor(((bin + 1) * span) / bins.length);
+          const left = first * scale;
+          const right = Math.max(left + 1, Math.min(width, last * scale));
+          if (left >= width) break;
+          context.globalAlpha = (value / 255) * strength;
+          context.fillRect(left, 0, right - left, height);
+        }
+      };
+
+      const shown = (layer: FillLayer) => focus === null || focus === layer;
+      if (shown('Headers')) {
+        context.globalAlpha = 0.35;
+        context.fillStyle = color(3);
+        context.fillRect(0, 0, Math.min(width, headers * scale), height);
+      }
+      if (fill && shown('Archived')) shade(fill.archived, color(0), 0.9);
+      if (fill && shown('Validated')) shade(fill.validated, color(1), 0.9);
+      if (shown('Confirmed')) {
+        context.globalAlpha = 0.6;
+        context.fillStyle = color(2);
+        context.fillRect(0, 0, Math.min(width, confirmed * scale), height);
+      }
+    };
+
+    draw();
+    const observer = new ResizeObserver(draw);
+    observer.observe(canvas);
+    return () => {
+      observer.disconnect();
+    };
+  }, [fill, confirmed, candidate, estimatedTop, focus, activeTheme]);
+
+  return <canvas ref={canvasReference} className="block h-full w-full" />;
 }
 
 function SyncValue({ label, value, hash }: { label: string; value: string; hash?: string }) {

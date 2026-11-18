@@ -102,9 +102,9 @@ export interface ChartTemplate {
 const syncPipeline: ChartDefinition = {
   id: 'default-sync-pipeline',
   title: 'Sync pipeline',
-  visualization: 'line',
-  scale: 'linear',
-  range: 900,
+  visualization: 'area',
+  scale: 'compressed',
+  range: 300,
   series: [
     series('sync-header', eventSignalId(0), 'occurrence-rate', CHART_COLORS[3]),
     series('sync-archive', eventSignalId(3), 'occurrence-rate', CHART_COLORS[0]),

@@ -252,16 +252,16 @@ function TelemetryChartCard({
               {isTimeSeriesChart(chart) && selected
                 ? `${unitLabel(selected.unit)} · ${rangeLabels[chart.range]} · ${chart.visualization}`
                 : 'Virtual size by fee-rate group · latest snapshot'}
-              {chart.scale === 'compressed' ? ' · compressed scale' : ''}
+              {chart.scale === 'compressed' ? ' · log scale' : ''}
               {pausedSnapshot ? ' · paused' : ''}
             </p>
           </div>
           <div className="flex flex-wrap justify-end gap-1 text-xs">
             <button
               type="button"
-              aria-label={`Compress peaks for ${chart.title}`}
+              aria-label={`Log scale for ${chart.title}`}
               aria-pressed={chart.scale === 'compressed'}
-              title="Use a log-like Y axis to compress large peaks. Zero, negative values, and original measurements are preserved."
+              title="Toggle between a linear and a logarithmic (asinh) Y axis. Zero, negative values, and original measurements are preserved."
               onClick={onToggleScale}
               className={`rounded-md border px-2 py-1.5 ${
                 chart.scale === 'compressed'
@@ -269,7 +269,7 @@ function TelemetryChartCard({
                   : 'border-accent/30 text-textMuted hover:text-accent hover:bg-accentSecondary/10'
               }`}
             >
-              Compress peaks
+              {chart.scale === 'compressed' ? 'Log scale' : 'Linear scale'}
             </button>
             <ChartAction
               label={pausedSnapshot ? 'Resume chart' : 'Pause chart'}
@@ -298,18 +298,18 @@ function TelemetryChartCard({
               Duplicate
             </ChartAction>
             <ChartAction
-              label={`Move ${chart.title} earlier`}
+              label={`Move ${chart.title} up`}
               onClick={onMoveEarlier}
               disabled={!canMoveEarlier}
             >
-              ←
+              ↑
             </ChartAction>
             <ChartAction
-              label={`Move ${chart.title} later`}
+              label={`Move ${chart.title} down`}
               onClick={onMoveLater}
               disabled={!canMoveLater}
             >
-              →
+              ↓
             </ChartAction>
             <ChartAction label="Delete chart" onClick={onDelete} danger>
               Delete
@@ -344,7 +344,7 @@ function TelemetryChartCard({
       </div>
       {chart.scale === 'compressed' && (
         <p className="text-textMuted px-5 pb-3 text-[11px]">
-          Log-like Y axis · peaks compressed · labels and hover values show original measurements.
+          Log Y axis · labels and hover values show original measurements.
         </p>
       )}
       {isTimeSeriesChart(chart) && chart.series.some((item) => item.signalId === 'event:10') && (

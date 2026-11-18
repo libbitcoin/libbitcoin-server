@@ -26,6 +26,11 @@ body {
 
 .uplot .u-legend .u-series {
   padding: 0.2rem 0.45rem;
+  opacity: 1 !important;
+}
+
+.uplot .u-legend .u-marker {
+  display: none;
 }
 
 .uplot .u-select {

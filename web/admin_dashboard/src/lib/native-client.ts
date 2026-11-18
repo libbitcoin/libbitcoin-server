@@ -22,6 +22,7 @@ export interface NativeLiveState {
   topReceivedAt: number | null;
   branch: NativeHeader | null;
   branchReceivedAt: number | null;
+  tip: NativeHeader | null;
   fees: NativeFeesSnapshot | null;
   invalidFrames: number;
 }
@@ -41,6 +42,7 @@ export const INITIAL_LIVE_STATE: NativeLiveState = {
   topReceivedAt: null,
   branch: null,
   branchReceivedAt: null,
+  tip: null,
   fees: null,
   invalidFrames: 0,
 };
@@ -56,6 +58,8 @@ export class NativeClient {
   #connectedAt: number | null = null;
   #headerRequest: { height: number; requestedAt: number } | null = null;
   #lastHeaderRequestedAt: number | null = null;
+  #tipRequest: { height: number; requestedAt: number } | null = null;
+  #lastTipRequestedAt: number | null = null;
   #pollIntervalMs: number;
   #poolTimer: ReturnType<typeof setInterval> | null = null;
   #poolRequestedAt: number | null = null;
@@ -124,6 +128,8 @@ export class NativeClient {
         this.#poolRequestedAt = null;
         this.#headerRequest = null;
         this.#lastHeaderRequestedAt = null;
+        this.#tipRequest = null;
+        this.#lastTipRequestedAt = null;
         this.#invalidateLiveState();
       }
     });
@@ -162,10 +168,16 @@ export class NativeClient {
         branch: retained ? this.#state.branch : null,
         branchReceivedAt: retained ? this.#state.branchReceivedAt : null,
       });
+      this.#requestTip(candidate.height, receivedAt);
       if (branching) this.#requestBranch(confirmed.height, receivedAt);
       return;
     }
     if (frame.type === 'header') {
+      if (frame.payload.height === this.#tipRequest?.height) {
+        this.#tipRequest = null;
+        this.#setState({ ...this.#state, tip: frame.payload });
+        return;
+      }
       if (frame.payload.height !== this.#headerRequest?.height) return;
       this.#headerRequest = null;
       this.#setState({
@@ -200,6 +212,18 @@ export class NativeClient {
     if (!this.#socket.send(nativeBranchPath(height))) this.#headerRequest = null;
   }
 
+  // The candidate top header, sampled at the polling cadence.
+  #requestTip(height: number, now: number): void {
+    if (this.#tipRequest !== null && now - this.#tipRequest.requestedAt < NATIVE_STATE_STALE_AFTER_MS)
+      return;
+    if (this.#lastTipRequestedAt !== null && now - this.#lastTipRequestedAt < this.#pollIntervalMs)
+      return;
+
+    this.#tipRequest = { height, requestedAt: now };
+    this.#lastTipRequestedAt = now;
+    if (!this.#socket.send(nativeBranchPath(height))) this.#tipRequest = null;
+  }
+
   #requestPool(): void {
     const now = this.#now();
     // Avoid piling up snapshot queries; retry an unanswered request after 30 seconds.
@@ -215,6 +239,7 @@ export class NativeClient {
       this.#state.topReceivedAt === null &&
       this.#state.branch === null &&
       this.#state.branchReceivedAt === null &&
+      this.#state.tip === null &&
       this.#state.fees === null
     ) {
       return;

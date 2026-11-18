@@ -20,7 +20,8 @@ const NOTICE_DURATION_MS = 8_000;
 export function SyncStatusNotifier({ sync, browserNotificationsEnabled }: SyncStatusNotifierProps) {
   const previousStateReference = useRef<SyncState | null>(null);
   const [notice, setNotice] = useState<SyncNotice | null>(null);
-  const blocksRemaining = sync?.blocksRemaining ?? null;
+  const atGenesis = sync !== null && sync.candidate.height === 0;
+  const blocksRemaining = atGenesis ? null : (sync?.blocksRemaining ?? null);
 
   useEffect(() => {
     const next = currentSyncState(blocksRemaining);

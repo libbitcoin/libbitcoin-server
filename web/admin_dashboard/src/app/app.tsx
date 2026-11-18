@@ -51,7 +51,14 @@ export function App() {
   const network = native.configuration
     ? `${coinOf(native.configuration.forks)} ${native.configuration.node.network}`
     : ' ';
-  const sync = chainSync(native.tops, native.branch);
+  const sync = chainSync(
+    native.tops,
+    native.branch,
+    snapshot.syncFill,
+    native.receivedAt,
+    native.tip,
+    now
+  );
 
   function updateBrowserNotifications(enabled: boolean) {
     saveBrowserNotificationsEnabled(enabled);

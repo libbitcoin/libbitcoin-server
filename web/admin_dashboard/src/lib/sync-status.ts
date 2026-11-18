@@ -1,28 +1,60 @@
 import type { NativeHeader, NativeTop, NativeTops } from './native-contract';
+import type { SyncFill, SyncFrontier } from './sync-fill';
 
 export const SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS = 18;
+const EXPECTED_BLOCK_INTERVAL_MS = 10 * 60 * 1_000;
+
+export interface SyncTop {
+  height: number;
+  hash?: string;
+}
 
 export interface ChainSync {
-  confirmed: NativeTop;
-  candidate: NativeTop;
+  confirmed: SyncTop;
+  candidate: SyncTop;
   blocksRemaining: number;
   progress: number;
   diverged: boolean;
+  fill: SyncFill | null;
+  estimatedTop: number;
 }
 
 // The branch header is the candidate header at the confirmed height, if known.
-export function chainSync(tops: NativeTops | null, branch: NativeHeader | null): ChainSync | null {
+// Frontier events received after the tops advance them between requests. The
+// tip header (candidate top) projects the network top from its timestamp.
+export function chainSync(
+  tops: NativeTops | null,
+  branch: NativeHeader | null,
+  fill: SyncFill | null = null,
+  receivedAt: number | null = null,
+  tip: NativeHeader | null = null,
+  now = Date.now()
+): ChainSync | null {
   if (tops === null) return null;
 
-  const { confirmed, candidate } = tops;
+  const confirmed = advance(tops.confirmed, fill?.confirmed ?? null, receivedAt);
+  const candidate = advance(tops.candidate, fill?.candidate ?? null, receivedAt);
   return {
     confirmed,
     candidate,
     blocksRemaining: Math.max(0, candidate.height - confirmed.height),
     progress:
       candidate.height === 0 ? 100 : Math.min(100, (confirmed.height / candidate.height) * 100),
-    diverged: isDiverged(confirmed, candidate, branch),
+    diverged: isDiverged(tops.confirmed, tops.candidate, branch),
+    fill,
+    estimatedTop: estimateTop(candidate.height, tip, now),
   };
+}
+
+function estimateTop(candidate: number, tip: NativeHeader | null, now: number): number {
+  if (tip === null) return candidate;
+  const elapsed = Math.max(0, now - tip.timestamp * 1_000);
+  return Math.max(candidate, tip.height + Math.ceil(elapsed / EXPECTED_BLOCK_INTERVAL_MS));
+}
+
+function advance(top: NativeTop, event: SyncFrontier | null, receivedAt: number | null): SyncTop {
+  if (event === null || receivedAt === null || event.receivedAt <= receivedAt) return top;
+  return event.height === top.height ? top : { height: event.height };
 }
 
 function isDiverged(confirmed: NativeTop, candidate: NativeTop, branch: NativeHeader | null) {

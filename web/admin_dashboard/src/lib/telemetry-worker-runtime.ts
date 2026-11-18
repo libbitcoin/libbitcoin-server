@@ -168,7 +168,13 @@ export class TelemetryWorkerRuntime {
     };
     this.#client = client;
     this.#native = native;
+    let connected = false;
     this.#unsubscribers = [
+      client.subscribeStatus(() => {
+        const current = client.getStatus().phase === 'connected';
+        if (current && !connected) this.#metrics.resetSyncFill();
+        connected = current;
+      }),
       client.subscribeFrames((frame) => {
         this.#metrics.ingest(frame);
       }),
