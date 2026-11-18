@@ -432,8 +432,7 @@ struct bitcoind_unfiltered_setup_fixture
             return test::setup_ten_block_store(query);
         }, [](configuration& config)
         {
-            config.database.filter_bk.buckets = 0;
-            config.database.filter_tx.buckets = 0;
+            config.database.envelope.provide_filters = false;
         })
     {
     }

@@ -156,6 +156,11 @@ code executor::open_store_coded(bool details)
             span.count()));
     }
 
+    if (metadata_.stored.schema != database::envelope::compiled)
+        logger(std::format(BS_DATABASE_MIGRATED,
+            metadata_.stored.schema.to_string(),
+            database::envelope::compiled.to_string()));
+
     apply_envelope();
     logger(BS_DATABASE_STARTED);
     return error::success;
@@ -354,10 +359,16 @@ void executor::apply_envelope()
         configured.bitcoin,
         configured.database,
         configured.node.limited_blocks,
+        configured.node.require_witness,
         configured.node.silent_start_height);
-        
+
+    for (const auto& name: metadata_.overrides)
+        logger(std::format(BS_DATABASE_ENVELOPE_OVERRIDE, name));
+
     for (const auto& name: applied)
         logger(std::format(BS_DATABASE_ENVELOPE_OVERRIDE, name));
+
+    metadata_.overrides.clear();
 }
 
 } // namespace server

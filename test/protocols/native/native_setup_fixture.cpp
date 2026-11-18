@@ -94,7 +94,10 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
                 configure(config_);
 
             config_.database.initialize(config_.bitcoin,
-                config_.node.limited_blocks, config_.node.silent_start_height);
+                config_.node.limited_blocks,
+                config_.database.envelope.provide_filters,
+                config_.node.require_witness,
+                config_.node.silent_start_height);
             return config_.database;
         }()
     },
