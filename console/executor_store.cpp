@@ -144,7 +144,11 @@ code executor::open_store_coded(bool details)
                 server_node::store::tables.at(table)));
     }))
     {
-        logger(std::format(BS_DATABASE_START_FAIL, ec.message()));
+        if (ec == database::error::fault_lock)
+            logger(BS_DATABASE_FAULT_LOCK);
+        else
+            logger(std::format(BS_DATABASE_START_FAIL, ec.message()));
+
         return ec;
     }
 
@@ -235,6 +239,8 @@ bool executor::restore_store(bool details)
     {
         if (ec == database::error::flush_lock)
             logger(BS_RESTORE_MISSING_FLUSH_LOCK);
+        else if (ec == database::error::fault_lock)
+            logger(BS_DATABASE_FAULT_LOCK);
         else
             logger(std::format(BS_RESTORE_FAILURE, ec.message()));
 

@@ -362,6 +362,10 @@
     "The {} database directory does not exist."
 #define BS_UNINITIALIZED_CHAIN \
     "The {} database is not initialized, delete and retry."
+#define BS_DATABASE_FAULT_LOCK \
+    "The application (or underlying operating system or hardware) " \
+    "produced an unrecoverable error prior to shutdown. The cause is not " \
+    "knowable to the application."
 #define BS_DATABASE_START_FAIL \
     "Database failed to start with error '{}'."
 #define BS_DATABASE_SCHEMA_FAIL \
