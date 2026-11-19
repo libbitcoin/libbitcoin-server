@@ -433,12 +433,10 @@ bool mempool_txs(system::json::value& out, const node::query& query,
 
 // There is no mempool sequence (zmq), so it is reported as constant.
 bool raw_mempool(system::json::value& out, const node::query& query,
-    bool verbose, bool sequence) NOEXCEPT
+    const database::tx_links& links, bool verbose, bool sequence) NOEXCEPT
 {
-    database::tx_links links{};
     system::json::value txs{};
-    if (query.get_confirmable_txs(links) ||
-        !mempool_txs(txs, query, links, verbose))
+    if (!mempool_txs(txs, query, links, verbose))
         return false;
 
     if (verbose || !sequence)
@@ -459,13 +457,11 @@ bool raw_mempool(system::json::value& out, const node::query& query,
 // The pool is stored, so usage is the size of its tables, and the maximum is
 // the space available to the store (shared with all tables and the volume).
 bool mempool_info(system::json::object& out, const node::query& query,
-    const std::filesystem::path& store, double minimum, double relay,
-    double increment) NOEXCEPT
+    const database::fee_rates& rates, const std::filesystem::path& store,
+    double minimum, double relay, double increment) NOEXCEPT
 {
     uint64_t space{};
-    database::fee_rates rates{};
-    if (!query.get_confirmable_fees(rates) ||
-        !database::file::space(space, store))
+    if (!database::file::space(space, store))
         return false;
 
     size_t bytes{};

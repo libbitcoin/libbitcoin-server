@@ -247,7 +247,10 @@ private:
     void complete_get_address_balance(const code& ec, uint8_t media,
         const uint64_t balance, const gate_t::ptr& gate) NOEXCEPT;
 
-    void do_get_fees(const gate_t::ptr& gate) NOEXCEPT;
+    void handle_fees(const code& ec, const database::fee_rates& rates,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void do_get_fees(const code& ec, const database::fee_rates& rates,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_fees(const code& ec, const fee_summary& summary,
         const gate_t::ptr& gate) NOEXCEPT;
 

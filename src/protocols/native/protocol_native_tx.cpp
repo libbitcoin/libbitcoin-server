@@ -221,23 +221,28 @@ bool protocol_native::handle_get_fees(const code& ec, interface::fees,
         return true;
     }
 
-    PARALLEL(do_get_fees, gate());
+    get_pool_fees(BIND(handle_fees, _1, _2, gate()));
     return true;
 }
 
-void protocol_native::do_get_fees(const gate_t::ptr& gate) NOEXCEPT
+void protocol_native::handle_fees(const code& ec,
+    const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
+{
+    PARALLEL(do_get_fees, ec, rates, gate);
+}
+
+void protocol_native::do_get_fees(const code& ec,
+    const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
-    database::fee_rates rates{};
-    if (!archive().get_confirmable_fees(rates))
+    if (ec)
     {
-        POST(complete_get_fees, database::error::integrity, fee_summary{},
-            gate);
+        POST(complete_get_fees, ec, fee_summary{}, gate);
         return;
     }
 
-    const auto summary = to_fee_summary(std::move(rates), histogram_bin);
+    const auto summary = to_fee_summary(rates, histogram_bin);
     POST(complete_get_fees, code{}, summary, gate);
 }
 

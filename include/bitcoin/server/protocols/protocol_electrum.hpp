@@ -285,8 +285,14 @@ protected:
     void handle_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
     void complete_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
 
-    void do_get_fee_histogram(const gate_t::ptr& gate) NOEXCEPT;
-    void do_mempool_recent(const gate_t::ptr& gate) NOEXCEPT;
+    void handle_fee_histogram(const code& ec,
+        const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT;
+    void do_get_fee_histogram(const code& ec,
+        const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT;
+    void handle_recent(const code& ec, const database::tx_links& links,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void do_mempool_recent(const code& ec, const database::tx_links& links,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_mempool(const code& ec, network::rpc::value_t& result,
         const gate_t::ptr& gate) NOEXCEPT;
 

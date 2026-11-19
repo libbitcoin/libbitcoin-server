@@ -56,7 +56,7 @@ bool protocol_esplora::handle_get_mempool(const code& ec, interface::mempool,
         return true;
     }
 
-    PARALLEL(do_get_mempool, gate());
+    get_pool_fees(BIND(handle_mempool, _1, _2, gate()));
     return true;
 }
 
@@ -72,7 +72,7 @@ bool protocol_esplora::handle_get_mempool_txids(const code& ec,
         return true;
     }
 
-    PARALLEL(do_get_mempool_txids, gate());
+    get_pool_txs(BIND(handle_mempool_txids, _1, _2, gate()));
     return true;
 }
 
@@ -88,7 +88,7 @@ bool protocol_esplora::handle_get_mempool_recent(const code& ec,
         return true;
     }
 
-    PARALLEL(do_get_mempool_recent, gate());
+    get_pool_txs(BIND(handle_mempool_recent, _1, _2, gate()));
     return true;
 }
 
@@ -112,19 +112,24 @@ bool protocol_esplora::handle_get_fee_estimates(const code& ec,
 // Completion handlers.
 // ----------------------------------------------------------------------------
 
-void protocol_esplora::do_get_mempool(const gate_t::ptr& gate) NOEXCEPT
+void protocol_esplora::handle_mempool(const code& ec,
+    const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
+{
+    PARALLEL(do_get_mempool, ec, rates, gate);
+}
+
+void protocol_esplora::do_get_mempool(const code& ec,
+    const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
-    database::fee_rates rates{};
-    if (!archive().get_confirmable_fees(rates))
+    if (ec)
     {
-        POST(complete_get_mempool, database::error::integrity,
-            value{}, gate);
+        POST(complete_get_mempool, ec, value{}, gate);
         return;
     }
 
-    const auto summary = to_fee_summary(std::move(rates), histogram_bin);
+    const auto summary = to_fee_summary(rates, histogram_bin);
     value out = object
     {
         { "count", summary.count },
@@ -136,18 +141,24 @@ void protocol_esplora::do_get_mempool(const gate_t::ptr& gate) NOEXCEPT
     POST(complete_get_mempool, code{}, std::move(out), gate);
 }
 
-void protocol_esplora::do_get_mempool_txids(const gate_t::ptr& gate) NOEXCEPT
+void protocol_esplora::handle_mempool_txids(const code& ec,
+    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
+{
+    PARALLEL(do_get_mempool_txids, ec, links, gate);
+}
+
+void protocol_esplora::do_get_mempool_txids(const code& ec,
+    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
-    database::tx_links links{};
-    const auto& query = archive();
-    if (query.get_confirmable_txs(links))
+    if (ec)
     {
-        POST(complete_get_mempool, database::error::integrity,
-            value{}, gate);
+        POST(complete_get_mempool, ec, value{}, gate);
         return;
     }
+
+    const auto& query = archive();
 
     array txids{};
     txids.reserve(links.size());
@@ -158,18 +169,24 @@ void protocol_esplora::do_get_mempool_txids(const gate_t::ptr& gate) NOEXCEPT
 }
 
 // The pool is ordered by entry, so the most recent are at its end.
-void protocol_esplora::do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT
+void protocol_esplora::handle_mempool_recent(const code& ec,
+    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
+{
+    PARALLEL(do_get_mempool_recent, ec, links, gate);
+}
+
+void protocol_esplora::do_get_mempool_recent(const code& ec,
+    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
-    database::tx_links links{};
-    const auto& query = archive();
-    if (query.get_confirmable_txs(links))
+    if (ec)
     {
-        POST(complete_get_mempool, database::error::integrity,
-            value{}, gate);
+        POST(complete_get_mempool, ec, value{}, gate);
         return;
     }
+
+    const auto& query = archive();
 
     array recent{};
     const auto count = std::min(recent_count, links.size());

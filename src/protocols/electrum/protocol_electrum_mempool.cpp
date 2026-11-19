@@ -47,7 +47,7 @@ void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
         return;
     }
 
-    PARALLEL(do_get_fee_histogram, gate());
+    get_pool_fees(BIND(handle_fee_histogram, _1, _2, gate()));
 }
 
 void protocol_electrum::handle_mempool_recent(const code& ec,
@@ -62,7 +62,7 @@ void protocol_electrum::handle_mempool_recent(const code& ec,
         return;
     }
 
-    PARALLEL(do_mempool_recent, gate());
+    get_pool_txs(BIND(handle_recent, _1, _2, gate()));
 }
 
 void protocol_electrum::handle_mempool_get_info(const code& ec,
@@ -91,14 +91,20 @@ void protocol_electrum::handle_mempool_get_info(const code& ec,
 // Completion handlers.
 // ----------------------------------------------------------------------------
 
-void protocol_electrum::do_get_fee_histogram(const gate_t::ptr& gate) NOEXCEPT
+void protocol_electrum::handle_fee_histogram(const code& ec,
+    const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
+{
+    PARALLEL(do_get_fee_histogram, ec, rates, gate);
+}
+
+void protocol_electrum::do_get_fee_histogram(const code& ec,
+    const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
-    database::fee_rates rates{};
-    if (!archive().get_confirmable_fees(rates))
+    if (ec)
     {
-        POST(complete_mempool, database::error::integrity, value_t{}, gate);
+        POST(complete_mempool, ec, value_t{}, gate);
         return;
     }
 
@@ -112,17 +118,24 @@ void protocol_electrum::do_get_fee_histogram(const gate_t::ptr& gate) NOEXCEPT
 }
 
 // The pool is ordered by entry, so the most recent are at its end.
-void protocol_electrum::do_mempool_recent(const gate_t::ptr& gate) NOEXCEPT
+void protocol_electrum::handle_recent(const code& ec,
+    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
+{
+    PARALLEL(do_mempool_recent, ec, links, gate);
+}
+
+void protocol_electrum::do_mempool_recent(const code& ec,
+    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
-    database::tx_links links{};
-    const auto& query = archive();
-    if (const auto ec = query.get_confirmable_txs(links))
+    if (ec)
     {
         POST(complete_mempool, ec, value_t{}, gate);
         return;
     }
+
+    const auto& query = archive();
 
     array_t recent{};
     const auto count = std::min(recent_count, links.size());

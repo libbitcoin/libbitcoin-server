@@ -804,7 +804,7 @@ bool protocol_bitcoind_blockchain::handle_save_mempool(const code& ec,
     rpc_interface::save_mempool) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    PARALLEL(do_save_mempool, gate());
+    get_pool_txs(BIND(handle_save_mempool_txs, _1, _2, gate()));
     return true;
 }
 
@@ -1741,19 +1741,27 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
     const auto relay = to_floating(settings.minimum_fee_rate_()) /
         chain::satoshi_per_bitcoin;
 
-    PARALLEL(do_get_mempool_info, minimum, relay, settings.minimum_fee_rate,
-        gate());
+    get_pool_fees(BIND(handle_mempool_info, _1, _2, minimum, relay,
+        settings.minimum_fee_rate, gate()));
     return true;
 }
 
-void protocol_bitcoind_blockchain::do_get_mempool_info(double minimum,
-    double relay, double increment, const gate_t::ptr& gate) NOEXCEPT
+void protocol_bitcoind_blockchain::handle_mempool_info(const code& ec,
+    const database::fee_rates& rates, double minimum, double relay,
+    double increment, const gate_t::ptr& gate) NOEXCEPT
+{
+    PARALLEL(do_get_mempool_info, ec, rates, minimum, relay, increment, gate);
+}
+
+void protocol_bitcoind_blockchain::do_get_mempool_info(const code& ec,
+    const database::fee_rates& rates, double minimum, double relay,
+    double increment, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
     system::json::object result{};
-    if (!mempool_info(result, archive(), database_settings().path, minimum,
-        relay, increment))
+    if (ec || !mempool_info(result, archive(), rates,
+        database_settings().path, minimum, relay, increment))
     {
         POST(fail, error::bitcoind::internal_error, gate);
         return;
@@ -1774,17 +1782,26 @@ bool protocol_bitcoind_blockchain::handle_get_raw_mempool(const code& ec,
         return true;
     }
 
-    PARALLEL(do_get_raw_mempool, verbose, mempool_sequence, gate());
+    get_pool_txs(BIND(handle_raw_mempool, _1, _2, verbose, mempool_sequence,
+        gate()));
     return true;
 }
 
-void protocol_bitcoind_blockchain::do_get_raw_mempool(bool verbose,
-    bool sequence, const gate_t::ptr& gate) NOEXCEPT
+void protocol_bitcoind_blockchain::handle_raw_mempool(const code& ec,
+    const database::tx_links& links, bool verbose, bool sequence,
+    const gate_t::ptr& gate) NOEXCEPT
+{
+    PARALLEL(do_get_raw_mempool, ec, links, verbose, sequence, gate);
+}
+
+void protocol_bitcoind_blockchain::do_get_raw_mempool(const code& ec,
+    const database::tx_links& links, bool verbose, bool sequence,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
     system::json::value result{};
-    if (!raw_mempool(result, archive(), verbose, sequence))
+    if (ec || !raw_mempool(result, archive(), links, verbose, sequence))
     {
         POST(fail, error::bitcoind::internal_error, gate);
         return;
@@ -2118,25 +2135,31 @@ void protocol_bitcoind_blockchain::complete_value(value_t& result,
 
 constexpr auto mempool_file = "mempool.dat";
 
-void protocol_bitcoind_blockchain::do_save_mempool(
-    const gate_t::ptr& gate) NOEXCEPT
+void protocol_bitcoind_blockchain::handle_save_mempool_txs(const code& ec,
+    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
+{
+    PARALLEL(do_save_mempool, ec, links, gate);
+}
+
+void protocol_bitcoind_blockchain::do_save_mempool(const code& ec,
+    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
     data_chunk data{};
-    if (!serialize_mempool(data, archive()))
+    if (ec || !serialize_mempool(data, archive(), links))
     {
         POST(fail, error::bitcoind::misc_error, gate);
         return;
     }
 
-    std::error_code ec{};
+    std::error_code status{};
     const auto path = database_settings().path / mempool_file;
-    const auto absolute = std::filesystem::absolute(path, ec);
+    const auto absolute = std::filesystem::absolute(path, status);
     auto temporary = path;
     temporary += ".new";
 
-    if (ec || !database::file::create_file(temporary, data.data(),
+    if (status || !database::file::create_file(temporary, data.data(),
         data.size()) || !database::file::rename(temporary, path))
     {
         POST(fail, error::bitcoind::misc_error, gate);

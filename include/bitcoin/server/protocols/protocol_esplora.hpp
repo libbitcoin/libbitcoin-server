@@ -247,9 +247,18 @@ private:
         const database::unspent_outputs& unspent,
         const gate_t::ptr& gate) NOEXCEPT;
 
-    void do_get_mempool(const gate_t::ptr& gate) NOEXCEPT;
-    void do_get_mempool_txids(const gate_t::ptr& gate) NOEXCEPT;
-    void do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT;
+    void handle_mempool(const code& ec, const database::fee_rates& rates,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void do_get_mempool(const code& ec, const database::fee_rates& rates,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void handle_mempool_txids(const code& ec,
+        const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
+    void do_get_mempool_txids(const code& ec,
+        const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
+    void handle_mempool_recent(const code& ec,
+        const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
+    void do_get_mempool_recent(const code& ec,
+        const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_mempool(const code& ec, system::json::value& out,
         const gate_t::ptr& gate) NOEXCEPT;
 

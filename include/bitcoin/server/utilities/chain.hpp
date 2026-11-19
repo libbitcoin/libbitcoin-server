@@ -54,9 +54,9 @@ BCS_API fee_summary to_fee_summary(database::fee_rates rates,
 BCS_API fee_histogram to_compact_fee_histogram(
     const database::fee_rates& rates, size_t bin) NOEXCEPT;
 
-/// The confirmable txs as a bitcoind mempool.dat (version 1).
+/// The txs as a bitcoind mempool.dat (version 1).
 BCS_API bool serialize_mempool(system::data_chunk& out,
-    const node::query& query) NOEXCEPT;
+    const node::query& query, const database::tx_links& links) NOEXCEPT;
 
 /// The txs of a bitcoind mempool.dat, deobfuscated in place (version 2).
 BCS_API bool parse_mempool(system::chain::transaction_cptrs& out,

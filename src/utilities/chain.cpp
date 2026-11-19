@@ -152,12 +152,9 @@ constexpr size_t mempool_key_size = 8;
 constexpr size_t mempool_key_offset = sizeof(uint64_t) + one;
 constexpr size_t mempool_body_offset = mempool_key_offset + mempool_key_size;
 
-bool serialize_mempool(data_chunk& out, const node::query& query) NOEXCEPT
+bool serialize_mempool(data_chunk& out, const node::query& query,
+    const database::tx_links& links) NOEXCEPT
 {
-    database::tx_links links{};
-    if (query.get_confirmable_txs(links))
-        return false;
-
     out.clear();
     write::bytes::data sink{ out };
     sink.write_8_bytes_little_endian(mempool_unobfuscated);
