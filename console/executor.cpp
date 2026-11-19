@@ -55,6 +55,7 @@ executor::executor(parser& metadata, std::istream& input, std::ostream& output,
     query_(store_),
     input_(input),
     output_(output),
+    log_(metadata.configured.log.thread_priority_()),
     log_interest_(create_log_interest())
 {
     initialize_stop();

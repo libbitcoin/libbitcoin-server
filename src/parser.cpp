@@ -3044,6 +3044,11 @@ options_metadata parser::load_settings() THROWS
         "log.events",
         setting<bool>(&configured.log.events),
         "Write events to the events log file, defaults to {}."
+    )
+    (
+        "log.thread_priority",
+        setting<bool>(&configured.log.thread_priority),
+        "Set the log thread to normal processing priority, defaults to {}."
     );
 
     return description;
