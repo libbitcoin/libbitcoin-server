@@ -174,7 +174,7 @@ export function selectNativeTelemetrySource(
       top: rest.tops.confirmed.height,
       tops: rest.tops,
       branch: rest.branch,
-      topHeader: null,
+      topHeader: rest.topHeader,
       configuration: rest.configuration,
       receivedAt: rest.receivedAt,
       transport: 'rest',

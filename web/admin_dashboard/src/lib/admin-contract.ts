@@ -411,6 +411,11 @@ export function isAdminAckFrame(frame: AdminFrame): frame is AdminAckFrame {
   return 'previous' in frame;
 }
 
+// The first header archived, which begins a synchronization from genesis.
+export function isFirstHeaderFrame(frame: AdminFrame): boolean {
+  return isAdminEventFrame(frame) && frame.event === 0 && frame.value === 1;
+}
+
 export function parseAdminFrame(text: string): AdminFrame | null {
   try {
     const value: unknown = JSON.parse(text) as unknown;

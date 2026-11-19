@@ -94,6 +94,7 @@ export interface NativeSnapshot {
   configuration: NativeConfiguration;
   tops: NativeTops;
   branch: NativeHeader | null;
+  topHeader: NativeHeader | null;
   receivedAt: number;
 }
 
@@ -155,18 +156,26 @@ export async function fetchNativeSnapshot(
   const configuration = nativeConfigurationSchema.parse(configurationValue);
   const tops = nativeTopsSchema.parse(topValue);
   const receivedAt = Date.now();
-  let branch: NativeHeader | null = null;
-  if (tops.candidate.height > tops.confirmed.height) {
+
+  // An unresolved header must not hide otherwise valid tops.
+  const candidateHeader = async (height: number): Promise<NativeHeader | null> => {
     try {
-      const path = nativeBranchPath(tops.confirmed.height);
+      const path = nativeBranchPath(height);
       const header = nativeHeaderSchema.parse(await fetchJson(endpointUrl(baseUrl, path), signal));
-      if (header.height === tops.confirmed.height) branch = header;
+      return header.height === height ? header : null;
     } catch {
-      // An unresolved branch must not hide otherwise valid tops.
       signal?.throwIfAborted();
+      return null;
     }
-  }
-  return { configuration, tops, branch, receivedAt };
+  };
+
+  const [branch, topHeader] = await Promise.all([
+    tops.candidate.height > tops.confirmed.height
+      ? candidateHeader(tops.confirmed.height)
+      : Promise.resolve(null),
+    candidateHeader(tops.candidate.height),
+  ]);
+  return { configuration, tops, branch, topHeader, receivedAt };
 }
 
 // The candidate header at the given height, compared against the confirmed top.

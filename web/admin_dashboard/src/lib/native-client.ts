@@ -14,6 +14,7 @@ import {
   type ReconnectingWebSocket,
   type SocketChannel,
 } from './reconnecting-websocket';
+import { isHeaderCurrent } from './sync-status';
 
 export interface NativeLiveState {
   configuration: NativeConfiguration | null;
@@ -34,6 +35,7 @@ interface NativeClientOptions {
 
 export const NATIVE_POLL_INTERVAL_MS = 15_000;
 export const NATIVE_STATE_STALE_AFTER_MS = 3 * NATIVE_POLL_INTERVAL_MS;
+const TOP_UNCURRENT_INTERVAL_MS = 1_000;
 
 export const INITIAL_LIVE_STATE: NativeLiveState = {
   configuration: null,
@@ -59,6 +61,7 @@ export class NativeClient {
   #headerRequest: { height: number; requestedAt: number } | null = null;
   #lastHeaderRequestedAt: number | null = null;
   #topRequest: { height: number; requestedAt: number } | null = null;
+  #topRequested = new Set<number>();
   #lastTopRequestedAt: number | null = null;
   #pollIntervalMs: number;
   #poolTimer: ReturnType<typeof setInterval> | null = null;
@@ -78,8 +81,12 @@ export class NativeClient {
         this.#requestPool();
       },
       onHeartbeat: (socket) => {
-        const topBaseline = this.#state.topReceivedAt ?? this.#connectedAt;
-        if (topBaseline !== null && this.#now() - topBaseline >= NATIVE_STATE_STALE_AFTER_MS) {
+        // Responses queue behind other frames on a shared socket, so any frame shows liveness.
+        const baseline = Math.max(
+          this.#state.topReceivedAt ?? this.#connectedAt ?? 0,
+          this.#socket.getStatus().lastMessageAt ?? 0
+        );
+        if (baseline !== 0 && this.#now() - baseline >= NATIVE_STATE_STALE_AFTER_MS) {
           try {
             socket.close(4000, 'Native top response timed out');
           } catch {
@@ -129,6 +136,7 @@ export class NativeClient {
         this.#headerRequest = null;
         this.#lastHeaderRequestedAt = null;
         this.#topRequest = null;
+        this.#topRequested.clear();
         this.#lastTopRequestedAt = null;
         this.#invalidateLiveState();
       }
@@ -173,9 +181,13 @@ export class NativeClient {
       return;
     }
     if (frame.type === 'header') {
-      if (frame.payload.height === this.#topRequest?.height) {
-        this.#topRequest = null;
-        this.#setState({ ...this.#state, topHeader: frame.payload });
+      const height = frame.payload.height;
+      if (this.#topRequested.has(height)) {
+        for (const requested of this.#topRequested)
+          if (requested <= height) this.#topRequested.delete(requested);
+        if (height === this.#topRequest?.height) this.#topRequest = null;
+        if ((this.#state.topHeader?.height ?? -1) < height)
+          this.#setState({ ...this.#state, topHeader: frame.payload });
         return;
       }
       if (frame.payload.height !== this.#headerRequest?.height) return;
@@ -212,16 +224,20 @@ export class NativeClient {
     if (!this.#socket.send(nativeBranchPath(height))) this.#headerRequest = null;
   }
 
-  // The candidate top header, sampled at the polling cadence.
+  // The candidate top header, sampled at the polling cadence once current.
   #requestTop(height: number, now: number): void {
     if (this.#topRequest !== null && now - this.#topRequest.requestedAt < NATIVE_STATE_STALE_AFTER_MS)
       return;
-    if (this.#lastTopRequestedAt !== null && now - this.#lastTopRequestedAt < this.#pollIntervalMs)
+    const interval = isHeaderCurrent(this.#state.topHeader, now)
+      ? this.#pollIntervalMs
+      : TOP_UNCURRENT_INTERVAL_MS;
+    if (this.#lastTopRequestedAt !== null && now - this.#lastTopRequestedAt < interval)
       return;
 
     this.#topRequest = { height, requestedAt: now };
     this.#lastTopRequestedAt = now;
-    if (!this.#socket.send(nativeBranchPath(height))) this.#topRequest = null;
+    if (this.#socket.send(nativeBranchPath(height))) this.#topRequested.add(height);
+    else this.#topRequest = null;
   }
 
   #requestPool(): void {

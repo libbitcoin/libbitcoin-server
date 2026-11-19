@@ -14,7 +14,9 @@ export function NodeSyncProgress({ sync }: NodeSyncProgressProps) {
   const [focus, setFocus] = useState<FillLayer | null>(null);
   if (
     sync === null ||
-    (!sync.diverged && sync.blocksRemaining <= SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS)
+    (!sync.diverged &&
+      sync.blocksRemaining !== null &&
+      sync.blocksRemaining <= SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS)
   )
     return null;
 
@@ -45,7 +47,11 @@ export function NodeSyncProgress({ sync }: NodeSyncProgressProps) {
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={Number(progress.toFixed(2))}
-          aria-valuetext={`${formatInteger(sync.blocksRemaining)} blocks remaining`}
+          aria-valuetext={
+            sync.blocksRemaining === null
+              ? 'Headers not current'
+              : `${formatInteger(sync.blocksRemaining)} blocks remaining`
+          }
           className="bg-background border-accentSecondary/20 h-4 overflow-hidden rounded-full border"
         >
           <FillBar
@@ -86,7 +92,10 @@ export function NodeSyncProgress({ sync }: NodeSyncProgressProps) {
           value={formatInteger(sync.confirmed.height)}
           hash={sync.confirmed.hash}
         />
-        <SyncValue label="Blocks remaining" value={formatInteger(sync.blocksRemaining)} />
+        <SyncValue
+          label="Blocks remaining"
+          value={sync.blocksRemaining === null ? '—' : formatInteger(sync.blocksRemaining)}
+        />
         <SyncValue
           label="Top candidate header"
           value={formatInteger(sync.candidate.height)}

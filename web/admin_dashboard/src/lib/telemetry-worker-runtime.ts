@@ -1,5 +1,5 @@
 import { AdminClient } from './admin-client';
-import { ALL_EVENT_FILTER } from './admin-contract';
+import { ALL_EVENT_FILTER, isFirstHeaderFrame } from './admin-contract';
 import { toWebSocketUrl } from './endpoints';
 import { NativeClient } from './native-client';
 import { ReconnectingWebSocket } from './reconnecting-websocket';
@@ -172,10 +172,11 @@ export class TelemetryWorkerRuntime {
     this.#unsubscribers = [
       client.subscribeStatus(() => {
         const current = client.getStatus().phase === 'connected';
-        if (current && !connected) this.#metrics.resetSyncFill();
+        if (current && !connected) this.#reset(this.#generation);
         connected = current;
       }),
       client.subscribeFrames((frame) => {
+        if (isFirstHeaderFrame(frame)) this.#reset(this.#generation);
         this.#metrics.ingest(frame);
       }),
       client.subscribeInvalidFrames(() => {

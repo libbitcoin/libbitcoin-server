@@ -344,10 +344,6 @@ export class LiveMetricsStore {
     this.flush();
   }
 
-  resetSyncFill(): void {
-    this.#syncFill.reset();
-  }
-
   tick(): void {
     const now = this.#collectionTime(this.#now());
     this.#ensureBucket(now);

@@ -66,6 +66,7 @@ export class ReconnectingWebSocket {
   #heartbeatTimers = new Map<SocketChannel, ReturnType<typeof setInterval>>();
   #retryDelayMs: number;
   #started = false;
+  #opened = false;
 
   constructor(options: ReconnectingWebSocketOptions) {
     this.#options = {
@@ -150,7 +151,7 @@ export class ReconnectingWebSocket {
   #connect(): void {
     if (!this.#started || this.#socket) return;
 
-    const reconnecting = this.#status.reconnects > 0;
+    const reconnecting = this.#opened;
     this.#setStatus({
       ...this.#status,
       phase: reconnecting ? 'reconnecting' : 'connecting',
@@ -185,10 +186,12 @@ export class ReconnectingWebSocket {
       this.#retryDelayMs = this.#options.retryMinimumMs;
       this.#setStatus({
         ...this.#status,
+        reconnects: this.#status.reconnects + (this.#opened ? 1 : 0),
         phase: 'connected',
         connectedAt: this.#options.now(),
         error: null,
       });
+      this.#opened = true;
       for (const channel of [...this.#channels]) {
         if (this.#socket !== socket) return;
         channel.onOpen?.(socket);
@@ -238,7 +241,6 @@ export class ReconnectingWebSocket {
     this.#setStatus({
       ...this.#status,
       phase: 'reconnecting',
-      reconnects: this.#status.reconnects + 1,
       connectedAt: null,
     });
     this.#retryTimer = setTimeout(() => {
