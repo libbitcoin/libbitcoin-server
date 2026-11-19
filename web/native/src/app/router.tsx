@@ -29,10 +29,10 @@ const router = createBrowserRouter(
       <Route path="v1/block/hash/:hash/header" element={<BlockPage />} />
       <Route path="v1/block/hash/:hash/header/context" element={<BlockPage />} />
       <Route path="v1/block/hash/:hash/details" element={<BlockPage />} />
-      <Route path="v1/block/height/:height" element={<BlockPage />} />
-      <Route path="v1/block/height/:height/header" element={<BlockPage />} />
-      <Route path="v1/block/height/:height/header/context" element={<BlockPage />} />
-      <Route path="v1/block/height/:height/details" element={<BlockPage />} />
+      <Route path="v1/block/confirmed/:height" element={<BlockPage />} />
+      <Route path="v1/block/confirmed/:height/header" element={<BlockPage />} />
+      <Route path="v1/block/confirmed/:height/header/context" element={<BlockPage />} />
+      <Route path="v1/block/confirmed/:height/details" element={<BlockPage />} />
       <Route path="v1/tx/:txid" element={<TransactionPage />} />
       <Route path="v1/tx/:txid/header" element={<TransactionPage />} />
       <Route path="v1/tx/:txid/details" element={<TransactionPage />} />

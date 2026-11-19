@@ -181,7 +181,7 @@ export async function fetchNativeSnapshot(
 
 // The candidate header at the given height, compared against the confirmed top.
 export function nativeBranchPath(height: number): string {
-  return `/v1/block/height/${String(height)}/header?format=json&candidate=true`;
+  return `/v1/block/candidate/${String(height)}/header?format=json`;
 }
 
 export async function fetchNativeFees(

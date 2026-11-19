@@ -86,6 +86,10 @@ protected:
         uint8_t version, uint8_t media) NOEXCEPT;
     bool handle_get_top_subscribe(const code& ec, interface::top_subscribe,
         uint8_t version, uint8_t media, bool stop) NOEXCEPT;
+    bool handle_get_top_chain(const code& ec, interface::top_chain,
+        uint8_t version, uint8_t media, bool candidate) NOEXCEPT;
+    bool handle_get_top_height(const code& ec, interface::top_height,
+        uint8_t version, uint8_t media, bool candidate) NOEXCEPT;
 
     bool handle_get_block(const code& ec, interface::block,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,

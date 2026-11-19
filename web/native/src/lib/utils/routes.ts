@@ -19,7 +19,7 @@ export function blockValidationPath(hash: string) {
 }
 
 export function blockByHeightPath(height: number | string) {
-  return `/v1/block/height/${encodeURIComponent(String(height))}`;
+  return `/v1/block/confirmed/${encodeURIComponent(String(height))}`;
 }
 
 export function transactionPath(txid: string) {

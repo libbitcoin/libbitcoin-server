@@ -54,6 +54,8 @@ void protocol_native::start() NOEXCEPT
     // Top methods.
     SUBSCRIBE_NATIVE(handle_get_top, _1, _2, _3, _4);
     SUBSCRIBE_NATIVE(handle_get_top_subscribe, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_top_chain, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_top_height, _1, _2, _3, _4, _5);
 
     // Block methods.
     SUBSCRIBE_NATIVE(handle_get_block, _1, _2, _3, _4, _5, _6, _7, _8);
