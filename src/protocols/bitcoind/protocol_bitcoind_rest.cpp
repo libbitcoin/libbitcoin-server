@@ -927,7 +927,7 @@ bool protocol_bitcoind_rest::handle_get_mempool(const code& ec,
         return true;
     }
 
-    get_pool_txs(BIND(handle_mempool, _1, _2, verbose, mempool_sequence,
+    get_confirmable_txs(BIND(handle_mempool, _1, _2, verbose, mempool_sequence,
         gate()));
     return true;
 }
@@ -978,8 +978,8 @@ bool protocol_bitcoind_rest::handle_get_mempool_information(const code& ec,
     const auto relay = to_floating(settings.minimum_fee_rate_()) /
         chain::satoshi_per_bitcoin;
 
-    get_pool_fees(BIND(handle_mempool_information, _1, _2, minimum, relay,
-        settings.minimum_fee_rate, gate()));
+    get_confirmable_fees(BIND(handle_mempool_information, _1, _2, minimum,
+        relay, settings.minimum_fee_rate, gate()));
     return true;
 }
 

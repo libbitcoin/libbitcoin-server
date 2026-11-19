@@ -804,7 +804,7 @@ bool protocol_bitcoind_blockchain::handle_save_mempool(const code& ec,
     rpc_interface::save_mempool) NOEXCEPT
 {
     if (stopped(ec)) return false;
-    get_pool_txs(BIND(handle_save_mempool_txs, _1, _2, gate()));
+    get_confirmable_txs(BIND(handle_save_mempool_txs, _1, _2, gate()));
     return true;
 }
 
@@ -1724,7 +1724,7 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
     const auto relay = to_floating(settings.minimum_fee_rate_()) /
         chain::satoshi_per_bitcoin;
 
-    get_pool_fees(BIND(handle_mempool_info, _1, _2, minimum, relay,
+    get_confirmable_fees(BIND(handle_mempool_info, _1, _2, minimum, relay,
         settings.minimum_fee_rate, gate()));
     return true;
 }
@@ -1768,8 +1768,8 @@ bool protocol_bitcoind_blockchain::handle_get_raw_mempool(const code& ec,
         return true;
     }
 
-    get_pool_txs(BIND(handle_raw_mempool, _1, _2, verbose, mempool_sequence,
-        gate()));
+    get_confirmable_txs(BIND(handle_raw_mempool, _1, _2, verbose,
+        mempool_sequence, gate()));
     return true;
 }
 

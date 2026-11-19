@@ -56,7 +56,7 @@ bool protocol_esplora::handle_get_mempool(const code& ec, interface::mempool,
         return true;
     }
 
-    get_pool_fees(BIND(handle_mempool, _1, _2, gate()));
+    get_confirmable_fees(BIND(handle_mempool, _1, _2, gate()));
     return true;
 }
 
@@ -72,7 +72,7 @@ bool protocol_esplora::handle_get_mempool_txids(const code& ec,
         return true;
     }
 
-    get_pool_txs(BIND(handle_mempool_txids, _1, _2, gate()));
+    get_confirmable_txs(BIND(handle_mempool_txids, _1, _2, gate()));
     return true;
 }
 
@@ -88,7 +88,7 @@ bool protocol_esplora::handle_get_mempool_recent(const code& ec,
         return true;
     }
 
-    get_pool_txs(BIND(handle_mempool_recent, _1, _2, gate()));
+    get_confirmable_txs(BIND(handle_mempool_recent, _1, _2, gate()));
     return true;
 }
 

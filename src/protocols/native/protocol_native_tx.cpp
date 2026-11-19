@@ -221,7 +221,7 @@ bool protocol_native::handle_get_fees(const code& ec, interface::fees,
         return true;
     }
 
-    get_pool_fees(BIND(handle_fees, _1, _2, gate()));
+    get_confirmable_fees(BIND(handle_fees, _1, _2, gate()));
     return true;
 }
 

@@ -47,7 +47,7 @@ void protocol_electrum::handle_mempool_get_fee_histogram(const code& ec,
         return;
     }
 
-    get_pool_fees(BIND(handle_fee_histogram, _1, _2, gate()));
+    get_confirmable_fees(BIND(handle_fee_histogram, _1, _2, gate()));
 }
 
 void protocol_electrum::handle_mempool_recent(const code& ec,
@@ -62,7 +62,7 @@ void protocol_electrum::handle_mempool_recent(const code& ec,
         return;
     }
 
-    get_pool_txs(BIND(handle_recent, _1, _2, gate()));
+    get_confirmable_txs(BIND(handle_recent, _1, _2, gate()));
 }
 
 void protocol_electrum::handle_mempool_get_info(const code& ec,
