@@ -927,18 +927,21 @@ bool protocol_bitcoind_rest::handle_get_mempool(const code& ec,
         return true;
     }
 
-    get_pool_txs(BIND(handle_mempool, _1, _2, verbose, mempool_sequence));
+    get_pool_txs(BIND(handle_mempool, _1, _2, verbose, mempool_sequence,
+        gate()));
     return true;
 }
 
 void protocol_bitcoind_rest::handle_mempool(const code& ec,
-    const database::tx_links& links, bool verbose, bool sequence) NOEXCEPT
+    const database::tx_links& links, bool verbose, bool sequence,
+    const gate_t::ptr& gate) NOEXCEPT
 {
-    POST(complete_mempool, ec, links, verbose, sequence);
+    POST(complete_mempool, ec, links, verbose, sequence, gate);
 }
 
 void protocol_bitcoind_rest::complete_mempool(const code& ec,
-    const database::tx_links& links, bool verbose, bool sequence) NOEXCEPT
+    const database::tx_links& links, bool verbose, bool sequence,
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -970,20 +973,21 @@ bool protocol_bitcoind_rest::handle_get_mempool_information(const code& ec,
         chain::satoshi_per_bitcoin;
 
     get_pool_fees(BIND(handle_mempool_information, _1, _2, minimum, relay,
-        settings.minimum_fee_rate));
+        settings.minimum_fee_rate, gate()));
     return true;
 }
 
 void protocol_bitcoind_rest::handle_mempool_information(const code& ec,
     const database::fee_rates& rates, double minimum, double relay,
-    double increment) NOEXCEPT
+    double increment, const gate_t::ptr& gate) NOEXCEPT
 {
-    POST(complete_mempool_information, ec, rates, minimum, relay, increment);
+    POST(complete_mempool_information, ec, rates, minimum, relay, increment,
+        gate);
 }
 
 void protocol_bitcoind_rest::complete_mempool_information(const code& ec,
     const database::fee_rates& rates, double minimum, double relay,
-    double increment) NOEXCEPT
+    double increment, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 

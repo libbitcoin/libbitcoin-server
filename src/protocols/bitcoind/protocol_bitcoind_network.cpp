@@ -228,7 +228,7 @@ bool protocol_bitcoind_network::handle_add_node(const code& ec,
         {
             const auto complete = emplace_shared<terminator::race>(
                 BIND(handle_stopped, _1,
-                    error::bitcoind::client_node_not_added));
+                    error::bitcoind::client_node_not_added, gate()));
 
             BROADCAST(terminator, to_shared<terminator>(complete,
                 network::error::channel_dropped, zero,
@@ -291,7 +291,7 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
 
     const auto complete = emplace_shared<terminator::race>(
         BIND(handle_stopped, _1,
-            error::bitcoind::client_node_not_connected));
+            error::bitcoind::client_node_not_connected, gate()));
 
     BROADCAST(terminator, to_shared<terminator>(complete,
         network::error::channel_stopped, identifier, peer));
@@ -300,16 +300,16 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
 }
 
 void protocol_bitcoind_network::handle_stopped(const code& ec,
-    error::bitcoind::error_t absent) NOEXCEPT
+    error::bitcoind::error_t absent, const gate_t::ptr& gate) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST(do_send_stopped, ec, absent);
+    POST(do_send_stopped, ec, absent, gate);
 }
 
 void protocol_bitcoind_network::do_send_stopped(const code& ec,
-    error::bitcoind::error_t absent) NOEXCEPT
+    error::bitcoind::error_t absent, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -339,7 +339,7 @@ bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
 
     const auto captured = to_shared<diagnostics::rows>();
     const auto complete = emplace_shared<diagnostics::race>(
-        BIND(handle_captured_manual, _1, captured));
+        BIND(handle_captured_manual, _1, captured, gate()));
 
     BROADCAST(diagnostics, to_shared<diagnostics>(complete,
         to_collector(captured), diagnostics::target::manual));
@@ -348,16 +348,17 @@ bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
 }
 
 void protocol_bitcoind_network::handle_captured_manual(const code&,
-    const network::diagnostics::rows_ptr& captured) NOEXCEPT
+    const network::diagnostics::rows_ptr& captured,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST(do_send_added_node_info, captured);
+    POST(do_send_added_node_info, captured, gate);
 }
 
 void protocol_bitcoind_network::do_send_added_node_info(
-    const network::diagnostics::rows_ptr& captured) NOEXCEPT
+    const network::diagnostics::rows_ptr& captured, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -461,21 +462,21 @@ bool protocol_bitcoind_network::handle_get_node_addresses(const code& ec,
     }
 
     node_network_ = network;
-    dump_addresses(BIND(handle_dump_nodes, _1, _2));
+    dump_addresses(BIND(handle_dump_nodes, _1, _2, gate()));
     return true;
 }
 
 void protocol_bitcoind_network::handle_dump_nodes(const code& ec,
-    const address_cptr& message) NOEXCEPT
+    const address_cptr& message, const gate_t::ptr& gate) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST(do_send_nodes, ec, message);
+    POST(do_send_nodes, ec, message, gate);
 }
 
 void protocol_bitcoind_network::do_send_nodes(const code& ec,
-    const address_cptr& message) NOEXCEPT
+    const address_cptr& message, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -560,12 +561,12 @@ bool protocol_bitcoind_network::handle_get_net_totals(const code& ec,
     if (stopped(ec))
         return false;
 
-    capture_totals(BIND(do_send_net_totals, _1, _2, _3));
+    capture_totals(BIND(do_send_net_totals, _1, _2, _3, gate()));
     return true;
 }
 
 void protocol_bitcoind_network::do_send_net_totals(const code& ec,
-    uint64_t sent, uint64_t received) NOEXCEPT
+    uint64_t sent, uint64_t received, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -666,7 +667,7 @@ bool protocol_bitcoind_network::handle_get_peer_info(const code& ec,
 
     const auto captured = to_shared<diagnostics::rows>();
     const auto complete = emplace_shared<diagnostics::race>(
-        BIND(handle_captured, _1, captured));
+        BIND(handle_captured, _1, captured, gate()));
 
     BROADCAST(diagnostics, to_shared<diagnostics>(complete,
         to_collector(captured), diagnostics::target::all));
@@ -675,16 +676,16 @@ bool protocol_bitcoind_network::handle_get_peer_info(const code& ec,
 }
 
 void protocol_bitcoind_network::handle_captured(const code&,
-    const diagnostics::rows_ptr& captured) NOEXCEPT
+    const diagnostics::rows_ptr& captured, const gate_t::ptr& gate) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST(do_send_peer_info, captured);
+    POST(do_send_peer_info, captured, gate);
 }
 
 void protocol_bitcoind_network::do_send_peer_info(
-    const diagnostics::rows_ptr& captured) NOEXCEPT
+    const diagnostics::rows_ptr& captured, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 

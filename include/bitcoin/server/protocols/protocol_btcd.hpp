@@ -96,14 +96,14 @@ protected:
     bool handle_get_net_totals(const code& ec,
         btcd_interface::get_net_totals) NOEXCEPT;
     void do_send_net_totals(const code& ec, uint64_t sent,
-        uint64_t received) NOEXCEPT;
+        uint64_t received, const gate_t::ptr& gate) NOEXCEPT;
     bool handle_node(const code& ec, btcd_interface::node,
         const std::string& subcmd, const std::string& target,
         const std::string& connectsubcmd) NOEXCEPT;
     void handle_stopped(const code& ec,
-        error::btcd::error_t absent) NOEXCEPT;
+        error::btcd::error_t absent, const gate_t::ptr& gate) NOEXCEPT;
     void do_send_stopped(const code& ec,
-        error::btcd::error_t absent) NOEXCEPT;
+        error::btcd::error_t absent, const gate_t::ptr& gate) NOEXCEPT;
     bool handle_search_raw_transactions(const code& ec,
         btcd_interface::search_raw_transactions, const std::string& address,
         double verbose, double skip, double count, double prevouts,
@@ -152,8 +152,10 @@ protected:
     bool handle_chase(const code& ec, node::event_value value) NOEXCEPT;
 
     /// Estimate completion (node strand to channel strand).
-    void handle_estimate(const code& ec, uint64_t fee) NOEXCEPT;
-    void complete_estimate(const code& ec, uint64_t fee) NOEXCEPT;
+    void handle_estimate(const code& ec, uint64_t fee,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_estimate(const code& ec, uint64_t fee,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     /// Sender (server push, no id).
     void send_notification(const std::string& method,

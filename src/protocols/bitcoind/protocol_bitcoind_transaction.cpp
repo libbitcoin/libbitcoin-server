@@ -262,18 +262,18 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
     // A single tx is the minimal package.
     constexpr auto test = false;
     submit(to_shared(chain::transaction_cptrs{ tx }),
-        test, BIND(handle_submit_tx, _1, _2, tx));
+        test, BIND(handle_submit_tx, _1, _2, tx, gate()));
     return true;
 }
 
 void protocol_bitcoind_transaction::handle_submit_tx(const code& ec, size_t,
-    const chain::transaction::cptr& tx) NOEXCEPT
+    const chain::transaction::cptr& tx, const gate_t::ptr& gate) NOEXCEPT
 {
-    POST(complete_submit_tx, ec, tx);
+    POST(complete_submit_tx, ec, tx, gate);
 }
 
 void protocol_bitcoind_transaction::complete_submit_tx(const code& ec,
-    const chain::transaction::cptr& tx) NOEXCEPT
+    const chain::transaction::cptr& tx, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -353,19 +353,19 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
 
     constexpr auto test = true;
     const auto package = to_shared<chain::transaction_cptrs>(std::move(txs));
-    submit(package, test, BIND(handle_test_package, _1, _2, package));
+    submit(package, test, BIND(handle_test_package, _1, _2, package, gate()));
     return true;
 }
 
 void protocol_bitcoind_transaction::handle_test_package(const code& ec, size_t,
-    const chain::transactions_cptr& txs) NOEXCEPT
+    const chain::transactions_cptr& txs, const gate_t::ptr& gate) NOEXCEPT
 {
-    POST(complete_test_package, ec, txs);
+    POST(complete_test_package, ec, txs, gate);
 }
 
 // The package is accepted as a whole, so its code applies to each of its txs.
 void protocol_bitcoind_transaction::complete_test_package(const code& ec,
-    const chain::transactions_cptr& txs) NOEXCEPT
+    const chain::transactions_cptr& txs, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -885,18 +885,20 @@ bool protocol_bitcoind_transaction::handle_submit_package(const code& ec,
 
     constexpr auto test = false;
     const auto txs_ptr = to_shared<chain::transaction_cptrs>(std::move(txs));
-    submit(txs_ptr, test, BIND(handle_package, _1, _2, txs_ptr));
+    submit(txs_ptr, test, BIND(handle_package, _1, _2, txs_ptr, gate()));
     return true;
 }
 
 void protocol_bitcoind_transaction::handle_package(const code& ec,
-    size_t index, const chain::transactions_cptr& txs) NOEXCEPT
+    size_t index, const chain::transactions_cptr& txs,
+    const gate_t::ptr& gate) NOEXCEPT
 {
-    POST(complete_package, ec, index, txs);
+    POST(complete_package, ec, index, txs, gate);
 }
 
 void protocol_bitcoind_transaction::complete_package(const code& ec,
-    size_t index, const chain::transactions_cptr& txs) NOEXCEPT
+    size_t index, const chain::transactions_cptr& txs,
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 

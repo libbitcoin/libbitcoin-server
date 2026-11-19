@@ -253,20 +253,21 @@ bool protocol_bitcoind_mining::handle_submit_header(const code& ec,
         return true;
     }
 
-    organize(header, BIND(handle_organize_header, _1, _2));
+    organize(header, BIND(handle_organize_header, _1, _2, gate()));
     return true;
 }
 
 void protocol_bitcoind_mining::handle_organize_header(const code& ec,
-    size_t) NOEXCEPT
+    size_t, const gate_t::ptr& gate) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST(do_submit_header, ec);
+    POST(do_submit_header, ec, gate);
 }
 
-void protocol_bitcoind_mining::do_submit_header(const code& ec) NOEXCEPT
+void protocol_bitcoind_mining::do_submit_header(const code& ec,
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
     using namespace error::bitcoind;
@@ -317,23 +318,23 @@ bool protocol_bitcoind_mining::handle_get_block_template(const code& ec,
         return true;
     }
 
-    get_template(BIND(handle_template, _1, _2, _3));
+    get_template(BIND(handle_template, _1, _2, _3, gate()));
     return true;
 }
 
 void protocol_bitcoind_mining::handle_template(const code& ec, size_t height,
-    const database::tx_links& links) NOEXCEPT
+    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST(do_template, ec, height, links);
+    POST(do_template, ec, height, links, gate);
 }
 
 // The template is of the block above the confirmed top, so one built for
 // another height is requested again.
 void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
-    const database::tx_links& links) NOEXCEPT
+    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(stranded());
     using namespace chain;
@@ -367,7 +368,7 @@ void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
 
     if (add1(top) != height)
     {
-        get_template(BIND(handle_template, _1, _2, _3));
+        get_template(BIND(handle_template, _1, _2, _3, gate));
         return;
     }
 

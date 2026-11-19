@@ -457,18 +457,18 @@ bool protocol_esplora::handle_broadcast(const code& ec, interface::broadcast,
     // A single tx is the minimal package.
     constexpr auto test = false;
     submit(to_shared(chain::transaction_cptrs{ tx }),
-        test, BIND(handle_submit_tx, _1, _2, tx));
+        test, BIND(handle_submit_tx, _1, _2, tx, gate()));
     return true;
 }
 
 void protocol_esplora::handle_submit_tx(const code& ec, size_t,
-    const chain::transaction::cptr& tx) NOEXCEPT
+    const chain::transaction::cptr& tx, const gate_t::ptr& gate) NOEXCEPT
 {
-    POST(complete_submit_tx, ec, tx);
+    POST(complete_submit_tx, ec, tx, gate);
 }
 
 void protocol_esplora::complete_submit_tx(const code& ec,
-    const chain::transaction::cptr& tx) NOEXCEPT
+    const chain::transaction::cptr& tx, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -528,18 +528,18 @@ bool protocol_esplora::handle_broadcast_package(const code& ec,
 
     constexpr auto test = false;
     const auto package = to_shared<chain::transaction_cptrs>(std::move(txs));
-    submit(package, test, BIND(handle_submit_package, _1, _2, package));
+    submit(package, test, BIND(handle_submit_package, _1, _2, package, gate()));
     return true;
 }
 
 void protocol_esplora::handle_submit_package(const code& ec, size_t index,
-    const chain::transactions_cptr& txs) NOEXCEPT
+    const chain::transactions_cptr& txs, const gate_t::ptr& gate) NOEXCEPT
 {
-    POST(complete_submit_package, ec, index, txs);
+    POST(complete_submit_package, ec, index, txs, gate);
 }
 
 void protocol_esplora::complete_submit_package(const code& ec, size_t index,
-    const chain::transactions_cptr& txs) NOEXCEPT
+    const chain::transactions_cptr& txs, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 

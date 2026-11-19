@@ -92,31 +92,35 @@ protected:
 private:
     /// Address dump completion (bounced to the channel strand).
     void handle_dump_nodes(const code& ec,
-        const network::address_cptr& message) NOEXCEPT;
+        const network::address_cptr& message, const gate_t::ptr& gate) NOEXCEPT;
     void do_send_nodes(const code& ec,
-        const network::address_cptr& message) NOEXCEPT;
+        const network::address_cptr& message, const gate_t::ptr& gate) NOEXCEPT;
 
     /// Diagnostic capture completion (bounced to the channel strand).
     void handle_captured(const code& ec,
-        const network::diagnostics::rows_ptr& captured) NOEXCEPT;
+        const network::diagnostics::rows_ptr& captured,
+        const gate_t::ptr& gate) NOEXCEPT;
     void do_send_peer_info(
-        const network::diagnostics::rows_ptr& captured) NOEXCEPT;
+        const network::diagnostics::rows_ptr& captured,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     /// Channel stop completion (bounced to the channel strand).
     void handle_stopped(const code& ec,
-        error::bitcoind::error_t absent) NOEXCEPT;
+        error::bitcoind::error_t absent, const gate_t::ptr& gate) NOEXCEPT;
     void do_send_stopped(const code& ec,
-        error::bitcoind::error_t absent) NOEXCEPT;
+        error::bitcoind::error_t absent, const gate_t::ptr& gate) NOEXCEPT;
 
     /// Manual capture completion (bounced to the channel strand).
     void handle_captured_manual(const code& ec,
-        const network::diagnostics::rows_ptr& captured) NOEXCEPT;
+        const network::diagnostics::rows_ptr& captured,
+        const gate_t::ptr& gate) NOEXCEPT;
     void do_send_added_node_info(
-        const network::diagnostics::rows_ptr& captured) NOEXCEPT;
+        const network::diagnostics::rows_ptr& captured,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     /// Peer byte totals completion (invoked on the channel strand).
     void do_send_net_totals(const code& ec, uint64_t sent,
-        uint64_t received) NOEXCEPT;
+        uint64_t received, const gate_t::ptr& gate) NOEXCEPT;
 
     // These are protected by strand.
     size_t node_count_{};

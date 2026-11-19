@@ -1445,21 +1445,22 @@ bool protocol_bitcoind_blockchain::handle_precious_block(const code& ec,
     }
 
     // The block may be cached (tied branch), so the organizer resolves it.
-    prioritize(hash, BIND(handle_prioritize, _1, _2));
+    prioritize(hash, BIND(handle_prioritize, _1, _2, gate()));
     return true;
 }
 
 void protocol_bitcoind_blockchain::handle_prioritize(const code& ec,
-    size_t) NOEXCEPT
+    size_t, const gate_t::ptr& gate) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST(do_precious_block, ec);
+    POST(do_precious_block, ec, gate);
 }
 
 // bitcoind returns null, having preferred the block where it could.
-void protocol_bitcoind_blockchain::do_precious_block(const code& ec) NOEXCEPT
+void protocol_bitcoind_blockchain::do_precious_block(const code& ec,
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 

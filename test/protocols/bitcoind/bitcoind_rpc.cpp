@@ -2587,6 +2587,40 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__batch__single_element__array_of_one)
     BC_REQUIRE_EQUAL(batch.at(0).at("result").as_int64(), 9);
 }
 
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__two_estimates__two_ordered_responses)
+{
+    const auto response = rpc_body(R"([{"jsonrpc":"2.0","id":1,"method":"estimatesmartfee","params":[2,"CONSERVATIVE"]},{"jsonrpc":"2.0","id":2,"method":"estimatesmartfee","params":[3,"CONSERVATIVE"]}])");
+    BC_REQUIRE(response.is_array());
+    const auto& batch = response.as_array();
+    BC_REQUIRE_EQUAL(batch.size(), 2u);
+    BC_REQUIRE_EQUAL(batch.at(0).at("id").as_int64(), 1);
+    BC_REQUIRE_EQUAL(batch.at(0).at("result").at("blocks").as_int64(), 2);
+    BC_REQUIRE_EQUAL(batch.at(1).at("id").as_int64(), 2);
+    BC_REQUIRE_EQUAL(batch.at(1).at("result").at("blocks").as_int64(), 3);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__single_estimate__array_of_one)
+{
+    const auto response = rpc_body(R"([{"jsonrpc":"2.0","id":7,"method":"estimatesmartfee","params":[2,"CONSERVATIVE"]}])");
+    BC_REQUIRE(response.is_array());
+    const auto& batch = response.as_array();
+    BC_REQUIRE_EQUAL(batch.size(), 1u);
+    BC_REQUIRE_EQUAL(batch.at(0).at("id").as_int64(), 7);
+    BC_REQUIRE_EQUAL(batch.at(0).at("result").at("blocks").as_int64(), 2);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__mempool_info_then_estimate__two_ordered_responses)
+{
+    const auto response = rpc_body(R"([{"jsonrpc":"2.0","id":1,"method":"getmempoolinfo","params":[]},{"jsonrpc":"2.0","id":2,"method":"estimatesmartfee","params":[2,"CONSERVATIVE"]}])");
+    BC_REQUIRE(response.is_array());
+    const auto& batch = response.as_array();
+    BC_REQUIRE_EQUAL(batch.size(), 2u);
+    BC_REQUIRE_EQUAL(batch.at(0).at("id").as_int64(), 1);
+    BC_REQUIRE(batch.at(0).at("result").as_object().contains("size"));
+    BC_REQUIRE_EQUAL(batch.at(1).at("id").as_int64(), 2);
+    BC_REQUIRE_EQUAL(batch.at(1).at("result").at("blocks").as_int64(), 2);
+}
+
 BC_AUTO_TEST_CASE(bitcoind_rpc__batch__error_element__delivered_in_order)
 {
     const auto unknown = hash_param(null_hash, "1");
@@ -5128,6 +5162,31 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__unknown_option__type_error
 BC_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__missing_vout__type_error)
 {
     BC_REQUIRE(has_code(rpc("gettxspendingprevout", "[[{\"txid\":\"" + encode_hash(one_hash) + "\"}]]"), -3));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__two_templates__two_ordered_responses)
+{
+    const auto response = rpc_body(R"([{"jsonrpc":"2.0","id":1,"method":"getblocktemplate","params":[{"rules":["segwit"]}]},{"jsonrpc":"2.0","id":2,"method":"getblocktemplate","params":[{"rules":["segwit"]}]}])");
+    BC_REQUIRE(response.is_array());
+    const auto& batch = response.as_array();
+    BC_REQUIRE_EQUAL(batch.size(), 2u);
+    BC_REQUIRE_EQUAL(batch.at(0).at("id").as_int64(), 1);
+    BC_REQUIRE(batch.at(0).at("result").at("transactions").as_array().empty());
+    BC_REQUIRE_EQUAL(batch.at(1).at("id").as_int64(), 2);
+    BC_REQUIRE(batch.at(1).at("result").at("transactions").as_array().empty());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__batch__two_broadcasts__two_ordered_responses)
+{
+    const auto hex = encode_base16(test::tx1c.to_data(true));
+    const auto response = rpc_body(R"([{"jsonrpc":"2.0","id":1,"method":"sendrawtransaction","params":[")" + hex + R"("]},{"jsonrpc":"2.0","id":2,"method":"sendrawtransaction","params":[")" + hex + R"("]}])");
+    BC_REQUIRE(response.is_array());
+    const auto& batch = response.as_array();
+    BC_REQUIRE_EQUAL(batch.size(), 2u);
+    BC_REQUIRE_EQUAL(batch.at(0).at("id").as_int64(), 1);
+    BC_REQUIRE_EQUAL(as_text(batch.at(0).at("result")), encode_hash(test::tx1c.hash(false)));
+    BC_REQUIRE_EQUAL(batch.at(1).at("id").as_int64(), 2);
+    BC_REQUIRE_EQUAL(as_text(batch.at(1).at("result")), encode_hash(test::tx1c.hash(false)));
 }
 
 BC_AUTO_TEST_SUITE_END()

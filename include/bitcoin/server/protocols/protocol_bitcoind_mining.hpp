@@ -74,14 +74,15 @@ protected:
 
 private:
     /// Organize completions (bounced to the channel strand).
-    void handle_organize_header(const code& ec, size_t height) NOEXCEPT;
-    void do_submit_header(const code& ec) NOEXCEPT;
+    void handle_organize_header(const code& ec, size_t height,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void do_submit_header(const code& ec, const gate_t::ptr& gate) NOEXCEPT;
 
     /// Template completions (bounced to the channel strand).
     void handle_template(const code& ec, size_t height,
-        const database::tx_links& links) NOEXCEPT;
+        const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
     void do_template(const code& ec, size_t height,
-        const database::tx_links& links) NOEXCEPT;
+        const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
 };
 
 } // namespace server

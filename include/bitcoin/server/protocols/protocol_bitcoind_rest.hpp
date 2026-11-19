@@ -95,15 +95,15 @@ protected:
 
     /// Completion handlers.
     void handle_mempool(const code& ec, const database::tx_links& links,
-        bool verbose, bool sequence) NOEXCEPT;
+        bool verbose, bool sequence, const gate_t::ptr& gate) NOEXCEPT;
     void complete_mempool(const code& ec, const database::tx_links& links,
-        bool verbose, bool sequence) NOEXCEPT;
+        bool verbose, bool sequence, const gate_t::ptr& gate) NOEXCEPT;
     void handle_mempool_information(const code& ec,
         const database::fee_rates& rates, double minimum, double relay,
-        double increment) NOEXCEPT;
+        double increment, const gate_t::ptr& gate) NOEXCEPT;
     void complete_mempool_information(const code& ec,
         const database::fee_rates& rates, double minimum, double relay,
-        double increment) NOEXCEPT;
+        double increment, const gate_t::ptr& gate) NOEXCEPT;
 
 private:
     template <class Derived, typename Method, typename... Args>

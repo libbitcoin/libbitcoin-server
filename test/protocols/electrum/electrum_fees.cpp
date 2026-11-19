@@ -79,6 +79,18 @@ BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__basic_empty_pool__zero)
     BC_REQUIRE_EQUAL(response.at("result").as_double(), 0.0);
 }
 
+BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__two_pipelined__ordered_responses)
+{
+    BC_REQUIRE(handshake(electrum::version::v1_6));
+
+    const auto first = get(R"({"id":801,"method":"blockchain.estimatefee","params":[0,"basic"]})" "\n" R"({"id":802,"method":"blockchain.estimatefee","params":[1,"basic"]})" "\n");
+    const auto second = receive();
+    BC_REQUIRE_MESSAGE(first.is_object() && first.as_object().contains("result"), serialize(first));
+    BC_REQUIRE_MESSAGE(second.is_object() && second.as_object().contains("result"), serialize(second));
+    BC_REQUIRE_EQUAL(first.at("id").as_int64(), 801);
+    BC_REQUIRE_EQUAL(second.at("id").as_int64(), 802);
+}
+
 BC_AUTO_TEST_CASE(electrum__blockchain_estimate_fee__geometric_empty_pool__zero)
 {
     BC_REQUIRE(handshake(electrum::version::v1_6));

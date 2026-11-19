@@ -175,8 +175,9 @@ private:
         wait_race::ptr race;
     };
 
-    void handle_prioritize(const code& ec, size_t height) NOEXCEPT;
-    void do_precious_block(const code& ec) NOEXCEPT;
+    void handle_prioritize(const code& ec, size_t height,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void do_precious_block(const code& ec, const gate_t::ptr& gate) NOEXCEPT;
 
     enum class set_hash : uint8_t { none, muhash, serialized };
 
