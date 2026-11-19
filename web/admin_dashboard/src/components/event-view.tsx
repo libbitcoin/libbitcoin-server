@@ -21,6 +21,8 @@ const categories: Array<{ value: EventCategory | 'all'; label: string }> = [
   { value: 'chain', label: 'Confirmed chain' },
   { value: 'mining', label: 'Mining' },
   { value: 'timing', label: 'Timing' },
+  { value: 'pool', label: 'Pool' },
+  { value: 'peers', label: 'Peers' },
 ];
 
 const categoryStyles: Record<EventCategory, string> = {
@@ -30,6 +32,8 @@ const categoryStyles: Record<EventCategory, string> = {
   chain: 'bg-emerald-500/15 text-emerald-300',
   mining: 'bg-amber-500/15 text-amber-300',
   timing: 'bg-cyan-500/15 text-cyan-300',
+  pool: 'bg-fuchsia-500/15 text-fuchsia-300',
+  peers: 'bg-rose-500/15 text-rose-300',
 };
 
 export function EventView({ metrics, paused, onPausedChange, onClear }: EventViewProps) {

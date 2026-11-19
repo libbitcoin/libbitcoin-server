@@ -174,6 +174,134 @@ const transactionArchiveRate: ChartDefinition = {
   series: [series('tx-archived', eventSignalId(10), 'occurrence-rate', CHART_COLORS[2])],
 };
 
+const blockLifecycle: ChartDefinition = {
+  id: 'default-block-lifecycle',
+  title: 'Block lifecycle detail',
+  visualization: 'line',
+  scale: 'compressed',
+  range: 300,
+  series: [
+    series('lifecycle-header-organized', eventSignalId(1), 'occurrence-rate', CHART_COLORS[3]),
+    series('lifecycle-buffered', eventSignalId(4), 'occurrence-rate', CHART_COLORS[0]),
+    series('lifecycle-validate-bypassed', eventSignalId(8), 'occurrence-rate', CHART_COLORS[1]),
+    series('lifecycle-confirm-bypassed', eventSignalId(9), 'occurrence-rate', CHART_COLORS[2]),
+    series('lifecycle-organized', eventSignalId(13), 'occurrence-rate', CHART_COLORS[6]),
+    series('lifecycle-tx-archived', eventSignalId(10), 'occurrence-rate', CHART_COLORS[7]),
+    series('lifecycle-tx-validated', eventSignalId(11), 'occurrence-rate', CHART_COLORS[5]),
+  ],
+};
+
+const chainEvents: ChartDefinition = {
+  id: 'default-chain-events',
+  title: 'Chain and peer events',
+  visualization: 'bar',
+  scale: 'linear',
+  range: 900,
+  series: [
+    series('events-header-reorganized', eventSignalId(2), 'occurrence-count', CHART_COLORS[3]),
+    series('events-block-reorganized', eventSignalId(14), 'occurrence-count', CHART_COLORS[2]),
+    series('events-unconfirmable', eventSignalId(7), 'occurrence-count', CHART_COLORS[4]),
+    series('events-tx-invalidated', eventSignalId(12), 'occurrence-count', CHART_COLORS[5]),
+    series('events-tx-dropped', eventSignalId(41), 'occurrence-count', CHART_COLORS[0]),
+    series('events-tx-refused', eventSignalId(42), 'occurrence-count', CHART_COLORS[1]),
+    series('events-tx-unserved', eventSignalId(43), 'occurrence-count', CHART_COLORS[7]),
+    series('events-template-issued', eventSignalId(15), 'occurrence-count', CHART_COLORS[6]),
+  ],
+};
+
+const topLatency: ChartDefinition = {
+  id: 'default-top-latency',
+  title: 'Top latency',
+  visualization: 'line',
+  scale: 'compressed',
+  range: 3600,
+  series: [
+    series('top-header', eventSignalId(28), 'payload-average', CHART_COLORS[0]),
+    series('top-validate', eventSignalId(27), 'payload-average', CHART_COLORS[1]),
+  ],
+};
+
+const poolAdmission: ChartDefinition = {
+  id: 'default-pool-admission',
+  title: 'Pool admission',
+  visualization: 'line',
+  scale: 'compressed',
+  range: 900,
+  series: [
+    series('admission-submit', eventSignalId(30), 'payload-average', CHART_COLORS[0]),
+    series('admission-coverage', eventSignalId(31), 'payload-average', CHART_COLORS[1]),
+    series('admission-connect', eventSignalId(32), 'payload-average', CHART_COLORS[2]),
+    series('admission-admit', eventSignalId(33), 'payload-average', CHART_COLORS[3]),
+  ],
+};
+
+const poolBlocks: ChartDefinition = {
+  id: 'default-pool-blocks',
+  title: 'Pool block and template handling',
+  visualization: 'line',
+  scale: 'compressed',
+  range: 900,
+  series: [
+    series('pool-block-in', eventSignalId(35), 'payload-maximum', CHART_COLORS[2]),
+    series('pool-block-out', eventSignalId(36), 'payload-maximum', CHART_COLORS[4]),
+    series('pool-compact', eventSignalId(34), 'payload-maximum', CHART_COLORS[1]),
+    series('pool-context', eventSignalId(37), 'payload-maximum', CHART_COLORS[3]),
+    series('pool-template', eventSignalId(38), 'payload-maximum', CHART_COLORS[6]),
+    series('pool-project', eventSignalId(39), 'payload-maximum', CHART_COLORS[0]),
+    series('pool-list', eventSignalId(40), 'payload-maximum', CHART_COLORS[5]),
+  ],
+};
+
+const poolRows: ChartDefinition = {
+  id: 'default-pool-rows',
+  title: 'Pool rows',
+  visualization: 'step',
+  scale: 'linear',
+  range: 900,
+  series: [series('pool-rows', eventSignalId(29), 'payload-latest', CHART_COLORS[5])],
+};
+
+const servingLatency: ChartDefinition = {
+  id: 'default-serving-latency',
+  title: 'Serving latency',
+  visualization: 'line',
+  scale: 'compressed',
+  range: 900,
+  series: [
+    series('serve-block', eventSignalId(19), 'payload-average', CHART_COLORS[0]),
+    series('serve-ancestry', eventSignalId(20), 'payload-average', CHART_COLORS[1]),
+    series('serve-filter', eventSignalId(21), 'payload-average', CHART_COLORS[2]),
+    series('serve-filter-hashes', eventSignalId(22), 'payload-average', CHART_COLORS[3]),
+    series('serve-filter-checkpoints', eventSignalId(23), 'payload-average', CHART_COLORS[4]),
+  ],
+};
+
+const signatureBatches: ChartDefinition = {
+  id: 'default-signature-batches',
+  title: 'Signature batches',
+  visualization: 'line',
+  scale: 'compressed',
+  range: 900,
+  series: [
+    series('batch-ecdsa', eventSignalId(24), 'payload-average', CHART_COLORS[0]),
+    series('batch-schnorr', eventSignalId(25), 'payload-average', CHART_COLORS[1]),
+    series('batch-silent', eventSignalId(26), 'payload-average', CHART_COLORS[2]),
+  ],
+};
+
+const storeOperations: ChartDefinition = {
+  id: 'default-store-operations',
+  title: 'Store operations',
+  visualization: 'step',
+  scale: 'compressed',
+  range: 3600,
+  series: [
+    series('store-snapshot', eventSignalId(16), 'payload-maximum', CHART_COLORS[0]),
+    series('store-prune', eventSignalId(17), 'payload-maximum', CHART_COLORS[1]),
+    series('store-reload', eventSignalId(18), 'payload-maximum', CHART_COLORS[2]),
+  ],
+};
+
 const poolHistogram: PoolHistogramDefinition = {
   id: 'default-pool-fee-histogram',
   title: 'Pool fee distribution',
@@ -232,6 +360,60 @@ export const CHART_TEMPLATES: readonly ChartTemplate[] = [
     chart: poolTotalFees,
   },
   {
+    id: 'block-lifecycle',
+    label: 'Block lifecycle detail',
+    description: 'Rates of the header, block and transaction events not in the sync pipeline.',
+    chart: blockLifecycle,
+  },
+  {
+    id: 'chain-events',
+    label: 'Chain and peer events',
+    description: 'Reorganizations, unconfirmable blocks, invalid transactions, peer drops, refused and unserved transactions, and issued templates.',
+    chart: chainEvents,
+  },
+  {
+    id: 'top-latency',
+    label: 'Top latency',
+    description: 'Candidate header to confirmed top, and block validation, in milliseconds.',
+    chart: topLatency,
+  },
+  {
+    id: 'pool-admission',
+    label: 'Pool admission',
+    description: 'Per transaction set: submit, coverage, script connect and index write.',
+    chart: poolAdmission,
+  },
+  {
+    id: 'pool-blocks',
+    label: 'Pool block and template handling',
+    description: 'Per block and template: organize, reorganize, compact fill, context sweep, template, projection and listing.',
+    chart: poolBlocks,
+  },
+  {
+    id: 'pool-rows',
+    label: 'Pool rows',
+    description: 'Pool table rows at each organized block.',
+    chart: poolRows,
+  },
+  {
+    id: 'serving-latency',
+    label: 'Serving latency',
+    description: 'Time to serve blocks, ancestry, filters, filter hashes and filter checkpoints.',
+    chart: servingLatency,
+  },
+  {
+    id: 'signature-batches',
+    label: 'Signature batches',
+    description: 'ECDSA and Schnorr batch verification and silent payment scan times.',
+    chart: signatureBatches,
+  },
+  {
+    id: 'store-operations',
+    label: 'Store operations',
+    description: 'Snapshot, prune and reload times.',
+    chart: storeOperations,
+  },
+  {
     id: 'transaction-fee-rate',
     label: 'Archived transaction fee rate',
     description: 'Average fee rate of newly archived transactions, in sat/vB.',
@@ -239,6 +421,7 @@ export const CHART_TEMPLATES: readonly ChartTemplate[] = [
       ...transactionArchiveRate,
       id: 'template-tx-fees',
       title: 'Archived transaction fee rate',
+      scale: 'compressed',
       series: [series('tx-fee-rate', eventSignalId(10), 'payload-average', CHART_COLORS[0])],
     },
   },
@@ -284,6 +467,15 @@ export function defaultChartDefinitions(): DashboardChartDefinition[] {
     poolTotalFees,
     poolVirtualSize,
     poolHistogram,
+    blockLifecycle,
+    chainEvents,
+    topLatency,
+    poolAdmission,
+    poolBlocks,
+    poolRows,
+    servingLatency,
+    signatureBatches,
+    storeOperations,
   ].map((chart) => cloneChart(chart));
 }
 

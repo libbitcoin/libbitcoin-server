@@ -12,6 +12,21 @@ export function formatInteger(value: number): string {
   return integerFormatter.format(value);
 }
 
+const scaledFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
+const scales = [
+  [1_000_000_000, 'G'],
+  [1_000_000, 'M'],
+  [1_000, 'k'],
+] as const;
+
+export function formatScaled(value: number, unit: string): string {
+  const magnitude = Math.abs(value);
+  for (const [divisor, prefix] of scales) {
+    if (magnitude >= divisor) return `${scaledFormatter.format(value / divisor)} ${prefix}${unit}`;
+  }
+  return `${scaledFormatter.format(value)} ${unit}`;
+}
+
 export function formatIsoTimestamp(value: number): string | undefined {
   const date = new Date(value);
   return Number.isFinite(date.getTime()) ? date.toISOString() : undefined;

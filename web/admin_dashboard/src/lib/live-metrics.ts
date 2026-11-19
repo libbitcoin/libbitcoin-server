@@ -66,6 +66,7 @@ export interface TelemetryBucket {
 
 export interface MetricsSnapshot {
   now: number;
+  frameTime: number | null;
   sessionStartedAt: number;
   totalFrames: number;
   totalLogs: number;
@@ -208,6 +209,7 @@ export class LiveMetricsStore {
   #invalidFrames = 0;
   #lastLogAt: number | null = null;
   #lastEventAt: number | null = null;
+  #frameTime: number | null = null;
   #poolSnapshot: MetricsSnapshot['poolSnapshot'] = null;
   #sequence = 0;
   #syncFill = new SyncFillTracker();
@@ -325,6 +327,7 @@ export class LiveMetricsStore {
     this.#signalLatest = {};
     this.#signalMaximums = {};
     this.#sessionStartedAt = this.#collectionTime(this.#now());
+    this.#frameTime = null;
     this.#totalFrames = 0;
     this.#totalLogs = 0;
     this.#evictedLogs = 0;
@@ -367,6 +370,7 @@ export class LiveMetricsStore {
     this.#sequence += 1;
     if (this.#logs.push({ ...frame, id: this.#sequence, receivedAt })) this.#evictedLogs += 1;
     this.#recordSignal(logSignalId(frame.level), frame.time, null);
+    this.#frameTime = Math.max(this.#frameTime ?? frame.time, frame.time);
   }
 
   #ingestEvent(frame: AdminEventFrame, receivedAt: number): void {
@@ -375,6 +379,7 @@ export class LiveMetricsStore {
     this.#sequence += 1;
     this.#events.push({ ...frame, id: this.#sequence, receivedAt });
     this.#syncFill.record(frame.event, frame.value, receivedAt);
+    this.#frameTime = Math.max(this.#frameTime ?? frame.time, frame.time);
     this.#recordSignal(
       eventSignalId(frame.event),
       frame.time,
@@ -473,6 +478,7 @@ export class LiveMetricsStore {
     });
     return {
       now: this.#collectionTime(this.#now()),
+      frameTime: this.#frameTime,
       sessionStartedAt: this.#sessionStartedAt,
       totalFrames: this.#totalFrames,
       totalLogs: this.#totalLogs,

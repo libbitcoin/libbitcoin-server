@@ -11,7 +11,7 @@ import {
   formatVirtualSize,
   type FeeHistogramBin,
 } from '@/lib/fee-histogram';
-import { formatInteger, formatTimestamp } from '@/lib/format';
+import { formatInteger, formatScaled, formatTimestamp } from '@/lib/format';
 import { POOL_STALE_AFTER_MS, type NativeFeesSnapshot } from '@/lib/native-contract';
 
 interface PoolFeeHistogramProps {
@@ -164,7 +164,7 @@ function HistogramPlot({
           font,
           grid: { stroke: theme.getPropertyValue('--chart-grid').trim(), width: 1 },
           ticks: { stroke: theme.getPropertyValue('--chart-ticks').trim(), width: 1 },
-          values: (_self, values: number[]) => values.map((value) => formatInteger(value)),
+          values: (_self, values: number[]) => values.map((value) => formatScaled(value, 'vB')),
           ...(scale === 'compressed'
             ? { splits: compressedAxisSplits, filter: (_self: uPlot, values: number[]) => values }
             : {}),

@@ -21,13 +21,13 @@ export interface ChainSync {
 
 // The branch header is the candidate header at the confirmed height, if known.
 // Frontier events received after the tops advance them between requests. The
-// tip header (candidate top) projects the network top from its timestamp.
+// candidate top header projects the network top from its timestamp.
 export function chainSync(
   tops: NativeTops | null,
   branch: NativeHeader | null,
   fill: SyncFill | null = null,
   receivedAt: number | null = null,
-  tip: NativeHeader | null = null,
+  topHeader: NativeHeader | null = null,
   now = Date.now()
 ): ChainSync | null {
   if (tops === null) return null;
@@ -42,14 +42,14 @@ export function chainSync(
       candidate.height === 0 ? 100 : Math.min(100, (confirmed.height / candidate.height) * 100),
     diverged: isDiverged(tops.confirmed, tops.candidate, branch),
     fill,
-    estimatedTop: estimateTop(candidate.height, tip, now),
+    estimatedTop: estimateTop(candidate.height, topHeader, now),
   };
 }
 
-function estimateTop(candidate: number, tip: NativeHeader | null, now: number): number {
-  if (tip === null) return candidate;
-  const elapsed = Math.max(0, now - tip.timestamp * 1_000);
-  return Math.max(candidate, tip.height + Math.ceil(elapsed / EXPECTED_BLOCK_INTERVAL_MS));
+function estimateTop(candidate: number, topHeader: NativeHeader | null, now: number): number {
+  if (topHeader === null) return candidate;
+  const elapsed = Math.max(0, now - topHeader.timestamp * 1_000);
+  return Math.max(candidate, topHeader.height + Math.ceil(elapsed / EXPECTED_BLOCK_INTERVAL_MS));
 }
 
 function advance(top: NativeTop, event: SyncFrontier | null, receivedAt: number | null): SyncTop {

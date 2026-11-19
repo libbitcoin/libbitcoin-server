@@ -69,13 +69,15 @@ function materializeTimeline(snapshot: MetricsSnapshot, cutoff: number): Telemet
   return timeline;
 }
 
+// Frames are bucketed by server time, so a bucket is observed through the
+// latest frame time, or through a second ago when no frame is more recent.
 function bucketDurationSeconds(
   bucket: TelemetryBucket,
-  now: number,
-  sessionStartedAt: number
+  snapshot: MetricsSnapshot
 ): number {
-  const observedFrom = Math.max(bucket.time, sessionStartedAt);
-  const observedUntil = Math.min(now, bucket.time + 1_000);
+  const observed = Math.max(snapshot.frameTime ?? 0, snapshot.now - 1_000);
+  const observedFrom = Math.max(bucket.time, snapshot.sessionStartedAt);
+  const observedUntil = Math.min(observed, bucket.time + 1_000);
   return Math.max(0, (observedUntil - observedFrom) / 1_000);
 }
 
@@ -101,8 +103,8 @@ function selectSeriesValues(
         return stat?.count ?? 0;
       }
       case 'occurrence-rate': {
-        const duration = bucketDurationSeconds(bucket, snapshot.now, snapshot.sessionStartedAt);
-        return duration > 0 ? (stat?.count ?? 0) / duration : 0;
+        const duration = bucketDurationSeconds(bucket, snapshot);
+        return duration > 0 ? (stat?.count ?? 0) / duration : null;
       }
       case 'cumulative-occurrences': {
         cumulative += stat?.count ?? 0;

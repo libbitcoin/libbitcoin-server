@@ -56,7 +56,7 @@ export function App() {
     native.branch,
     snapshot.syncFill,
     native.receivedAt,
-    native.tip,
+    native.topHeader,
     now
   );
 

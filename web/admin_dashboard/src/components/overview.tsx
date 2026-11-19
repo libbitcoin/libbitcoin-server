@@ -117,7 +117,7 @@ export function Overview({ adminStatus, endpoints, metrics, native, sync }: Over
 
       <TelemetryDashboard metrics={metrics} />
 
-      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid gap-6 xl:grid-cols-2">
         <div className="border-accent/30 bg-surface/80 overflow-hidden rounded-2xl border">
           <header className="border-accentSecondary/20 border-b px-5 py-4">
             <p className="text-accentSecondary text-xs tracking-wide uppercase">

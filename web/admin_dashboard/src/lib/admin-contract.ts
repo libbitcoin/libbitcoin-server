@@ -20,7 +20,15 @@ export const LOG_LEVELS: readonly LogLevel[] = [
   { id: 9, name: 'verbose', label: 'Verbose', disabled: true },
 ];
 
-export type EventCategory = 'headers' | 'blocks' | 'transactions' | 'chain' | 'mining' | 'timing';
+export type EventCategory =
+  | 'headers'
+  | 'blocks'
+  | 'transactions'
+  | 'chain'
+  | 'mining'
+  | 'timing'
+  | 'pool'
+  | 'peers';
 export type EventValueKind =
   'height' | 'count' | 'fee-rate' | 'seconds' | 'milliseconds' | 'microseconds' | 'unknown';
 
@@ -229,7 +237,119 @@ export const EVENT_DEFINITIONS = [
     category: 'timing',
     valueKind: 'microseconds',
   },
-  { id: 28, name: 'unknown', label: 'Unknown', category: 'chain', valueKind: 'unknown' },
+  {
+    id: 28,
+    name: 'top_usecs',
+    label: 'Header to top',
+    category: 'timing',
+    valueKind: 'microseconds',
+  },
+  {
+    id: 29,
+    name: 'pool_rows',
+    label: 'Pool rows',
+    category: 'pool',
+    valueKind: 'count',
+  },
+  {
+    id: 30,
+    name: 'pool_submit_usecs',
+    label: 'Pool submit',
+    category: 'pool',
+    valueKind: 'microseconds',
+  },
+  {
+    id: 31,
+    name: 'pool_coverage_usecs',
+    label: 'Pool coverage',
+    category: 'pool',
+    valueKind: 'microseconds',
+  },
+  {
+    id: 32,
+    name: 'pool_connect_usecs',
+    label: 'Pool script connect',
+    category: 'pool',
+    valueKind: 'microseconds',
+  },
+  {
+    id: 33,
+    name: 'pool_admit_usecs',
+    label: 'Pool admission',
+    category: 'pool',
+    valueKind: 'microseconds',
+  },
+  {
+    id: 34,
+    name: 'pool_compact_usecs',
+    label: 'Pool compact block fill',
+    category: 'pool',
+    valueKind: 'microseconds',
+  },
+  {
+    id: 35,
+    name: 'pool_block_in_usecs',
+    label: 'Pool organized block',
+    category: 'pool',
+    valueKind: 'microseconds',
+  },
+  {
+    id: 36,
+    name: 'pool_block_out_usecs',
+    label: 'Pool reorganized block',
+    category: 'pool',
+    valueKind: 'microseconds',
+  },
+  {
+    id: 37,
+    name: 'pool_context_usecs',
+    label: 'Pool context sweep',
+    category: 'pool',
+    valueKind: 'microseconds',
+  },
+  {
+    id: 38,
+    name: 'pool_template_usecs',
+    label: 'Pool template',
+    category: 'pool',
+    valueKind: 'microseconds',
+  },
+  {
+    id: 39,
+    name: 'pool_project_usecs',
+    label: 'Pool fee projection',
+    category: 'pool',
+    valueKind: 'microseconds',
+  },
+  {
+    id: 40,
+    name: 'pool_list_usecs',
+    label: 'Pool listing',
+    category: 'pool',
+    valueKind: 'microseconds',
+  },
+  {
+    id: 41,
+    name: 'tx_dropped',
+    label: 'Peer dropped for transactions',
+    category: 'peers',
+    valueKind: 'count',
+  },
+  {
+    id: 42,
+    name: 'tx_refused',
+    label: 'Transactions refused, peer kept',
+    category: 'peers',
+    valueKind: 'count',
+  },
+  {
+    id: 43,
+    name: 'tx_unserved',
+    label: 'Transactions not served by peer',
+    category: 'peers',
+    valueKind: 'count',
+  },
+  { id: 44, name: 'unknown', label: 'Unknown', category: 'chain', valueKind: 'unknown' },
 ] as const satisfies readonly EventDefinition[];
 
 // JavaScript Date supports at most 100,000,000 days from the Unix epoch.
@@ -332,10 +452,7 @@ export function getLogLevel(level: number) {
 }
 
 export function eventValueInMilliseconds(event: number, value: number): number | null {
-  const definition = getEventDefinition(event);
-  if (definition.category !== 'timing') return null;
-
-  switch (definition.valueKind) {
+  switch (getEventDefinition(event).valueKind) {
     case 'seconds': {
       return value * 1_000;
     }
