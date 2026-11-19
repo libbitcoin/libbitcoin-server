@@ -1745,10 +1745,15 @@ void protocol_bitcoind_blockchain::complete_mempool_info(const code& ec,
     if (stopped())
         return;
 
-    const auto closed = (ec == node::error::pooling_disabled);
+    if (ec == node::error::pooling_disabled)
+    {
+        send_error(error::bitcoind::client_mempool_disabled);
+        return;
+    }
+
     system::json::object result{};
-    if ((ec && !closed) || !mempool_info(result, archive(), rates,
-        database_settings().path, minimum, relay, increment, !closed))
+    if (ec || !mempool_info(result, archive(), rates,
+        database_settings().path, minimum, relay, increment))
     {
         send_error(error::bitcoind::internal_error);
         return;

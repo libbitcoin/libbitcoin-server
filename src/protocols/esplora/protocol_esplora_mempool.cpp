@@ -123,7 +123,7 @@ void protocol_esplora::complete_get_mempool(const code& ec,
 {
     BC_ASSERT(stranded());
 
-    if (stopped() || send_unlisted(ec))
+    if (stopped() || send_closed(ec))
         return;
 
     const auto summary = to_fee_summary(rates, histogram_bin);
@@ -147,7 +147,7 @@ void protocol_esplora::complete_get_mempool_txids(const code& ec,
 {
     BC_ASSERT(stranded());
 
-    if (stopped() || send_unlisted(ec))
+    if (stopped() || send_closed(ec))
         return;
 
     const auto& query = archive();
@@ -172,7 +172,7 @@ void protocol_esplora::complete_get_mempool_recent(const code& ec,
 {
     BC_ASSERT(stranded());
 
-    if (stopped() || send_unlisted(ec))
+    if (stopped() || send_closed(ec))
         return;
 
     const auto& query = archive();
@@ -204,18 +204,21 @@ void protocol_esplora::complete_get_mempool_recent(const code& ec,
     send_json(value{ std::move(recent) });
 }
 
-// A closed pool has no listing, and is not found.
-bool protocol_esplora::send_unlisted(const code& ec) NOEXCEPT
+// A closed pool is not implemented with relay disabled, and is otherwise
+// unavailable until it opens.
+bool protocol_esplora::send_closed(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (!ec)
         return false;
 
-    if (ec == node::error::pooling_disabled)
-        send_not_found();
-    else
+    if (ec != node::error::pooling_disabled)
         send_internal_server_error(ec);
+    else if (network_settings().enable_relay)
+        send_service_unavailable();
+    else
+        send_not_implemented();
 
     return true;
 }

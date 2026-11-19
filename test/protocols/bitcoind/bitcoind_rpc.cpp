@@ -1969,26 +1969,9 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__pending__expected_code)
     }
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__closed_pool__not_loaded)
+BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__closed_pool__mempool_disabled)
 {
-    const auto response = rpc("getmempoolinfo", "[]");
-    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-
-    const auto& result = response.at("result");
-    BC_REQUIRE(!result.at("loaded").as_bool());
-    BC_REQUIRE_EQUAL(result.at("size").as_int64(), 0);
-    BC_REQUIRE_EQUAL(result.at("bytes").as_int64(), 0);
-    BC_REQUIRE_EQUAL(result.at("unbroadcastcount").as_int64(), 0);
-    BC_REQUIRE(!result.at("fullrbf").as_bool());
-}
-
-// The test store is historical, so the node is not current.
-BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__not_current__max_money_minimum)
-{
-    const auto response = rpc("getmempoolinfo", "[]");
-    const auto& result = response.at("result");
-    BC_REQUIRE_EQUAL(result.at("mempoolminfee").as_double(), 20999999.9769);
-    BC_REQUIRE_EQUAL(result.at("minrelaytxfee").as_double(), 0.0);
+    BC_REQUIRE(has_code(rpc("getmempoolinfo", "[]"), -33));
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__closed_pool__mempool_disabled)
@@ -2612,7 +2595,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__batch__mempool_info_then_estimate__two_ordered_r
     const auto& batch = response.as_array();
     BC_REQUIRE_EQUAL(batch.size(), 2u);
     BC_REQUIRE_EQUAL(batch.at(0).at("id").as_int64(), 1);
-    BC_REQUIRE(batch.at(0).at("result").as_object().contains("size"));
+    BC_REQUIRE(has_code(batch.at(0), -33));
     BC_REQUIRE_EQUAL(batch.at(1).at("id").as_int64(), 2);
     BC_REQUIRE_EQUAL(batch.at(1).at("result").at("blocks").as_int64(), 2);
 }
@@ -5169,6 +5152,8 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__empty_pool__loaded)
     BC_REQUIRE(result.at("loaded").as_bool());
     BC_REQUIRE_EQUAL(result.at("size").as_int64(), 0);
     BC_REQUIRE_EQUAL(result.at("bytes").as_int64(), 0);
+    BC_REQUIRE_EQUAL(result.at("unbroadcastcount").as_int64(), 0);
+    BC_REQUIRE(!result.at("fullrbf").as_bool());
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__empty_pool__empty_array)

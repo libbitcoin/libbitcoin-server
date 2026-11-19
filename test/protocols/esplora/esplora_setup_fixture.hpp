@@ -102,6 +102,22 @@ struct esplora_submit_setup_fixture
     }
 };
 
+// Configured with relay disabled, so the pool is not maintained.
+struct esplora_relay_disabled_setup_fixture
+  : esplora_setup_fixture
+{
+    inline esplora_relay_disabled_setup_fixture()
+      : esplora_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.network.enable_relay = false;
+        }, false)
+    {
+    }
+};
+
 struct esplora_broadcast_setup_fixture
   : esplora_setup_fixture
 {

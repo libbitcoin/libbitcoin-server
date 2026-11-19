@@ -463,12 +463,9 @@ BC_AUTO_TEST_CASE(bitcoind_rest__getutxos_bin__hit__bip64_framing)
 
 // mempool
 
-BC_AUTO_TEST_CASE(bitcoind_rest__mempool_info__closed_pool__not_loaded)
+BC_AUTO_TEST_CASE(bitcoind_rest__mempool_info__closed_pool__not_found)
 {
-    const auto result = rest_json("/rest/mempool/info.json");
-    BC_REQUIRE(!result.at("loaded").as_bool());
-    BC_REQUIRE_EQUAL(result.at("size").as_int64(), 0);
-    BC_REQUIRE_EQUAL(result.at("bytes").as_int64(), 0);
+    BC_REQUIRE_EQUAL(rest_status("/rest/mempool/info.json"), status::not_found);
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__closed_pool__not_found)

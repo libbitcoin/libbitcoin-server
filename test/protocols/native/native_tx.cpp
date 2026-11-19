@@ -175,9 +175,9 @@ BC_AUTO_TEST_CASE(native__ws_tx_subscribe__stop__empty)
 // fees
 // ----------------------------------------------------------------------------
 
-BC_AUTO_TEST_CASE(native__fees__closed_pool__not_found)
+BC_AUTO_TEST_CASE(native__fees__relay_disabled__not_implemented)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/fees?format=json"), status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/fees?format=json"), status::not_implemented);
 }
 
 BC_AUTO_TEST_CASE(native__fees__text__not_acceptable)
@@ -190,10 +190,19 @@ BC_AUTO_TEST_CASE(native__fees__data__not_acceptable)
     BC_REQUIRE_EQUAL(get_status("/v1/fees?format=data"), http::status::not_acceptable);
 }
 
-BC_AUTO_TEST_CASE(native__ws_fees__closed_pool__empty)
+BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(native_closed_tests, native_closed_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__fees__closed_pool__service_unavailable)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/fees?format=json"), status::service_unavailable);
+}
+
+BC_AUTO_TEST_CASE(native__ws_fees__closed_pool__service_unavailable)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_get_text("/v1/fees").empty());
+    BC_REQUIRE(ws_get_text("/v1/fees").starts_with("Service Unavailable"));
 }
 
 BC_AUTO_TEST_SUITE_END()

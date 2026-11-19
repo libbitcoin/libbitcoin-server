@@ -308,6 +308,22 @@ struct native_pooling_setup_fixture
     }
 };
 
+// Configured with relay but not the chasers, so the pool does not open.
+struct native_closed_setup_fixture
+  : native_setup_fixture
+{
+    inline native_closed_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.network.enable_relay = true;
+        })
+    {
+    }
+};
+
 struct native_delayed_setup_fixture
   : native_setup_fixture
 {

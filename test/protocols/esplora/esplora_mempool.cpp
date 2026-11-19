@@ -28,19 +28,19 @@ BC_FIXTURE_TEST_SUITE(esplora_tests, esplora_ten_block_setup_fixture)
 // mempool
 // ----------------------------------------------------------------------------
 
-BC_AUTO_TEST_CASE(esplora__mempool__closed_pool__not_found)
+BC_AUTO_TEST_CASE(esplora__mempool__closed_pool__service_unavailable)
 {
-    BC_REQUIRE_EQUAL(get_status("/mempool"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/mempool"), http::status::service_unavailable);
 }
 
-BC_AUTO_TEST_CASE(esplora__mempool_txids__closed_pool__not_found)
+BC_AUTO_TEST_CASE(esplora__mempool_txids__closed_pool__service_unavailable)
 {
-    BC_REQUIRE_EQUAL(get_status("/mempool/txids"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/mempool/txids"), http::status::service_unavailable);
 }
 
-BC_AUTO_TEST_CASE(esplora__mempool_recent__closed_pool__not_found)
+BC_AUTO_TEST_CASE(esplora__mempool_recent__closed_pool__service_unavailable)
 {
-    BC_REQUIRE_EQUAL(get_status("/mempool/recent"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/mempool/recent"), http::status::service_unavailable);
 }
 
 BC_AUTO_TEST_CASE(esplora__mempool_invalid_component__not_found)
@@ -242,6 +242,20 @@ BC_AUTO_TEST_CASE(esplora__mempool_recent__broadcast__expected)
 BC_AUTO_TEST_SUITE_END()
 
 // fee-estimates (node started)
+
+BC_FIXTURE_TEST_SUITE(esplora_relay_disabled_tests, esplora_relay_disabled_setup_fixture)
+
+BC_AUTO_TEST_CASE(esplora__mempool__relay_disabled__not_implemented)
+{
+    BC_REQUIRE_EQUAL(get_status("/mempool"), http::status::not_implemented);
+}
+
+BC_AUTO_TEST_CASE(esplora__mempool_txids__relay_disabled__not_implemented)
+{
+    BC_REQUIRE_EQUAL(get_status("/mempool/txids"), http::status::not_implemented);
+}
+
+BC_AUTO_TEST_SUITE_END()
 
 BC_FIXTURE_TEST_SUITE(esplora_estimate_tests, esplora_submit_setup_fixture)
 

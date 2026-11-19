@@ -263,7 +263,7 @@ private:
         const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_mempool_recent(const code& ec,
         const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
-    bool send_unlisted(const code& ec) NOEXCEPT;
+    bool send_closed(const code& ec) NOEXCEPT;
 
     void next_estimate(size_t index, const gate_t::ptr& gate) NOEXCEPT;
     void handle_estimate(const code& ec, uint64_t fee, size_t index,

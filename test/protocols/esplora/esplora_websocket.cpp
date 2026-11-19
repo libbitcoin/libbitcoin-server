@@ -59,10 +59,10 @@ BC_AUTO_TEST_CASE(esplora__ws_block__json__expected)
     BC_REQUIRE_EQUAL(response.as_object().at("height").as_int64(), 1);
 }
 
-BC_AUTO_TEST_CASE(esplora__ws_mempool__closed_pool__not_found)
+BC_AUTO_TEST_CASE(esplora__ws_mempool__closed_pool__service_unavailable)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(ws_get_text("/mempool/txids").starts_with("Not Found"));
+    BC_REQUIRE(ws_get_text("/mempool/txids").starts_with("Service Unavailable"));
 }
 
 BC_AUTO_TEST_CASE(esplora__ws_pipelined__ordered__expected)

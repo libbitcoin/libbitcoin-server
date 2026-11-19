@@ -239,9 +239,15 @@ void protocol_native::complete_get_fees(const code& ec,
     if (stopped())
         return;
 
+    // A closed pool is not implemented with relay disabled, and is
+    // otherwise unavailable until it opens.
     if (ec == node::error::pooling_disabled)
     {
-        send_not_found();
+        if (network_settings().enable_relay)
+            send_service_unavailable();
+        else
+            send_not_implemented();
+
         return;
     }
 

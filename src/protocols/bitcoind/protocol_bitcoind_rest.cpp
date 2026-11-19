@@ -1000,10 +1000,15 @@ void protocol_bitcoind_rest::complete_mempool_information(const code& ec,
     if (stopped())
         return;
 
-    const auto closed = (ec == node::error::pooling_disabled);
+    if (ec == node::error::pooling_disabled)
+    {
+        send_not_found();
+        return;
+    }
+
     object out{};
-    if ((ec && !closed) || !mempool_info(out, archive(), rates,
-        database_settings().path, minimum, relay, increment, !closed))
+    if (ec || !mempool_info(out, archive(), rates, database_settings().path,
+        minimum, relay, increment))
     {
         send_internal_server_error(database::error::integrity);
         return;
