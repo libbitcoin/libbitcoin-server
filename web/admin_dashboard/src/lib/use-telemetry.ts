@@ -144,7 +144,7 @@ export function hasFreshNativeLiveState(
     live.topReceivedAt !== null &&
     live.configuration !== null &&
     live.configurationReceivedAt !== null &&
-    isNativeStateFresh(live.topReceivedAt, now)
+    isNativeStateFresh(Math.max(live.topReceivedAt, status.lastMessageAt ?? 0), now)
   );
 }
 

@@ -84,6 +84,10 @@ export class ReconnectingWebSocket {
 
   readonly getStatus = (): ConnectionStatus => this.#status;
 
+  resetReconnects(): void {
+    if (this.#status.reconnects !== 0) this.#setStatus({ ...this.#status, reconnects: 0 });
+  }
+
   readonly subscribeStatus = (listener: StatusListener): (() => void) => {
     this.#listeners.add(listener);
     return () => {
