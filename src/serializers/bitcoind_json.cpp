@@ -458,7 +458,7 @@ bool raw_mempool(system::json::value& out, const node::query& query,
 // the space available to the store (shared with all tables and the volume).
 bool mempool_info(system::json::object& out, const node::query& query,
     const database::fee_rates& rates, const std::filesystem::path& store,
-    double minimum, double relay, double increment) NOEXCEPT
+    double minimum, double relay, double increment, bool loaded) NOEXCEPT
 {
     uint64_t space{};
     if (!database::file::space(space, store))
@@ -478,7 +478,7 @@ bool mempool_info(system::json::object& out, const node::query& query,
 
     out = system::json::object
     {
-        { "loaded", true },
+        { "loaded", loaded },
         { "size", rates.size() },
         { "bytes", bytes },
         { "usage", usage },

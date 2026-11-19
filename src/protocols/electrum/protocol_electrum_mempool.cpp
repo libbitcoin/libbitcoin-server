@@ -94,17 +94,21 @@ void protocol_electrum::handle_mempool_get_info(const code& ec,
 void protocol_electrum::handle_fee_histogram(const code& ec,
     const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
 {
-    PARALLEL(do_get_fee_histogram, ec, rates, gate);
+    POST(complete_fee_histogram, ec, rates, gate);
 }
 
-void protocol_electrum::do_get_fee_histogram(const code& ec,
-    const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
+void protocol_electrum::complete_fee_histogram(const code& ec,
+    const database::fee_rates& rates, const gate_t::ptr&) NOEXCEPT
 {
-    BC_ASSERT(!stranded());
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
 
     if (ec)
     {
-        POST(complete_mempool, ec, value_t{}, gate);
+        using namespace error::electrum;
+        send_code(translate(ec, daemon_error));
         return;
     }
 
@@ -114,24 +118,28 @@ void protocol_electrum::do_get_fee_histogram(const code& ec,
     for (const auto& [rate, size]: bins)
         histogram.emplace_back(array_t{ rate, to64(size) });
 
-    POST(complete_mempool, code{}, value_t{ std::move(histogram) }, gate);
+    send_result(std::move(histogram));
 }
 
 // The pool is ordered by entry, so the most recent are at its end.
 void protocol_electrum::handle_recent(const code& ec,
     const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
 {
-    PARALLEL(do_mempool_recent, ec, links, gate);
+    POST(complete_recent, ec, links, gate);
 }
 
-void protocol_electrum::do_mempool_recent(const code& ec,
-    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
+void protocol_electrum::complete_recent(const code& ec,
+    const database::tx_links& links, const gate_t::ptr&) NOEXCEPT
 {
-    BC_ASSERT(!stranded());
+    BC_ASSERT(stranded());
+    using namespace error::electrum;
+
+    if (stopped())
+        return;
 
     if (ec)
     {
-        POST(complete_mempool, ec, value_t{}, gate);
+        send_code(translate(ec, daemon_error));
         return;
     }
 
@@ -147,8 +155,7 @@ void protocol_electrum::do_mempool_recent(const code& ec,
         if (!query.get_tx_fee(fee, *link) ||
             !query.get_tx_virtual_size(vsize, *link))
         {
-            POST(complete_mempool, database::error::integrity, value_t{},
-                gate);
+            send_code(daemon_error);
             return;
         }
 
@@ -160,24 +167,7 @@ void protocol_electrum::do_mempool_recent(const code& ec,
         });
     }
 
-    POST(complete_mempool, code{}, value_t{ std::move(recent) }, gate);
-}
-
-void protocol_electrum::complete_mempool(const code& ec, value_t& result,
-    const gate_t::ptr&) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    if (stopped())
-        return;
-
-    if (ec)
-    {
-        using namespace error::electrum;
-        send_code(translate(ec, daemon_error));
-        return;
-    }
-
-    send_result(std::move(result));
+    send_result(std::move(recent));
 }
 
 BC_POP_WARNING()

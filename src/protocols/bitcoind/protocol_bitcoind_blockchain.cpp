@@ -1659,21 +1659,11 @@ bool protocol_bitcoind_blockchain::get_mempool_relatives(
         return true;
     }
 
-    PARALLEL(do_get_mempool_relatives, hash, verbose, ancestors, gate());
-    return true;
-}
-
-void protocol_bitcoind_blockchain::do_get_mempool_relatives(
-    const hash_digest& hash, bool verbose, bool ancestors,
-    const gate_t::ptr& gate) NOEXCEPT
-{
-    BC_ASSERT(!stranded());
-
     const auto link = to_mempool_tx(hash);
     if (link.is_terminal())
     {
-        POST(fail, error::bitcoind::invalid_address_or_key, gate);
-        return;
+        send_error(error::bitcoind::invalid_address_or_key);
+        return true;
     }
 
     const auto& query = archive();
@@ -1683,11 +1673,12 @@ void protocol_bitcoind_blockchain::do_get_mempool_relatives(
     system::json::value result{};
     if (!mempool_txs(result, query, links, verbose))
     {
-        POST(fail, error::bitcoind::internal_error, gate);
-        return;
+        send_error(error::bitcoind::internal_error);
+        return true;
     }
 
-    POST(complete_value, value_t{ std::move(result) }, gate);
+    send_result(value_t{ std::move(result) });
+    return true;
 }
 
 bool protocol_bitcoind_blockchain::handle_get_mempool_entry(const code& ec,
@@ -1702,31 +1693,22 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_entry(const code& ec,
         return true;
     }
 
-    PARALLEL(do_get_mempool_entry, hash, gate());
-    return true;
-}
-
-void protocol_bitcoind_blockchain::do_get_mempool_entry(
-    const hash_digest& hash, const gate_t::ptr& gate) NOEXCEPT
-{
-    BC_ASSERT(!stranded());
-
     const auto link = to_mempool_tx(hash);
     if (link.is_terminal())
     {
-        POST(fail, error::bitcoind::invalid_address_or_key, gate);
-        return;
+        send_error(error::bitcoind::invalid_address_or_key);
+        return true;
     }
 
     system::json::object entry{};
     if (!mempool_entry(entry, archive(), link))
     {
-        POST(fail, error::bitcoind::internal_error, gate);
-        return;
+        send_error(error::bitcoind::internal_error);
+        return true;
     }
 
-    POST(complete_value, value_t{ system::json::value{ std::move(entry) } },
-        gate);
+    send_result(value_t{ system::json::value{ std::move(entry) } });
+    return true;
 }
 
 // The minimum is that sent to peers (feefilter), while the relay minimum is
@@ -1751,25 +1733,28 @@ void protocol_bitcoind_blockchain::handle_mempool_info(const code& ec,
     const database::fee_rates& rates, double minimum, double relay,
     double increment, const gate_t::ptr& gate) NOEXCEPT
 {
-    PARALLEL(do_get_mempool_info, ec, rates, minimum, relay, increment, gate);
+    POST(complete_mempool_info, ec, rates, minimum, relay, increment, gate);
 }
 
-void protocol_bitcoind_blockchain::do_get_mempool_info(const code& ec,
+void protocol_bitcoind_blockchain::complete_mempool_info(const code& ec,
     const database::fee_rates& rates, double minimum, double relay,
-    double increment, const gate_t::ptr& gate) NOEXCEPT
+    double increment, const gate_t::ptr&) NOEXCEPT
 {
-    BC_ASSERT(!stranded());
+    BC_ASSERT(stranded());
 
+    if (stopped())
+        return;
+
+    const auto closed = (ec == node::error::pooling_disabled);
     system::json::object result{};
-    if (ec || !mempool_info(result, archive(), rates,
-        database_settings().path, minimum, relay, increment))
+    if ((ec && !closed) || !mempool_info(result, archive(), rates,
+        database_settings().path, minimum, relay, increment, !closed))
     {
-        POST(fail, error::bitcoind::internal_error, gate);
+        send_error(error::bitcoind::internal_error);
         return;
     }
 
-    POST(complete_value, value_t{ system::json::value{ std::move(result) } },
-        gate);
+    send_result(value_t{ system::json::value{ std::move(result) } });
 }
 
 bool protocol_bitcoind_blockchain::handle_get_raw_mempool(const code& ec,
@@ -1792,17 +1777,48 @@ void protocol_bitcoind_blockchain::handle_raw_mempool(const code& ec,
     const database::tx_links& links, bool verbose, bool sequence,
     const gate_t::ptr& gate) NOEXCEPT
 {
-    PARALLEL(do_get_raw_mempool, ec, links, verbose, sequence, gate);
+    // An entry is serialized for each tx when verbose.
+    if (verbose && !ec)
+        PARALLEL(do_get_raw_mempool, links, gate);
+    else
+        POST(complete_raw_mempool, ec, links, sequence, gate);
 }
 
-void protocol_bitcoind_blockchain::do_get_raw_mempool(const code& ec,
-    const database::tx_links& links, bool verbose, bool sequence,
-    const gate_t::ptr& gate) NOEXCEPT
+void protocol_bitcoind_blockchain::complete_raw_mempool(const code& ec,
+    const database::tx_links& links, bool sequence,
+    const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    if (ec == node::error::pooling_disabled)
+    {
+        send_error(error::bitcoind::client_mempool_disabled);
+        return;
+    }
+
+    constexpr auto verbose = false;
+    system::json::value result{};
+    if (ec || !raw_mempool(result, archive(), links, verbose, sequence))
+    {
+        send_error(error::bitcoind::internal_error);
+        return;
+    }
+
+    send_result(value_t{ std::move(result) });
+}
+
+void protocol_bitcoind_blockchain::do_get_raw_mempool(
+    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
+    constexpr auto verbose = true;
+    constexpr auto sequence = false;
     system::json::value result{};
-    if (ec || !raw_mempool(result, archive(), links, verbose, sequence))
+    if (!raw_mempool(result, archive(), links, verbose, sequence))
     {
         POST(fail, error::bitcoind::internal_error, gate);
         return;
@@ -1891,18 +1907,7 @@ bool protocol_bitcoind_blockchain::handle_get_tx_spending_prevout(const code& ec
         prevouts.emplace_back(hash, index);
     }
 
-    PARALLEL(do_get_tx_spending_prevout, std::move(prevouts), mempool_only,
-        return_tx, gate());
-    return true;
-}
-
-// The mempool spender has precedence, as with bitcoind.
-void protocol_bitcoind_blockchain::do_get_tx_spending_prevout(
-    const chain::points& prevouts, bool mempool_only, bool return_tx,
-    const gate_t::ptr& gate) NOEXCEPT
-{
-    BC_ASSERT(!stranded());
-
+    // The mempool spender has precedence, as with bitcoind.
     const auto& query = archive();
     array_t results{};
     results.reserve(prevouts.size());
@@ -1932,8 +1937,8 @@ void protocol_bitcoind_blockchain::do_get_tx_spending_prevout(
                 const auto spending = query.get_transaction(tx, true);
                 if (!spending)
                 {
-                    POST(fail, error::bitcoind::internal_error, gate);
-                    return;
+                    send_error(error::bitcoind::internal_error);
+                    return true;
                 }
 
                 result["spendingtx"] = encode_base16(spending->to_data(true));
@@ -1949,7 +1954,8 @@ void protocol_bitcoind_blockchain::do_get_tx_spending_prevout(
         results.emplace_back(std::move(result));
     }
 
-    POST(complete_value, value_t{ std::move(results) }, gate);
+    send_result(std::move(results));
+    return true;
 }
 
 // Each tx is submitted individually, in file order, and failures are skipped.
@@ -2146,6 +2152,12 @@ void protocol_bitcoind_blockchain::do_save_mempool(const code& ec,
     const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
+
+    if (ec == node::error::pooling_disabled)
+    {
+        POST(fail, error::bitcoind::client_mempool_disabled, gate);
+        return;
+    }
 
     data_chunk data{};
     if (ec || !serialize_mempool(data, archive(), links))

@@ -228,31 +228,22 @@ bool protocol_native::handle_get_fees(const code& ec, interface::fees,
 void protocol_native::handle_fees(const code& ec,
     const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
 {
-    PARALLEL(do_get_fees, ec, rates, gate);
-}
-
-void protocol_native::do_get_fees(const code& ec,
-    const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
-{
-    BC_ASSERT(!stranded());
-
-    if (ec)
-    {
-        POST(complete_get_fees, ec, fee_summary{}, gate);
-        return;
-    }
-
-    const auto summary = to_fee_summary(rates, histogram_bin);
-    POST(complete_get_fees, code{}, summary, gate);
+    POST(complete_get_fees, ec, rates, gate);
 }
 
 void protocol_native::complete_get_fees(const code& ec,
-    const fee_summary& summary, const gate_t::ptr&) NOEXCEPT
+    const database::fee_rates& rates, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (stopped())
         return;
+
+    if (ec == node::error::pooling_disabled)
+    {
+        send_not_found();
+        return;
+    }
 
     if (ec)
     {
@@ -260,6 +251,7 @@ void protocol_native::complete_get_fees(const code& ec,
         return;
     }
 
+    const auto summary = to_fee_summary(rates, histogram_bin);
     system::json::object object
     {
         { "count", summary.count },

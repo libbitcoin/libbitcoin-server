@@ -115,48 +115,40 @@ bool protocol_esplora::handle_get_fee_estimates(const code& ec,
 void protocol_esplora::handle_mempool(const code& ec,
     const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
 {
-    PARALLEL(do_get_mempool, ec, rates, gate);
+    POST(complete_get_mempool, ec, rates, gate);
 }
 
-void protocol_esplora::do_get_mempool(const code& ec,
-    const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
+void protocol_esplora::complete_get_mempool(const code& ec,
+    const database::fee_rates& rates, const gate_t::ptr&) NOEXCEPT
 {
-    BC_ASSERT(!stranded());
+    BC_ASSERT(stranded());
 
-    if (ec)
-    {
-        POST(complete_get_mempool, ec, value{}, gate);
+    if (stopped() || send_unlisted(ec))
         return;
-    }
 
     const auto summary = to_fee_summary(rates, histogram_bin);
-    value out = object
+    send_json(object
     {
         { "count", summary.count },
         { "vsize", summary.vsize },
         { "total_fee", summary.fee },
         { "fee_histogram", value_from(summary.histogram) }
-    };
-
-    POST(complete_get_mempool, code{}, std::move(out), gate);
+    });
 }
 
 void protocol_esplora::handle_mempool_txids(const code& ec,
     const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
 {
-    PARALLEL(do_get_mempool_txids, ec, links, gate);
+    POST(complete_get_mempool_txids, ec, links, gate);
 }
 
-void protocol_esplora::do_get_mempool_txids(const code& ec,
-    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
+void protocol_esplora::complete_get_mempool_txids(const code& ec,
+    const database::tx_links& links, const gate_t::ptr&) NOEXCEPT
 {
-    BC_ASSERT(!stranded());
+    BC_ASSERT(stranded());
 
-    if (ec)
-    {
-        POST(complete_get_mempool, ec, value{}, gate);
+    if (stopped() || send_unlisted(ec))
         return;
-    }
 
     const auto& query = archive();
 
@@ -165,26 +157,23 @@ void protocol_esplora::do_get_mempool_txids(const code& ec,
     for (const auto& link: links)
         txids.emplace_back(encode_hash(query.get_tx_key(link)));
 
-    POST(complete_get_mempool, code{}, value{ std::move(txids) }, gate);
+    send_json(value{ std::move(txids) });
 }
 
 // The pool is ordered by entry, so the most recent are at its end.
 void protocol_esplora::handle_mempool_recent(const code& ec,
     const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
 {
-    PARALLEL(do_get_mempool_recent, ec, links, gate);
+    POST(complete_get_mempool_recent, ec, links, gate);
 }
 
-void protocol_esplora::do_get_mempool_recent(const code& ec,
-    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
+void protocol_esplora::complete_get_mempool_recent(const code& ec,
+    const database::tx_links& links, const gate_t::ptr&) NOEXCEPT
 {
-    BC_ASSERT(!stranded());
+    BC_ASSERT(stranded());
 
-    if (ec)
-    {
-        POST(complete_get_mempool, ec, value{}, gate);
+    if (stopped() || send_unlisted(ec))
         return;
-    }
 
     const auto& query = archive();
 
@@ -199,8 +188,7 @@ void protocol_esplora::do_get_mempool_recent(const code& ec,
             !query.get_tx_virtual_size(vsize, *link) ||
             !query.get_tx_spend(spend, *link))
         {
-            POST(complete_get_mempool, database::error::integrity,
-                value{}, gate);
+            send_internal_server_error(database::error::integrity);
             return;
         }
 
@@ -213,24 +201,23 @@ void protocol_esplora::do_get_mempool_recent(const code& ec,
         });
     }
 
-    POST(complete_get_mempool, code{}, value{ std::move(recent) }, gate);
+    send_json(value{ std::move(recent) });
 }
 
-void protocol_esplora::complete_get_mempool(const code& ec,
-    value& out, const gate_t::ptr&) NOEXCEPT
+// A closed pool has no listing, and is not found.
+bool protocol_esplora::send_unlisted(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    if (stopped())
-        return;
+    if (!ec)
+        return false;
 
-    if (ec)
-    {
+    if (ec == node::error::pooling_disabled)
+        send_not_found();
+    else
         send_internal_server_error(ec);
-        return;
-    }
 
-    send_json(std::move(out));
+    return true;
 }
 
 void protocol_esplora::next_estimate(size_t index,

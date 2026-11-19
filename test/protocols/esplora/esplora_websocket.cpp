@@ -59,13 +59,10 @@ BC_AUTO_TEST_CASE(esplora__ws_block__json__expected)
     BC_REQUIRE_EQUAL(response.as_object().at("height").as_int64(), 1);
 }
 
-BC_AUTO_TEST_CASE(esplora__ws_mempool__json__empty)
+BC_AUTO_TEST_CASE(esplora__ws_mempool__closed_pool__not_found)
 {
     BC_REQUIRE(!ws_upgrade());
-
-    const auto response = ws_get_json("/mempool/txids");
-    BC_REQUIRE(response.is_array());
-    BC_REQUIRE(response.as_array().empty());
+    BC_REQUIRE(ws_get_text("/mempool/txids").starts_with("Not Found"));
 }
 
 BC_AUTO_TEST_CASE(esplora__ws_pipelined__ordered__expected)

@@ -249,9 +249,7 @@ private:
 
     void handle_fees(const code& ec, const database::fee_rates& rates,
         const gate_t::ptr& gate) NOEXCEPT;
-    void do_get_fees(const code& ec, const database::fee_rates& rates,
-        const gate_t::ptr& gate) NOEXCEPT;
-    void complete_get_fees(const code& ec, const fee_summary& summary,
+    void complete_get_fees(const code& ec, const database::fee_rates& rates,
         const gate_t::ptr& gate) NOEXCEPT;
 
     // Utilities.

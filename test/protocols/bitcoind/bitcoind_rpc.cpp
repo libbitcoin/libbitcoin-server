@@ -1969,13 +1969,13 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__pending__expected_code)
     }
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__default__empty_pool)
+BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__closed_pool__not_loaded)
 {
     const auto response = rpc("getmempoolinfo", "[]");
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
 
     const auto& result = response.at("result");
-    REQUIRE_NO_THROW_TRUE(result.at("loaded").as_bool());
+    BC_REQUIRE(!result.at("loaded").as_bool());
     BC_REQUIRE_EQUAL(result.at("size").as_int64(), 0);
     BC_REQUIRE_EQUAL(result.at("bytes").as_int64(), 0);
     BC_REQUIRE_EQUAL(result.at("unbroadcastcount").as_int64(), 0);
@@ -1991,28 +1991,24 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__not_current__max_money_minimum)
     BC_REQUIRE_EQUAL(result.at("minrelaytxfee").as_double(), 0.0);
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__default__empty_array)
+BC_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__closed_pool__mempool_disabled)
 {
-    const auto response = rpc("getrawmempool", "[]");
-    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_array() && response.at("result").as_array().empty());
+    BC_REQUIRE(has_code(rpc("getrawmempool", "[]"), -33));
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__verbose__empty_object)
+BC_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__verbose_closed_pool__mempool_disabled)
 {
-    const auto response = rpc("getrawmempool", "[true]");
-    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_object() && response.at("result").as_object().empty());
+    BC_REQUIRE(has_code(rpc("getrawmempool", "[true]"), -33));
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__mempool_sequence__empty_with_sequence)
+BC_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__mempool_sequence_closed_pool__mempool_disabled)
 {
-    const auto response = rpc("getrawmempool", "[false,true]");
-    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE(has_code(rpc("getrawmempool", "[false,true]"), -33));
+}
 
-    const auto& result = response.at("result");
-    REQUIRE_NO_THROW_TRUE(result.at("txids").is_array() && result.at("txids").as_array().empty());
-    BC_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 1);
+BC_AUTO_TEST_CASE(bitcoind_rpc__savemempool__closed_pool__mempool_disabled)
+{
+    BC_REQUIRE(has_code(rpc("savemempool", "[]"), -33));
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolentry__unpooled__invalid_address_or_key)
@@ -5162,6 +5158,41 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__unknown_option__type_error
 BC_AUTO_TEST_CASE(bitcoind_rpc__gettxspendingprevout__missing_vout__type_error)
 {
     BC_REQUIRE(has_code(rpc("gettxspendingprevout", "[[{\"txid\":\"" + encode_hash(one_hash) + "\"}]]"), -3));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__empty_pool__loaded)
+{
+    const auto response = rpc("getmempoolinfo", "[]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& result = response.at("result");
+    BC_REQUIRE(result.at("loaded").as_bool());
+    BC_REQUIRE_EQUAL(result.at("size").as_int64(), 0);
+    BC_REQUIRE_EQUAL(result.at("bytes").as_int64(), 0);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__empty_pool__empty_array)
+{
+    const auto response = rpc("getrawmempool", "[]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array() && response.at("result").as_array().empty());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__verbose_empty_pool__empty_object)
+{
+    const auto response = rpc("getrawmempool", "[true]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_object() && response.at("result").as_object().empty());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__mempool_sequence_empty_pool__empty_with_sequence)
+{
+    const auto response = rpc("getrawmempool", "[false,true]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& result = response.at("result");
+    REQUIRE_NO_THROW_TRUE(result.at("txids").is_array() && result.at("txids").as_array().empty());
+    BC_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 1);
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__batch__two_templates__two_ordered_responses)

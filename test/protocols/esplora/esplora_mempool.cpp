@@ -28,31 +28,19 @@ BC_FIXTURE_TEST_SUITE(esplora_tests, esplora_ten_block_setup_fixture)
 // mempool
 // ----------------------------------------------------------------------------
 
-BC_AUTO_TEST_CASE(esplora__mempool__json__expected)
+BC_AUTO_TEST_CASE(esplora__mempool__closed_pool__not_found)
 {
-    const auto response = get_json("/mempool");
-    BC_REQUIRE(response.is_object());
-
-    const auto& object = response.as_object();
-    BC_REQUIRE_EQUAL(object.size(), 4u);
-    BC_REQUIRE_EQUAL(object.at("count").as_int64(), 0);
-    BC_REQUIRE_EQUAL(object.at("vsize").as_int64(), 0);
-    BC_REQUIRE_EQUAL(object.at("total_fee").as_int64(), 0);
-    BC_REQUIRE(object.at("fee_histogram").as_array().empty());
+    BC_REQUIRE_EQUAL(get_status("/mempool"), http::status::not_found);
 }
 
-BC_AUTO_TEST_CASE(esplora__mempool_txids__json__empty)
+BC_AUTO_TEST_CASE(esplora__mempool_txids__closed_pool__not_found)
 {
-    const auto response = get_json("/mempool/txids");
-    BC_REQUIRE(response.is_array());
-    BC_REQUIRE(response.as_array().empty());
+    BC_REQUIRE_EQUAL(get_status("/mempool/txids"), http::status::not_found);
 }
 
-BC_AUTO_TEST_CASE(esplora__mempool_recent__json__empty)
+BC_AUTO_TEST_CASE(esplora__mempool_recent__closed_pool__not_found)
 {
-    const auto response = get_json("/mempool/recent");
-    BC_REQUIRE(response.is_array());
-    BC_REQUIRE(response.as_array().empty());
+    BC_REQUIRE_EQUAL(get_status("/mempool/recent"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(esplora__mempool_invalid_component__not_found)
@@ -175,6 +163,33 @@ BC_AUTO_TEST_CASE(esplora__broadcast_package__broadcast__success)
 
     const auto txids = get_json("/mempool/txids");
     BC_REQUIRE_EQUAL(txids.as_array().size(), 1u);
+}
+
+BC_AUTO_TEST_CASE(esplora__mempool__empty_pool__zeros)
+{
+    const auto response = get_json("/mempool");
+    BC_REQUIRE(response.is_object());
+
+    const auto& object = response.as_object();
+    BC_REQUIRE_EQUAL(object.size(), 4u);
+    BC_REQUIRE_EQUAL(object.at("count").as_int64(), 0);
+    BC_REQUIRE_EQUAL(object.at("vsize").as_int64(), 0);
+    BC_REQUIRE_EQUAL(object.at("total_fee").as_int64(), 0);
+    BC_REQUIRE(object.at("fee_histogram").as_array().empty());
+}
+
+BC_AUTO_TEST_CASE(esplora__mempool_txids__empty_pool__empty)
+{
+    const auto response = get_json("/mempool/txids");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE(response.as_array().empty());
+}
+
+BC_AUTO_TEST_CASE(esplora__mempool_recent__empty_pool__empty)
+{
+    const auto response = get_json("/mempool/recent");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE(response.as_array().empty());
 }
 
 BC_AUTO_TEST_CASE(esplora__mempool__broadcast__expected)

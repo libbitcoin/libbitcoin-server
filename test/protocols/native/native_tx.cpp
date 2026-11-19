@@ -175,17 +175,9 @@ BC_AUTO_TEST_CASE(native__ws_tx_subscribe__stop__empty)
 // fees
 // ----------------------------------------------------------------------------
 
-BC_AUTO_TEST_CASE(native__fees__json__empty)
+BC_AUTO_TEST_CASE(native__fees__closed_pool__not_found)
 {
-    const auto response = get_json("/v1/fees?format=json");
-    BC_REQUIRE(response.is_object());
-
-    const auto& object = response.as_object();
-    BC_REQUIRE_EQUAL(object.size(), 4u);
-    BC_REQUIRE_EQUAL(object.at("count").as_int64(), 0);
-    BC_REQUIRE_EQUAL(object.at("virtual").as_int64(), 0);
-    BC_REQUIRE_EQUAL(object.at("fee").as_int64(), 0);
-    BC_REQUIRE(object.at("histogram").as_array().empty());
+    BC_REQUIRE_EQUAL(get_status("/v1/fees?format=json"), status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__fees__text__not_acceptable)
@@ -198,7 +190,30 @@ BC_AUTO_TEST_CASE(native__fees__data__not_acceptable)
     BC_REQUIRE_EQUAL(get_status("/v1/fees?format=data"), http::status::not_acceptable);
 }
 
-BC_AUTO_TEST_CASE(native__ws_fees__default__json)
+BC_AUTO_TEST_CASE(native__ws_fees__closed_pool__empty)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(ws_get_text("/v1/fees").empty());
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(native_pooling_tests, native_pooling_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__fees__empty_pool__zeros)
+{
+    const auto response = get_json("/v1/fees?format=json");
+    BC_REQUIRE(response.is_object());
+
+    const auto& object = response.as_object();
+    BC_REQUIRE_EQUAL(object.size(), 4u);
+    BC_REQUIRE_EQUAL(object.at("count").as_int64(), 0);
+    BC_REQUIRE_EQUAL(object.at("virtual").as_int64(), 0);
+    BC_REQUIRE_EQUAL(object.at("fee").as_int64(), 0);
+    BC_REQUIRE(object.at("histogram").as_array().empty());
+}
+
+BC_AUTO_TEST_CASE(native__ws_fees__empty_pool__json)
 {
     BC_REQUIRE(!ws_upgrade());
 

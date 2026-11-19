@@ -289,13 +289,11 @@ protected:
 
     void handle_fee_histogram(const code& ec,
         const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT;
-    void do_get_fee_histogram(const code& ec,
+    void complete_fee_histogram(const code& ec,
         const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT;
     void handle_recent(const code& ec, const database::tx_links& links,
         const gate_t::ptr& gate) NOEXCEPT;
-    void do_mempool_recent(const code& ec, const database::tx_links& links,
-        const gate_t::ptr& gate) NOEXCEPT;
-    void complete_mempool(const code& ec, network::rpc::value_t& result,
+    void complete_recent(const code& ec, const database::tx_links& links,
         const gate_t::ptr& gate) NOEXCEPT;
 
     /// Notification event handlers.

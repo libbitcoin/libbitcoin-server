@@ -253,18 +253,17 @@ private:
 
     void handle_mempool(const code& ec, const database::fee_rates& rates,
         const gate_t::ptr& gate) NOEXCEPT;
-    void do_get_mempool(const code& ec, const database::fee_rates& rates,
-        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_mempool(const code& ec,
+        const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT;
     void handle_mempool_txids(const code& ec,
         const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
-    void do_get_mempool_txids(const code& ec,
+    void complete_get_mempool_txids(const code& ec,
         const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
     void handle_mempool_recent(const code& ec,
         const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
-    void do_get_mempool_recent(const code& ec,
+    void complete_get_mempool_recent(const code& ec,
         const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
-    void complete_get_mempool(const code& ec, system::json::value& out,
-        const gate_t::ptr& gate) NOEXCEPT;
+    bool send_unlisted(const code& ec) NOEXCEPT;
 
     void next_estimate(size_t index, const gate_t::ptr& gate) NOEXCEPT;
     void handle_estimate(const code& ec, uint64_t fee, size_t index,
