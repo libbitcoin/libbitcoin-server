@@ -163,7 +163,7 @@ void executor::do_resume()
         return;
     }
 
-    if (query_.is_fault())
+    if (query_.is_fault() || query_.is_fault_locked())
     {
         logger(BS_NODE_UNRECOVERABLE);
         return;
