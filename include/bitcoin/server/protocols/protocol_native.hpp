@@ -261,7 +261,10 @@ private:
     void inject(system::json::value& out, std::optional<uint32_t> height,
         const database::header_link& link) const NOEXCEPT;
 
-    system::chain::checkpoint get_top(bool candidate) const NOEXCEPT;
+    system::chain::header::cptr get_top(bool candidate,
+        size_t& height) const NOEXCEPT;
+    system::data_chunk to_top(bool candidate) const NOEXCEPT;
+    system::json::value to_top_json(bool candidate) const NOEXCEPT;
     system::data_chunk to_tops() const NOEXCEPT;
     system::json::value to_tops_json() const NOEXCEPT;
     database::header_link to_header(const std::optional<uint32_t>& height,

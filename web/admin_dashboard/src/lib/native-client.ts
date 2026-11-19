@@ -8,13 +8,13 @@ import {
   POOL_POLL_INTERVAL_MS,
   nativeBranchPath,
   parseNativeFrame,
+  topHeaderOf,
 } from './native-contract';
 import {
   type ConnectionStatus,
   type ReconnectingWebSocket,
   type SocketChannel,
 } from './reconnecting-websocket';
-import { isHeaderCurrent } from './sync-status';
 
 export interface NativeLiveState {
   configuration: NativeConfiguration | null;
@@ -35,7 +35,6 @@ interface NativeClientOptions {
 
 export const NATIVE_POLL_INTERVAL_MS = 15_000;
 export const NATIVE_STATE_STALE_AFTER_MS = 3 * NATIVE_POLL_INTERVAL_MS;
-const TOP_UNCURRENT_INTERVAL_MS = 1_000;
 
 export const INITIAL_LIVE_STATE: NativeLiveState = {
   configuration: null,
@@ -60,9 +59,6 @@ export class NativeClient {
   #connectedAt: number | null = null;
   #headerRequest: { height: number; requestedAt: number } | null = null;
   #lastHeaderRequestedAt: number | null = null;
-  #topRequest: { height: number; requestedAt: number } | null = null;
-  #topRequested = new Set<number>();
-  #lastTopRequestedAt: number | null = null;
   #pollIntervalMs: number;
   #poolTimer: ReturnType<typeof setInterval> | null = null;
   #poolRequestedAt: number | null = null;
@@ -135,9 +131,6 @@ export class NativeClient {
         this.#poolRequestedAt = null;
         this.#headerRequest = null;
         this.#lastHeaderRequestedAt = null;
-        this.#topRequest = null;
-        this.#topRequested.clear();
-        this.#lastTopRequestedAt = null;
         this.#invalidateLiveState();
       }
     });
@@ -172,24 +165,15 @@ export class NativeClient {
       this.#setState({
         ...this.#state,
         tops: frame.payload,
+        topHeader: topHeaderOf(frame.payload),
         topReceivedAt: receivedAt,
         branch: retained ? this.#state.branch : null,
         branchReceivedAt: retained ? this.#state.branchReceivedAt : null,
       });
-      this.#requestTop(candidate.height, receivedAt);
       if (branching) this.#requestBranch(confirmed.height, receivedAt);
       return;
     }
     if (frame.type === 'header') {
-      const height = frame.payload.height;
-      if (this.#topRequested.has(height)) {
-        for (const requested of this.#topRequested)
-          if (requested <= height) this.#topRequested.delete(requested);
-        if (height === this.#topRequest?.height) this.#topRequest = null;
-        if ((this.#state.topHeader?.height ?? -1) < height)
-          this.#setState({ ...this.#state, topHeader: frame.payload });
-        return;
-      }
       if (frame.payload.height !== this.#headerRequest?.height) return;
       this.#headerRequest = null;
       this.#setState({
@@ -222,22 +206,6 @@ export class NativeClient {
     this.#headerRequest = { height, requestedAt: now };
     this.#lastHeaderRequestedAt = now;
     if (!this.#socket.send(nativeBranchPath(height))) this.#headerRequest = null;
-  }
-
-  // The candidate top header, sampled at the polling cadence once current.
-  #requestTop(height: number, now: number): void {
-    if (this.#topRequest !== null && now - this.#topRequest.requestedAt < NATIVE_STATE_STALE_AFTER_MS)
-      return;
-    const interval = isHeaderCurrent(this.#state.topHeader, now)
-      ? this.#pollIntervalMs
-      : TOP_UNCURRENT_INTERVAL_MS;
-    if (this.#lastTopRequestedAt !== null && now - this.#lastTopRequestedAt < interval)
-      return;
-
-    this.#topRequest = { height, requestedAt: now };
-    this.#lastTopRequestedAt = now;
-    if (this.#socket.send(nativeBranchPath(height))) this.#topRequested.add(height);
-    else this.#topRequest = null;
   }
 
   #requestPool(): void {

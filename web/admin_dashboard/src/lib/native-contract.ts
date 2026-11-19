@@ -61,6 +61,9 @@ export type NativeHeader = z.infer<typeof nativeHeaderSchema>;
 const nativeTopSchema = z.object({
   hash: hashSchema,
   height: z.number().int().nonnegative(),
+  header: z.object({
+    timestamp: z.number().int().positive().max(0xffff_ffff),
+  }),
 });
 
 const nativeTopsSchema = z.object({
@@ -70,6 +73,12 @@ const nativeTopsSchema = z.object({
 
 export type NativeTop = z.infer<typeof nativeTopSchema>;
 export type NativeTops = z.infer<typeof nativeTopsSchema>;
+
+// The candidate top header is carried by the tops.
+export function topHeaderOf(tops: NativeTops): NativeHeader {
+  const { hash, height, header } = tops.candidate;
+  return { hash, height, timestamp: header.timestamp };
+}
 
 // Native /v1/fees returns existing pool gauges, not transaction arrival counters.
 const poolIntegerSchema = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -156,26 +165,18 @@ export async function fetchNativeSnapshot(
   const configuration = nativeConfigurationSchema.parse(configurationValue);
   const tops = nativeTopsSchema.parse(topValue);
   const receivedAt = Date.now();
-
-  // An unresolved header must not hide otherwise valid tops.
-  const candidateHeader = async (height: number): Promise<NativeHeader | null> => {
+  let branch: NativeHeader | null = null;
+  if (tops.candidate.height > tops.confirmed.height) {
     try {
-      const path = nativeBranchPath(height);
+      const path = nativeBranchPath(tops.confirmed.height);
       const header = nativeHeaderSchema.parse(await fetchJson(endpointUrl(baseUrl, path), signal));
-      return header.height === height ? header : null;
+      if (header.height === tops.confirmed.height) branch = header;
     } catch {
+      // An unresolved branch must not hide otherwise valid tops.
       signal?.throwIfAborted();
-      return null;
     }
-  };
-
-  const [branch, topHeader] = await Promise.all([
-    tops.candidate.height > tops.confirmed.height
-      ? candidateHeader(tops.confirmed.height)
-      : Promise.resolve(null),
-    candidateHeader(tops.candidate.height),
-  ]);
-  return { configuration, tops, branch, topHeader, receivedAt };
+  }
+  return { configuration, tops, branch, topHeader: topHeaderOf(tops), receivedAt };
 }
 
 // The candidate header at the given height, compared against the confirmed top.
