@@ -121,11 +121,11 @@ BC_AUTO_TEST_CASE(server__admin_server__defaults__expected)
     BC_REQUIRE_EQUAL(server.binds.front().ip(), system::ip::address{ system::ip::ipv4::loopback() });
     BC_REQUIRE_EQUAL(server.binds.front().port(), 0u);
     BC_REQUIRE_EQUAL(server.connections, 10u);
-    BC_REQUIRE_EQUAL(server.inactivity_minutes, 10u);
-    BC_REQUIRE_EQUAL(server.expiration_minutes, 60u);
+    BC_REQUIRE_EQUAL(server.inactivity_minutes, 0u);
+    BC_REQUIRE_EQUAL(server.expiration_minutes, 0u);
     BC_REQUIRE(server.enabled());
-    BC_REQUIRE(server.inactivity() == minutes(10));
-    BC_REQUIRE(server.expiration() == minutes(60));
+    BC_REQUIRE(server.inactivity() == minutes(0));
+    BC_REQUIRE(server.expiration() == minutes(0));
 
     // tls_server
     BC_REQUIRE(!server.secure());
@@ -552,6 +552,8 @@ BC_AUTO_TEST_CASE(server__settings__mainnet__service_limits)
     const server::settings instance{ selection::mainnet, pages, pages };
     constexpr auto encoded = 2u * max_payload + 4u * kilobyte;
     BC_REQUIRE_EQUAL(instance.admin.maximum_backlog, 1024u * megabyte);
+    BC_REQUIRE_EQUAL(instance.admin.inactivity_minutes, 0u);
+    BC_REQUIRE_EQUAL(instance.admin.expiration_minutes, 0u);
     BC_REQUIRE_EQUAL(instance.btcd.maximum_backlog, 20u * megabyte);
     BC_REQUIRE_EQUAL(instance.zmq.maximum_backlog, 32u * megabyte);
     BC_REQUIRE_EQUAL(instance.zmq.inactivity_minutes, 0u);
