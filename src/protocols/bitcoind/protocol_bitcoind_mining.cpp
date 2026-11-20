@@ -160,7 +160,7 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    get_pool_txs(BIND(handle_mining_info, _1, _2, gate()));
+    get_confirmable_txs(BIND(handle_mining_info, _1, _2, gate()));
     return true;
 }
 
