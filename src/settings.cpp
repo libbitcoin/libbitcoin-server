@@ -106,7 +106,7 @@ settings::settings(system::chain::selection context,
     admin.binds.emplace_back(system::ip::ipv4::loopback(), 0_u16);
 
     // Admin may accumulate a large amount of log backlog.
-    admin.maximum_backlog = 10 * network::megabyte;
+    admin.maximum_backlog = 1024 * network::megabyte;
 
     // The largest btcd notification is a filtered block.
     btcd.maximum_backlog = 20 * network::megabyte;

@@ -551,7 +551,7 @@ BC_AUTO_TEST_CASE(server__settings__mainnet__service_limits)
     const server::settings::embedded_pages pages{};
     const server::settings instance{ selection::mainnet, pages, pages };
     constexpr auto encoded = 2u * max_payload + 4u * kilobyte;
-    BC_REQUIRE_EQUAL(instance.admin.maximum_backlog, 10u * megabyte);
+    BC_REQUIRE_EQUAL(instance.admin.maximum_backlog, 1024u * megabyte);
     BC_REQUIRE_EQUAL(instance.btcd.maximum_backlog, 20u * megabyte);
     BC_REQUIRE_EQUAL(instance.zmq.maximum_backlog, 32u * megabyte);
     BC_REQUIRE_EQUAL(instance.zmq.inactivity_minutes, 0u);
