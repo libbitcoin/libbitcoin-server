@@ -885,7 +885,7 @@ const block block1c
         block0_hash,        // previous_block_hash
         hash_digest{ 0x1c },// merkle_root
         0x41424344,         // timestamp
-        0x51525354,         // bits
+        0x1d00ffff,         // bits
         0x61626364          // nonce
     },
     transactions
