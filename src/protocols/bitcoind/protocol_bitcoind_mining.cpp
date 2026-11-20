@@ -154,14 +154,40 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     return true;
 }
 
-// bitcoind omits currentblockweight/currentblocktx until block assembly.
 bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     rpc_interface::get_mining_info) NOEXCEPT
 {
-    using namespace chain;
-
     if (stopped(ec))
         return false;
+
+    get_pool_txs(BIND(handle_mining_info, _1, _2, gate()));
+    return true;
+}
+
+void protocol_bitcoind_mining::handle_mining_info(const code& ec,
+    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    POST(do_mining_info, ec, links, gate);
+}
+
+// bitcoind omits currentblockweight/currentblocktx until block assembly.
+void protocol_bitcoind_mining::do_mining_info(const code& ec,
+    const database::tx_links& links, const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    using namespace chain;
+
+    if (stopped())
+        return;
+
+    if (ec && ec != node::error::pooling_disabled)
+    {
+        send_error(error::bitcoind::internal_error);
+        return;
+    }
 
     size_t height{};
     const auto& query = archive();
@@ -170,7 +196,7 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     if (!top || !query.get_height(height, link))
     {
         send_error(error::bitcoind::internal_error);
-        return true;
+        return;
     }
 
     // The pool state over the top block carries the next work required.
@@ -180,7 +206,7 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     if (!state)
     {
         send_error(error::bitcoind::internal_error);
-        return true;
+        return;
     }
 
     const chain_state pool{ *state, bitcoin };
@@ -193,8 +219,7 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
         { "target", encode_hash(from_uintx(chain::compact::expand(header.bits()))) }
     };
 
-    // TODO: change to min inclusion fee when mining enabled.
-    const auto max_money = to_floating(bitcoin.max_money());
+    const auto minimum = to_floating(node_settings().pool.minimum_fee_rate_());
     const auto span = to_floating(power2<uint64_t>(32u));
     const auto period = bitcoin.block_spacing_seconds;
 
@@ -206,13 +231,12 @@ bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
         { "difficulty", top->difficulty() },
         { "target", encode_hash(from_uintx(chain::compact::expand(top->bits()))) },
         { "networkhashps", top->difficulty() * span / period },
-        { "pooledtx", to64(zero) },
-        { "blockmintxfee", max_money / satoshi_per_bitcoin },
+        { "pooledtx", to64(links.size()) },
+        { "blockmintxfee", minimum / satoshi_per_bitcoin },
         { "chain", chain_name(bitcoin) },
         { "next", std::move(next_block) },
         { "warnings", array_t{} }
     });
-    return true;
 }
 
 // The node accepts only blocks that it requests, so there is no path for a

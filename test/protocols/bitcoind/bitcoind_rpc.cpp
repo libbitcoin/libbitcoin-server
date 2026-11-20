@@ -758,6 +758,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getmininginfo__ten_block_store__expected)
     BC_REQUIRE_EQUAL(result.at("blocks").as_int64(), 9);
     BC_REQUIRE_EQUAL(result.at("difficulty").as_double(), 1.0);
     BC_REQUIRE_EQUAL(result.at("pooledtx").as_int64(), 0);
+    BC_REQUIRE_EQUAL(result.at("blockmintxfee").as_double(), 0.0);
     BC_REQUIRE_EQUAL(as_text(result.at("chain")), "main");
     BC_REQUIRE(!result.as_object().contains("currentblockweight"));
     BC_REQUIRE_EQUAL(result.at("next").at("height").as_int64(), 10);
@@ -4763,6 +4764,16 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolinfo__broadcast__expected)
     BC_REQUIRE_EQUAL(result.at("total_fee").as_double(), 10.0 / chain::satoshi_per_bitcoin);
     BC_REQUIRE(result.at("usage").as_int64() > 0);
     BC_REQUIRE(result.at("maxmempool").as_int64() > 0);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getmininginfo__broadcast__pooledtx)
+{
+    const auto sent = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\"]");
+    BC_REQUIRE_MESSAGE(sent.is_object() && sent.as_object().contains("result"), serialize(sent));
+
+    const auto response = rpc("getmininginfo");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(response.at("result").at("pooledtx").as_int64(), 1);
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__gettxout__broadcast_spent__null)
