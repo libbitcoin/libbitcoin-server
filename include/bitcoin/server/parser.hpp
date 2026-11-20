@@ -87,6 +87,9 @@ public:
     database::envelope stored{};
     code stored_code{};
 
+    /// The envelope of the configuration, before stored values are applied.
+    database::envelope current{};
+
     /// The names of configured values overridden by the stored envelope.
     system::string_list overrides{};
 

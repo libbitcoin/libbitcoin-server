@@ -191,8 +191,22 @@ void parser::read_envelope() NOEXCEPT
             configured.bitcoin.network = selected;
     }
 
-    overrides = stored.apply(configured.bitcoin, configured.database,
-        configured.node.limited_blocks, configured.node.require_witness,
+    const auto& node = configured.node;
+    current =
+    {
+        configured.bitcoin,
+        configured.database,
+        node.limited_blocks,
+        node.provide_filters,
+        node.require_witness,
+        node.silent_start_height
+    };
+
+    overrides = stored.apply(
+        configured.bitcoin,
+        configured.database,
+        configured.node.limited_blocks,
+        configured.node.require_witness,
         configured.node.silent_start_height);
 }
 

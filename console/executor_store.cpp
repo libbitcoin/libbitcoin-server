@@ -189,7 +189,7 @@ code executor::migrate_store(bool& migrated, bool details)
 
     const auto start = logger::now();
     system::config::version original{};
-    if (const auto ec = store_.migrate(original, metadata_.stored,
+    if (const auto ec = store_.migrate(original, metadata_.current,
         [&](auto event_, auto table)
     {
         if (details)
