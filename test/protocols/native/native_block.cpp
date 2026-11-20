@@ -578,7 +578,7 @@ BC_AUTO_TEST_CASE(native__block_header_context__json__expected)
     BC_REQUIRE(!state.at("unconfirmable").as_bool());
 
     const auto& forks = object.at("forks").as_object();
-    BC_REQUIRE_EQUAL(forks.size(), 20u);
+    BC_REQUIRE_EQUAL(forks.size(), 19u);
     BC_REQUIRE(!forks.at("bip16").as_bool());
     BC_REQUIRE(!forks.at("bip30").as_bool());
     BC_REQUIRE(!forks.at("bip34").as_bool());
