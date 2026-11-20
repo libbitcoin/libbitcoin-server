@@ -55,6 +55,7 @@ public:
     bool make{};
     bool backup{};
     bool restore{};
+    bool transform{};
 
     /// Service (unset implies no service action).
     std::optional<bool> daemon{};

@@ -131,6 +131,23 @@ bool executor::do_restore()
         && close_store();
 }
 
+// --[t]ransform
+bool executor::do_transform()
+{
+    log_.stop();
+    auto migrated = false;
+    if (!check_store_path() ||
+        migrate_store(migrated, true))
+        return false;
+
+    if (!migrated)
+        return true;
+
+    return open_store()
+        && cold_backup_store(true)
+        && close_store();
+}
+
 // --[f]lags
 bool executor::do_flags()
 {
@@ -255,6 +272,9 @@ bool executor::dispatch()
 
     if (config.settings)
         return do_settings();
+
+    if (config.transform)
+        return do_transform();
 
     if (config.version)
         return do_version();

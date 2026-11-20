@@ -130,6 +130,17 @@ code executor::open_store_coded(bool details)
         return metadata_.stored_code;
     }
 
+    auto migrated = false;
+    if (!metadata_.stored_code &&
+        metadata_.stored.schema != database::envelope::compiled)
+    {
+        if (!prompt_migrate_store())
+            return database::error::schema_version;
+
+        if (const auto ec = migrate_store(migrated, details))
+            return ec;
+    }
+
     // The pool compaction is the open's only pruning, and its last step.
     std::optional<logger::time> compacting{};
     ////logger(BS_DATABASE_STARTING);
@@ -160,14 +171,90 @@ code executor::open_store_coded(bool details)
             span.count()));
     }
 
-    if (metadata_.stored.schema != database::envelope::compiled)
-        logger(std::format(BS_DATABASE_MIGRATED,
-            metadata_.stored.schema.to_string(),
-            database::envelope::compiled.to_string()));
-
     apply_envelope();
     logger(BS_DATABASE_STARTED);
+
+    if (migrated)
+        /* bool */ cold_backup_store(details);
+
     return error::success;
+}
+
+// Migrate a closed store to the compiled schema.
+code executor::migrate_store(bool& migrated, bool details)
+{
+    const auto& compiled = database::envelope::compiled;
+    logger(std::format(BS_DATABASE_MIGRATING,
+        metadata_.stored.schema.to_string(), compiled.to_string()));
+
+    const auto start = logger::now();
+    system::config::version original{};
+    if (const auto ec = store_.migrate(original, metadata_.stored,
+        [&](auto event_, auto table)
+    {
+        if (details)
+            logger(std::format(BS_MIGRATE,
+                server_node::store::events.at(event_),
+                server_node::store::tables.at(table)));
+    }))
+    {
+        logger(std::format(BS_DATABASE_MIGRATE_FAIL, original.to_string(),
+            ec.message()));
+        return ec;
+    }
+
+    migrated = (original != compiled);
+    metadata_.stored.schema = compiled;
+    if (!migrated)
+    {
+        logger(std::format(BS_DATABASE_CURRENT, compiled.to_string()));
+        return error::success;
+    }
+
+    const auto span = duration_cast<seconds>(logger::now() - start);
+    logger(std::format(BS_DATABASE_MIGRATED, original.to_string(),
+        compiled.to_string(), span.count()));
+    return error::success;
+}
+
+bool executor::prompt_migrate_store() const
+{
+    if (metadata_.configured.accept)
+        return true;
+
+    if (!interactive())
+    {
+        logger(BS_MIGRATE_HALTED);
+        return false;
+    }
+
+    logger(BS_PROMPT_SETOFF);
+    logger(std::format(BS_MIGRATE_PROMPT1,
+        metadata_.stored.schema.to_string(),
+        database::envelope::compiled.to_string()));
+    logger(BS_MIGRATE_PROMPT2);
+    logger(BS_MIGRATE_CHOICE1);
+    logger(BS_MIGRATE_CHOICE2);
+    logger(BS_PROMPT_SETOFF);
+
+    std::string line{};
+    while (std::getline(input_, line) && !canceled())
+    {
+        system::trim(line);
+        if (line.empty())
+            return true;
+
+        if (line == "c")
+        {
+            logger(BS_MIGRATE_HALTED);
+            return false;
+        }
+
+        logger(BS_MIGRATE_CHOICE1);
+        logger(BS_MIGRATE_CHOICE2);
+    }
+
+    return false;
 }
 
 bool executor::close_store(bool details)

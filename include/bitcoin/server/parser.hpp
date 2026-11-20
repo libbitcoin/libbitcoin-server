@@ -44,6 +44,7 @@ public:
     static constexpr auto make_variable = "make";
     static constexpr auto backup_variable = "backup";
     static constexpr auto restore_variable = "restore";
+    static constexpr auto transform_variable = "transform";
     static constexpr auto daemon_variable = "daemon";
     static constexpr auto user_variable = "user";
     static constexpr auto flags_variable = "flags";

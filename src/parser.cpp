@@ -297,6 +297,12 @@ options_metadata parser::load_options() THROWS
             default_value(false)->zero_tokens(),
         "Restore from most recent snapshot."
     )
+    (
+        alias(transform_variable, 't').c_str(),
+        value<bool>(&configured.transform)->
+            default_value(false)->zero_tokens(),
+        "Migrate the store to the compiled schema."
+    )
     // Service.
     (
         alias(daemon_variable, 'd').c_str(),
