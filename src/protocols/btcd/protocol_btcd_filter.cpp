@@ -111,10 +111,16 @@ void protocol_btcd::do_load_tx_filter(bool reload, const hashes& keys,
         const auto at = address_watches_.try_emplace(key, address_watch{});
         if (at.second)
         {
-            const auto fault = query.get_history(stopping_,
-                at.first->second.cursor, discard, key, limit, turbo_);
-            if (fault == database::error::query_canceled)
-                return;
+            if (const auto fault = query.get_history(stopping_,
+                at.first->second.cursor, discard, key, limit, turbo_))
+            {
+                if (fault == database::error::query_canceled)
+                    return;
+
+                address_watches_.erase(at.first);
+                ec = fault;
+                break;
+            }
         }
     }
 
@@ -214,10 +220,16 @@ void protocol_btcd::do_notify_received(const hashes& keys,
         if (at.second)
         {
             watching_legacy_.store(true, relaxed);
-            const auto fault = query.get_history(stopping_,
-                at.first->second.cursor, discard, key, limit, turbo_);
-            if (fault == database::error::query_canceled)
-                return;
+            if (const auto fault = query.get_history(stopping_,
+                at.first->second.cursor, discard, key, limit, turbo_))
+            {
+                if (fault == database::error::query_canceled)
+                    return;
+
+                receive_watches_.erase(at.first);
+                ec = fault;
+                break;
+            }
         }
     }
 
