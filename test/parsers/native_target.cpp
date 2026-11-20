@@ -177,7 +177,8 @@ BC_AUTO_TEST_CASE(parsers__native_target__top_confirmed_valid__expected)
     BC_REQUIRE_EQUAL(object.size(), 1u);
 
     const auto version = std::get<uint8_t>(object.at("version").value());
-    BC_REQUIRE_EQUAL(version, 42u);}
+    BC_REQUIRE_EQUAL(version, 42u);
+}
 
 BC_AUTO_TEST_CASE(parsers__native_target__top_candidate_valid__expected)
 {
@@ -215,7 +216,8 @@ BC_AUTO_TEST_CASE(parsers__native_target__top_confirmed_height_valid__expected)
     BC_REQUIRE_EQUAL(object.size(), 1u);
 
     const auto version = std::get<uint8_t>(object.at("version").value());
-    BC_REQUIRE_EQUAL(version, 42u);}
+    BC_REQUIRE_EQUAL(version, 42u);
+}
 
 BC_AUTO_TEST_CASE(parsers__native_target__top_candidate_height_valid__expected)
 {
