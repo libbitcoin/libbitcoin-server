@@ -2517,6 +2517,11 @@ options_metadata parser::load_settings() THROWS
         "Minimum fee rate for non-conflicting tx acceptance, defaults to {}."
     )
     (
+        "pool.cutoff_rate",
+        setting<double>(&configured.node.pool.cutoff_rate),
+        "Fee rate on space when resolving template conflicts, defaults to {}."
+    )
+    (
         "pool.maximum_outcomes",
         setting<uint32_t>(&configured.node.pool.maximum_outcomes),
         "Maximum conflict outcomes evaluated to accept a transaction, defaults to {}."
