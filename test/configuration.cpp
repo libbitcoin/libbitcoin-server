@@ -35,6 +35,7 @@ BC_AUTO_TEST_CASE(configuration__construct1__none_context__expected)
     BC_REQUIRE(!instance.make);
     BC_REQUIRE(!instance.backup);
     BC_REQUIRE(!instance.restore);
+    BC_REQUIRE(!instance.transform);
     BC_REQUIRE(!instance.daemon);
     BC_REQUIRE(!instance.user);
     BC_REQUIRE(!instance.flags);

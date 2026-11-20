@@ -44,6 +44,7 @@ public:
     static constexpr auto make_variable = "make";
     static constexpr auto backup_variable = "backup";
     static constexpr auto restore_variable = "restore";
+    static constexpr auto transform_variable = "transform";
     static constexpr auto daemon_variable = "daemon";
     static constexpr auto user_variable = "user";
     static constexpr auto flags_variable = "flags";
@@ -85,6 +86,9 @@ public:
     /// The envelope of an existing store and the result of reading it.
     database::envelope stored{};
     code stored_code{};
+
+    /// The envelope of the configuration, before stored values are applied.
+    database::envelope current{};
 
     /// The names of configured values overridden by the stored envelope.
     system::string_list overrides{};

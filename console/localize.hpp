@@ -57,6 +57,17 @@
 #define BS_MILESTONE_HALTED2 \
     "Set to genesis-hash:0 if you have not validated previously."
 
+#define BS_MIGRATE_PROMPT1 \
+    "Database schema {} must be migrated to compiled schema {}."
+#define BS_MIGRATE_PROMPT2 \
+    "Existing snapshots are deleted and an interruption is not recoverable."
+#define BS_MIGRATE_CHOICE1 \
+    "Press <enter> to migrate the store now."
+#define BS_MIGRATE_CHOICE2 \
+    "Enter 'c' to stop without changing the store."
+#define BS_MIGRATE_HALTED \
+    "Database not migrated, start with --accept or run --transform."
+
 // startup warnings
 #define BS_WARNINGS_CHOICE1 \
     "Press <enter> to continue despite the above warnings."
@@ -305,6 +316,8 @@
     "snapshot::{}({})"
 #define BS_RESTORE \
     "restore::{}({})"
+#define BS_MIGRATE \
+    "migrate::{}({})"
 #define BS_RELOAD \
     "reload::{}({})"
 #define BS_CONDITION \
@@ -374,8 +387,14 @@
     "Database schema {} does not match compiled schema {}."
 #define BS_DATABASE_ENVELOPE_OVERRIDE \
     "Database envelope [{}] overrides configuration."
+#define BS_DATABASE_MIGRATING \
+    "Database schema {} is migrating to compiled schema {}."
 #define BS_DATABASE_MIGRATED \
-    "Database schema {} migrated to compiled schema {}."
+    "Database schema {} migrated to compiled schema {} in {} secs."
+#define BS_DATABASE_MIGRATE_FAIL \
+    "Database schema {} failed to migrate with error '{}'."
+#define BS_DATABASE_CURRENT \
+    "Database schema {} is current."
 #define BS_NETWORK_OVERRIDE \
     "Network [{}] overrides configured network [{}]."
 #define BS_DATABASE_STOPPING \

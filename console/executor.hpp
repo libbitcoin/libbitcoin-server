@@ -94,7 +94,9 @@ private:
     bool restore_store(bool details=false);
     bool hot_backup_store(bool details=false);
     bool cold_backup_store(bool details=false);
+    code migrate_store(bool& migrated, bool details=false);
     bool prompt_milestone_store() const;
+    bool prompt_migrate_store() const;
     void apply_envelope();
 
     // Long-running queries (scans).
@@ -117,6 +119,7 @@ private:
     bool do_make();
     bool do_backup();
     bool do_restore();
+    bool do_transform();
     bool do_daemon();
     bool do_flags();
     bool do_information();
