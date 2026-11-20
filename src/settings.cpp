@@ -108,6 +108,10 @@ settings::settings(system::chain::selection context,
     // Admin may accumulate a large amount of log backlog.
     admin.maximum_backlog = 1024 * network::megabyte;
 
+    // Admin sessions are held open for monitoring, so they do not expire.
+    admin.inactivity_minutes = 0;
+    admin.expiration_minutes = 0;
+
     // The largest btcd notification is a filtered block.
     btcd.maximum_backlog = 20 * network::megabyte;
 
