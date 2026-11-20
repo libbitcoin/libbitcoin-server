@@ -221,33 +221,35 @@ bool protocol_native::handle_get_fees(const code& ec, interface::fees,
         return true;
     }
 
-    PARALLEL(do_get_fees, gate());
+    get_confirmable_fees(BIND(handle_fees, _1, _2, gate()));
     return true;
 }
 
-void protocol_native::do_get_fees(const gate_t::ptr& gate) NOEXCEPT
+void protocol_native::handle_fees(const code& ec,
+    const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
 {
-    BC_ASSERT(!stranded());
-
-    database::fee_rates rates{};
-    if (!archive().get_confirmable_fees(rates))
-    {
-        POST(complete_get_fees, database::error::integrity, fee_summary{},
-            gate);
-        return;
-    }
-
-    const auto summary = to_fee_summary(std::move(rates), histogram_bin);
-    POST(complete_get_fees, code{}, summary, gate);
+    POST(complete_get_fees, ec, rates, gate);
 }
 
 void protocol_native::complete_get_fees(const code& ec,
-    const fee_summary& summary, const gate_t::ptr&) NOEXCEPT
+    const database::fee_rates& rates, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (stopped())
         return;
+
+    // A closed pool is not implemented with relay disabled, and is
+    // otherwise unavailable until it opens.
+    if (ec == node::error::pooling_disabled)
+    {
+        if (network_settings().enable_relay)
+            send_service_unavailable();
+        else
+            send_not_implemented();
+
+        return;
+    }
 
     if (ec)
     {
@@ -255,6 +257,7 @@ void protocol_native::complete_get_fees(const code& ec,
         return;
     }
 
+    const auto summary = to_fee_summary(rates, histogram_bin);
     system::json::object object
     {
         { "count", summary.count },

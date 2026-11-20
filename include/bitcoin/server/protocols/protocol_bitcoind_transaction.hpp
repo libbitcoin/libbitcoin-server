@@ -99,19 +99,25 @@ protected:
         const network::rpc::array_t& descriptors) NOEXCEPT;
 
     void handle_test_package(const code& ec, size_t index,
-        const system::chain::transactions_cptr& txs) NOEXCEPT;
+        const system::chain::transactions_cptr& txs,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_test_package(const code& ec,
-        const system::chain::transactions_cptr& txs) NOEXCEPT;
+        const system::chain::transactions_cptr& txs,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     void handle_submit_tx(const code& ec, size_t link,
-        const system::chain::transaction::cptr& tx) NOEXCEPT;
+        const system::chain::transaction::cptr& tx,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_submit_tx(const code& ec,
-        const system::chain::transaction::cptr& tx) NOEXCEPT;
+        const system::chain::transaction::cptr& tx,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     void handle_package(const code& ec, size_t index,
-        const system::chain::transactions_cptr& txs) NOEXCEPT;
+        const system::chain::transactions_cptr& txs,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_package(const code& ec, size_t index,
-        const system::chain::transactions_cptr& txs) NOEXCEPT;
+        const system::chain::transactions_cptr& txs,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     bool handle_abort_private_broadcast(const code& ec,
         rpc_interface::abort_private_broadcast) NOEXCEPT;

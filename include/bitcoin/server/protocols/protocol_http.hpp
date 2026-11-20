@@ -95,6 +95,7 @@ protected:
     void send_forbidden() NOEXCEPT;
     void send_not_implemented() NOEXCEPT;
     void send_method_not_allowed() NOEXCEPT;
+    void send_service_unavailable() NOEXCEPT;
     void send_internal_server_error(const code& reason) NOEXCEPT;
 
     /// Error senders, responding to the request.
@@ -109,6 +110,8 @@ protected:
     void send_not_implemented(
         const network::http::request& request) NOEXCEPT override;
     void send_method_not_allowed(
+        const network::http::request& request) NOEXCEPT override;
+    void send_service_unavailable(
         const network::http::request& request) NOEXCEPT override;
     void send_internal_server_error(const code& reason,
         const network::http::request& request) NOEXCEPT override;

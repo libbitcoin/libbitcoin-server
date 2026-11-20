@@ -108,8 +108,8 @@ def test_block_by_hash(native_config):
 
 
 def test_block_by_height(native_config):
-    """Test /v1/block/height/{height}"""
-    data = get_json(native_config["base_url"], f"block/height/{ReferenceData.KNOWN_HEIGHT}")
+    """Test /v1/block/confirmed/{height}"""
+    data = get_json(native_config["base_url"], f"block/confirmed/{ReferenceData.KNOWN_HEIGHT}")
     assert isinstance(data, dict)
     assert "header" in data
     header = data["header"]
@@ -125,8 +125,8 @@ def test_block_header_by_hash(native_config):
 
 
 def test_block_header_by_height(native_config):
-    """Test /v1/block/height/{height}/header"""
-    data = get_json(native_config["base_url"], f"block/height/{ReferenceData.KNOWN_HEIGHT}/header")
+    """Test /v1/block/confirmed/{height}/header"""
+    data = get_json(native_config["base_url"], f"block/confirmed/{ReferenceData.KNOWN_HEIGHT}/header")
     assert isinstance(data, dict)
     assert data["height"] == ReferenceData.KNOWN_HEIGHT
 
@@ -140,8 +140,8 @@ def test_header_context_by_hash(native_config):
 
 
 def test_header_context_by_height(native_config):
-    """Test /v1/block/height/{height}/header/context"""
-    data = get_json(native_config["base_url"], f"block/height/{ReferenceData.KNOWN_HEIGHT}/header/context")
+    """Test /v1/block/confirmed/{height}/header/context"""
+    data = get_json(native_config["base_url"], f"block/confirmed/{ReferenceData.KNOWN_HEIGHT}/header/context")
     if data is not None:
         assert isinstance(data, dict)
         assert data["height"] == ReferenceData.KNOWN_HEIGHT
@@ -155,8 +155,8 @@ def test_block_details_by_hash(native_config):
 
 
 def test_block_details_by_height(native_config):
-    """Test /v1/block/height/{height}/details"""
-    data = get_json(native_config["base_url"], f"block/height/{ReferenceData.KNOWN_HEIGHT}/details")
+    """Test /v1/block/confirmed/{height}/details"""
+    data = get_json(native_config["base_url"], f"block/confirmed/{ReferenceData.KNOWN_HEIGHT}/details")
     assert isinstance(data, dict)
     assert data["hash"] == ReferenceData.KNOWN_BLOCK_HASH
 
@@ -171,8 +171,8 @@ def test_block_txs_by_hash(native_config):
 
 
 def test_block_txs_by_height(native_config):
-    """Test /v1/block/height/{height}/txs"""
-    data = get_json(native_config["base_url"], f"block/height/{ReferenceData.KNOWN_HEIGHT}/txs")
+    """Test /v1/block/confirmed/{height}/txs"""
+    data = get_json(native_config["base_url"], f"block/confirmed/{ReferenceData.KNOWN_HEIGHT}/txs")
     assert isinstance(data, list)
     assert len(data) >= 1
     assert isinstance(data[0], str)
@@ -186,8 +186,8 @@ def test_block_tx_by_position_hash(native_config):
 
 
 def test_block_tx_by_position_height(native_config):
-    """Test /v1/block/height/{height}/tx/{position}"""
-    data = get_json(native_config["base_url"], f"block/height/{ReferenceData.KNOWN_HEIGHT}/tx/0")
+    """Test /v1/block/confirmed/{height}/tx/{position}"""
+    data = get_json(native_config["base_url"], f"block/confirmed/{ReferenceData.KNOWN_HEIGHT}/tx/0")
     assert isinstance(data, dict)
     assert "hash" in data
 
@@ -523,7 +523,7 @@ def test_non_existing_block_hash(native_config):
 def test_invalid_height(native_config):
     """Test 404 response for invalid/future block height"""
     with pytest.raises(requests.exceptions.HTTPError):
-        get_json(native_config["base_url"], "block/height/10000000")
+        get_json(native_config["base_url"], "block/confirmed/10000000")
 
 
 def test_unsupported_format(native_config):

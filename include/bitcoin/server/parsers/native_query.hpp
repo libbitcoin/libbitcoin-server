@@ -34,7 +34,6 @@ namespace native
         constexpr auto turbo = "turbo";
         constexpr auto format = "format";
         constexpr auto witness = "witness";
-        constexpr auto candidate = "candidate";
 
         /// Boolean values.
         constexpr auto true_ = "true";

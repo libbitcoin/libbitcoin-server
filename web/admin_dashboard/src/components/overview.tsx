@@ -38,9 +38,9 @@ export function Overview({ adminStatus, endpoints, metrics, native, sync }: Over
   const activity = detectNodeActivity(metrics, 10);
   const configuration = native.configuration;
   const coin = coinOf(configuration?.forks ?? []);
-  const connection = combineStatus(adminStatus, native.status);
   // Admin and native share one socket when their endpoints match.
   const shared = endpoints.adminUrl === endpoints.nativeUrl;
+  const connection = combineStatus(adminStatus, native.status, shared);
   const warnings = [
     adminStatus.error ? `${shared ? 'Connection' : 'Admin'}: ${adminStatus.error}` : null,
     native.status.error && !shared ? `Native: ${native.status.error}` : null,
@@ -117,7 +117,7 @@ export function Overview({ adminStatus, endpoints, metrics, native, sync }: Over
 
       <TelemetryDashboard metrics={metrics} />
 
-      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid gap-6 xl:grid-cols-2">
         <div className="border-accent/30 bg-surface/80 overflow-hidden rounded-2xl border">
           <header className="border-accentSecondary/20 border-b px-5 py-4">
             <p className="text-accentSecondary text-xs tracking-wide uppercase">
@@ -313,12 +313,16 @@ const PHASE_RANK: Record<ConnectionPhase, number> = {
   idle: 3,
 };
 
-function combineStatus(admin: ConnectionStatus, native: ConnectionStatus): ConnectionStatus {
+function combineStatus(
+  admin: ConnectionStatus,
+  native: ConnectionStatus,
+  shared: boolean
+): ConnectionStatus {
   const worse = PHASE_RANK[native.phase] > PHASE_RANK[admin.phase] ? native : admin;
   const last = Math.max(admin.lastMessageAt ?? 0, native.lastMessageAt ?? 0);
   return {
     ...worse,
-    reconnects: admin.reconnects + native.reconnects,
+    reconnects: shared ? admin.reconnects : admin.reconnects + native.reconnects,
     lastMessageAt: last > 0 ? last : null,
   };
 }
@@ -381,6 +385,7 @@ function EmptyRow({ text }: { text: string }) {
 function nativeSyncDescription(sync: ChainSync | null): string {
   if (!sync) return 'Waiting for chain tops';
   if (sync.diverged) return 'Candidate branch diverges';
+  if (sync.blocksRemaining === null) return 'Headers not current';
   if (sync.blocksRemaining === 0) return 'At top candidate header';
   return sync.blocksRemaining <= SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS
     ? `Near current, ${formatInteger(sync.blocksRemaining)} blocks remaining`

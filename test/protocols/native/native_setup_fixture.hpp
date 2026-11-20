@@ -35,7 +35,8 @@ struct native_setup_fixture
     DELETE_COPY_MOVE(native_setup_fixture);
     explicit native_setup_fixture(const initializer& setup,
         const configurator& configure={},
-        const server::settings::embedded_pages& pages=test::web_pages);
+        const server::settings::embedded_pages& pages=test::web_pages,
+        bool start=false);
     ~native_setup_fixture();
 
     bool expect_dropped(std::string_view target);
@@ -281,6 +282,43 @@ struct native_origins_hosts_setup_fixture
         {
             config.server.native.hosts = { { "localhost" } };
             config.server.native.origins = { { "example.com" } };
+        })
+    {
+    }
+};
+
+// Configured with the chasers started, relay and no currency window, so that
+// the pool is open.
+struct native_pooling_setup_fixture
+  : native_setup_fixture
+{
+    inline native_pooling_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            using deployment = system::chain::chain_state::deployment;
+            config.bitcoin.bip9_bit0_deployment.start =
+                deployment::always_active;
+            config.network.enable_relay = true;
+            config.node.currency_window_minutes = 0;
+        }, test::web_pages, true)
+    {
+    }
+};
+
+// Configured with relay but not the chasers, so the pool does not open.
+struct native_closed_setup_fixture
+  : native_setup_fixture
+{
+    inline native_closed_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.network.enable_relay = true;
         })
     {
     }

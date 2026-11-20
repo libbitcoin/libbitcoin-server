@@ -175,8 +175,9 @@ private:
         wait_race::ptr race;
     };
 
-    void handle_prioritize(const code& ec, size_t height) NOEXCEPT;
-    void do_precious_block(const code& ec) NOEXCEPT;
+    void handle_prioritize(const code& ec, size_t height,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void do_precious_block(const code& ec, const gate_t::ptr& gate) NOEXCEPT;
 
     enum class set_hash : uint8_t { none, muhash, serialized };
 
@@ -191,22 +192,28 @@ private:
         const std::shared_ptr<network::rpc::array_t>& scanobjects,
         bool include_mempool, const gate_t::ptr& gate) NOEXCEPT;
 
-    void do_get_mempool_entry(const system::hash_digest& hash,
+    void handle_mempool_info(const code& ec, const database::fee_rates& rates,
+        double minimum, double relay, double increment,
         const gate_t::ptr& gate) NOEXCEPT;
-    void do_get_mempool_info(double minimum, double relay, double increment,
-        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_mempool_info(const code& ec,
+        const database::fee_rates& rates, double minimum, double relay,
+        double increment, const gate_t::ptr& gate) NOEXCEPT;
     database::tx_link to_mempool_tx(
         const system::hash_digest& hash) const NOEXCEPT;
     bool get_mempool_relatives(const std::string& txid, bool verbose,
         bool ancestors) NOEXCEPT;
-    void do_get_mempool_relatives(const system::hash_digest& hash,
-        bool verbose, bool ancestors, const gate_t::ptr& gate) NOEXCEPT;
-    void do_get_raw_mempool(bool verbose, bool sequence,
+    void handle_raw_mempool(const code& ec, const database::tx_links& links,
+        bool verbose, bool sequence, const gate_t::ptr& gate) NOEXCEPT;
+    void complete_raw_mempool(const code& ec,
+        const database::tx_links& links, bool sequence,
         const gate_t::ptr& gate) NOEXCEPT;
-    void do_get_tx_spending_prevout(const system::chain::points& prevouts,
-        bool mempool_only, bool return_tx, const gate_t::ptr& gate) NOEXCEPT;
+    void do_get_raw_mempool(const database::tx_links& links,
+        const gate_t::ptr& gate) NOEXCEPT;
 
-    void do_save_mempool(const gate_t::ptr& gate) NOEXCEPT;
+    void handle_save_mempool_txs(const code& ec,
+        const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
+    void do_save_mempool(const code& ec, const database::tx_links& links,
+        const gate_t::ptr& gate) NOEXCEPT;
     void do_import_mempool(const std::string& filepath,
         const gate_t::ptr& gate) NOEXCEPT;
     void next_import(const system::chain::transactions_cptr& txs,

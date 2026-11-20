@@ -86,6 +86,10 @@ protected:
         uint8_t version, uint8_t media) NOEXCEPT;
     bool handle_get_top_subscribe(const code& ec, interface::top_subscribe,
         uint8_t version, uint8_t media, bool stop) NOEXCEPT;
+    bool handle_get_top_chain(const code& ec, interface::top_chain,
+        uint8_t version, uint8_t media, bool candidate) NOEXCEPT;
+    bool handle_get_top_height(const code& ec, interface::top_height,
+        uint8_t version, uint8_t media, bool candidate) NOEXCEPT;
 
     bool handle_get_block(const code& ec, interface::block,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
@@ -247,8 +251,9 @@ private:
     void complete_get_address_balance(const code& ec, uint8_t media,
         const uint64_t balance, const gate_t::ptr& gate) NOEXCEPT;
 
-    void do_get_fees(const gate_t::ptr& gate) NOEXCEPT;
-    void complete_get_fees(const code& ec, const fee_summary& summary,
+    void handle_fees(const code& ec, const database::fee_rates& rates,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_fees(const code& ec, const database::fee_rates& rates,
         const gate_t::ptr& gate) NOEXCEPT;
 
     // Utilities.
@@ -260,7 +265,10 @@ private:
     void inject(system::json::value& out, std::optional<uint32_t> height,
         const database::header_link& link) const NOEXCEPT;
 
-    system::chain::checkpoint get_top(bool candidate) const NOEXCEPT;
+    system::chain::header::cptr get_top(bool candidate,
+        size_t& height) const NOEXCEPT;
+    system::data_chunk to_top(bool candidate) const NOEXCEPT;
+    system::json::value to_top_json(bool candidate) const NOEXCEPT;
     system::data_chunk to_tops() const NOEXCEPT;
     system::json::value to_tops_json() const NOEXCEPT;
     database::header_link to_header(const std::optional<uint32_t>& height,

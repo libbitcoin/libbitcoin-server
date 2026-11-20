@@ -185,13 +185,17 @@ private:
         const std::string& body) NOEXCEPT;
 
     void handle_submit_tx(const code& ec, size_t link,
-        const system::chain::transaction::cptr& tx) NOEXCEPT;
+        const system::chain::transaction::cptr& tx,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_submit_tx(const code& ec,
-        const system::chain::transaction::cptr& tx) NOEXCEPT;
+        const system::chain::transaction::cptr& tx,
+        const gate_t::ptr& gate) NOEXCEPT;
     void handle_submit_package(const code& ec, size_t index,
-        const system::chain::transactions_cptr& txs) NOEXCEPT;
+        const system::chain::transactions_cptr& txs,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_submit_package(const code& ec, size_t index,
-        const system::chain::transactions_cptr& txs) NOEXCEPT;
+        const system::chain::transactions_cptr& txs,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     bool to_key(system::hash_digest& out,
         const std::optional<system::hash_cptr>& hash,
@@ -247,16 +251,25 @@ private:
         const database::unspent_outputs& unspent,
         const gate_t::ptr& gate) NOEXCEPT;
 
-    void do_get_mempool(const gate_t::ptr& gate) NOEXCEPT;
-    void do_get_mempool_txids(const gate_t::ptr& gate) NOEXCEPT;
-    void do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT;
-    void complete_get_mempool(const code& ec, system::json::value& out,
+    void handle_mempool(const code& ec, const database::fee_rates& rates,
         const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_mempool(const code& ec,
+        const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT;
+    void handle_mempool_txids(const code& ec,
+        const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_mempool_txids(const code& ec,
+        const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
+    void handle_mempool_recent(const code& ec,
+        const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_mempool_recent(const code& ec,
+        const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
+    bool send_closed(const code& ec) NOEXCEPT;
 
-    void next_estimate(size_t index) NOEXCEPT;
-    void handle_estimate(const code& ec, uint64_t fee, size_t index) NOEXCEPT;
+    void next_estimate(size_t index, const gate_t::ptr& gate) NOEXCEPT;
+    void handle_estimate(const code& ec, uint64_t fee, size_t index,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_estimate(const code& ec, uint64_t fee,
-        size_t index) NOEXCEPT;
+        size_t index, const gate_t::ptr& gate) NOEXCEPT;
     // These are thread safe.
     const options_t& options_;
     std::atomic_bool stopping_{};

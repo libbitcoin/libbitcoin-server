@@ -624,6 +624,7 @@ BC_AUTO_TEST_CASE(zmq__sequence__transaction__reversed_hash_and_accepted_label)
     BC_REQUIRE_EQUAL(message.at(0), to_chunk("sequence"));
     BC_REQUIRE_EQUAL(message.at(1).size(), 41u);
     BC_REQUIRE_EQUAL(data_chunk(message.at(1).begin(), std::next(message.at(1).begin(), 33)), expected);
+    BC_REQUIRE_EQUAL(data_chunk(std::next(message.at(1).begin(), 33), message.at(1).end()), to_chunk(to_little_endian<uint64_t>(1)));
 }
 
 BC_AUTO_TEST_SUITE_END()

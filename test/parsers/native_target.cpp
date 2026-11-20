@@ -36,19 +36,19 @@ BC_AUTO_TEST_CASE(parsers__native_target__missing_version__missing_version)
 {
     request_t out{};
     BC_REQUIRE_EQUAL(native_target(out, "/"), server::error::missing_version);
-    BC_REQUIRE_EQUAL(native_target(out, "/block/height/123"), server::error::missing_version);
+    BC_REQUIRE_EQUAL(native_target(out, "/block/confirmed/123"), server::error::missing_version);
 }
 
 BC_AUTO_TEST_CASE(parsers__native_target__invalid_version__invalid_number)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/vinvalid/block/height/123"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(native_target(out, "/vinvalid/block/confirmed/123"), server::error::invalid_number);
 }
 
 BC_AUTO_TEST_CASE(parsers__native_target__version_leading_zero__invalid_number)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v01/block/height/123"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(native_target(out, "/v01/block/confirmed/123"), server::error::invalid_number);
 }
 
 BC_AUTO_TEST_CASE(parsers__native_target__missing_target__missing_target)
@@ -159,11 +159,103 @@ BC_AUTO_TEST_CASE(parsers__native_target__top_subscribe_extra_segment__extra_seg
     BC_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
 
-// block/height
+// top/confirmed, top/candidate
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_height_valid__expected)
+BC_AUTO_TEST_CASE(parsers__native_target__top_confirmed_valid__expected)
 {
-    const std::string path = "/v42/block/height/123456";
+    const std::string path = "/v42/top/confirmed";
+
+    request_t request{};
+    BC_REQUIRE(!native_target(request, path));
+    BC_REQUIRE_EQUAL(request.method, "top_chain");
+    BC_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BC_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 1u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BC_REQUIRE_EQUAL(version, 42u);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__top_candidate_valid__expected)
+{
+    const std::string path = "/v42/top/candidate";
+
+    request_t request{};
+    BC_REQUIRE(!native_target(request, path));
+    BC_REQUIRE_EQUAL(request.method, "top_chain");
+    BC_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BC_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 2u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BC_REQUIRE_EQUAL(version, 42u);
+    BC_REQUIRE(std::get<bool>(object.at("candidate").value()));
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__top_confirmed_height_valid__expected)
+{
+    const std::string path = "/v42/top/confirmed/height";
+
+    request_t request{};
+    BC_REQUIRE(!native_target(request, path));
+    BC_REQUIRE_EQUAL(request.method, "top_height");
+    BC_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BC_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 1u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BC_REQUIRE_EQUAL(version, 42u);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__top_candidate_height_valid__expected)
+{
+    const std::string path = "/v42/top/candidate/height";
+
+    request_t request{};
+    BC_REQUIRE(!native_target(request, path));
+    BC_REQUIRE_EQUAL(request.method, "top_height");
+    BC_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BC_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 2u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BC_REQUIRE_EQUAL(version, 42u);
+    BC_REQUIRE(std::get<bool>(object.at("candidate").value()));
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__top_confirmed_invalid_subcomponent__invalid_subcomponent)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/top/confirmed/invalid"), server::error::invalid_subcomponent);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__top_candidate_height_extra_segment__extra_segment)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/top/candidate/height/extra"), server::error::extra_segment);
+}
+
+// block/confirmed
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_confirmed_valid__expected)
+{
+    const std::string path = "/v42/block/confirmed/123456";
 
     request_t request{};
     BC_REQUIRE(!native_target(request, path));
@@ -183,22 +275,70 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_height_valid__expected)
     BC_REQUIRE_EQUAL(height, 123456u);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_height_missing_height__missing_height)
+BC_AUTO_TEST_CASE(parsers__native_target__block_confirmed_missing_height__missing_height)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height"), server::error::missing_height);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed"), server::error::missing_height);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_height_invalid_height__invalid_number)
+BC_AUTO_TEST_CASE(parsers__native_target__block_confirmed_invalid_height__invalid_number)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/invalid"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/invalid"), server::error::invalid_number);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_height_invalid_component__invalid_component)
+BC_AUTO_TEST_CASE(parsers__native_target__block_confirmed_invalid_component__invalid_component)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/123/invalid"), server::error::invalid_component);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/invalid"), server::error::invalid_component);
+}
+
+// block/candidate
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_candidate_valid__expected)
+{
+    const std::string path = "/v42/block/candidate/123456";
+
+    request_t request{};
+    BC_REQUIRE(!native_target(request, path));
+    BC_REQUIRE_EQUAL(request.method, "block");
+    BC_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BC_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 3u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BC_REQUIRE_EQUAL(version, 42u);
+
+    const auto height = std::get<uint32_t>(object.at("height").value());
+    BC_REQUIRE_EQUAL(height, 123456u);
+    BC_REQUIRE(std::get<bool>(object.at("candidate").value()));
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_candidate_header_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/block/candidate/123456/header"));
+    BC_REQUIRE_EQUAL(request.method, "block_header");
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 3u);
+    BC_REQUIRE(std::get<bool>(object.at("candidate").value()));
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_candidate_missing_height__missing_height)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/candidate"), server::error::missing_height);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_candidate_invalid_height__invalid_number)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/candidate/invalid"), server::error::invalid_number);
 }
 
 // block/hash
@@ -254,12 +394,12 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_invalid_id_type__invalid_id_type
     BC_REQUIRE_EQUAL(native_target(out, "/v3/block/invalid/123"), server::error::invalid_id_type);
 }
 
-// block_header/height
+// block_header/confirmed
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_header_height_valid__expected)
+BC_AUTO_TEST_CASE(parsers__native_target__block_header_confirmed_valid__expected)
 {
     request_t request{};
-    BC_REQUIRE(!native_target(request, "/v42/block/height/123456/header/"));
+    BC_REQUIRE(!native_target(request, "/v42/block/confirmed/123456/header/"));
     BC_REQUIRE_EQUAL(request.method, "block_header");
     BC_REQUIRE(request.params.has_value());
 
@@ -276,10 +416,10 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_header_height_valid__expected)
     BC_REQUIRE_EQUAL(height, 123456u);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_header_height_invalid_subcomponent__invalid_subcomponent)
+BC_AUTO_TEST_CASE(parsers__native_target__block_header_confirmed_invalid_subcomponent__invalid_subcomponent)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/123/header/invalid"), server::error::invalid_subcomponent);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/header/invalid"), server::error::invalid_subcomponent);
 }
 
 // block_header/hash
@@ -317,12 +457,12 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_header_hash_invalid_subcomponent
     BC_REQUIRE_EQUAL(native_target(out, path), server::error::invalid_subcomponent);
 }
 
-// block_header_context/height
+// block_header_context/confirmed
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_header_context_height_valid__expected)
+BC_AUTO_TEST_CASE(parsers__native_target__block_header_context_confirmed_valid__expected)
 {
     request_t request{};
-    BC_REQUIRE(!native_target(request, "/v42/block/height/123456/header/context"));
+    BC_REQUIRE(!native_target(request, "/v42/block/confirmed/123456/header/context"));
     BC_REQUIRE_EQUAL(request.method, "block_header_context");
     BC_REQUIRE(request.params.has_value());
 
@@ -339,10 +479,10 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_header_context_height_valid__exp
     BC_REQUIRE_EQUAL(height, 123456u);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_header_context_height_extra_segment__extra_segment)
+BC_AUTO_TEST_CASE(parsers__native_target__block_header_context_confirmed_extra_segment__extra_segment)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/123/header/context/extra"), server::error::extra_segment);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/header/context/extra"), server::error::extra_segment);
 }
 
 // block_header_context/hash
@@ -379,12 +519,12 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_header_context_hash_extra_segmen
     BC_REQUIRE_EQUAL(native_target(out, "/v3/block/hash/0000000000000000000000000000000000000000000000000000000000000000/header/context/extra"), server::error::extra_segment);
 }
 
-// block_txs/height
+// block_txs/confirmed
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_txs_height_valid__expected)
+BC_AUTO_TEST_CASE(parsers__native_target__block_txs_confirmed_valid__expected)
 {
     request_t request{};
-    BC_REQUIRE(!native_target(request, "/v42/block/height/123456/txs"));
+    BC_REQUIRE(!native_target(request, "/v42/block/confirmed/123456/txs"));
     BC_REQUIRE_EQUAL(request.method, "block_txs");
     BC_REQUIRE(request.params.has_value());
 
@@ -401,10 +541,10 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_txs_height_valid__expected)
     BC_REQUIRE_EQUAL(height, 123456u);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_txs_height_extra_segment__extra_segment)
+BC_AUTO_TEST_CASE(parsers__native_target__block_txs_confirmed_extra_segment__extra_segment)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/123/txs/extra"), server::error::extra_segment);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/txs/extra"), server::error::extra_segment);
 }
 
 // block_txs/hash
@@ -442,12 +582,12 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_txs_hash_extra_segment__extra_se
     BC_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
 
-// block_tx/height
+// block_tx/confirmed
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_tx_height_valid__expected)
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_confirmed_valid__expected)
 {
     request_t request{};
-    BC_REQUIRE(!native_target(request, "/v42/block/height/123456/tx/7"));
+    BC_REQUIRE(!native_target(request, "/v42/block/confirmed/123456/tx/7"));
     BC_REQUIRE_EQUAL(request.method, "block_tx");
     BC_REQUIRE(request.params.has_value());
 
@@ -467,22 +607,22 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_tx_height_valid__expected)
     BC_REQUIRE_EQUAL(position, 7u);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_tx_height_missing_position__missing_position)
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_confirmed_missing_position__missing_position)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/123/tx"), server::error::missing_position);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/tx"), server::error::missing_position);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_tx_height_invalid_position__invalid_number)
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_confirmed_invalid_position__invalid_number)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/123/tx/invalid"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/tx/invalid"), server::error::invalid_number);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_tx_height_extra_segment__extra_segment)
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_confirmed_extra_segment__extra_segment)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/123/tx/7/extra"), server::error::extra_segment);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/tx/7/extra"), server::error::extra_segment);
 }
 
 // block_tx/hash
@@ -1184,12 +1324,12 @@ BC_AUTO_TEST_CASE(parsers__native_target__address_subscribe_extra_segment__extra
     BC_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
 
-// block_filter/height
+// block_filter/confirmed
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_filter_height_valid__expected)
+BC_AUTO_TEST_CASE(parsers__native_target__block_filter_confirmed_valid__expected)
 {
     request_t request{};
-    BC_REQUIRE(!native_target(request, "v42/block/height/123456/filter/255"));
+    BC_REQUIRE(!native_target(request, "v42/block/confirmed/123456/filter/255"));
     BC_REQUIRE_EQUAL(request.method, "block_filter");
     BC_REQUIRE(request.params.has_value());
 
@@ -1209,10 +1349,10 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_filter_height_valid__expected)
     BC_REQUIRE_EQUAL(type, 255u);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_filter_height_invalid_subcomponent__invalid_subcomponent)
+BC_AUTO_TEST_CASE(parsers__native_target__block_filter_confirmed_invalid_subcomponent__invalid_subcomponent)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/123/filter/42/invalid"), server::error::invalid_subcomponent);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/filter/42/invalid"), server::error::invalid_subcomponent);
 }
 
 // block_filter/hash
@@ -1253,12 +1393,12 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_filter_hash_invalid_subcomponent
     BC_REQUIRE_EQUAL(native_target(out, path), server::error::invalid_subcomponent);
 }
 
-// block_filter_hash/height
+// block_filter_hash/confirmed
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_filter_hash_height_valid__expected)
+BC_AUTO_TEST_CASE(parsers__native_target__block_filter_hash_confirmed_valid__expected)
 {
     request_t request{};
-    BC_REQUIRE(!native_target(request, "/v42/block/height/123456/filter/255/hash"));
+    BC_REQUIRE(!native_target(request, "/v42/block/confirmed/123456/filter/255/hash"));
     BC_REQUIRE_EQUAL(request.method, "block_filter_hash");
     BC_REQUIRE(request.params.has_value());
 
@@ -1278,10 +1418,10 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_filter_hash_height_valid__expect
     BC_REQUIRE_EQUAL(type, 255u);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_filter_hash_height_extra_segment__extra_segment)
+BC_AUTO_TEST_CASE(parsers__native_target__block_filter_hash_confirmed_extra_segment__extra_segment)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/123/filter/42/hash/extra"), server::error::extra_segment);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/filter/42/hash/extra"), server::error::extra_segment);
 }
 
 // block_filter_hash/hash
@@ -1322,12 +1462,12 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_filter_hash_hash_extra_segment__
     BC_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
 
-// block_filter_header/height
+// block_filter_header/confirmed
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_filter_header_height_valid__expected)
+BC_AUTO_TEST_CASE(parsers__native_target__block_filter_header_confirmed_valid__expected)
 {
     request_t request{};
-    BC_REQUIRE(!native_target(request, "/v42/block/height/123456/filter/255/header"));
+    BC_REQUIRE(!native_target(request, "/v42/block/confirmed/123456/filter/255/header"));
     BC_REQUIRE_EQUAL(request.method, "block_filter_header");
     BC_REQUIRE(request.params.has_value());
 
@@ -1347,10 +1487,10 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_filter_header_height_valid__expe
     BC_REQUIRE_EQUAL(type, 255u);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_filter_header_height_extra_segment__extra_segment)
+BC_AUTO_TEST_CASE(parsers__native_target__block_filter_header_confirmed_extra_segment__extra_segment)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/123/filter/42/header/extra"), server::error::extra_segment);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/filter/42/header/extra"), server::error::extra_segment);
 }
 
 // block_filter_header/hash
@@ -1394,21 +1534,21 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_filter_header_hash_extra_segment
 BC_AUTO_TEST_CASE(parsers__native_target__block_filter_missing_type_id__missing_type_id)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/123/filter"), server::error::missing_type_id);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/filter"), server::error::missing_type_id);
     BC_REQUIRE_EQUAL(native_target(out, "/v3/block/hash/0000000000000000000000000000000000000000000000000000000000000000/filter"), server::error::missing_type_id);
 }
 
 BC_AUTO_TEST_CASE(parsers__native_target__block_filter_invalid_type__invalid_number)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/123/filter/invalid"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/filter/invalid"), server::error::invalid_number);
     BC_REQUIRE_EQUAL(native_target(out, "/v3/block/hash/0000000000000000000000000000000000000000000000000000000000000000/filter/invalid"), server::error::invalid_number);
 }
 
 BC_AUTO_TEST_CASE(parsers__native_target__block_filter_invalid_subcomponent__invalid_subcomponent)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/123/filter/42/invalid"), server::error::invalid_subcomponent);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/filter/42/invalid"), server::error::invalid_subcomponent);
     BC_REQUIRE_EQUAL(native_target(out, "/v3/block/hash/0000000000000000000000000000000000000000000000000000000000000000/filter/42/invalid"), server::error::invalid_subcomponent);
 }
 
@@ -1447,12 +1587,12 @@ BC_AUTO_TEST_CASE(parsers__native_target__tx_details_extra_segment__extra_segmen
     BC_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
 
-// block_details/height
+// block_details/confirmed
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_details_height_valid__expected)
+BC_AUTO_TEST_CASE(parsers__native_target__block_details_confirmed_valid__expected)
 {
     request_t request{};
-    BC_REQUIRE(!native_target(request, "/v42/block/height/123456/details"));
+    BC_REQUIRE(!native_target(request, "/v42/block/confirmed/123456/details"));
     BC_REQUIRE_EQUAL(request.method, "block_details");
     BC_REQUIRE(request.params.has_value());
 
@@ -1469,10 +1609,10 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_details_height_valid__expected)
     BC_REQUIRE_EQUAL(height, 123456u);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_details_height_extra_segment__extra_segment)
+BC_AUTO_TEST_CASE(parsers__native_target__block_details_confirmed_extra_segment__extra_segment)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/height/123/details/extra"), server::error::extra_segment);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/details/extra"), server::error::extra_segment);
 }
 
 // block_details/hash

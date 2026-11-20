@@ -34,6 +34,8 @@ struct native_methods
 
         method<"top", uint8_t, uint8_t>{ "version", "media" },
         method<"top_subscribe", uint8_t, uint8_t, optional<false>>{ "version", "media", "stop" },
+        method<"top_chain", uint8_t, uint8_t, optional<false>>{ "version", "media", "candidate" },
+        method<"top_height", uint8_t, uint8_t, optional<false>>{ "version", "media", "candidate" },
 
         method<"block", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<true>, optional<false>>{ "version", "media", "hash", "height", "witness", "candidate" },
         method<"block_header", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<false>>{ "version", "media", "hash", "height", "candidate" },
@@ -84,42 +86,44 @@ struct native_methods
 
     using top = at<1>;
     using top_subscribe = at<2>;
+    using top_chain = at<3>;
+    using top_height = at<4>;
 
-    using block = at<3>;
-    using block_header = at<4>;
-    using block_header_context = at<5>;
-    using block_details = at<6>;
-    using block_txs = at<7>;
-    using block_filter = at<8>;
-    using block_filter_hash = at<9>;
-    using block_filter_header = at<10>;
-    using block_tx = at<11>;
-    using block_subscribe = at<12>;
+    using block = at<5>;
+    using block_header = at<6>;
+    using block_header_context = at<7>;
+    using block_details = at<8>;
+    using block_txs = at<9>;
+    using block_filter = at<10>;
+    using block_filter_hash = at<11>;
+    using block_filter_header = at<12>;
+    using block_tx = at<13>;
+    using block_subscribe = at<14>;
 
-    using tx = at<13>;
-    using tx_header = at<14>;
-    using tx_details = at<15>;
-    using tx_subscribe = at<16>;
+    using tx = at<15>;
+    using tx_header = at<16>;
+    using tx_details = at<17>;
+    using tx_subscribe = at<18>;
 
-    using inputs = at<17>;
-    using input = at<18>;
-    using input_script = at<19>;
-    using input_witness = at<20>;
+    using inputs = at<19>;
+    using input = at<20>;
+    using input_script = at<21>;
+    using input_witness = at<22>;
 
-    using outputs = at<21>;
-    using output = at<22>;
-    using output_script = at<23>;
-    using output_spender = at<24>;
-    using output_spenders = at<25>;
-    using output_subscribe = at<26>;
+    using outputs = at<23>;
+    using output = at<24>;
+    using output_script = at<25>;
+    using output_spender = at<26>;
+    using output_spenders = at<27>;
+    using output_subscribe = at<28>;
 
-    using address = at<27>;
-    using address_confirmed = at<28>;
-    using address_unconfirmed = at<29>;
-    using address_balance = at<30>;
-    using address_subscribe = at<31>;
+    using address = at<29>;
+    using address_confirmed = at<30>;
+    using address_unconfirmed = at<31>;
+    using address_balance = at<32>;
+    using address_subscribe = at<33>;
 
-    using fees = at<32>;
+    using fees = at<34>;
 };
 
 /// ?format=data|text|json (via query string).
@@ -128,33 +132,46 @@ struct native_methods
 /// /v1/configuration {1}
 
 /// /v1/top {1}
+/// /v1/top/confirmed {1}
+/// /v1/top/candidate {1}
+/// /v1/top/confirmed/height {1}
+/// /v1/top/candidate/height {1}
 
 /// /v1/block/hash/[bkhash] {1}
-/// /v1/block/height/[height] {1}
+/// /v1/block/confirmed/[height] {1}
+/// /v1/block/candidate/[height] {1}
 
 /// /v1/block/hash/[bkhash]/header {1}
-/// /v1/block/height/[height]/header {1}
+/// /v1/block/confirmed/[height]/header {1}
+/// /v1/block/candidate/[height]/header {1}
 
 /// /v1/block/hash/[bkhash]/header/context {1}
-/// /v1/block/height/[height]/header/context {1}
+/// /v1/block/confirmed/[height]/header/context {1}
+/// /v1/block/candidate/[height]/header/context {1}
 
 /// /v1/block/hash/[bkhash]/details {1}
-/// /v1/block/height/[height]/details {1}
+/// /v1/block/confirmed/[height]/details {1}
+/// /v1/block/candidate/[height]/details {1}
 
 /// /v1/block/hash/[bkhash]/filter/[type] {1}
-/// /v1/block/height/[height]/filter/[type] {1}
+/// /v1/block/confirmed/[height]/filter/[type] {1}
+/// /v1/block/candidate/[height]/filter/[type] {1}
 
 /// /v1/block/hash/[bkhash]/filter/[type]/hash {1}
-/// /v1/block/height/[height]/filter/[type]/hash {1}
+/// /v1/block/confirmed/[height]/filter/[type]/hash {1}
+/// /v1/block/candidate/[height]/filter/[type]/hash {1}
 
 /// /v1/block/hash/[bkhash]/filter/[type]/header {1}
-/// /v1/block/height/[height]/filter/[type]/header {1}
+/// /v1/block/confirmed/[height]/filter/[type]/header {1}
+/// /v1/block/candidate/[height]/filter/[type]/header {1}
 
 /// /v1/block/hash/[bkhash]/txs {all txs in the block}
-/// /v1/block/height/[height]/txs {all txs in the block}
+/// /v1/block/confirmed/[height]/txs {all txs in the block}
+/// /v1/block/candidate/[height]/txs {all txs in the block}
 
 /// /v1/block/hash/[bkhash]/tx/[position] {1}
-/// /v1/block/height/[height]/tx/[position] {1}
+/// /v1/block/confirmed/[height]/tx/[position] {1}
+/// /v1/block/candidate/[height]/tx/[position] {1}
 
 /// ---------------------------------------------------------------------------
 

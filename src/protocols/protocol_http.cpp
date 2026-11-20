@@ -258,6 +258,11 @@ void protocol_http::send_method_not_allowed() NOEXCEPT
     send_method_not_allowed(*reset_request());
 }
 
+void protocol_http::send_service_unavailable() NOEXCEPT
+{
+    send_service_unavailable(*reset_request());
+}
+
 void protocol_http::send_internal_server_error(const code& reason) NOEXCEPT
 {
     send_internal_server_error(reason, *reset_request());
@@ -291,6 +296,11 @@ void protocol_http::send_not_implemented(const request& request) NOEXCEPT
 void protocol_http::send_method_not_allowed(const request& request) NOEXCEPT
 {
     network::protocol_http::send_method_not_allowed(request);
+}
+
+void protocol_http::send_service_unavailable(const request& request) NOEXCEPT
+{
+    network::protocol_http::send_service_unavailable(request);
 }
 
 void protocol_http::send_internal_server_error(const code& reason,

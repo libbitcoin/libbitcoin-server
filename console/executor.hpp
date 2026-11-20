@@ -191,7 +191,7 @@ private:
 
     std::istream& input_;
     std::ostream& output_;
-    network::logger log_{};
+    network::logger log_;
     network::capture capture_{ input_, close_ };
     const interest_ptr log_interest_;
 

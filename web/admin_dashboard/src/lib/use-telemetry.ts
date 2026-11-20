@@ -24,7 +24,7 @@ export interface NativeTelemetry {
   top: number | null;
   tops: NativeLiveState['tops'];
   branch: NativeLiveState['branch'];
-  tip: NativeLiveState['tip'];
+  topHeader: NativeLiveState['topHeader'];
   configuration: NativeLiveState['configuration'];
   receivedAt: number | null;
   transport: 'websocket' | 'rest' | 'none';
@@ -33,7 +33,7 @@ export interface NativeTelemetry {
 
 type NativeTelemetrySelection = Pick<
   NativeTelemetry,
-  'top' | 'tops' | 'branch' | 'tip' | 'configuration' | 'receivedAt' | 'transport'
+  'top' | 'tops' | 'branch' | 'topHeader' | 'configuration' | 'receivedAt' | 'transport'
 >;
 
 export function useAdminTelemetry(
@@ -144,7 +144,7 @@ export function hasFreshNativeLiveState(
     live.topReceivedAt !== null &&
     live.configuration !== null &&
     live.configurationReceivedAt !== null &&
-    isNativeStateFresh(live.topReceivedAt, now)
+    isNativeStateFresh(Math.max(live.topReceivedAt, status.lastMessageAt ?? 0), now)
   );
 }
 
@@ -162,7 +162,7 @@ export function selectNativeTelemetrySource(
         live.branchReceivedAt !== null && isNativeStateFresh(live.branchReceivedAt, now)
           ? live.branch
           : null,
-      tip: live.tip,
+      topHeader: live.topHeader,
       configuration: live.configuration,
       receivedAt: live.topReceivedAt,
       transport: 'websocket',
@@ -174,7 +174,7 @@ export function selectNativeTelemetrySource(
       top: rest.tops.confirmed.height,
       tops: rest.tops,
       branch: rest.branch,
-      tip: null,
+      topHeader: rest.topHeader,
       configuration: rest.configuration,
       receivedAt: rest.receivedAt,
       transport: 'rest',
@@ -185,7 +185,7 @@ export function selectNativeTelemetrySource(
     top: null,
     tops: null,
     branch: null,
-    tip: null,
+    topHeader: null,
     configuration: null,
     receivedAt: null,
     transport: 'none',

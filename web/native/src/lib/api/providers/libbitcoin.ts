@@ -417,10 +417,10 @@ async function fetchTopHeightCached(baseUrl: string, turbo?: boolean) {
 async function resolveBlockPath(baseUrl: string, hashOrHeight: string, turbo?: boolean) {
   if (hashOrHeight === 'latest' || hashOrHeight === 'tip') {
     const tip = await fetchTopHeightCached(baseUrl, turbo);
-    return { path: `/v1/block/height/${String(tip)}`, height: tip };
+    return { path: `/v1/block/confirmed/${String(tip)}`, height: tip };
   }
   if (/^\d+$/u.test(hashOrHeight)) {
-    return { path: `/v1/block/height/${hashOrHeight}` };
+    return { path: `/v1/block/confirmed/${hashOrHeight}` };
   }
   return { path: `/v1/block/hash/${hashOrHeight}` };
 }
@@ -481,8 +481,8 @@ async function fetchBlockTransactionPositions(
 async function fetchBlockSummaries(baseUrl: string, heights: number[]): Promise<BlockSummary[]> {
   return mapWithConcurrency(heights, REQUEST_CONCURRENCY, async (h) => {
     const [header, context] = await Promise.all([
-      fetchJson<BlockHeaderResponse>(baseUrl, `/v1/block/height/${String(h)}/header?format=json`),
-      tryFetchJson<unknown>(baseUrl, `/v1/block/height/${String(h)}/header/context?format=json`),
+      fetchJson<BlockHeaderResponse>(baseUrl, `/v1/block/confirmed/${String(h)}/header?format=json`),
+      tryFetchJson<unknown>(baseUrl, `/v1/block/confirmed/${String(h)}/header/context?format=json`),
     ]);
     const state = extractHeaderContextState(context);
     return {
@@ -825,7 +825,7 @@ export function createLibbitcoinClient({
   async function emitBlockEvent(identifier: string | number) {
     const path =
       typeof identifier === 'number'
-        ? `/v1/block/height/${String(identifier)}`
+        ? `/v1/block/confirmed/${String(identifier)}`
         : `/v1/block/hash/${identifier}`;
     const [header, context] = await Promise.all([
       observeHttp(fetchJson<BlockHeaderResponse>(baseUrl, `${path}/header?format=json`)),
@@ -1098,7 +1098,7 @@ export function createLibbitcoinClient({
       if (header.height < tip) {
         const nextHeader = await tryFetchJson<BlockHeaderResponse>(
           baseUrl,
-          `/v1/block/height/${String(header.height + 1)}/header?format=json`
+          `/v1/block/confirmed/${String(header.height + 1)}/header?format=json`
         );
         nextBlockHash = nextHeader?.hash ?? null;
       }

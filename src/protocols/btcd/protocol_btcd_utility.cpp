@@ -60,16 +60,18 @@ bool protocol_btcd::handle_estimate_fee(const code& ec,
 
     // The estimator targets the next block as zero.
     estimate(sub1(target), node::estimate_mode::basic,
-        BIND(handle_estimate, _1, _2));
+        BIND(handle_estimate, _1, _2, gate()));
     return true;
 }
 
-void protocol_btcd::handle_estimate(const code& ec, uint64_t fee) NOEXCEPT
+void protocol_btcd::handle_estimate(const code& ec, uint64_t fee,
+    const gate_t::ptr& gate) NOEXCEPT
 {
-    POST_BTCD(complete_estimate, ec, fee);
+    POST_BTCD(complete_estimate, ec, fee, gate);
 }
 
-void protocol_btcd::complete_estimate(const code& ec, uint64_t fee) NOEXCEPT
+void protocol_btcd::complete_estimate(const code& ec, uint64_t fee,
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -310,12 +312,12 @@ bool protocol_btcd::handle_get_net_totals(const code& ec,
     if (stopped(ec))
         return false;
 
-    capture_totals(BIND(do_send_net_totals, _1, _2, _3));
+    capture_totals(BIND(do_send_net_totals, _1, _2, _3, gate()));
     return true;
 }
 
 void protocol_btcd::do_send_net_totals(const code& ec, uint64_t sent,
-    uint64_t received) NOEXCEPT
+    uint64_t received, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -380,7 +382,7 @@ bool protocol_btcd::handle_node(const code& ec, btcd_interface::node,
             error::btcd::client_node_not_connected;
 
         const auto complete = emplace_shared<terminator::race>(
-            BIND(handle_stopped, _1, absent));
+            BIND(handle_stopped, _1, absent, gate()));
 
         BROADCAST(terminator, to_shared<terminator>(complete, reason,
             numeric ? identifier : zero, numeric ?
@@ -396,16 +398,16 @@ bool protocol_btcd::handle_node(const code& ec, btcd_interface::node,
 }
 
 void protocol_btcd::handle_stopped(const code& ec,
-    error::btcd::error_t absent) NOEXCEPT
+    error::btcd::error_t absent, const gate_t::ptr& gate) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST_BTCD(do_send_stopped, ec, absent);
+    POST_BTCD(do_send_stopped, ec, absent, gate);
 }
 
 void protocol_btcd::do_send_stopped(const code& ec,
-    error::btcd::error_t absent) NOEXCEPT
+    error::btcd::error_t absent, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 

@@ -98,11 +98,33 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
         }
         else
         {
-            const auto subcomponent = segments[segment++];
-            if (subcomponent == "subscribe")
+            const auto component = segments[segment++];
+            if (component == "subscribe")
+            {
                 method = "top_subscribe";
+            }
+            else if (component == "confirmed" || component == "candidate")
+            {
+                if (component == "candidate")
+                    params["candidate"] = true;
+
+                if (segment == segments.size())
+                {
+                    method = "top_chain";
+                }
+                else
+                {
+                    const auto subcomponent = segments[segment++];
+                    if (subcomponent == "height")
+                        method = "top_height";
+                    else
+                        return error::invalid_subcomponent;
+                }
+            }
             else
+            {
                 return error::invalid_subcomponent;
+            }
         }
     }
     else if (target == "address")
@@ -268,7 +290,7 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
 
                 params["hash"] = hash;
             }
-            else if (by == "height")
+            else if (by == "confirmed" || by == "candidate")
             {
                 if (segment == segments.size())
                     return error::missing_height;
@@ -278,6 +300,8 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
                     return error::invalid_number;
 
                 params["height"] = height;
+                if (by == "candidate")
+                    params["candidate"] = true;
             }
             else
             {

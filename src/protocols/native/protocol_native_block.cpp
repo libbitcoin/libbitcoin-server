@@ -73,6 +73,56 @@ bool protocol_native::handle_get_top_subscribe(const code& ec,
     return handle_get_top(ec, {}, version, media);
 }
 
+bool protocol_native::handle_get_top_chain(const code& ec,
+    interface::top_chain, uint8_t, uint8_t media, bool candidate) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    switch (media)
+    {
+        case data:
+            send_chunk(to_top(candidate));
+            return true;
+        case text:
+            send_text(encode_base16(to_top(candidate)));
+            return true;
+        case json:
+            send_json(to_top_json(candidate));
+            return true;
+    }
+
+    send_not_found();
+    return true;
+}
+
+bool protocol_native::handle_get_top_height(const code& ec,
+    interface::top_height, uint8_t, uint8_t media, bool candidate) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    const auto height = possible_narrow_cast<uint32_t>(candidate ?
+        query.get_top_candidate() : query.get_top_confirmed());
+
+    switch (media)
+    {
+        case data:
+            send_chunk(to_chunk(to_little_endian(height)));
+            return true;
+        case text:
+            send_text(encode_base16(to_little_endian(height)));
+            return true;
+        case json:
+            send_json(height);
+            return true;
+    }
+
+    send_not_found();
+    return true;
+}
+
 // notify
 void protocol_native::do_top(media_type media) NOEXCEPT
 {

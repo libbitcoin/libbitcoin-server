@@ -927,15 +927,41 @@ bool protocol_bitcoind_rest::handle_get_mempool(const code& ec,
         return true;
     }
 
+    get_confirmable_txs(BIND(handle_mempool, _1, _2, verbose, mempool_sequence,
+        gate()));
+    return true;
+}
+
+void protocol_bitcoind_rest::handle_mempool(const code& ec,
+    const database::tx_links& links, bool verbose, bool sequence,
+    const gate_t::ptr& gate) NOEXCEPT
+{
+    POST(complete_mempool, ec, links, verbose, sequence, gate);
+}
+
+void protocol_bitcoind_rest::complete_mempool(const code& ec,
+    const database::tx_links& links, bool verbose, bool sequence,
+    const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    if (ec == node::error::pooling_disabled)
+    {
+        send_not_found();
+        return;
+    }
+
     system::json::value out{};
-    if (!raw_mempool(out, archive(), verbose, mempool_sequence))
+    if (ec || !raw_mempool(out, archive(), links, verbose, sequence))
     {
         send_internal_server_error(database::error::integrity);
-        return true;
+        return;
     }
 
     send_json(std::move(out));
-    return true;
 }
 
 // The minimum is that sent to peers (feefilter), while the relay minimum is
@@ -952,16 +978,43 @@ bool protocol_bitcoind_rest::handle_get_mempool_information(const code& ec,
     const auto relay = to_floating(settings.minimum_fee_rate_()) /
         chain::satoshi_per_bitcoin;
 
+    get_confirmable_fees(BIND(handle_mempool_information, _1, _2, minimum,
+        relay, settings.minimum_fee_rate, gate()));
+    return true;
+}
+
+void protocol_bitcoind_rest::handle_mempool_information(const code& ec,
+    const database::fee_rates& rates, double minimum, double relay,
+    double increment, const gate_t::ptr& gate) NOEXCEPT
+{
+    POST(complete_mempool_information, ec, rates, minimum, relay, increment,
+        gate);
+}
+
+void protocol_bitcoind_rest::complete_mempool_information(const code& ec,
+    const database::fee_rates& rates, double minimum, double relay,
+    double increment, const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    if (ec == node::error::pooling_disabled)
+    {
+        send_not_found();
+        return;
+    }
+
     object out{};
-    if (!mempool_info(out, archive(), database_settings().path, minimum,
-        relay, settings.minimum_fee_rate))
+    if (ec || !mempool_info(out, archive(), rates, database_settings().path,
+        minimum, relay, increment))
     {
         send_internal_server_error(database::error::integrity);
-        return true;
+        return;
     }
 
     send_json(std::move(out));
-    return true;
 }
 
 bool protocol_bitcoind_rest::handle_get_deployment_info(const code& ec,

@@ -48,6 +48,7 @@ public:
 
     bool console;
     bool events;
+    bool thread_priority;
     uint32_t limit;
     system::config::path console_path;
     system::config::path events_path;
@@ -56,6 +57,7 @@ public:
     system::config::path symbols_path{ "symbols" };
 #endif
 
+    virtual network::processing_priority thread_priority_() const NOEXCEPT;
     virtual std::filesystem::path log_file1() const NOEXCEPT;
     virtual std::filesystem::path log_file2() const NOEXCEPT;
     virtual std::filesystem::path events_file() const NOEXCEPT;

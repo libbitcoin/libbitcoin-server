@@ -382,21 +382,21 @@ bool protocol_bitcoind_utility::handle_estimate_smart_fee(const code& ec,
     }
 
     // The estimator targets the next block as zero.
-    estimate(sub1(target), mode, BIND(handle_estimate, _1, _2, target));
+    estimate(sub1(target), mode, BIND(handle_estimate, _1, _2, target, gate()));
     return true;
 }
 
 void protocol_bitcoind_utility::handle_estimate(const code& ec, uint64_t fee,
-    size_t target) NOEXCEPT
+    size_t target, const gate_t::ptr& gate) NOEXCEPT
 {
-    POST(complete_estimate, ec, fee, target);
+    POST(complete_estimate, ec, fee, target, gate);
 }
 
 // Satoshis to bitcoin (each per virtual kilobyte).
 constexpr double fee_scale = 100'000'000.0;
 
 void protocol_bitcoind_utility::complete_estimate(const code& ec,
-    uint64_t fee, size_t target) NOEXCEPT
+    uint64_t fee, size_t target, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 

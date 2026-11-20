@@ -45,6 +45,7 @@ settings::settings() NOEXCEPT
     verbose{ false /*levels::verbose_defined*/ },
     console{ true },
     events{ true },
+    thread_priority{ false },
     limit{ 1'000'000_u32 }
 {
 }
@@ -52,6 +53,13 @@ settings::settings() NOEXCEPT
 settings::settings(chain::selection) NOEXCEPT
   : settings()
 {
+}
+
+processing_priority settings::thread_priority_() const NOEXCEPT
+{
+    // medium is "normal" (os default).
+    return thread_priority ? processing_priority::medium :
+        processing_priority::low;
 }
 
 std::filesystem::path settings::log_file1() const NOEXCEPT
@@ -98,7 +106,7 @@ settings::settings(system::chain::selection context,
     admin.binds.emplace_back(system::ip::ipv4::loopback(), 0_u16);
 
     // Admin may accumulate a large amount of log backlog.
-    admin.maximum_backlog = 10 * network::megabyte;
+    admin.maximum_backlog = 1024 * network::megabyte;
 
     // The largest btcd notification is a filtered block.
     btcd.maximum_backlog = 20 * network::megabyte;

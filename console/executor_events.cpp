@@ -75,8 +75,11 @@ const std::unordered_map<uint8_t, std::string> executor::fired_
     { events::pool_context_usecs,   "pool_context_usecs.." },
     { events::pool_template_usecs,  "pool_template_usecs." },
     { events::pool_project_usecs,   "pool_project_usecs.." },
+    { events::pool_confirmable_usecs, "pool_confirmable_usecs" },
 
     { events::tx_dropped,           "tx_dropped.........." },
+    { events::tx_refused,           "tx_refused.........." },
+    { events::tx_unserved,          "tx_unserved........." },
 
     { events::unknown,              "unknown............." }
 };

@@ -56,7 +56,7 @@ bool protocol_esplora::handle_get_mempool(const code& ec, interface::mempool,
         return true;
     }
 
-    PARALLEL(do_get_mempool, gate());
+    get_confirmable_fees(BIND(handle_mempool, _1, _2, gate()));
     return true;
 }
 
@@ -72,7 +72,7 @@ bool protocol_esplora::handle_get_mempool_txids(const code& ec,
         return true;
     }
 
-    PARALLEL(do_get_mempool_txids, gate());
+    get_confirmable_txs(BIND(handle_mempool_txids, _1, _2, gate()));
     return true;
 }
 
@@ -88,7 +88,7 @@ bool protocol_esplora::handle_get_mempool_recent(const code& ec,
         return true;
     }
 
-    PARALLEL(do_get_mempool_recent, gate());
+    get_confirmable_txs(BIND(handle_mempool_recent, _1, _2, gate()));
     return true;
 }
 
@@ -105,71 +105,77 @@ bool protocol_esplora::handle_get_fee_estimates(const code& ec,
     }
 
     estimates_.clear();
-    next_estimate(zero);
+    next_estimate(zero, gate());
     return true;
 }
 
 // Completion handlers.
 // ----------------------------------------------------------------------------
 
-void protocol_esplora::do_get_mempool(const gate_t::ptr& gate) NOEXCEPT
+void protocol_esplora::handle_mempool(const code& ec,
+    const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
 {
-    BC_ASSERT(!stranded());
+    POST(complete_get_mempool, ec, rates, gate);
+}
 
-    database::fee_rates rates{};
-    if (!archive().get_confirmable_fees(rates))
-    {
-        POST(complete_get_mempool, database::error::integrity,
-            value{}, gate);
+void protocol_esplora::complete_get_mempool(const code& ec,
+    const database::fee_rates& rates, const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped() || send_closed(ec))
         return;
-    }
 
-    const auto summary = to_fee_summary(std::move(rates), histogram_bin);
-    value out = object
+    const auto summary = to_fee_summary(rates, histogram_bin);
+    send_json(object
     {
         { "count", summary.count },
         { "vsize", summary.vsize },
         { "total_fee", summary.fee },
         { "fee_histogram", value_from(summary.histogram) }
-    };
-
-    POST(complete_get_mempool, code{}, std::move(out), gate);
+    });
 }
 
-void protocol_esplora::do_get_mempool_txids(const gate_t::ptr& gate) NOEXCEPT
+void protocol_esplora::handle_mempool_txids(const code& ec,
+    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
 {
-    BC_ASSERT(!stranded());
+    POST(complete_get_mempool_txids, ec, links, gate);
+}
 
-    database::tx_links links{};
-    const auto& query = archive();
-    if (query.get_confirmable_txs(links))
-    {
-        POST(complete_get_mempool, database::error::integrity,
-            value{}, gate);
+void protocol_esplora::complete_get_mempool_txids(const code& ec,
+    const database::tx_links& links, const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped() || send_closed(ec))
         return;
-    }
+
+    const auto& query = archive();
 
     array txids{};
     txids.reserve(links.size());
     for (const auto& link: links)
         txids.emplace_back(encode_hash(query.get_tx_key(link)));
 
-    POST(complete_get_mempool, code{}, value{ std::move(txids) }, gate);
+    send_json(value{ std::move(txids) });
 }
 
 // The pool is ordered by entry, so the most recent are at its end.
-void protocol_esplora::do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT
+void protocol_esplora::handle_mempool_recent(const code& ec,
+    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
 {
-    BC_ASSERT(!stranded());
+    POST(complete_get_mempool_recent, ec, links, gate);
+}
 
-    database::tx_links links{};
-    const auto& query = archive();
-    if (query.get_confirmable_txs(links))
-    {
-        POST(complete_get_mempool, database::error::integrity,
-            value{}, gate);
+void protocol_esplora::complete_get_mempool_recent(const code& ec,
+    const database::tx_links& links, const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped() || send_closed(ec))
         return;
-    }
+
+    const auto& query = archive();
 
     array recent{};
     const auto count = std::min(recent_count, links.size());
@@ -182,8 +188,7 @@ void protocol_esplora::do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT
             !query.get_tx_virtual_size(vsize, *link) ||
             !query.get_tx_spend(spend, *link))
         {
-            POST(complete_get_mempool, database::error::integrity,
-                value{}, gate);
+            send_internal_server_error(database::error::integrity);
             return;
         }
 
@@ -196,27 +201,30 @@ void protocol_esplora::do_get_mempool_recent(const gate_t::ptr& gate) NOEXCEPT
         });
     }
 
-    POST(complete_get_mempool, code{}, value{ std::move(recent) }, gate);
+    send_json(value{ std::move(recent) });
 }
 
-void protocol_esplora::complete_get_mempool(const code& ec,
-    value& out, const gate_t::ptr&) NOEXCEPT
+// A closed pool is not implemented with relay disabled, and is otherwise
+// unavailable until it opens.
+bool protocol_esplora::send_closed(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    if (stopped())
-        return;
+    if (!ec)
+        return false;
 
-    if (ec)
-    {
+    if (ec != node::error::pooling_disabled)
         send_internal_server_error(ec);
-        return;
-    }
+    else if (network_settings().enable_relay)
+        send_service_unavailable();
+    else
+        send_not_implemented();
 
-    send_json(std::move(out));
+    return true;
 }
 
-void protocol_esplora::next_estimate(size_t index) NOEXCEPT
+void protocol_esplora::next_estimate(size_t index,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -229,19 +237,19 @@ void protocol_esplora::next_estimate(size_t index) NOEXCEPT
 
     // The estimator targets the next block as zero.
     estimate(sub1(targets.at(index)), node::estimate_mode::basic,
-        BIND(handle_estimate, _1, _2, index));
+        BIND(handle_estimate, _1, _2, index, gate));
 }
 
 void protocol_esplora::handle_estimate(const code& ec, uint64_t fee,
-    size_t index) NOEXCEPT
+    size_t index, const gate_t::ptr& gate) NOEXCEPT
 {
-    POST(complete_estimate, ec, fee, index);
+    POST(complete_estimate, ec, fee, index, gate);
 }
 
 constexpr double sats_per_vkbyte_to_sats_per_vbyte = 1'000.0;
 
 void protocol_esplora::complete_estimate(const code& ec, uint64_t fee,
-    size_t index) NOEXCEPT
+    size_t index, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -265,7 +273,7 @@ void protocol_esplora::complete_estimate(const code& ec, uint64_t fee,
         estimates_[system::serialize(targets.at(index))] =
             fee / sats_per_vkbyte_to_sats_per_vbyte;
 
-    next_estimate(add1(index));
+    next_estimate(add1(index), gate);
 }
 
 BC_POP_WARNING()

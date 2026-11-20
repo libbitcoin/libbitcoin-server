@@ -23,23 +23,34 @@ using namespace system;
 namespace http = network::http;
 namespace ws = network::ws;
 
-static data_chunk to_tops(const hash_digest& confirmed, size_t confirmed_height,
-    const hash_digest& candidate, size_t candidate_height)
+static data_chunk to_top(const chain::header& header, size_t height)
 {
-    return splice(chain::checkpoint{ confirmed, confirmed_height }.to_data(),
-        chain::checkpoint{ candidate, candidate_height }.to_data());
+    return splice(chain::checkpoint{ header.hash(), height }.to_data(),
+        header.to_data());
 }
 
-static bool is_top(const json::value& value, const hash_digest& hash,
+static data_chunk to_tops(const chain::header& confirmed,
+    size_t confirmed_height, const chain::header& candidate,
+    size_t candidate_height)
+{
+    return splice(to_top(confirmed, confirmed_height),
+        to_top(candidate, candidate_height));
+}
+
+static bool is_top(const json::value& value, const chain::header& header,
     int64_t height)
 {
-    return value.is_object() &&
-        value.as_object().at("hash").as_string() == encode_hash(hash) &&
-        value.as_object().at("height").as_int64() == height;
+    if (!value.is_object())
+        return false;
+
+    const auto& object = value.as_object();
+    return object.at("hash").as_string() == encode_hash(header.hash()) &&
+        object.at("height").as_int64() == height &&
+        object.at("header") == json::value_from(header);
 }
 
-static bool is_tops(const json::value& value, const hash_digest& confirmed,
-    int64_t confirmed_height, const hash_digest& candidate,
+static bool is_tops(const json::value& value, const chain::header& confirmed,
+    int64_t confirmed_height, const chain::header& candidate,
     int64_t candidate_height)
 {
     return value.is_object() && value.as_object().size() == 2u &&
@@ -49,7 +60,7 @@ static bool is_tops(const json::value& value, const hash_digest& confirmed,
 
 static data_chunk default_tops()
 {
-    return to_tops(test::block9_hash, 9, test::block0_hash, 0);
+    return to_tops(test::block9.header(), 9, test::genesis.header(), 0);
 }
 
 BC_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
@@ -59,7 +70,7 @@ BC_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
 
 BC_AUTO_TEST_CASE(native__top__json__expected)
 {
-    BC_REQUIRE(is_tops(get_json("/v1/top?format=json"), test::block9_hash, 9, test::block0_hash, 0));
+    BC_REQUIRE(is_tops(get_json("/v1/top?format=json"), test::block9.header(), 9, test::genesis.header(), 0));
 }
 
 BC_AUTO_TEST_CASE(native__top__text__expected)
@@ -75,7 +86,7 @@ BC_AUTO_TEST_CASE(native__top__data__expected)
 BC_AUTO_TEST_CASE(native__top__pushed_candidate_json__candidate_top)
 {
     BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
-    BC_REQUIRE(is_tops(get_json("/v1/top?format=json"), test::block9_hash, 9, test::block1_hash, 1));
+    BC_REQUIRE(is_tops(get_json("/v1/top?format=json"), test::block9.header(), 9, test::block1.header(), 1));
 }
 
 BC_AUTO_TEST_CASE(native__top__xml__bad_request)
@@ -94,7 +105,63 @@ BC_AUTO_TEST_CASE(native__top__default__not_acceptable)
 
 BC_AUTO_TEST_CASE(native__top_subscribe__json__expected)
 {
-    BC_REQUIRE(is_tops(get_json("/v1/top/subscribe?format=json"), test::block9_hash, 9, test::block0_hash, 0));
+    BC_REQUIRE(is_tops(get_json("/v1/top/subscribe?format=json"), test::block9.header(), 9, test::genesis.header(), 0));
+}
+
+// top/confirmed, top/candidate
+
+BC_AUTO_TEST_CASE(native__top_chain__confirmed_json__expected)
+{
+    BC_REQUIRE(is_top(get_json("/v1/top/confirmed?format=json"), test::block9.header(), 9));
+}
+
+BC_AUTO_TEST_CASE(native__top_chain__candidate_json__expected)
+{
+    BC_REQUIRE(is_top(get_json("/v1/top/candidate?format=json"), test::genesis.header(), 0));
+}
+
+BC_AUTO_TEST_CASE(native__top_chain__confirmed_data__expected)
+{
+    BC_REQUIRE_EQUAL(get_data("/v1/top/confirmed?format=data"), to_top(test::block9.header(), 9));
+}
+
+BC_AUTO_TEST_CASE(native__top_chain__candidate_text__expected)
+{
+    BC_REQUIRE_EQUAL(get_text("/v1/top/candidate?format=text"), encode_base16(to_top(test::genesis.header(), 0)));
+}
+
+BC_AUTO_TEST_CASE(native__top_chain__pushed_candidate_json__candidate_top)
+{
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    BC_REQUIRE(is_top(get_json("/v1/top/candidate?format=json"), test::block1.header(), 1));
+}
+
+// top/confirmed/height, top/candidate/height
+
+BC_AUTO_TEST_CASE(native__top_height__confirmed_json__expected)
+{
+    BC_REQUIRE_EQUAL(get_json("/v1/top/confirmed/height?format=json").as_int64(), 9);
+}
+
+BC_AUTO_TEST_CASE(native__top_height__candidate_json__expected)
+{
+    BC_REQUIRE_EQUAL(get_json("/v1/top/candidate/height?format=json").as_int64(), 0);
+}
+
+BC_AUTO_TEST_CASE(native__top_height__confirmed_data__expected)
+{
+    BC_REQUIRE_EQUAL(get_data("/v1/top/confirmed/height?format=data"), to_chunk(to_little_endian<uint32_t>(9)));
+}
+
+BC_AUTO_TEST_CASE(native__top_height__confirmed_text__expected)
+{
+    BC_REQUIRE_EQUAL(get_text("/v1/top/confirmed/height?format=text"), "09000000");
+}
+
+BC_AUTO_TEST_CASE(native__top_height__pushed_candidate_json__candidate_height)
+{
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    BC_REQUIRE_EQUAL(get_json("/v1/top/candidate/height?format=json").as_int64(), 1);
 }
 
 // top (websockets)
@@ -108,7 +175,7 @@ BC_AUTO_TEST_CASE(native__ws_upgrade__always__success)
 BC_AUTO_TEST_CASE(native__ws_top__json__expected)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(is_tops(ws_get_json("/v1/top?format=json"), test::block9_hash, 9, test::block0_hash, 0));
+    BC_REQUIRE(is_tops(ws_get_json("/v1/top?format=json"), test::block9.header(), 9, test::genesis.header(), 0));
 }
 
 BC_AUTO_TEST_CASE(native__ws_top__text__expected)
@@ -134,7 +201,7 @@ BC_AUTO_TEST_CASE(native__ws_top__xml__bad_request)
 BC_AUTO_TEST_CASE(native__ws_top_subscribe__json__expected)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(is_tops(ws_get_json("/v1/top/subscribe?format=json"), test::block9_hash, 9, test::block0_hash, 0));
+    BC_REQUIRE(is_tops(ws_get_json("/v1/top/subscribe?format=json"), test::block9.header(), 9, test::genesis.header(), 0));
 }
 
 BC_AUTO_TEST_CASE(native__ws_top_subscribe__stop__empty)
@@ -149,7 +216,7 @@ BC_AUTO_TEST_CASE(native__ws_block__not_found_json__empty)
 {
     BC_REQUIRE(!ws_upgrade());
 
-    const auto response = ws_get_text("/v1/block/height/10/header");
+    const auto response = ws_get_text("/v1/block/confirmed/10/header");
     BC_REQUIRE(response.empty());
 }
 
@@ -157,15 +224,15 @@ BC_AUTO_TEST_CASE(native__ws_block__not_found_text__empty)
 {
     BC_REQUIRE(!ws_upgrade());
 
-    const auto response = ws_get_text("/v1/block/height/10?format=text");
+    const auto response = ws_get_text("/v1/block/confirmed/10?format=text");
     BC_REQUIRE(response.empty());
 }
 
 BC_AUTO_TEST_CASE(native__ws_top_subscribe__repeat__idempotent)
 {
     BC_REQUIRE(!ws_upgrade());
-    BC_REQUIRE(is_tops(ws_get_json("/v1/top/subscribe?format=json"), test::block9_hash, 9, test::block0_hash, 0));
-    BC_REQUIRE(is_tops(ws_get_json("/v1/top/subscribe?format=json"), test::block9_hash, 9, test::block0_hash, 0));
+    BC_REQUIRE(is_tops(ws_get_json("/v1/top/subscribe?format=json"), test::block9.header(), 9, test::genesis.header(), 0));
+    BC_REQUIRE(is_tops(ws_get_json("/v1/top/subscribe?format=json"), test::block9.header(), 9, test::genesis.header(), 0));
 }
 
 BC_AUTO_TEST_CASE(native__ws_top_subscribe__block__emits_tops)
@@ -177,7 +244,7 @@ BC_AUTO_TEST_CASE(native__ws_top_subscribe__block__emits_tops)
     BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
     notify(node::chases::block{ node::header_t{ 10 } });
 
-    BC_REQUIRE_EQUAL(ws_receive(), to_tops(test::mock_block10.hash(), 10, test::block0_hash, 0));
+    BC_REQUIRE_EQUAL(ws_receive(), to_tops(test::mock_block10.header(), 10, test::genesis.header(), 0));
 }
 
 BC_AUTO_TEST_CASE(native__ws_top_subscribe__reorganized__emits_tops)
@@ -185,7 +252,7 @@ BC_AUTO_TEST_CASE(native__ws_top_subscribe__reorganized__emits_tops)
     BC_REQUIRE(!ws_upgrade());
     BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
-    BC_REQUIRE_EQUAL(ws_get_data("/v1/top/subscribe?format=data"), to_tops(test::mock_block10.hash(), 10, test::block0_hash, 0));
+    BC_REQUIRE_EQUAL(ws_get_data("/v1/top/subscribe?format=data"), to_tops(test::mock_block10.header(), 10, test::genesis.header(), 0));
 
     BC_REQUIRE(query_.pop_confirmed());
     notify(node::chases::reorganized{ node::header_t{ 10 } });
@@ -201,7 +268,7 @@ BC_AUTO_TEST_CASE(native__ws_top_subscribe__headers__emits_tops)
     BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
     notify(node::chases::headers{ node::height_t{ 0 } });
 
-    BC_REQUIRE_EQUAL(ws_receive(), to_tops(test::block9_hash, 9, test::block1_hash, 1));
+    BC_REQUIRE_EQUAL(ws_receive(), to_tops(test::block9.header(), 9, test::block1.header(), 1));
 }
 
 BC_AUTO_TEST_CASE(native__ws_top_subscribe__regressed__emits_tops)
@@ -209,12 +276,12 @@ BC_AUTO_TEST_CASE(native__ws_top_subscribe__regressed__emits_tops)
     BC_REQUIRE(!ws_upgrade());
     BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
     BC_REQUIRE(query_.push_candidate(query_.to_header(test::block2_hash)));
-    BC_REQUIRE_EQUAL(ws_get_data("/v1/top/subscribe?format=data"), to_tops(test::block9_hash, 9, test::block2_hash, 2));
+    BC_REQUIRE_EQUAL(ws_get_data("/v1/top/subscribe?format=data"), to_tops(test::block9.header(), 9, test::block2.header(), 2));
 
     BC_REQUIRE(query_.pop_candidate());
     notify(node::chases::regressed{ node::height_t{ 1 } });
 
-    BC_REQUIRE_EQUAL(ws_receive(), to_tops(test::block9_hash, 9, test::block1_hash, 1));
+    BC_REQUIRE_EQUAL(ws_receive(), to_tops(test::block9.header(), 9, test::block1.header(), 1));
 }
 
 BC_AUTO_TEST_CASE(native__ws_top_subscribe__notify_text__expected)
@@ -225,19 +292,19 @@ BC_AUTO_TEST_CASE(native__ws_top_subscribe__notify_text__expected)
     BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
     notify(node::chases::headers{ node::height_t{ 0 } });
 
-    BC_REQUIRE_EQUAL(to_string(ws_receive()), encode_base16(to_tops(test::block9_hash, 9, test::block1_hash, 1)));
+    BC_REQUIRE_EQUAL(to_string(ws_receive()), encode_base16(to_tops(test::block9.header(), 9, test::block1.header(), 1)));
 }
 
 BC_AUTO_TEST_CASE(native__ws_top_subscribe__notify_json__expected)
 {
     BC_REQUIRE(!ws_upgrade());
     BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
-    BC_REQUIRE(is_tops(ws_get_json("/v1/top/subscribe?format=json"), test::block9_hash, 9, test::block0_hash, 0));
+    BC_REQUIRE(is_tops(ws_get_json("/v1/top/subscribe?format=json"), test::block9.header(), 9, test::genesis.header(), 0));
 
     BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
     notify(node::chases::block{ node::header_t{ 10 } });
 
-    BC_REQUIRE(is_tops(test::parse_json(to_string(ws_receive())), test::mock_block10.hash(), 10, test::block0_hash, 0));
+    BC_REQUIRE(is_tops(test::parse_json(to_string(ws_receive())), test::mock_block10.header(), 10, test::genesis.header(), 0));
 }
 
 // dispatch
@@ -245,22 +312,14 @@ BC_AUTO_TEST_CASE(native__ws_top_subscribe__notify_json__expected)
 
 BC_AUTO_TEST_CASE(native__dispatch__invalid_witness__bad_request)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1?format=data&witness=maybe"), http::status::bad_request);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1?format=data&witness=maybe"), http::status::bad_request);
 }
 
-BC_AUTO_TEST_CASE(native__dispatch__invalid_candidate__bad_request)
-{
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1?format=data&candidate=maybe"), http::status::bad_request);
-}
 
-BC_AUTO_TEST_CASE(native__dispatch__unsupported_candidate_top__bad_request)
-{
-    BC_REQUIRE_EQUAL(get_status("/v1/top?format=json&candidate=true"), http::status::bad_request);
-}
 
 BC_AUTO_TEST_CASE(native__dispatch__invalid_turbo__bad_request)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1?format=data&turbo=maybe"), http::status::bad_request);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1?format=data&turbo=maybe"), http::status::bad_request);
 }
 
 BC_AUTO_TEST_CASE(native__dispatch__invalid_stop__bad_request)
@@ -337,7 +396,7 @@ BC_AUTO_TEST_CASE(native__dispatch__origin_data__access_control)
 
 BC_AUTO_TEST_CASE(native__dispatch__origin_stream__access_control)
 {
-    const auto response = get_response("/v1/block/height/1?format=data", "http://example.com");
+    const auto response = get_response("/v1/block/confirmed/1?format=data", "http://example.com");
     BC_REQUIRE_EQUAL(response.result(), http::status::ok);
     BC_REQUIRE_EQUAL(response[http::field::access_control_allow_origin], "http://example.com");
 }
@@ -359,7 +418,7 @@ BC_AUTO_TEST_CASE(native__dispatch__http_1_0__version_1_0)
 
 BC_AUTO_TEST_CASE(native__dispatch__not_found_http_1_0__version_1_0)
 {
-    const auto response = get_response("/v1/block/height/10?format=data", {}, network::http::version_1_0);
+    const auto response = get_response("/v1/block/confirmed/10?format=data", {}, network::http::version_1_0);
     BC_REQUIRE_EQUAL(response.result(), http::status::not_found);
     BC_REQUIRE_EQUAL(response.version(), network::http::version_1_0);
 }
@@ -376,18 +435,18 @@ static const chain::transaction& coinbase1() NOEXCEPT
 
 BC_AUTO_TEST_CASE(native__block__candidate_unpushed__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1?format=data&candidate=true"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/candidate/1?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block__candidate_pushed__expected)
 {
     BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
-    BC_REQUIRE_EQUAL(get_data("/v1/block/height/1?format=data&candidate=true"), to_chunk(test::block1_data));
+    BC_REQUIRE_EQUAL(get_data("/v1/block/candidate/1?format=data"), to_chunk(test::block1_data));
 }
 
-BC_AUTO_TEST_CASE(native__block__height_data__expected)
+BC_AUTO_TEST_CASE(native__block__confirmed_data__expected)
 {
-    BC_REQUIRE_EQUAL(get_data("/v1/block/height/1?format=data"), to_chunk(test::block1_data));
+    BC_REQUIRE_EQUAL(get_data("/v1/block/confirmed/1?format=data"), to_chunk(test::block1_data));
 }
 
 BC_AUTO_TEST_CASE(native__block__hash_data__expected)
@@ -397,17 +456,17 @@ BC_AUTO_TEST_CASE(native__block__hash_data__expected)
 
 BC_AUTO_TEST_CASE(native__block__text__expected)
 {
-    BC_REQUIRE_EQUAL(get_text("/v1/block/height/1?format=text"), encode_base16(test::block1_data));
+    BC_REQUIRE_EQUAL(get_text("/v1/block/confirmed/1?format=text"), encode_base16(test::block1_data));
 }
 
 BC_AUTO_TEST_CASE(native__block__no_witness__expected)
 {
-    BC_REQUIRE_EQUAL(get_data("/v1/block/height/1?format=data&witness=false"), to_chunk(test::block1_data));
+    BC_REQUIRE_EQUAL(get_data("/v1/block/confirmed/1?format=data&witness=false"), to_chunk(test::block1_data));
 }
 
 BC_AUTO_TEST_CASE(native__block__json__expected)
 {
-    const auto response = get_json("/v1/block/height/1?format=json");
+    const auto response = get_json("/v1/block/confirmed/1?format=json");
     BC_REQUIRE(response.is_object());
 
     const auto& header = response.as_object().at("header").as_object();
@@ -428,7 +487,7 @@ BC_AUTO_TEST_CASE(native__block__json_by_hash__injects_height)
 
 BC_AUTO_TEST_CASE(native__block__above_top__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/10?format=data"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block__unknown_hash__not_found)
@@ -441,7 +500,7 @@ BC_AUTO_TEST_CASE(native__ws_block__default__json)
 {
     BC_REQUIRE(!ws_upgrade());
 
-    const auto response = ws_get_json("/v1/block/height/1");
+    const auto response = ws_get_json("/v1/block/confirmed/1");
     BC_REQUIRE(response.is_object());
     BC_REQUIRE_EQUAL(response.as_object().at("header").as_object().at("hash").as_string(), block1_hash);
 }
@@ -451,7 +510,7 @@ BC_AUTO_TEST_CASE(native__ws_block__default__json)
 
 BC_AUTO_TEST_CASE(native__block_header__data__expected)
 {
-    BC_REQUIRE_EQUAL(get_data("/v1/block/height/1/header?format=data"), to_chunk(test::header1_data));
+    BC_REQUIRE_EQUAL(get_data("/v1/block/confirmed/1/header?format=data"), to_chunk(test::header1_data));
 }
 
 BC_AUTO_TEST_CASE(native__block_header__text__expected)
@@ -461,7 +520,7 @@ BC_AUTO_TEST_CASE(native__block_header__text__expected)
 
 BC_AUTO_TEST_CASE(native__block_header__json__expected)
 {
-    const auto response = get_json("/v1/block/height/1/header?format=json");
+    const auto response = get_json("/v1/block/confirmed/1/header?format=json");
     BC_REQUIRE(response.is_object());
 
     const auto& object = response.as_object();
@@ -472,20 +531,20 @@ BC_AUTO_TEST_CASE(native__block_header__json__expected)
 
 BC_AUTO_TEST_CASE(native__block_header__candidate_genesis__expected)
 {
-    const auto response = get_json("/v1/block/height/0/header?format=json&candidate=true");
+    const auto response = get_json("/v1/block/candidate/0/header?format=json");
     BC_REQUIRE(response.is_object());
     BC_REQUIRE_EQUAL(response.as_object().at("hash").as_string(), encode_hash(test::block0_hash));
 }
 
 BC_AUTO_TEST_CASE(native__block_header__candidate_unpushed__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/header?format=data&candidate=true"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/candidate/1/header?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block_header__candidate_pushed__expected)
 {
     BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
-    const auto response = get_json("/v1/block/height/1/header?format=json&candidate=true");
+    const auto response = get_json("/v1/block/candidate/1/header?format=json");
     BC_REQUIRE(response.is_object());
     BC_REQUIRE_EQUAL(response.as_object().at("hash").as_string(), block1_hash);
     BC_REQUIRE_EQUAL(response.as_object().at("height").as_int64(), 1);
@@ -493,7 +552,7 @@ BC_AUTO_TEST_CASE(native__block_header__candidate_pushed__expected)
 
 BC_AUTO_TEST_CASE(native__block_header__above_top__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/10/header?format=data"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10/header?format=data"), http::status::not_found);
 }
 
 // block/header/context
@@ -501,7 +560,7 @@ BC_AUTO_TEST_CASE(native__block_header__above_top__not_found)
 
 BC_AUTO_TEST_CASE(native__block_header_context__json__expected)
 {
-    const auto response = get_json("/v1/block/height/1/header/context?format=json");
+    const auto response = get_json("/v1/block/confirmed/1/header/context?format=json");
     BC_REQUIRE(response.is_object());
 
     const auto& object = response.as_object();
@@ -534,13 +593,13 @@ BC_AUTO_TEST_CASE(native__block_header_context__json__expected)
 
 BC_AUTO_TEST_CASE(native__block_header_context__candidate_unpushed__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/header/context?format=json&candidate=true"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/candidate/1/header/context?format=json"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block_header_context__candidate_pushed__expected)
 {
     BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
-    const auto response = get_json("/v1/block/height/1/header/context?format=json&candidate=true");
+    const auto response = get_json("/v1/block/candidate/1/header/context?format=json");
     BC_REQUIRE(response.is_object());
     BC_REQUIRE_EQUAL(response.as_object().at("hash").as_string(), block1_hash);
     BC_REQUIRE_EQUAL(response.as_object().at("height").as_int64(), 1);
@@ -548,12 +607,12 @@ BC_AUTO_TEST_CASE(native__block_header_context__candidate_pushed__expected)
 
 BC_AUTO_TEST_CASE(native__block_header_context__text__not_acceptable)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/header/context?format=text"), http::status::not_acceptable);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/header/context?format=text"), http::status::not_acceptable);
 }
 
 BC_AUTO_TEST_CASE(native__block_header_context__above_top__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/10/header/context?format=json"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10/header/context?format=json"), http::status::not_found);
 }
 
 // block/details
@@ -561,7 +620,7 @@ BC_AUTO_TEST_CASE(native__block_header_context__above_top__not_found)
 
 BC_AUTO_TEST_CASE(native__block_details__json__expected)
 {
-    const auto response = get_json("/v1/block/height/1/details?format=json");
+    const auto response = get_json("/v1/block/confirmed/1/details?format=json");
     BC_REQUIRE(response.is_object());
 
     const auto& object = response.as_object();
@@ -589,23 +648,23 @@ BC_AUTO_TEST_CASE(native__block_details__by_hash__expected)
 
 BC_AUTO_TEST_CASE(native__block_details__data__not_acceptable)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/details?format=data"), http::status::not_acceptable);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/details?format=data"), http::status::not_acceptable);
 }
 
 BC_AUTO_TEST_CASE(native__block_details__candidate_unpushed__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/details?format=json&candidate=true"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/candidate/1/details?format=json"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block_details__candidate_pushed__expected)
 {
     BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
-    BC_REQUIRE(get_json("/v1/block/height/1/details?format=json&candidate=true").is_object());
+    BC_REQUIRE(get_json("/v1/block/candidate/1/details?format=json").is_object());
 }
 
 BC_AUTO_TEST_CASE(native__block_details__above_top__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/10/details?format=json"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10/details?format=json"), http::status::not_found);
 }
 
 // block/txs
@@ -613,7 +672,7 @@ BC_AUTO_TEST_CASE(native__block_details__above_top__not_found)
 
 BC_AUTO_TEST_CASE(native__block_txs__json__expected)
 {
-    const auto response = get_json("/v1/block/height/1/txs?format=json");
+    const auto response = get_json("/v1/block/confirmed/1/txs?format=json");
     BC_REQUIRE(response.is_array());
     BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
     BC_REQUIRE_EQUAL(response.as_array().front().as_string(), coinbase1_hash);
@@ -621,28 +680,28 @@ BC_AUTO_TEST_CASE(native__block_txs__json__expected)
 
 BC_AUTO_TEST_CASE(native__block_txs__data__expected)
 {
-    BC_REQUIRE_EQUAL(get_data("/v1/block/height/1/txs?format=data"), to_chunk(coinbase1().hash(false)));
+    BC_REQUIRE_EQUAL(get_data("/v1/block/confirmed/1/txs?format=data"), to_chunk(coinbase1().hash(false)));
 }
 
 BC_AUTO_TEST_CASE(native__block_txs__text__expected)
 {
-    BC_REQUIRE_EQUAL(get_text("/v1/block/height/1/txs?format=text"), encode_base16(coinbase1().hash(false)));
+    BC_REQUIRE_EQUAL(get_text("/v1/block/confirmed/1/txs?format=text"), encode_base16(coinbase1().hash(false)));
 }
 
 BC_AUTO_TEST_CASE(native__block_txs__candidate_unpushed__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/txs?format=data&candidate=true"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/candidate/1/txs?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block_txs__candidate_pushed__expected)
 {
     BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
-    BC_REQUIRE_EQUAL(get_data("/v1/block/height/1/txs?format=data&candidate=true"), to_chunk(coinbase1().hash(false)));
+    BC_REQUIRE_EQUAL(get_data("/v1/block/candidate/1/txs?format=data"), to_chunk(coinbase1().hash(false)));
 }
 
 BC_AUTO_TEST_CASE(native__block_txs__above_top__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/10/txs?format=json"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10/txs?format=json"), http::status::not_found);
 }
 
 // block/tx
@@ -650,18 +709,18 @@ BC_AUTO_TEST_CASE(native__block_txs__above_top__not_found)
 
 BC_AUTO_TEST_CASE(native__block_tx__data__expected)
 {
-    BC_REQUIRE_EQUAL(get_data("/v1/block/height/1/tx/0?format=data"), coinbase1().to_data(true));
+    BC_REQUIRE_EQUAL(get_data("/v1/block/confirmed/1/tx/0?format=data"), coinbase1().to_data(true));
 }
 
 BC_AUTO_TEST_CASE(native__block_tx__candidate_unpushed__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/tx/0?format=data&candidate=true"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/candidate/1/tx/0?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block_tx__candidate_pushed__expected)
 {
     BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
-    BC_REQUIRE_EQUAL(get_data("/v1/block/height/1/tx/0?format=data&candidate=true"), coinbase1().to_data(true));
+    BC_REQUIRE_EQUAL(get_data("/v1/block/candidate/1/tx/0?format=data"), coinbase1().to_data(true));
 }
 
 BC_AUTO_TEST_CASE(native__block_tx__text__expected)
@@ -671,14 +730,14 @@ BC_AUTO_TEST_CASE(native__block_tx__text__expected)
 
 BC_AUTO_TEST_CASE(native__block_tx__json__expected)
 {
-    const auto response = get_json("/v1/block/height/1/tx/0?format=json");
+    const auto response = get_json("/v1/block/confirmed/1/tx/0?format=json");
     BC_REQUIRE(response.is_object());
     BC_REQUIRE_EQUAL(response.as_object().at("hash").as_string(), coinbase1_hash);
 }
 
 BC_AUTO_TEST_CASE(native__block_tx__position_above_count__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/tx/1?format=data"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/tx/1?format=data"), http::status::not_found);
 }
 
 // block/filter
@@ -686,99 +745,99 @@ BC_AUTO_TEST_CASE(native__block_tx__position_above_count__not_found)
 
 BC_AUTO_TEST_CASE(native__block_filter__candidate_genesis__expected)
 {
-    BC_REQUIRE_EQUAL(get_data("/v1/block/height/0/filter/0?format=data&candidate=true"), get_data("/v1/block/height/0/filter/0?format=data"));
+    BC_REQUIRE_EQUAL(get_data("/v1/block/candidate/0/filter/0?format=data"), get_data("/v1/block/candidate/0/filter/0?format=data"));
 }
 
 BC_AUTO_TEST_CASE(native__block_filter__candidate_unpushed__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/filter/0?format=data&candidate=true"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/candidate/1/filter/0?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block_filter_hash__candidate_unpushed__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/filter/0/hash?format=data&candidate=true"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/candidate/1/filter/0/hash?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block_filter_header__candidate_unpushed__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/1/filter/0/header?format=data&candidate=true"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/candidate/1/filter/0/header?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block_filter__genesis__hashes_to_filter_hash)
 {
-    const auto filter = get_data("/v1/block/height/0/filter/0?format=data");
+    const auto filter = get_data("/v1/block/confirmed/0/filter/0?format=data");
     BC_REQUIRE(!filter.empty());
 
-    const auto filter_hash = get_data("/v1/block/height/0/filter/0/hash?format=data");
+    const auto filter_hash = get_data("/v1/block/confirmed/0/filter/0/hash?format=data");
     BC_REQUIRE_EQUAL(filter_hash, to_chunk(bitcoin_hash(filter)));
 }
 
 BC_AUTO_TEST_CASE(native__block_filter__genesis__chains_to_filter_header)
 {
-    const auto filter_hash = get_data("/v1/block/height/0/filter/0/hash?format=data");
-    const auto filter_header = get_data("/v1/block/height/0/filter/0/header?format=data");
+    const auto filter_hash = get_data("/v1/block/confirmed/0/filter/0/hash?format=data");
+    const auto filter_header = get_data("/v1/block/confirmed/0/filter/0/header?format=data");
     BC_REQUIRE_EQUAL(filter_header, to_chunk(bitcoin_hash(splice(filter_hash, null_hash))));
 }
 
 BC_AUTO_TEST_CASE(native__block_filter__text__expected)
 {
-    const auto filter = get_data("/v1/block/height/0/filter/0?format=data");
-    BC_REQUIRE_EQUAL(get_text("/v1/block/height/0/filter/0?format=text"), encode_base16(filter));
+    const auto filter = get_data("/v1/block/confirmed/0/filter/0?format=data");
+    BC_REQUIRE_EQUAL(get_text("/v1/block/confirmed/0/filter/0?format=text"), encode_base16(filter));
 }
 
 BC_AUTO_TEST_CASE(native__block_filter__json__expected)
 {
-    const auto filter = get_data("/v1/block/height/0/filter/0?format=data");
-    const auto response = get_json("/v1/block/height/0/filter/0?format=json");
+    const auto filter = get_data("/v1/block/confirmed/0/filter/0?format=data");
+    const auto response = get_json("/v1/block/confirmed/0/filter/0?format=json");
     BC_REQUIRE(response.is_string());
     BC_REQUIRE_EQUAL(response.as_string(), encode_base16(filter));
 }
 
 BC_AUTO_TEST_CASE(native__block_filter_hash__text_json__expected)
 {
-    const auto digest = bitcoin_hash(get_data("/v1/block/height/0/filter/0?format=data"));
-    const auto response = get_json("/v1/block/height/0/filter/0/hash?format=json");
-    BC_REQUIRE_EQUAL(get_text("/v1/block/height/0/filter/0/hash?format=text"), encode_base16(digest));
+    const auto digest = bitcoin_hash(get_data("/v1/block/confirmed/0/filter/0?format=data"));
+    const auto response = get_json("/v1/block/confirmed/0/filter/0/hash?format=json");
+    BC_REQUIRE_EQUAL(get_text("/v1/block/confirmed/0/filter/0/hash?format=text"), encode_base16(digest));
     BC_REQUIRE_EQUAL(response.as_string(), encode_hash(digest));
 }
 
 BC_AUTO_TEST_CASE(native__block_filter_header__text_json__expected)
 {
-    const auto filter_hash = bitcoin_hash(get_data("/v1/block/height/0/filter/0?format=data"));
+    const auto filter_hash = bitcoin_hash(get_data("/v1/block/confirmed/0/filter/0?format=data"));
     const auto digest = bitcoin_hash(splice(filter_hash, null_hash));
-    const auto response = get_json("/v1/block/height/0/filter/0/header?format=json");
-    BC_REQUIRE_EQUAL(get_text("/v1/block/height/0/filter/0/header?format=text"), encode_base16(digest));
+    const auto response = get_json("/v1/block/confirmed/0/filter/0/header?format=json");
+    BC_REQUIRE_EQUAL(get_text("/v1/block/confirmed/0/filter/0/header?format=text"), encode_base16(digest));
     BC_REQUIRE_EQUAL(response.as_string(), encode_hash(digest));
 }
 
 BC_AUTO_TEST_CASE(native__block_filter__unknown_type__not_implemented)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/0/filter/1?format=data"), http::status::not_implemented);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/0/filter/1?format=data"), http::status::not_implemented);
 }
 
 BC_AUTO_TEST_CASE(native__block_filter_hash__unknown_type__not_implemented)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/0/filter/1/hash?format=data"), http::status::not_implemented);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/0/filter/1/hash?format=data"), http::status::not_implemented);
 }
 
 BC_AUTO_TEST_CASE(native__block_filter_header__unknown_type__not_implemented)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/0/filter/1/header?format=data"), http::status::not_implemented);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/0/filter/1/header?format=data"), http::status::not_implemented);
 }
 
 BC_AUTO_TEST_CASE(native__block_filter__above_top__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/10/filter/0?format=data"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10/filter/0?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block_filter_hash__above_top__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/10/filter/0/hash?format=data"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10/filter/0/hash?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block_filter_header__above_top__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/10/filter/0/header?format=data"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10/filter/0/header?format=data"), http::status::not_found);
 }
 
 // block/subscribe
@@ -1064,7 +1123,7 @@ BC_FIXTURE_TEST_SUITE(native_unassociated_tests, native_unassociated_setup_fixtu
 
 BC_AUTO_TEST_CASE(native__block__unassociated__internal_server_error)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/3?format=data"), http::status::internal_server_error);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/3?format=data"), http::status::internal_server_error);
 }
 
 BC_AUTO_TEST_SUITE_END()
@@ -1073,7 +1132,7 @@ BC_FIXTURE_TEST_SUITE(native_witness_tests, native_witness_setup_fixture)
 
 BC_AUTO_TEST_CASE(native__block_details__missing_prevouts__internal_server_error)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/2/details?format=json"), http::status::internal_server_error);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/2/details?format=json"), http::status::internal_server_error);
 }
 
 BC_AUTO_TEST_SUITE_END()
@@ -1087,7 +1146,7 @@ BC_AUTO_TEST_CASE(native__top__scoped_credential__ok)
 
 BC_AUTO_TEST_CASE(native__block_header__scoped_credential_unlisted_method__forbidden)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/height/0/header?format=json", http::field::authorization, NATIVE_TEST_AUTHORIZATION), http::status::forbidden);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/0/header?format=json", http::field::authorization, NATIVE_TEST_AUTHORIZATION), http::status::forbidden);
 }
 
 BC_AUTO_TEST_CASE(native__top__no_credential__unauthorized)

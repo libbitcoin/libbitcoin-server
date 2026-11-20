@@ -71,7 +71,7 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 native_setup_fixture::native_setup_fixture(const initializer& setup,
     const configurator& configure,
-    const server::settings::embedded_pages& pages)
+    const server::settings::embedded_pages& pages, bool start)
   : config_
     {
         system::chain::selection::mainnet,
@@ -126,6 +126,19 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
         test::ephemeral(config_);
 
         BC_REQUIRE(setup(query_));
+
+        // The node (chasers and address pool), bypassed by default.
+        if (start)
+        {
+            std::promise<code> started{};
+            server_.start([&](const code& ec) NOEXCEPT
+            {
+                started.set_value(ec);
+            });
+
+            ec = started.get_future().get();
+            BC_REQUIRE_MESSAGE(!ec, ec.message());
+        }
 
         // Run the server.
         std::promise<code> running{};

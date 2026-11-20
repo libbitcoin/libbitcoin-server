@@ -93,14 +93,16 @@ BCS_API bool mempool_entry(system::json::object& out,
 BCS_API bool mempool_txs(system::json::value& out, const node::query& query,
     const database::tx_links& links, bool verbose) NOEXCEPT;
 
-/// The getrawmempool result, with a constant mempool sequence.
+/// The getrawmempool result of the txs, with a constant mempool sequence.
 BCS_API bool raw_mempool(system::json::value& out, const node::query& query,
-    bool verbose, bool sequence) NOEXCEPT;
+    const database::tx_links& links, bool verbose, bool sequence) NOEXCEPT;
 
-/// The getmempoolinfo result, with usage and maximum as store sizes.
+/// The getmempoolinfo result of the fee rates, with usage and maximum as
+/// store sizes.
 BCS_API bool mempool_info(system::json::object& out,
-    const node::query& query, const std::filesystem::path& store,
-    double minimum, double relay, double increment) NOEXCEPT;
+    const node::query& query, const database::fee_rates& rates,
+    const std::filesystem::path& store, double minimum, double relay,
+    double increment) NOEXCEPT;
 
 /// The bitcoind chain name of the genesis network.
 BCS_API std::string chain_name(const system::settings& settings) NOEXCEPT;

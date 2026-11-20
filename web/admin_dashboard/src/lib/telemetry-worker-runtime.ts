@@ -1,5 +1,5 @@
 import { AdminClient } from './admin-client';
-import { ALL_EVENT_FILTER } from './admin-contract';
+import { ALL_EVENT_FILTER, isFirstHeaderFrame } from './admin-contract';
 import { toWebSocketUrl } from './endpoints';
 import { NativeClient } from './native-client';
 import { ReconnectingWebSocket } from './reconnecting-websocket';
@@ -32,6 +32,7 @@ export class TelemetryWorkerRuntime {
   #frozenLogs: readonly RecentLog[] | null = null;
   #frozenEvents: readonly RecentEvent[] | null = null;
   #unsubscribers: Array<() => void> = [];
+  #candidate: number | null = null;
 
   constructor(
     readonly send: (message: TelemetryResponse) => void,
@@ -163,8 +164,22 @@ export class TelemetryWorkerRuntime {
     this.#sockets = adminSocket === nativeSocket ? [adminSocket] : [adminSocket, nativeSocket];
     const client = new AdminClient(adminSocket, { logFilter });
     const native = new NativeClient(nativeSocket);
+    let awaitingTop = true;
     const sendNative = () => {
-      this.send({ type: 'native', status: native.getStatus(), live: native.getState() });
+      const status = native.getStatus();
+      const live = native.getState();
+      if (status.phase !== 'connected') awaitingTop = true;
+      else if (live.tops !== null) {
+        // A candidate top below the last seen on reconnect is a new node run.
+        const candidate = live.tops.candidate.height;
+        if (awaitingTop && this.#candidate !== null && candidate < this.#candidate) {
+          this.#reset(this.#generation);
+          for (const socket of this.#sockets) socket.resetReconnects();
+        }
+        awaitingTop = false;
+        this.#candidate = candidate;
+      }
+      this.send({ type: 'native', status, live });
     };
     this.#client = client;
     this.#native = native;
@@ -172,10 +187,11 @@ export class TelemetryWorkerRuntime {
     this.#unsubscribers = [
       client.subscribeStatus(() => {
         const current = client.getStatus().phase === 'connected';
-        if (current && !connected) this.#metrics.resetSyncFill();
+        if (current && !connected) this.#reset(this.#generation);
         connected = current;
       }),
       client.subscribeFrames((frame) => {
+        if (isFirstHeaderFrame(frame)) this.#reset(this.#generation);
         this.#metrics.ingest(frame);
       }),
       client.subscribeInvalidFrames(() => {

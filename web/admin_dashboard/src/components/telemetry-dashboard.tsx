@@ -11,6 +11,7 @@ import {
   type DashboardChartDefinition,
 } from '@/lib/chart-config';
 import { selectChartData, unitLabel, unitSuffix, zeroBasedUnit } from '@/lib/chart-data';
+import { formatScaled } from '@/lib/format';
 import type { MetricsSnapshot } from '@/lib/live-metrics';
 import { getSignalDefinition, type SignalUnit } from '@/lib/signal-catalog';
 import { useCurrentTime } from '@/lib/use-current-time';
@@ -45,7 +46,25 @@ function formatNumberAxis(value: number): string {
 }
 
 function formatterForUnit(unit: SignalUnit): (value: number) => string {
-  return unit === 'height' || unit === 'occurrences' ? formatIntegerAxis : formatNumberAxis;
+  switch (unit) {
+    case 'vbytes': {
+      return (value) => formatScaled(value, 'vB');
+    }
+    case 'satoshis': {
+      return (value) => formatScaled(value, 'sat');
+    }
+    case 'height':
+    case 'occurrences': {
+      return formatIntegerAxis;
+    }
+    default: {
+      return formatNumberAxis;
+    }
+  }
+}
+
+function suffixForUnit(unit: SignalUnit): string {
+  return unit === 'vbytes' || unit === 'satoshis' ? '' : unitSuffix(unit);
 }
 
 export function TelemetryDashboard({ metrics }: TelemetryDashboardProps) {
@@ -327,7 +346,7 @@ function TelemetryChartCard({
             scale={chart.scale}
             zeroBased={zeroBasedUnit(selected.unit)}
             valueFormatter={valueFormatter}
-            valueSuffix={unitSuffix(selected.unit)}
+            valueSuffix={suffixForUnit(selected.unit)}
             forceEmpty={!selected.hasObservedData}
             emptyMessage={emptyMessage}
           />

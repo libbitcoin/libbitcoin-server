@@ -79,20 +79,20 @@ void protocol_electrum::handle_blockchain_estimate_fee(const code& ec,
 
     // The estimator targets the next block as zero, as does target zero.
     estimate(floored_subtract(target, one), mode_,
-        BIND(handle_estimate_fee, _1, _2));
+        BIND(handle_estimate_fee, _1, _2, gate()));
 }
 
 void protocol_electrum::handle_estimate_fee(const code& ec,
-    uint64_t fee) NOEXCEPT
+    uint64_t fee, const gate_t::ptr& gate) NOEXCEPT
 {
-    POST(complete_estimate_fee, ec, fee);
+    POST(complete_estimate_fee, ec, fee, gate);
 }
 
 constexpr int64_t no_fee_estimate = -1;
 constexpr double sats_per_vkbyte_to_btc_per_vkbyte = 100'000'000.0;
 
 void protocol_electrum::complete_estimate_fee(const code& ec,
-    uint64_t fee) NOEXCEPT
+    uint64_t fee, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 

@@ -282,12 +282,18 @@ protected:
         const unspent_outputs& unspents, bool wrap,
         const gate_t::ptr& gate) NOEXCEPT;
 
-    void handle_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
-    void complete_estimate_fee(const code& ec, uint64_t fee) NOEXCEPT;
+    void handle_estimate_fee(const code& ec, uint64_t fee,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_estimate_fee(const code& ec, uint64_t fee,
+        const gate_t::ptr& gate) NOEXCEPT;
 
-    void do_get_fee_histogram(const gate_t::ptr& gate) NOEXCEPT;
-    void do_mempool_recent(const gate_t::ptr& gate) NOEXCEPT;
-    void complete_mempool(const code& ec, network::rpc::value_t& result,
+    void handle_fee_histogram(const code& ec,
+        const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT;
+    void complete_fee_histogram(const code& ec,
+        const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT;
+    void handle_recent(const code& ec, const database::tx_links& links,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_recent(const code& ec, const database::tx_links& links,
         const gate_t::ptr& gate) NOEXCEPT;
 
     /// Notification event handlers.
@@ -401,19 +407,25 @@ private:
 
     // Submit a transaction to the tx chaser, which archives and relays it.
     void handle_submit_tx(const code& ec, size_t link,
-        const system::chain::transaction::cptr& tx) NOEXCEPT;
+        const system::chain::transaction::cptr& tx,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_submit_tx(const code& ec,
-        const system::chain::transaction::cptr& tx) NOEXCEPT;
+        const system::chain::transaction::cptr& tx,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     void handle_test_package(const code& ec, size_t index,
-        const system::chain::transactions_cptr& txs) NOEXCEPT;
+        const system::chain::transactions_cptr& txs,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_test_package(const code& ec,
-        const system::chain::transactions_cptr& txs) NOEXCEPT;
+        const system::chain::transactions_cptr& txs,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     void handle_submit_package(const code& ec, size_t index,
-        const system::chain::transactions_cptr& txs) NOEXCEPT;
+        const system::chain::transactions_cptr& txs,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_submit_package(const code& ec, size_t index,
-        const system::chain::transactions_cptr& txs) NOEXCEPT;
+        const system::chain::transactions_cptr& txs,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     static network::rpc::value_t wrapped(array_t&& out,
         const network::rpc::string_t& key, bool wrap) NOEXCEPT;

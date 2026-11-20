@@ -61,6 +61,9 @@ export type NativeHeader = z.infer<typeof nativeHeaderSchema>;
 const nativeTopSchema = z.object({
   hash: hashSchema,
   height: z.number().int().nonnegative(),
+  header: z.object({
+    timestamp: z.number().int().positive().max(0xffff_ffff),
+  }),
 });
 
 const nativeTopsSchema = z.object({
@@ -70,6 +73,12 @@ const nativeTopsSchema = z.object({
 
 export type NativeTop = z.infer<typeof nativeTopSchema>;
 export type NativeTops = z.infer<typeof nativeTopsSchema>;
+
+// The candidate top header is carried by the tops.
+export function topHeaderOf(tops: NativeTops): NativeHeader {
+  const { hash, height, header } = tops.candidate;
+  return { hash, height, timestamp: header.timestamp };
+}
 
 // Native /v1/fees returns existing pool gauges, not transaction arrival counters.
 const poolIntegerSchema = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -94,6 +103,7 @@ export interface NativeSnapshot {
   configuration: NativeConfiguration;
   tops: NativeTops;
   branch: NativeHeader | null;
+  topHeader: NativeHeader | null;
   receivedAt: number;
 }
 
@@ -166,12 +176,12 @@ export async function fetchNativeSnapshot(
       signal?.throwIfAborted();
     }
   }
-  return { configuration, tops, branch, receivedAt };
+  return { configuration, tops, branch, topHeader: topHeaderOf(tops), receivedAt };
 }
 
 // The candidate header at the given height, compared against the confirmed top.
 export function nativeBranchPath(height: number): string {
-  return `/v1/block/height/${String(height)}/header?format=json&candidate=true`;
+  return `/v1/block/candidate/${String(height)}/header?format=json`;
 }
 
 export async function fetchNativeFees(

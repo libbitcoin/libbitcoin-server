@@ -82,9 +82,10 @@ protected:
         rpc_interface::sign_message_with_priv_key) NOEXCEPT;
 
     /// Estimate completion (node strand to channel strand).
-    void handle_estimate(const code& ec, uint64_t fee, size_t target) NOEXCEPT;
+    void handle_estimate(const code& ec, uint64_t fee, size_t target,
+        const gate_t::ptr& gate) NOEXCEPT;
     void complete_estimate(const code& ec, uint64_t fee,
-        size_t target) NOEXCEPT;
+        size_t target, const gate_t::ptr& gate) NOEXCEPT;
 };
 
 } // namespace server

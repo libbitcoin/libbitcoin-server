@@ -54,6 +54,8 @@ void protocol_native::start() NOEXCEPT
     // Top methods.
     SUBSCRIBE_NATIVE(handle_get_top, _1, _2, _3, _4);
     SUBSCRIBE_NATIVE(handle_get_top_subscribe, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_top_chain, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_top_height, _1, _2, _3, _4, _5);
 
     // Block methods.
     SUBSCRIBE_NATIVE(handle_get_block, _1, _2, _3, _4, _5, _6, _7, _8);
@@ -309,27 +311,44 @@ void protocol_native::inject(value& out, std::optional<uint32_t> height,
         archive().get_height(link).value);
 }
 
-chain::checkpoint protocol_native::get_top(bool candidate) const NOEXCEPT
+chain::header::cptr protocol_native::get_top(bool candidate,
+    size_t& height) const NOEXCEPT
 {
     const auto& query = archive();
-    const auto height = candidate ? query.get_top_candidate() :
-        query.get_top_confirmed();
-    const auto link = candidate ? query.to_candidate(height) :
-        query.to_confirmed(height);
-    return { query.get_header_key(link), height };
+    height = candidate ? query.get_top_candidate() : query.get_top_confirmed();
+    return query.get_header(candidate ? query.to_candidate(height) :
+        query.to_confirmed(height));
+}
+
+// A top is its checkpoint followed by its header.
+data_chunk protocol_native::to_top(bool candidate) const NOEXCEPT
+{
+    size_t height{};
+    const auto header = get_top(candidate, height);
+    return splice(chain::checkpoint{ header->hash(), height }.to_data(),
+        header->to_data());
+}
+
+value protocol_native::to_top_json(bool candidate) const NOEXCEPT
+{
+    size_t height{};
+    const auto header = get_top(candidate, height);
+    auto model = value_from(chain::checkpoint{ header->hash(), height });
+    model.as_object().emplace("header", value_from(header));
+    return model;
 }
 
 data_chunk protocol_native::to_tops() const NOEXCEPT
 {
-    return splice(get_top(false).to_data(), get_top(true).to_data());
+    return splice(to_top(false), to_top(true));
 }
 
 value protocol_native::to_tops_json() const NOEXCEPT
 {
     return
     {
-        { "confirmed", value_from(get_top(false)) },
-        { "candidate", value_from(get_top(true)) }
+        { "confirmed", to_top_json(false) },
+        { "candidate", to_top_json(true) }
     };
 }
 
