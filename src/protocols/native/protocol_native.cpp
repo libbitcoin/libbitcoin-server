@@ -124,8 +124,12 @@ bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
     rpc::request_t model{};
     if (const auto ec = native_target(model, target))
     {
-        // Allow invalid interface target to be retried as a page request.
-        return !ec;
+        // A target without a version is retried as a page request.
+        if (ec == error::missing_version || ec == error::empty_path)
+            return false;
+
+        send_bad_target(ec, *reset_request());
+        return true;
     }
 
     // No media defaults injected for an http request.

@@ -117,6 +117,11 @@ BC_AUTO_TEST_CASE(admin__dispatch__invalid_target__bad_request)
     BC_REQUIRE(get_status("/v1/bogus") == status::bad_request);
 }
 
+BC_AUTO_TEST_CASE(admin__dispatch__invalid_subcomponent__bad_request)
+{
+    BC_REQUIRE(get_status("/v1/log/bogus") == status::bad_request);
+}
+
 BC_AUTO_TEST_CASE(admin__dispatch__html__bad_request)
 {
     BC_REQUIRE(get_status("/v1/log/subscribe?filter=1&format=html") == status::bad_request);

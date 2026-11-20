@@ -74,12 +74,10 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
     BC_ASSERT(!segments.empty());
 
     size_t segment{};
-    if (!segments[segment].starts_with('v'))
-        return error::missing_version;
-
     uint8_t version{};
-    if (!to_number(version, segments[segment++].substr(one)))
-        return error::invalid_number;
+    if (!segments[segment].starts_with('v') ||
+        !to_number(version, segments[segment++].substr(one)))
+        return error::missing_version;
 
     params["version"] = version;
     if (segment == segments.size())
