@@ -124,7 +124,7 @@ private:
     uint32_t raw_blocks_{};
     uint32_t hash_txs_{};
     uint32_t raw_txs_{};
-    uint64_t pool_{};
+    uint64_t pool_{ 1 };
 };
 
 } // namespace server

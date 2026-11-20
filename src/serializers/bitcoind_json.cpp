@@ -431,7 +431,7 @@ bool mempool_txs(system::json::value& out, const node::query& query,
     return true;
 }
 
-// There is no mempool sequence (zmq), so it is reported as constant.
+// The zmq mempool sequence is local to each channel, which starts it at one.
 bool raw_mempool(system::json::value& out, const node::query& query,
     const database::tx_links& links, bool verbose, bool sequence) NOEXCEPT
 {
@@ -448,7 +448,7 @@ bool raw_mempool(system::json::value& out, const node::query& query,
     out = system::json::object
     {
         { "txids", std::move(txs) },
-        { "mempool_sequence", 1 }
+        { "mempool_sequence", 0 }
     };
 
     return true;

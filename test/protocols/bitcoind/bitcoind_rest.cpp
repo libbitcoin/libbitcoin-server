@@ -770,7 +770,7 @@ BC_AUTO_TEST_CASE(bitcoind_rest__mempool_contents__broadcast_sequence__txids_wit
 
     const auto result = rest_json("/rest/mempool/contents.json?verbose=false&mempool_sequence=true");
     BC_REQUIRE_EQUAL(result.at("txids").as_array().size(), 1u);
-    BC_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 1);
+    BC_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 0);
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rest__mempool_info__broadcast__one)

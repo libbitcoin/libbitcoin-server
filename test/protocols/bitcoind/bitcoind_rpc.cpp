@@ -4842,7 +4842,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__broadcast_mempool_sequence__txid_
     const auto& txids = result.at("txids").as_array();
     BC_REQUIRE_EQUAL(txids.size(), 1u);
     BC_REQUIRE_EQUAL(as_text(txids.front()), encode_hash(test::tx1c.hash(false)));
-    BC_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 1);
+    BC_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 0);
 }
 
 static std::string send_param(const chain::transaction& tx) NOEXCEPT
@@ -5188,7 +5188,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getrawmempool__mempool_sequence_empty_pool__empt
 
     const auto& result = response.at("result");
     REQUIRE_NO_THROW_TRUE(result.at("txids").is_array() && result.at("txids").as_array().empty());
-    BC_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 1);
+    BC_REQUIRE_EQUAL(result.at("mempool_sequence").as_int64(), 0);
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__batch__two_templates__two_ordered_responses)
