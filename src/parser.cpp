@@ -1261,6 +1261,11 @@ options_metadata parser::load_settings() THROWS
         "A persistent peer node, multiple allowed."
     )
     (
+        "manual.request_mempool",
+        setting<bool>(&configured.network.manual.request_mempool),
+        "Request the memory pool of manual peers once relaying, defaults to {}."
+    )
+    (
         "manual.username",
         setting<std::string>(&configured.network.manual.username),
         "The socks5 proxy username (optional)."
