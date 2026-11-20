@@ -14,7 +14,6 @@ const RULE_DESCRIPTIONS: Partial<Record<string, string>> = {
   bip65: 'Absolute script timelocks',
   bip66: 'DER signature encoding',
   bip68: 'Relative sequence locks',
-  bip90: 'Buried activation rules',
   bip112: 'Relative script timelocks',
   bip113: 'Median time for locktime',
   bip141: 'SegWit consensus rules',
@@ -29,16 +28,11 @@ const RULE_DESCRIPTIONS: Partial<Record<string, string>> = {
   bip54_coinbase: 'Coinbase locktime height',
 };
 
-const RULE_QUALIFIERS: Partial<Record<string, string>> = {
-  bip90: 'hard fork',
-};
-
 function ruleLabel(rule: string) {
   const match = /^bip(\d+)(?:_(\w+))?$/u.exec(rule);
   if (!match) return;
   const number = match[1];
-  const fixed = Object.hasOwn(RULE_QUALIFIERS, rule) ? RULE_QUALIFIERS[rule] : undefined;
-  const qualifier = match.at(2) ?? fixed;
+  const qualifier = match.at(2);
   const name = qualifier ? `BIP ${number} (${qualifier})` : `BIP ${number}`;
   const href = `https://github.com/bitcoin/bips/blob/master/bip-${number.padStart(4, '0')}.mediawiki`;
   return { name, href };

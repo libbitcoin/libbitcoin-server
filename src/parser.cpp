@@ -1261,6 +1261,11 @@ options_metadata parser::load_settings() THROWS
         "A persistent peer node, multiple allowed."
     )
     (
+        "manual.request_mempool",
+        setting<bool>(&configured.network.manual.request_mempool),
+        "Request the memory pool of manual peers once relaying, defaults to {}."
+    )
+    (
         "manual.username",
         setting<std::string>(&configured.network.manual.username),
         "The socks5 proxy username (optional)."
@@ -2515,6 +2520,11 @@ options_metadata parser::load_settings() THROWS
         "pool.minimum_fee_rate",
         setting<double>(&configured.node.pool.minimum_fee_rate),
         "Minimum fee rate for non-conflicting tx acceptance, defaults to {}."
+    )
+    (
+        "pool.cutoff_rate",
+        setting<double>(&configured.node.pool.cutoff_rate),
+        "Fee rate on space when resolving template conflicts, defaults to {}."
     )
     (
         "pool.maximum_outcomes",
