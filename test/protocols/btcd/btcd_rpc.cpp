@@ -95,6 +95,63 @@ BC_AUTO_TEST_CASE(btcd_rpc__http_post__application_error__ok)
     BC_REQUIRE_EQUAL(http_rpc_status("getblockhash", "[10]"), network::http::status::ok);
 }
 
+// unanswered (no id or null id)
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(btcd_rpc__http_post__v1_missing_id__no_content)
+{
+    BC_REQUIRE_EQUAL(http_body_status(R"({"method":"getblockcount","params":[]})"), network::http::status::no_content);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__http_post__v1_null_id__no_content)
+{
+    BC_REQUIRE_EQUAL(http_body_status(R"({"id":null,"method":"getblockcount","params":[]})"), network::http::status::no_content);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__http_post__v2_null_id__no_content)
+{
+    BC_REQUIRE_EQUAL(http_body_status(R"({"jsonrpc":"2.0","id":null,"method":"getblockcount","params":[]})"), network::http::status::no_content);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__http_post__v2_missing_id__no_content)
+{
+    BC_REQUIRE_EQUAL(http_body_status(R"({"jsonrpc":"2.0","method":"getblockcount","params":[]})"), network::http::status::no_content);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__http_post__btcd_method_null_id__no_content)
+{
+    BC_REQUIRE_EQUAL(http_body_status(R"({"id":null,"method":"getbestblock","params":[]})"), network::http::status::no_content);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__http_post__unknown_method_null_id__no_content)
+{
+    BC_REQUIRE_EQUAL(http_body_status(R"({"id":null,"method":"nosuchmethod","params":[]})"), network::http::status::no_content);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__http_post__batch_null_id__omitted)
+{
+    const auto response = http_body(R"([{"id":null,"method":"getblockcount","params":[]},{"id":1,"method":"getblockcount","params":[]}])");
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
+    BC_REQUIRE_EQUAL(response.as_array().at(0).at("id").as_int64(), 1);
+    BC_REQUIRE_EQUAL(response.as_array().at(0).at("result").as_int64(), 9);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__websocket__null_id__no_response)
+{
+    ws_notify(R"({"id":null,"method":"getblockcount","params":[]})");
+    const auto response = rpc("getblockcount");
+    BC_REQUIRE(!response.at("id").is_null());
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__websocket__missing_id__no_response)
+{
+    ws_notify(R"({"method":"getbestblock","params":[]})");
+    const auto response = rpc("getblockcount");
+    BC_REQUIRE(!response.at("id").is_null());
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
 BC_AUTO_TEST_CASE(btcd_rpc__help__default__method_list)
 {
     const auto response = rpc("help");
@@ -1351,11 +1408,24 @@ BC_AUTO_TEST_CASE(btcd_scoped_credential__notifyblocks__unlisted_method__invalid
     BC_REQUIRE_EQUAL(rpc_error("notifyblocks"), invalid_params.value());
 }
 
-BC_AUTO_TEST_CASE(btcd_scoped_credential__notifyblocks__http_post_unlisted_method__invalid_params)
+BC_AUTO_TEST_CASE(btcd_scoped_credential__getblockcount__unlisted_method__invalid_params)
+{
+    BC_REQUIRE(authenticate());
+    BC_REQUIRE_EQUAL(rpc_error("getblockcount"), invalid_params.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_scoped_credential__notifyblocks__http_post_unlisted_method__internal)
 {
     const auto response = http_rpc("notifyblocks", "[]", BTCD_TEST_USERNAME, BTCD_TEST_PASSWORD);
     REQUIRE_NO_THROW_TRUE(response.at("error").is_object());
-    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), invalid_params.value());
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), internal.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_scoped_credential__getblockcount__http_post_unlisted_method__internal)
+{
+    const auto response = http_rpc("getblockcount", "[]", BTCD_TEST_USERNAME, BTCD_TEST_PASSWORD);
+    REQUIRE_NO_THROW_TRUE(response.at("error").is_object());
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), internal.value());
 }
 
 BC_AUTO_TEST_CASE(btcd_scoped_credential__negotiateversion__http_post_unlisted_method__maximum)

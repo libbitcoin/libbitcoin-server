@@ -2911,6 +2911,27 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__notification__v1_null_id__answered)
     BC_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 }
 
+BC_AUTO_TEST_CASE(bitcoind_rpc__notification__v1_missing_id__answered)
+{
+    const auto response = rpc_body(R"({"method":"getblockcount","params":[]})");
+    BC_REQUIRE(response.at("id").is_null());
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__v1_missing_params__answered)
+{
+    const auto response = rpc_body(R"({"id":1,"method":"getblockcount"})");
+    BC_REQUIRE_EQUAL(response.at("id").as_int64(), 1);
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__v1_null_params__answered)
+{
+    const auto response = rpc_body(R"({"id":1,"method":"getblockcount","params":null})");
+    BC_REQUIRE_EQUAL(response.at("id").as_int64(), 1);
+    BC_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
+}
+
 BC_AUTO_TEST_CASE(bitcoind_rpc__notification__ws_v2_missing_id__no_response)
 {
     BC_REQUIRE(!ws_upgrade());

@@ -162,6 +162,22 @@ network::http::status btcd_setup_fixture::http_rpc_status(
     return other_.post_status(body_of(http_request_id_++, method, params));
 }
 
+system::json::value btcd_setup_fixture::http_body(std::string_view body)
+{
+    return other_.post(std::string{ body });
+}
+
+network::http::status btcd_setup_fixture::http_body_status(
+    std::string_view body)
+{
+    return other_.post_status(std::string{ body });
+}
+
+void btcd_setup_fixture::ws_notify(std::string_view body)
+{
+    client_.write_frame(body);
+}
+
 system::json::value btcd_setup_fixture::http_rpc(std::string_view method,
     std::string_view params, const std::string& username,
     const std::string& password)
