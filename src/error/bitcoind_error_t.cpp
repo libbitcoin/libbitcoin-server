@@ -148,6 +148,7 @@ block_rejects
     { system::error::incorrect_proof_of_work, "bad-diffbits" },
     { system::error::early_timestamp, "time-too-old" },
     { system::error::orphan_block, "prev-blk-not-found" },
+    { system::error::checkpoint_conflict, "bad-fork-prior-to-checkpoint" },
     { system::error::block_size_limit, "bad-blk-length" },
     { system::error::empty_block, "bad-blk-length" },
     { system::error::first_not_coinbase, "bad-cb-missing" },

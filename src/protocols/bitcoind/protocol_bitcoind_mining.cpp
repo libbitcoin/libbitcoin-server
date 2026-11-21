@@ -304,6 +304,13 @@ void protocol_bitcoind_mining::do_organize_block(const code& ec,
     if (stopped())
         return;
 
+    // An unknown header is unconfirmable only by its parent.
+    if (ec == database::error::block_unconfirmable)
+    {
+        send_result(string_t{ "bad-prevblk" });
+        return;
+    }
+
     if (ec && (ec != node::error::duplicate_header))
     {
         if (block_error_category::contains(ec) ||
