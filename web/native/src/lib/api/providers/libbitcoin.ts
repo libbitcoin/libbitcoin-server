@@ -1009,7 +1009,7 @@ export function createLibbitcoinClient({
     }
 
     const activeSocket = socket;
-    let lastTopResponseAt = Date.now();
+    let probeSentAt: number | null = null;
     socketConnectTimer = setTimeout(() => {
       if (socket !== activeSocket) return;
       console.warn('Libbitcoin websocket connect timed out, falling back to polling');
@@ -1023,17 +1023,19 @@ export function createLibbitcoinClient({
         activeSocket.send(TOP_SUBSCRIBE_PATH);
         stopPolling();
         websocketUnavailable = false;
-        lastTopResponseAt = Date.now();
         socketHeartbeatTimer = setInterval(() => {
           if (socket !== activeSocket) return;
-          if (Date.now() - lastTopResponseAt >= WEBSOCKET_RESPONSE_TIMEOUT_MS) {
-            console.warn('Libbitcoin websocket response timed out, falling back to polling');
-            handleWebSocketFailure();
+          if (probeSentAt !== null) {
+            if (Date.now() - probeSentAt >= WEBSOCKET_RESPONSE_TIMEOUT_MS) {
+              console.warn('Libbitcoin websocket response timed out, falling back to polling');
+              handleWebSocketFailure();
+            }
             return;
           }
           try {
             // Native top queries reply even when no new block has arrived.
             activeSocket.send(TOP_QUERY_PATH);
+            probeSentAt = Date.now();
           } catch (error) {
             console.warn('Libbitcoin websocket heartbeat failed, falling back to polling', error);
             handleWebSocketFailure();
@@ -1056,7 +1058,7 @@ export function createLibbitcoinClient({
           if (text === null || socket !== activeSocket) return;
           const identifier = parseTopSubscriptionMessage(text);
           if (identifier === null) return;
-          lastTopResponseAt = Date.now();
+          probeSentAt = null;
           // An open but unresponsive socket must not reset reconnect backoff.
           websocketRetryDelayMs = WEBSOCKET_RETRY_MIN_DELAY_MS;
           if (identifier === lastBlockHash) {
