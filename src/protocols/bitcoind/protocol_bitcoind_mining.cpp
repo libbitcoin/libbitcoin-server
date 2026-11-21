@@ -382,21 +382,30 @@ void protocol_bitcoind_mining::submit_block(const block_cptr& block,
     const auto bypass = is_bypass(state);
     const auto prune = bypass && node_settings().limited_blocks;
     const auto strong = is_any(state, checkpointed);
+    const auto hash = block->hash();
     if (!archive_block(stored, block, link, strong, bypass, height, prune,
-        BIND(handle_archive_block, _1, height)))
+        BIND(handle_archive_block, _1, hash, height)))
         return;
 
-    handle_archive_block(stored, height);
+    handle_archive_block(stored, hash, height);
 }
 
-// A block archived meanwhile by another channel is awaited as submitted.
+// A block archived meanwhile by another channel is awaited as submitted, and a
+// failure to store one is a fault, whether or not the channel has stopped.
 void protocol_bitcoind_mining::handle_archive_block(const code& ec,
-    size_t height) NOEXCEPT
+    const hash_digest& hash, size_t height) NOEXCEPT
 {
     if (!ec)
     {
         notify(ec, node::chases::checked{ height });
         fire(node::events::block_archived, height);
+    }
+    else if ((ec != node::error::duplicate_block) &&
+        (ec != network::error::service_stopped))
+    {
+        LOGF("Failure storing block [" << encode_hash(hash) << ":" << height
+            << "] " << ec.message());
+        fault(ec);
     }
 
     if (stopped())
@@ -411,9 +420,6 @@ void protocol_bitcoind_mining::do_archive_block(const code& ec) NOEXCEPT
 
     if (stopped() || !ec || (ec == node::error::duplicate_block))
         return;
-
-    if (ec != network::error::service_stopped)
-        fault(ec);
 
     submitted_ = {};
     send_error(error::bitcoind::internal_error);
