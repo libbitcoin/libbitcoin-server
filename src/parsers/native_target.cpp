@@ -347,8 +347,9 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
                         if (segments[segment++] != "script")
                             return error::invalid_component;
 
-                        method = subcomponent == "input" ?
-                            "block_tx_input_script" : "block_tx_output_script";
+                        method = "block_tx_output_script";
+                        if (subcomponent == "input")
+                            method = "block_tx_input_script";
                     }
                 }
                 else if (component == "header")
