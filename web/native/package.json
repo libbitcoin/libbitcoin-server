@@ -7,7 +7,8 @@
     "node": ">=20.19"
   },
   "scripts": {
-    "build": "tsc && vite build"
+    "build": "tsc && vite build",
+    "test": "vitest run"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -30,6 +31,7 @@
     "tailwindcss": "^4.3.5",
     "typescript": "^5.9.3",
     "vite": "^7.3.8",
-    "vite-tsconfig-paths": "^6.1.1"
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^5.1.0"
   }
 }
