@@ -88,6 +88,12 @@ void executor::set_signal_handlers()
 #if defined(HAVE_LINUX)
     sigaction(SIGPWR,  &action, nullptr);
 #endif
+
+    // A closed output reader fails the write, not the process.
+    struct sigaction ignore{};
+    ignore.sa_handler = SIG_IGN;
+    sigemptyset(&ignore.sa_mask);
+    sigaction(SIGPIPE, &ignore, nullptr);
 #endif
 }
 
