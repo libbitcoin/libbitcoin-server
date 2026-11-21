@@ -944,6 +944,12 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
         }
     }
 
+    if (ec == database::error::depth_limited)
+    {
+        POST(fail, error::bitcoind::limit_exceeded, gate);
+        return;
+    }
+
     if (ec)
     {
         LOGF("Bitcoind::scantxoutset, " << ec.message());
@@ -1405,6 +1411,12 @@ void protocol_bitcoind_blockchain::do_get_descriptor_activity(
                 history, key, options().maximum_history,
                 database_settings().turbo))
             {
+                if (ec == database::error::depth_limited)
+                {
+                    POST(fail, error::bitcoind::limit_exceeded, gate);
+                    return;
+                }
+
                 LOGF("Bitcoind::getdescriptoractivity, " << ec.message());
                 POST(fail, error::bitcoind::internal_error, gate);
                 return;
