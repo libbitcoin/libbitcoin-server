@@ -448,7 +448,7 @@ export function getEventDefinition(event: number): EventDefinition {
 
 export function getLogLevel(level: number) {
   return (
-    LOG_LEVELS[level] ?? {
+    LOG_LEVELS.find((item) => item.id === level) ?? {
       id: level,
       name: `level_${String(level)}`,
       label: `Level ${String(level)}`,
