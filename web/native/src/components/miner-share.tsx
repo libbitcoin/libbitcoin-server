@@ -25,7 +25,7 @@ function toShares(miners: Array<Miner | null>): Share[] {
   const shares = listed.map(([name, count], index) => ({
     name,
     count,
-    color: SLICE_COLORS[index],
+    color: index < LISTED_MINERS ? SLICE_COLORS[index] : OTHER_COLOR,
   }));
 
   const other = ranked.slice(listed.length).reduce((sum, [, count]) => sum + count, 0);
