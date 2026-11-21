@@ -167,7 +167,7 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
     constexpr auto witness = true;
     const auto& query = archive();
     const auto link = query.to_header(hash);
-    if (is_pruned_block(link))
+    if (query.is_pruned(link))
     {
         send_error_message(error::bitcoind::misc_error, block_pruned);
         return true;
@@ -420,6 +420,12 @@ bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
     if (!query.is_confirmed_block(link))
     {
         send_error(error::bitcoind::invalid_address_or_key);
+        return true;
+    }
+
+    if (query.is_pruned(link))
+    {
+        send_error_message(error::bitcoind::misc_error, block_pruned);
         return true;
     }
 
@@ -1388,6 +1394,12 @@ void protocol_bitcoind_blockchain::do_get_descriptor_activity(
 
         constexpr auto witness = true;
         const auto link = query.to_header(hash);
+        if (query.is_pruned(link))
+        {
+            POST(fail, error::bitcoind::misc_error, gate);
+            return;
+        }
+
         const auto block = query.get_block(link, witness);
         if (!block)
         {
@@ -1992,6 +2004,12 @@ bool protocol_bitcoind_blockchain::handle_get_tx_spending_prevout(const code& ec
 
             if (return_tx)
             {
+                if (query.is_pruned(tx))
+                {
+                    send_error(error::bitcoind::invalid_address_or_key);
+                    return true;
+                }
+
                 const auto spending = query.get_transaction(tx, true);
                 if (!spending)
                 {

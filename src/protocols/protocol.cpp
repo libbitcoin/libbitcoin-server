@@ -37,20 +37,6 @@ size_t protocol::get_pruned_height() const NOEXCEPT
     return std::max(milestone, checkpoint);
 }
 
-// The genesis block is never pruned.
-bool protocol::is_pruned_block(const database::header_link& link) const NOEXCEPT
-{
-    size_t height{};
-    const auto pruned = get_pruned_height();
-    return !is_zero(pruned) && archive().get_height(height, link) &&
-        !is_zero(height) && height <= pruned;
-}
-
-bool protocol::is_pruned_tx(const database::tx_link& link) const NOEXCEPT
-{
-    return is_pruned_block(archive().find_confirmed_block(link));
-}
-
 // private
 size_t protocol::get_active_height(const hash_digest& hash) const NOEXCEPT
 {

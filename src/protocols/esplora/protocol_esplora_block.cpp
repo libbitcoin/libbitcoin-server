@@ -102,7 +102,7 @@ bool protocol_esplora::handle_get_block(const code& ec, interface::block,
     if (media == data)
     {
         size_t size{};
-        if (is_pruned_block(link) || !query.get_block_size(size, link, true))
+        if (query.is_pruned(link) || !query.get_block_size(size, link, true))
         {
             send_not_found();
             return true;
@@ -154,8 +154,9 @@ bool protocol_esplora::handle_get_block_txs(const code& ec,
     }
 
     const auto& query = archive();
-    const auto txs = query.to_transactions(query.to_header(*hash));
-    if (txs.empty() || start >= txs.size())
+    const auto link = query.to_header(*hash);
+    const auto txs = query.to_transactions(link);
+    if (txs.empty() || start >= txs.size() || query.is_pruned(link))
     {
         send_not_found();
         return true;

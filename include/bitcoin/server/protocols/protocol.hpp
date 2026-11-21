@@ -105,12 +105,6 @@ public:
     /// Height at and below which blocks may be pruned, zero if none.
     size_t get_pruned_height() const NOEXCEPT;
 
-    /// True if the block may be pruned, so it is not served whole.
-    bool is_pruned_block(const database::header_link& link) const NOEXCEPT;
-
-    /// True if the confirming block of the tx may be pruned.
-    bool is_pruned_tx(const database::tx_link& link) const NOEXCEPT;
-
 private:
     size_t get_active_height(const system::hash_digest& hash) const NOEXCEPT;
 

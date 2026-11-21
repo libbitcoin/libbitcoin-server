@@ -855,6 +855,12 @@ BC_AUTO_TEST_CASE(bitcoind_rest__block_json__pruned__not_found)
     BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block9 + ".json"), status::not_found);
 }
 
+BC_AUTO_TEST_CASE(bitcoind_rest__tx_json__pruned__not_found)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    BC_REQUIRE_EQUAL(rest_status("/rest/tx/" + txid + ".json"), status::not_found);
+}
+
 BC_AUTO_TEST_CASE(bitcoind_rest__block_bin__pruned_genesis__ok)
 {
     BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block0 + ".bin"), status::ok);

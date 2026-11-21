@@ -119,10 +119,49 @@ bool setup_ten_block_store(query_t& query, uint32_t top_flags) NOEXCEPT
         query.push_confirmed(query.to_header(block9_hash), true);
 }
 
-// Candidate through block9 with bip141 active there, for a block9 milestone.
+// Blocks one through nine archived pruned and candidate, with bip141 active
+// at block9 for a block9 milestone.
 bool setup_ten_block_pruned_store(query_t& query) NOEXCEPT
 {
-    return setup_ten_block_store(query, system::chain::flags::bip141_rule) &&
+    constexpr auto bip141 = system::chain::flags::bip141_rule;
+    const auto proof = genesis.header().proof();
+    return query.initialize(genesis) &&
+        query.set(block1.header(), database::context{ 0, 1, 1231006505 },
+            proof * 2u, false) &&
+        query.set(block1, false, false, true) &&
+        query.set(block2.header(), database::context{ 0, 2, 1231469665 },
+            proof * 3u, false) &&
+        query.set(block2, false, false, true) &&
+        query.set(block3.header(), database::context{ 0, 3, 1231469665 },
+            proof * 4u, false) &&
+        query.set(block3, false, false, true) &&
+        query.set(block4.header(), database::context{ 0, 4, 1231469744 },
+            proof * 5u, false) &&
+        query.set(block4, false, false, true) &&
+        query.set(block5.header(), database::context{ 0, 5, 1231469744 },
+            proof * 6u, false) &&
+        query.set(block5, false, false, true) &&
+        query.set(block6.header(), database::context{ 0, 6, 1231470173 },
+            proof * 7u, false) &&
+        query.set(block6, false, false, true) &&
+        query.set(block7.header(), database::context{ 0, 7, 1231470173 },
+            proof * 8u, false) &&
+        query.set(block7, false, false, true) &&
+        query.set(block8.header(), database::context{ 0, 8, 1231470988 },
+            proof * 9u, false) &&
+        query.set(block8, false, false, true) &&
+        query.set(block9.header(), database::context{ bip141, 9, 1231470988 },
+            proof * 10u, false) &&
+        query.set(block9, false, false, true) &&
+        query.push_confirmed(query.to_header(block1_hash), true) &&
+        query.push_confirmed(query.to_header(block2_hash), true) &&
+        query.push_confirmed(query.to_header(block3_hash), true) &&
+        query.push_confirmed(query.to_header(block4_hash), true) &&
+        query.push_confirmed(query.to_header(block5_hash), true) &&
+        query.push_confirmed(query.to_header(block6_hash), true) &&
+        query.push_confirmed(query.to_header(block7_hash), true) &&
+        query.push_confirmed(query.to_header(block8_hash), true) &&
+        query.push_confirmed(query.to_header(block9_hash), true) &&
         query.push_candidate(query.to_header(block1_hash)) &&
         query.push_candidate(query.to_header(block2_hash)) &&
         query.push_candidate(query.to_header(block3_hash)) &&

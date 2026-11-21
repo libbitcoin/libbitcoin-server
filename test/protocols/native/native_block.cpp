@@ -1292,6 +1292,16 @@ BC_AUTO_TEST_CASE(native__block__pruned_json__not_found)
     BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/5?format=json"), http::status::not_found);
 }
 
+BC_AUTO_TEST_CASE(native__block_tx__pruned_data__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/tx/0?format=data"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block_tx_input_script__pruned_data__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/tx/0/input/0/script?format=data"), http::status::not_found);
+}
+
 BC_AUTO_TEST_CASE(native__block__pruned_genesis_data__ok)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/0?format=data"), http::status::ok);

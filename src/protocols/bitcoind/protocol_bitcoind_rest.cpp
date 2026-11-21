@@ -189,7 +189,7 @@ bool protocol_bitcoind_rest::handle_get_block(const code& ec,
     const auto link = query.to_header(*hash);
     const auto turbo = database_settings().turbo;
     size_t size{};
-    if (is_pruned_block(link) || !query.get_block_size(size, link, witness))
+    if (query.is_pruned(link) || !query.get_block_size(size, link, witness))
     {
         send_not_found();
         return true;
@@ -251,7 +251,9 @@ bool protocol_bitcoind_rest::handle_get_tx(const code& ec,
     constexpr auto witness = true;
     const auto& query = archive();
     const auto link = query.to_tx(*hash);
-    const auto tx = query.get_transaction(link, witness);
+    const auto tx = query.is_pruned(link) ? nullptr :
+        query.get_transaction(link, witness);
+
     if (!tx)
     {
         send_not_found();
@@ -327,7 +329,10 @@ bool protocol_bitcoind_rest::handle_get_block_txs(const code& ec,
 
     constexpr auto witness = true;
     const auto& query = archive();
-    const auto block = query.get_block(query.to_header(*hash), witness);
+    const auto link = query.to_header(*hash);
+    const auto block = query.is_pruned(link) ? nullptr :
+        query.get_block(link, witness);
+
     if (!block)
     {
         send_not_found();
@@ -467,7 +472,10 @@ bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
 
     constexpr auto witness = true;
     const auto& query = archive();
-    const auto block = query.get_block(query.to_header(*hash), witness);
+    const auto link = query.to_header(*hash);
+    const auto block = query.is_pruned(link) ? nullptr :
+        query.get_block(link, witness);
+
     if (!block)
     {
         send_not_found();

@@ -191,7 +191,7 @@ bool protocol_esplora::handle_get_tx(const code& ec, interface::tx,
 
     const auto& query = archive();
     const auto link = query.to_tx(*hash);
-    if (link.is_terminal())
+    if (link.is_terminal() || query.is_pruned(link))
     {
         send_not_found();
         return true;

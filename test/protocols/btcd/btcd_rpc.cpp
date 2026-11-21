@@ -1538,3 +1538,13 @@ BC_AUTO_TEST_CASE(btcd_rpc__rescan__dangling__internal_error)
 }
 
 BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(btcd_pruned_tests, btcd_pruned_setup_fixture)
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescanblocks__pruned__invalid_address_or_key)
+{
+    const auto result = rpc_error("rescanblocks", std::format(R"([["{}"]])", system::encode_hash(test::block1.hash())));
+    BC_REQUIRE_EQUAL(result, code{ server::error::btcd::invalid_address_or_key }.value());
+}
+
+BC_AUTO_TEST_SUITE_END()

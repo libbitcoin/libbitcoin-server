@@ -900,3 +900,25 @@ BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__unassociated__dae
 }
 
 BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(electrum_transactions_pruned_tests, electrum_pruned_setup_fixture)
+
+BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get__pruned__daemon_error)
+{
+    BC_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto txid = system::encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto response = get(R"({"id":77,"method":"blockchain.transaction.get","params":[")" + txid + R"(",false]})" "\n");
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), code{ server::error::electrum::daemon_error }.value());
+}
+
+BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get__pruned_verbose__daemon_error)
+{
+    BC_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto txid = system::encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto response = get(R"({"id":78,"method":"blockchain.transaction.get","params":[")" + txid + R"(",true]})" "\n");
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), code{ server::error::electrum::daemon_error }.value());
+}
+
+BC_AUTO_TEST_SUITE_END()

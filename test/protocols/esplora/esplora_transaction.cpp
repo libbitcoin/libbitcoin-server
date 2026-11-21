@@ -440,3 +440,17 @@ BC_AUTO_TEST_CASE(esplora__broadcast_package__v2_10__not_found)
 }
 
 BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(esplora_transaction_pruned_tests, esplora_pruned_setup_fixture)
+
+BC_AUTO_TEST_CASE(esplora__tx__pruned__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/tx/" + encode_hash(test::block1.transactions_ptr()->front()->hash(false))), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(esplora__tx_hex__pruned__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/tx/" + encode_hash(test::block1.transactions_ptr()->front()->hash(false)) + "/hex"), http::status::not_found);
+}
+
+BC_AUTO_TEST_SUITE_END()

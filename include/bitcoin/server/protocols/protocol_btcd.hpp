@@ -250,7 +250,8 @@ protected:
         const hash_digest& key, const sizes& heights) NOEXCEPT;
     void match_outpoints(matches& out, outpoint_watch& sub,
         const point& prevout, const sizes& heights) NOEXCEPT;
-    network::rpc::array_t serialize_matches(const matched_txs& txs) NOEXCEPT;
+    bool serialize_matches(network::rpc::array_t& out,
+        const matched_txs& txs) NOEXCEPT;
 
     /// Legacy (notifyreceived/notifyspent) individual notifications.
     /// -----------------------------------------------------------------------

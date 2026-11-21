@@ -151,7 +151,7 @@ bool protocol_native::handle_get_block(const code& ec, interface::block,
 
     const auto& query = archive();
     const auto link = to_header(height, hash, candidate);
-    if (link.is_terminal() || is_pruned_block(link))
+    if (link.is_terminal() || query.is_pruned(link))
     {
         send_not_found();
         return true;
@@ -549,8 +549,15 @@ bool protocol_native::handle_get_block_tx(const code& ec, interface::block_tx,
         return false;
 
     const auto& query = archive();
-    if (const auto tx = query.get_transaction(query.to_transaction(
-        to_header(height, hash, candidate), position), witness))
+    const auto link = query.to_transaction(to_header(height, hash, candidate),
+        position);
+    if (query.is_pruned(link))
+    {
+        send_not_found();
+        return true;
+    }
+
+    if (const auto tx = query.get_transaction(link, witness))
     {
         const auto size = tx->serialized_size(witness);
         switch (media)
@@ -580,10 +587,15 @@ bool protocol_native::handle_get_block_tx_input_script(const code& ec,
         return false;
 
     const auto& query = archive();
-    const auto tx = query.to_transaction(to_header(height, hash, candidate),
+    const auto link = query.to_transaction(to_header(height, hash, candidate),
         position);
+    if (query.is_pruned(link))
+    {
+        send_not_found();
+        return true;
+    }
 
-    if (const auto script = query.get_input_script(query.to_point(tx, index)))
+    if (const auto script = query.get_input_script(query.to_point(link, index)))
     {
         const auto size = script->serialized_size(false);
         switch (media)

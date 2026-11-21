@@ -269,7 +269,7 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
 
     const auto& query = archive();
     const auto link = query.to_tx(hash);
-    if (link.is_terminal())
+    if (link.is_terminal() || query.is_pruned(link))
     {
         // electrumx passes tx lookup to its daemon, failing as daemon error.
         send_code(error::electrum::daemon_error);
