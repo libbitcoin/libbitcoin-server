@@ -1,6 +1,13 @@
 import { createContext, useCallback, useContext, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
+import type { Miner } from '@/lib/utils/miner';
 import { createLibbitcoinClient } from './providers/libbitcoin';
+
+export interface RecentMiners {
+  top: number;
+  /** Newest first; null where the coinbase matches no known pool. */
+  miners: Array<Miner | null>;
+}
 
 export interface BlockSummary {
   hash: string;
@@ -188,6 +195,9 @@ export interface BlockchainClient {
   getBlockValidation(hash: string): Promise<BlockValidation>;
   getBlockStats(hashOrHeight: string): Promise<BlockStats>;
   getBlockTransactions(hashOrHeight: string, startIndex?: number): Promise<TransactionSummary[]>;
+  /** Pool identified from the block's coinbase, null when unrecognized. */
+  getBlockMiner(hashOrHeight: string): Promise<Miner | null>;
+  getRecentMiners(count: number): Promise<RecentMiners>;
   getTransactionHeader(txid: string): Promise<TransactionSummary>;
   getTransaction(txid: string): Promise<TransactionSummary>;
   getTransactionInputScriptHex(txid: string, inputIndex: number): Promise<string>;

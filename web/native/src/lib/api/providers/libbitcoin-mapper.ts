@@ -125,6 +125,10 @@ function decodeScriptAddress(
   return { type: mapScriptType(script) };
 }
 
+export function outputAddresses(tx: TxResponse, params: NetworkParams): string[] {
+  return tx.outputs.flatMap((output) => decodeScriptAddress(output.script, params).address ?? []);
+}
+
 function addressToScript(
   address: string,
   params: NetworkParams

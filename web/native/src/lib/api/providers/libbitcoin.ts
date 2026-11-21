@@ -13,6 +13,7 @@ import {
   BlockchainEventStatus,
   BlockchainEventStatusHandler,
   BlockchainEventTransport,
+  RecentMiners,
   TransactionSummary,
   TransactionOutputSpend,
 } from '../client';
@@ -24,7 +25,9 @@ import {
   scriptHashFromAddress,
   toBlockSummary,
   mapTransaction,
+  outputAddresses,
 } from './libbitcoin-mapper';
+import { identifyMiner, type Miner } from '@/lib/utils/miner';
 
 interface LibbitcoinClientOptions {
   baseUrl: string;
@@ -38,6 +41,8 @@ const TRANSACTION_PAGE_SIZE = 25;
 const REQUEST_CONCURRENCY = 8;
 const HTTP_REQUEST_TIMEOUT_MS = 30_000;
 const TOP_QUERY_PATH = '/v1/top?format=json';
+// Miners are cached by height only at this depth, below which reorganization is not expected.
+const MINER_CACHE_DEPTH = 6;
 const TOP_SUBSCRIBE_PATH = '/v1/top/subscribe?format=json';
 const TOP_UNSUBSCRIBE_PATH = '/v1/top/subscribe?format=json&stop=true';
 const WEBSOCKET_CONNECT_TIMEOUT_MS = 5_000;
@@ -722,6 +727,7 @@ export function createLibbitcoinClient({
     websocketAvailable: supportsWebsocket,
     connectionState: 'unknown',
   };
+  const minersByHeight = new Map<number, Miner | null>();
   const addressOutputsCache = new Map<string, { outputs: AddressOutpoint[]; expiresAt: number }>();
   const confirmedUtxosCache = new Map<
     string,
@@ -783,6 +789,15 @@ export function createLibbitcoinClient({
         throw error;
       });
     return configurationPromise;
+  }
+
+  async function fetchMiner(path: string): Promise<Miner | null> {
+    const params = await resolveNetworkParams();
+    const [coinbase, script] = await Promise.all([
+      fetchJson<TxResponse>(baseUrl, `${path}/tx/0?format=json`),
+      fetchJson<string>(baseUrl, `${path}/tx/0/input/0/script?format=text`),
+    ]);
+    return identifyMiner(script.trim(), outputAddresses(coinbase, params)) ?? null;
   }
 
   async function resolveNetworkParams() {
@@ -1260,6 +1275,29 @@ export function createLibbitcoinClient({
         );
         return applyTxDetails(mapped, detail);
       });
+    },
+
+    async getBlockMiner(hashOrHeight: string): Promise<Miner | null> {
+      const { path } = await resolveBlockPath(baseUrl, hashOrHeight);
+      return fetchMiner(path);
+    },
+
+    async getRecentMiners(count: number): Promise<RecentMiners> {
+      const top = await observeHttp(fetchTopHeightCached(baseUrl));
+      const bottom = Math.max(0, top - count + 1);
+      for (const height of minersByHeight.keys()) {
+        if (height < bottom) minersByHeight.delete(height);
+      }
+
+      const heights = Array.from({ length: top - bottom + 1 }, (_, idx) => top - idx);
+      const miners = await mapWithConcurrency(heights, REQUEST_CONCURRENCY, async (height) => {
+        const cached = minersByHeight.get(height);
+        if (cached !== undefined) return cached;
+        const miner = await fetchMiner(`/v1/block/confirmed/${String(height)}`);
+        if (height <= top - MINER_CACHE_DEPTH) minersByHeight.set(height, miner);
+        return miner;
+      });
+      return { top, miners };
     },
 
     async getTransaction(txid: string): Promise<TransactionSummary> {

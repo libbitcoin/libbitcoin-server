@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { TransactionSummary } from '@/lib/api/client';
-import { useTransactionInputScriptHex } from '@/lib/hooks/useBlockchainData';
-import { identifyMiner } from '@/lib/utils/miner';
+import { useBlockMiner, useTransactionInputScriptHex } from '@/lib/hooks/useBlockchainData';
+import { identifyMiner, type Miner } from '@/lib/utils/miner';
 
 export function MinerValue({ coinbase }: { coinbase?: TransactionSummary }) {
   const input = coinbase?.inputs[0];
@@ -19,6 +19,16 @@ export function MinerValue({ coinbase }: { coinbase?: TransactionSummary }) {
 
   if (!coinbase) return '…';
   if (!isCoinbase || isError) return '—';
+  return <MinerName miner={miner} />;
+}
+
+export function BlockMinerValue({ hash }: { hash?: string }) {
+  const { data: miner, isError } = useBlockMiner(hash ?? '');
+  if (!hash || isError) return '—';
+  return <MinerName miner={miner} />;
+}
+
+function MinerName({ miner }: { miner?: Miner | null }) {
   if (miner === undefined) return '…';
   if (miner === null) return 'Unknown';
   if (!miner.link) return miner.name;

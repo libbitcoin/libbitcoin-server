@@ -18,10 +18,12 @@ import {
   BlockStats,
   BlockSummary,
   BlockchainEvent,
+  RecentMiners,
   TransactionSummary,
   TransactionOutputSpend,
   useBlockchainClient,
 } from '@/lib/api/client';
+import type { Miner } from '@/lib/utils/miner';
 
 type BlockchainQueryScope = {
   endpoint: string;
@@ -184,6 +186,23 @@ export function useBlockStats(hashOrHeight: string, options?: { enabled?: boolea
     queryFn: (client) => client.getBlockStats(hashOrHeight),
     enabled: (options?.enabled ?? true) && Boolean(hashOrHeight.trim()),
     staleTime: Infinity,
+  });
+}
+
+export function useBlockMiner(hash: string, options?: { enabled?: boolean }) {
+  return useBlockchainQuery<Miner | null>({
+    queryKey: ['block', hash, 'miner'],
+    queryFn: (client) => client.getBlockMiner(hash),
+    enabled: (options?.enabled ?? true) && Boolean(hash.trim()),
+    staleTime: Infinity,
+  });
+}
+
+export function useRecentMiners(count: number) {
+  return useBlockchainQuery<RecentMiners>({
+    queryKey: ['blocks', 'miners', { count }],
+    queryFn: (client) => client.getRecentMiners(count),
+    blockRefresh: 'always',
   });
 }
 
