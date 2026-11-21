@@ -179,6 +179,11 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\themes.css" />
     <None Include="..\..\..\..\web\admin_dashboard\src\vite-env.d.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\tailwind.config.js" />
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\endpoints.test.ts" />
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\fee-histogram.test.ts" />
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\format.test.ts" />
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\log-window.test.ts" />
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\sync-status.test.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\tsconfig.json" />
     <None Include="..\..\..\..\web\admin_dashboard\tsconfig.node.json" />
     <None Include="..\..\..\..\web\admin_dashboard\vite.config.ts" />
@@ -239,6 +244,11 @@
     <None Include="..\..\..\..\web\native\src\vendor\mining-pools\pools.json" />
     <None Include="..\..\..\..\web\native\src\vite-env.d.ts" />
     <None Include="..\..\..\..\web\native\tailwind.config.js" />
+    <None Include="..\..\..\..\web\native\test\lib\utils\address.test.ts" />
+    <None Include="..\..\..\..\web\native\test\lib\utils\format.test.ts" />
+    <None Include="..\..\..\..\web\native\test\lib\utils\miner.test.ts" />
+    <None Include="..\..\..\..\web\native\test\lib\utils\routes.test.ts" />
+    <None Include="..\..\..\..\web\native\test\lib\utils\search.test.ts" />
     <None Include="..\..\..\..\web\native\tsconfig.json" />
     <None Include="..\..\..\..\web\native\tsconfig.node.json" />
     <None Include="..\..\..\..\web\native\vite.config.ts" />
