@@ -337,8 +337,11 @@ void protocol_bitcoind_mining::submit_block(const block_cptr& block,
     const auto state = query.get_block_state(link);
     if (is_associated(state))
     {
+        const auto valid = is_validated(state) ||
+            query.is_confirmed_block(link);
+
         send_result(string_t{ is_unconfirmable(state) ? "duplicate-invalid" :
-            (is_validated(state) ? "duplicate" : "duplicate-inconclusive") });
+            (valid ? "duplicate" : "duplicate-inconclusive") });
         return;
     }
 
