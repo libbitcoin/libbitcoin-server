@@ -1010,6 +1010,30 @@ BC_AUTO_TEST_CASE(native__embedded__invalid_hash__bad_request)
     BC_REQUIRE_EQUAL(get_status("/v1/block/hash/invalid"), http::status::bad_request);
 }
 
+BC_AUTO_TEST_CASE(native__embedded__missing_target_accept_html__html)
+{
+    const auto response = get_response("/v1", http::field::accept, "text/html");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response.body(), "<html></html>");
+}
+
+BC_AUTO_TEST_CASE(native__embedded__missing_component_accept_html__html)
+{
+    const auto response = get_response("/v1/block", http::field::accept, "text/html");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response.body(), "<html></html>");
+}
+
+BC_AUTO_TEST_CASE(native__embedded__invalid_target_format_html__html)
+{
+    BC_REQUIRE_EQUAL(get_text("/v1/bogus?format=html"), "<html></html>");
+}
+
+BC_AUTO_TEST_CASE(native__embedded__invalid_target_accept_json__bad_request)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/bogus", http::field::accept, "application/json"), http::status::bad_request);
+}
+
 BC_AUTO_TEST_CASE(native__embedded__root__html)
 {
     BC_REQUIRE_EQUAL(get_text("/"), "<html></html>");

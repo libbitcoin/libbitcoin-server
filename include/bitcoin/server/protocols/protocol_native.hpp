@@ -65,6 +65,10 @@ protected:
     void dispatch_websocket(
         const network::http::request& request) NOEXCEPT override;
 
+    /// True if the request resolves to html media (a page request).
+    bool is_page_request(
+        const network::http::request& request) const NOEXCEPT;
+
     /// Senders.
     using protocol_html::send_not_found;
     void send_not_found(

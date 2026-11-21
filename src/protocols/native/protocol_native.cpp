@@ -126,8 +126,9 @@ bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
     rpc::request_t model{};
     if (const auto ec = native_target(model, target))
     {
-        // A target without a version is retried as a page request.
-        if (ec == error::missing_version || ec == error::empty_path)
+        // A target without a version or requesting html is a page request.
+        if (ec == error::missing_version || ec == error::empty_path ||
+            is_page_request(request))
             return false;
 
         send_bad_target(ec, *reset_request());
@@ -163,6 +164,14 @@ bool protocol_native::try_dispatch_object(const http::request& request) NOEXCEPT
         send_bad_request();
 
     return true;
+}
+
+bool protocol_native::is_page_request(
+    const http::request& request) const NOEXCEPT
+{
+    rpc::request_t model{ .params = rpc::object_t{} };
+    return native_query(model, request) &&
+        get_media(model) == media_type::text_html;
 }
 
 void protocol_native::dispatch_websocket(const http::request& request) NOEXCEPT

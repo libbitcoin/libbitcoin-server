@@ -84,8 +84,9 @@ bool protocol_admin::try_dispatch_object(const http::request& request) NOEXCEPT
         if (ec == error::invalid_target)
             return protocol_native::try_dispatch_object(request);
 
-        // A target without a version is retried as a page request.
-        if (ec == error::missing_version || ec == error::empty_path)
+        // A target without a version or requesting html is a page request.
+        if (ec == error::missing_version || ec == error::empty_path ||
+            is_page_request(request))
             return false;
 
         send_bad_target(ec, *reset_request());
