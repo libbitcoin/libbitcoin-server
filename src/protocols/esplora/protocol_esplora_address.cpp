@@ -129,6 +129,12 @@ void protocol_esplora::complete_get_address(const code& ec,
     if (stopped())
         return;
 
+    if (ec == database::error::depth_limited)
+    {
+        send_bad_request();
+        return;
+    }
+
     if (ec)
     {
         send_internal_server_error(ec);
@@ -257,6 +263,12 @@ void protocol_esplora::complete_get_address_txs(const code& ec,
     if (stopped())
         return;
 
+    if (ec == database::error::depth_limited)
+    {
+        send_bad_request();
+        return;
+    }
+
     if (ec)
     {
         send_internal_server_error(ec);
@@ -373,6 +385,12 @@ void protocol_esplora::complete_get_address_utxo(const code& ec,
 
     if (stopped())
         return;
+
+    if (ec == database::error::depth_limited)
+    {
+        send_bad_request();
+        return;
+    }
 
     if (ec)
     {

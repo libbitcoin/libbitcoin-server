@@ -73,6 +73,12 @@ void protocol_native::complete_get_address(const code& ec, uint8_t media,
     if (stopped())
         return;
 
+    if (ec == database::error::depth_limited)
+    {
+        send_bad_request();
+        return;
+    }
+
     if (ec)
     {
         send_internal_server_error(ec);
@@ -215,6 +221,12 @@ void protocol_native::complete_get_address_balance(const code& ec,
     // Suppresses cancelation error response.
     if (stopped())
         return;
+
+    if (ec == database::error::depth_limited)
+    {
+        send_bad_request();
+        return;
+    }
 
     if (ec)
     {
