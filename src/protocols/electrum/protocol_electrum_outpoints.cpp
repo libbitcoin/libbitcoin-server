@@ -305,10 +305,11 @@ void protocol_electrum::outpoint_notify(const std::unique_ptr<object_t>& status,
 
     ////std::cout << "outpoint_notify -> " << encode_hash(prevout.hash()) << std::endl;
 
-    send_notification("blockchain.outpoint.subscribe", array_t
-    {
-        encode_hash(prevout.hash()), prevout.index(), std::move(*status)
-    });
+    send_notification(network::rpc::version::v2,
+        "blockchain.outpoint.subscribe", array_t
+        {
+            encode_hash(prevout.hash()), prevout.index(), std::move(*status)
+        });
 }
 
 // utility

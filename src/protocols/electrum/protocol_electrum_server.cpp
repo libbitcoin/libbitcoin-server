@@ -198,7 +198,8 @@ void protocol_electrum::handle_ping(const code& ec) NOEXCEPT
     }
 
     const auto size = options().ping_size;
-    send_notification("server.ping", array_t{ string_t(size, '0') });
+    send_notification(network::rpc::version::v2,
+        "server.ping", array_t{ string_t(size, '0') });
 
     start_ping();
 }

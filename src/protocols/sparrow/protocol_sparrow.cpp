@@ -376,12 +376,13 @@ void protocol_sparrow::silent_notify(const object_t& subscription,
     if (stopped())
         return;
 
-    send_notification("blockchain.silentpayments.subscribe", array_t
-    {
-        subscription,
-        progress,
-        history
-    });
+    send_notification(network::rpc::version::v2,
+        "blockchain.silentpayments.subscribe", array_t
+        {
+            subscription,
+            progress,
+            history
+        });
 }
 
 // Utility.

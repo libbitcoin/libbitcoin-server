@@ -223,11 +223,12 @@ void protocol_electrum::scripthash_notify(const hash_digest& status,
 {
     BC_ASSERT(stranded());
 
-    send_notification(to_method_name(type), array_t
-    {
-        encode_hash(hash),
-        status == null_hash ? value_t{} : value_t{ encode_base16(status) }
-    });
+    send_notification(network::rpc::version::v2,
+        to_method_name(type), array_t
+        {
+            encode_hash(hash),
+            status == null_hash ? value_t{} : value_t{ encode_base16(status) }
+        });
 }
 
 // utility
