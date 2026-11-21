@@ -1449,6 +1449,11 @@ options_metadata parser::load_settings() THROWS
         setting<std::string>(&configured.server.admin.default_),
         "The path of the default source page, defaults to {}."
     )
+    (
+        "admin.maximum_history",
+        setting<uint32_t>(&configured.server.admin.maximum_history),
+        "The maximum number of address history entries, defaults to {}."
+    )
 
     /* [native] */
     (

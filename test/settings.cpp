@@ -150,6 +150,9 @@ BC_AUTO_TEST_CASE(server__admin_server__defaults__expected)
     BC_REQUIRE(server.path.empty());
     BC_REQUIRE(server.websocket);
     BC_REQUIRE_EQUAL(server.default_, "index.html");
+
+    // native_server
+    BC_REQUIRE_EQUAL(server.maximum_history, 1'000'000u);
 }
 
 BC_AUTO_TEST_CASE(server__native_server__defaults__expected)

@@ -311,7 +311,7 @@ public:
     wallet_settings wallet;
 
     /// admin web interface, isolated (http/s, stateless html)
-    server::settings::html_server admin;
+    server::settings::native_server admin;
 
     /// RESTful block explorer (http/s, stateless html/websocket)
     server::settings::native_server native;
