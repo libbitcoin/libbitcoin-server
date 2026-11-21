@@ -183,7 +183,6 @@ const std::vector<method_code> pending_methods
     { "getmempoolcluster", R"([""])", -33 },
     { "abortprivatebroadcast", R"([""])", -32601 },
     { "getprivatebroadcastinfo", "[]", -32601 },
-    { "submitblock", R"([""])", -33 },
     { "getprioritisedtransactions", "[]", -33 },
     { "prioritisetransaction", R"([""])", -33 }
 };
@@ -3487,6 +3486,24 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__submitheader__truncated__deserialization_error)
     BC_REQUIRE(has_code(rpc("submitheader", "[\"00\"]"), -22));
 }
 
+BC_AUTO_TEST_CASE(bitcoind_rpc__submitblock__not_hex__deserialization_error)
+{
+    BC_REQUIRE(has_code(rpc("submitblock", "[\"zz\"]"), -22));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__submitblock__truncated__deserialization_error)
+{
+    BC_REQUIRE(has_code(rpc("submitblock", "[\"00\"]"), -22));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__submitblock__existing_block__duplicate)
+{
+    const auto block = encode_base16(test::block9.to_data(true));
+    const auto response = rpc("submitblock", "[\"" + block + "\"]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE(as_text(response.at("result")).starts_with("duplicate"));
+}
+
 // waitfor (all conditions immediately met or timing out on the fixture)
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__waitforblockheight__at_top__immediate_top)
@@ -4567,6 +4584,24 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__submitheader__unacceptable_header__error)
 {
     const auto header = encode_base16(test::mock_block10.header().to_data());
     BC_REQUIRE(has_error(rpc("submitheader", "[\"" + header + "\"]")));
+}
+
+// Mainnet block 10 header with the block 9 coinbase.
+BC_AUTO_TEST_CASE(bitcoind_rpc__submitblock__mismatched_body__bad_txnmrklroot)
+{
+    const auto coinbase = encode_base16(test::block9.transactions_ptr()->front()->to_data(true));
+    const auto response = rpc("submitblock", "[\"010000000508085c47cc849eb80ea905cc7800a3be674ffc57263cf210c59d8d00000000112ba175a1e04b14ba9e7ea5f76ab640affeef5ec98173ac9799a852fa39add320cd6649ffff001d1e2de56501" + coinbase + "\"]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(as_text(response.at("result")), "bad-txnmrklroot");
+}
+
+// Mainnet block 10 header with an unknown previous block.
+BC_AUTO_TEST_CASE(bitcoind_rpc__submitblock__unknown_parent__prev_blk_not_found)
+{
+    const auto coinbase = encode_base16(test::block9.transactions_ptr()->front()->to_data(true));
+    const auto response = rpc("submitblock", "[\"010000000608085c47cc849eb80ea905cc7800a3be674ffc57263cf210c59d8d00000000112ba175a1e04b14ba9e7ea5f76ab640affeef5ec98173ac9799a852fa39add320cd6649ffff001d1e2de56501" + coinbase + "\"]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(as_text(response.at("result")), "prev-blk-not-found");
 }
 
 // Mainnet block 10 header (000000002c05cc2e78923c34df87fd108b22221ac6076c18f3ade378a4d915e9).

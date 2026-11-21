@@ -51,6 +51,7 @@ public:
     }
 
     void start() NOEXCEPT override;
+    void stopping(const code& ec) NOEXCEPT override;
 
 protected:
     /// Handlers.
@@ -72,7 +73,12 @@ protected:
     bool handle_prioritise_transaction(const code& ec,
         rpc_interface::prioritise_transaction) NOEXCEPT;
 
+    /// Chase events (submitted block completion).
+    bool handle_chase(const code& ec, node::event_value value) NOEXCEPT;
+
 private:
+    using block_cptr = system::chain::view::block::cptr;
+
     /// Pool completions (bounced to the channel strand).
     void handle_mining_info(const code& ec, const database::tx_links& links,
         const gate_t::ptr& gate) NOEXCEPT;
@@ -84,11 +90,27 @@ private:
         const gate_t::ptr& gate) NOEXCEPT;
     void do_submit_header(const code& ec, const gate_t::ptr& gate) NOEXCEPT;
 
+    /// Submit block completions (bounced to the channel strand).
+    void handle_organize_block(const code& ec, size_t height,
+        const block_cptr& block, const gate_t::ptr& gate) NOEXCEPT;
+    void do_organize_block(const code& ec, const block_cptr& block,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void submit_block(const block_cptr& block,
+        const database::header_link& link, const gate_t::ptr& gate) NOEXCEPT;
+    void handle_archive_block(const code& ec, size_t height) NOEXCEPT;
+    void do_archive_block(const code& ec) NOEXCEPT;
+    void do_submitted(const code& ec, node::event_value value) NOEXCEPT;
+    void send_submitted(network::rpc::value_option&& result) NOEXCEPT;
+
     /// Template completions (bounced to the channel strand).
     void handle_template(const code& ec, size_t height,
         const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
     void do_template(const code& ec, size_t height,
         const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
+
+    // These are protected by strand.
+    database::header_link submitted_{};
+    gate_t::ptr submitted_gate_{};
 };
 
 } // namespace server

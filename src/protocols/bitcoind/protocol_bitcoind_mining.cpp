@@ -59,7 +59,16 @@ void protocol_bitcoind_mining::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_block_template, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_prioritised_transactions, _1, _2);
     SUBSCRIBE_BITCOIND(handle_prioritise_transaction, _1, _2);
+    subscribe_chase(BIND(handle_chase, _1, _2));
     protocol_bitcoind_dispatch<rpc_interface>::start();
+}
+
+void protocol_bitcoind_mining::stopping(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    unsubscribe_chase();
+    submitted_gate_.reset();
+    protocol_bitcoind_dispatch<rpc_interface>::stopping(ec);
 }
 
 // Mining methods.
@@ -238,15 +247,256 @@ void protocol_bitcoind_mining::do_mining_info(const code& ec,
     });
 }
 
-// The node accepts only blocks that it requests, so there is no path for a
-// client block, and a submitted block is by construction unrequested.
+// bip22: null when accepted, otherwise duplicate, inconclusive or the reject
+// token, sent once the block is confirmable or not.
 bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
-    rpc_interface::submit_block, const std::string&,
+    rpc_interface::submit_block, const std::string& hexdata,
     const std::string&) NOEXCEPT
 {
-    if (stopped(ec)) return false;
-    send_error(error::bitcoind::client_mempool_disabled);
+    if (stopped(ec))
+        return false;
+
+    data_chunk data{};
+    if (!decode_base16(data, hexdata))
+    {
+        send_error(error::bitcoind::deserialization_error);
+        return true;
+    }
+
+    const auto header = emplace_shared<const chain::header>(data);
+    const auto block = emplace_shared<const chain::view::block>(
+        std::move(data), true);
+
+    if (!header->is_valid() || !block->is_valid())
+    {
+        send_error(error::bitcoind::deserialization_error);
+        return true;
+    }
+
+    const auto link = archive().to_header(header->hash());
+    if (!link.is_terminal())
+    {
+        submit_block(block, link, gate());
+        return true;
+    }
+
+    organize_submitted(header,
+        BIND(handle_organize_block, _1, _2, block, gate()));
     return true;
+}
+
+void protocol_bitcoind_mining::handle_organize_block(const code& ec, size_t,
+    const block_cptr& block, const gate_t::ptr& gate) NOEXCEPT
+{
+    if (stopped())
+        return;
+
+    POST(do_organize_block, ec, block, gate);
+}
+
+// The header of a weak branch is cached, not archived, so its block is not.
+void protocol_bitcoind_mining::do_organize_block(const code& ec,
+    const block_cptr& block, const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    using namespace system::error;
+
+    if (stopped())
+        return;
+
+    if (ec && (ec != node::error::duplicate_header))
+    {
+        if (block_error_category::contains(ec) ||
+            (ec == node::error::orphan_header) ||
+            (ec == database::error::block_unconfirmable))
+            send_result(string_t{ error::bitcoind::reject(ec) });
+        else
+            send_error(error::bitcoind::internal_error);
+
+        return;
+    }
+
+    const auto link = archive().to_header(block->hash());
+    if (link.is_terminal())
+    {
+        send_result(string_t{ "inconclusive" });
+        return;
+    }
+
+    submit_block(block, link, gate);
+}
+
+// A body that does not match its header is rejected, and leaves no state.
+void protocol_bitcoind_mining::submit_block(const block_cptr& block,
+    const database::header_link& link, const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    using namespace database;
+
+    const auto& query = archive();
+    const auto state = query.get_block_state(link);
+    if (is_associated(state))
+    {
+        send_result(string_t{ is_unconfirmable(state) ? "duplicate-invalid" :
+            (is_validated(state) ? "duplicate" : "duplicate-inconclusive") });
+        return;
+    }
+
+    if (is_unconfirmable(state))
+    {
+        send_result(string_t{ "duplicate-invalid" });
+        return;
+    }
+
+    chain::context ctx{};
+    if (!query.get_context(ctx, link))
+    {
+        send_error(error::bitcoind::internal_error);
+        return;
+    }
+
+    if (const auto failed = block->check_guard())
+    {
+        send_result(string_t{ error::bitcoind::reject(failed) });
+        return;
+    }
+
+    if (const auto failed = block->check_guard(ctx))
+    {
+        send_result(string_t{ error::bitcoind::reject(failed) });
+        return;
+    }
+
+    if (!query.is_candidate_header(link))
+    {
+        send_result(string_t{ "inconclusive" });
+        return;
+    }
+
+    submitted_ = link;
+    submitted_gate_ = gate;
+
+    // A bypassed block of a pruned node does not store its witness.
+    code stored{};
+    const auto height = ctx.height;
+    const auto bypass = is_bypass(state);
+    const auto prune = bypass && node_settings().limited_blocks;
+    const auto strong = is_any(state, checkpointed);
+    if (!archive_block(stored, block, link, strong, bypass, height, prune,
+        BIND(handle_archive_block, _1, height)))
+        return;
+
+    handle_archive_block(stored, height);
+}
+
+// A block archived meanwhile by another channel is awaited as submitted.
+void protocol_bitcoind_mining::handle_archive_block(const code& ec,
+    size_t height) NOEXCEPT
+{
+    if (!ec)
+    {
+        notify_chase(ec, node::chases::checked{ height });
+        fire(node::events::block_archived, height);
+    }
+
+    if (stopped())
+        return;
+
+    POST(do_archive_block, ec);
+}
+
+void protocol_bitcoind_mining::do_archive_block(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped() || !ec || (ec == node::error::duplicate_block))
+        return;
+
+    if (ec != network::error::service_stopped)
+        fault(ec);
+
+    submitted_ = {};
+    send_error(error::bitcoind::internal_error);
+    submitted_gate_.reset();
+}
+
+bool protocol_bitcoind_mining::handle_chase(const code& ec,
+    node::event_value value) NOEXCEPT
+{
+    // Do not pass ec to stopped, it is not a call status.
+    if (stopped())
+        return false;
+
+    switch (node::to_chase(value))
+    {
+        case node::chase::regressed:
+        case node::chase::disorganized:
+        case node::chase::unvalid:
+        case node::chase::confirmable:
+        case node::chase::unconfirmable:
+        {
+            POST(do_submitted, ec, value);
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+
+    return true;
+}
+
+// A submitted block leaving the candidate chain unconfirmed is inconclusive.
+void protocol_bitcoind_mining::do_submitted(const code& ec,
+    node::event_value value) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    using namespace node;
+
+    if (stopped() || submitted_.is_terminal())
+        return;
+
+    switch (to_chase(value))
+    {
+        case chase::confirmable:
+        {
+            if (to_payload<chase::confirmable>(value).link == submitted_)
+                send_submitted(null_t{});
+
+            break;
+        }
+        case chase::unvalid:
+        {
+            if (to_payload<chase::unvalid>(value).link == submitted_)
+                send_submitted(string_t{ error::bitcoind::reject(ec) });
+
+            break;
+        }
+        case chase::unconfirmable:
+        {
+            if (to_payload<chase::unconfirmable>(value).link == submitted_)
+                send_submitted(string_t{ error::bitcoind::reject(ec) });
+
+            break;
+        }
+        default:
+        {
+            if (!archive().is_candidate_header(submitted_))
+                send_submitted(string_t{ "inconclusive" });
+
+            break;
+        }
+    }
+}
+
+void protocol_bitcoind_mining::send_submitted(
+    network::rpc::value_option&& result) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    submitted_ = {};
+    send_result(std::move(result));
+    submitted_gate_.reset();
 }
 
 // The response defers to organize completion (see dispatch).
