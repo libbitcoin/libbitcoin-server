@@ -127,6 +127,21 @@ struct bitcoind_ten_block_setup_fixture
     }
 };
 
+struct bitcoind_utxo_disabled_setup_fixture
+    : bitcoind_setup_fixture
+{
+    inline bitcoind_utxo_disabled_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.server.bitcoind.enable_utxo = false;
+        })
+    {
+    }
+};
+
 // Configured with a credential -- for tests that verify authorization is
 // established by the upgrade request, as ws frames carry no headers.
 struct bitcoind_credentialed_setup_fixture

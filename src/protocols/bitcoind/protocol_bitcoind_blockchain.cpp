@@ -644,6 +644,12 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_set_info(const code& ec,
     if (stopped(ec))
         return false;
 
+    if (!options().enable_utxo)
+    {
+        send_error(error::bitcoind::method_not_found);
+        return true;
+    }
+
     set_hash type{};
     if (hash_type == "hash_serialized_3")
         type = set_hash::serialized;
@@ -841,6 +847,13 @@ bool protocol_bitcoind_blockchain::handle_scan_tx_out_set(const code& ec,
     if (action != "start")
     {
         send_error(error::bitcoind::invalid_parameter);
+        return true;
+    }
+
+    // Without the address index the scan walks the utxo set.
+    if (!options().enable_utxo && !archive().address_enabled())
+    {
+        send_error(error::bitcoind::method_not_found);
         return true;
     }
 

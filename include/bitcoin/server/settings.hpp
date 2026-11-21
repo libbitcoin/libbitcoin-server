@@ -250,6 +250,9 @@ public:
 
         /// Report an unbatched json-rpc v1 error in the http status.
         bool error_status{ true };
+
+        /// Enable utxo set queries, which disables connection timeouts.
+        bool enable_utxo{ false };
     };
 
     struct BCS_API btcd_server

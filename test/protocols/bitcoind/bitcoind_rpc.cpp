@@ -4241,6 +4241,24 @@ BC_AUTO_TEST_SUITE_END()
 // advertised inbound addresses
 // ----------------------------------------------------------------------------
 
+BC_FIXTURE_TEST_SUITE(bitcoind_utxo_disabled_tests, bitcoind_utxo_disabled_setup_fixture)
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__utxo_disabled__method_not_found)
+{
+    BC_REQUIRE(has_code(rpc("gettxoutsetinfo"), -32601));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__utxo_disabled_address_index__empty)
+{
+    const auto response = rpc("scantxoutset", "[\"start\", []]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE(response.at("result").is_object());
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+// ----------------------------------------------------------------------------
+
 BC_FIXTURE_TEST_SUITE(bitcoind_selfs_tests, bitcoind_selfs_setup_fixture)
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__selfs__localaddresses)

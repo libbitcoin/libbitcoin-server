@@ -1683,6 +1683,11 @@ options_metadata parser::load_settings() THROWS
         setting<bool>(&configured.server.bitcoind.compression),
         "Compress response bodies as accepted by the request (gzip, deflate), defaults to {}."
     )
+    (
+        "bitcoind.enable_utxo",
+        setting<bool>(&configured.server.bitcoind.enable_utxo),
+        "Enable utxo set queries, disabling connection timeouts, defaults to {}."
+    )
 
     /* [zmq] */
     (
@@ -1856,6 +1861,11 @@ options_metadata parser::load_settings() THROWS
         "btcd.compression",
         setting<bool>(&configured.server.btcd.compression),
         "Compress response bodies as accepted by the request (gzip, deflate), defaults to {}."
+    )
+    (
+        "btcd.enable_utxo",
+        setting<bool>(&configured.server.btcd.enable_utxo),
+        "Enable utxo set queries, disabling connection timeouts, defaults to {}."
     )
 
     /* [electrum] */
