@@ -135,40 +135,6 @@ bool protocol_native::handle_get_configuration(const code& ec,
     return true;
 }
 
-// utility
-// ----------------------------------------------------------------------------
-
-size_t protocol_native::get_pruned_height() NOEXCEPT
-{
-    if (!node_settings().limited_blocks)
-        return {};
-
-    const auto& system_ = system_settings();
-    const auto milestone = get_active_height(system_.milestone.hash());
-    const auto checkpoint = get_active_height(system_.top_checkpoint().hash());
-    return std::max(milestone, checkpoint);
-}
-
-size_t protocol_native::get_active_height(
-    const system::hash_digest& hash) NOEXCEPT
-{
-    const auto& query = archive();
-    const auto link = query.to_header(hash);
-    system::chain::context ctx{};
-
-    // This uses candidate header vs. confirmed block so that stripping will
-    // show at heights below top checkpoint and milestone while still syncing.
-    // This can result in a weak branch milestone block implying a pruned
-    // height that doesn't confirm (ok), which can't happen for checkpoints.
-    // This can be mitigated by setting stripped on the object when it's a
-    // milestone or checked object and pruning is enabled. Pruning can be
-    // enabled after storage of non-stripped blocks, which does not strip them.
-    // This will return false is bip141 is not active by the milestone.
-    return query.get_context(ctx, link) && 
-        ctx.is_enabled(system::chain::bip141_rule) && 
-        query.is_candidate_header(link) ? ctx.height : zero;
-}
-
 BC_POP_WARNING()
 
 } // namespace server

@@ -189,7 +189,7 @@ bool protocol_bitcoind_rest::handle_get_block(const code& ec,
     const auto link = query.to_header(*hash);
     const auto turbo = database_settings().turbo;
     size_t size{};
-    if (!query.get_block_size(size, link, witness))
+    if (is_pruned_block(link) || !query.get_block_size(size, link, witness))
     {
         send_not_found();
         return true;

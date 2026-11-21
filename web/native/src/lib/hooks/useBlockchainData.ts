@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'r
 import {
   type Query,
   type QueryClient,
+  type QueryFunctionContext,
   type UseQueryOptions,
   useQuery,
   useQueryClient,
@@ -39,7 +40,7 @@ interface BlockchainQueryMeta extends Record<string, unknown> {
 
 interface BlockchainQueryOptions<T> {
   queryKey: readonly unknown[];
-  queryFn: (client: BlockchainClient) => Promise<T>;
+  queryFn: (client: BlockchainClient, context: QueryFunctionContext) => Promise<T>;
   enabled?: boolean;
   retry?: boolean | number | ((failureCount: number, error: Error) => boolean);
   staleTime?: number;
@@ -135,7 +136,7 @@ function useBlockchainQuery<T>({
   // Keep data isolated by node endpoint without tying it to the client instance.
   return useQuery<T>({
     queryKey: [getBlockchainQueryScope(client), ...queryKey],
-    queryFn: () => queryFn(client),
+    queryFn: (context) => queryFn(client, context),
     enabled,
     ...(retry === undefined ? {} : { retry }),
     staleTime,
@@ -201,7 +202,7 @@ export function useBlockMiner(hash: string, options?: { enabled?: boolean }) {
 export function useRecentMiners(count: number) {
   return useBlockchainQuery<RecentMiners>({
     queryKey: ['blocks', 'miners', { count }],
-    queryFn: (client) => client.getRecentMiners(count),
+    queryFn: (client, { signal }) => client.getRecentMiners(count, signal),
     blockRefresh: 'always',
   });
 }

@@ -197,7 +197,7 @@ export interface BlockchainClient {
   getBlockTransactions(hashOrHeight: string, startIndex?: number): Promise<TransactionSummary[]>;
   /** Pool identified from the block's coinbase, null when unrecognized. */
   getBlockMiner(hashOrHeight: string): Promise<Miner | null>;
-  getRecentMiners(count: number): Promise<RecentMiners>;
+  getRecentMiners(count: number, signal?: AbortSignal): Promise<RecentMiners>;
   getTransactionHeader(txid: string): Promise<TransactionSummary>;
   getTransaction(txid: string): Promise<TransactionSummary>;
   getTransactionInputScriptHex(txid: string, inputIndex: number): Promise<string>;

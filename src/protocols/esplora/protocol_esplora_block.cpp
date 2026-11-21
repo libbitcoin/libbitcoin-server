@@ -102,7 +102,7 @@ bool protocol_esplora::handle_get_block(const code& ec, interface::block,
     if (media == data)
     {
         size_t size{};
-        if (!query.get_block_size(size, link, true))
+        if (is_pruned_block(link) || !query.get_block_size(size, link, true))
         {
             send_not_found();
             return true;

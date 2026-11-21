@@ -199,7 +199,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     auto& query = archive();
     const auto link = query.to_tx(hash);
     size_t size{};
-    if (!query.get_tx_size(size, link, witness))
+    if (is_pruned_tx(link) || !query.get_tx_size(size, link, witness))
     {
         send_error(error::bitcoind::invalid_address_or_key, txid);
         return true;

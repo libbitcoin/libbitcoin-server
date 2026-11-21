@@ -18,10 +18,58 @@
  */
 #include <bitcoin/server/protocols/protocol.hpp>
 
+#include <algorithm>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
+
+using namespace system;
+
+size_t protocol::get_pruned_height() const NOEXCEPT
+{
+    if (!node_settings().limited_blocks)
+        return {};
+
+    const auto& system_ = system_settings();
+    const auto milestone = get_active_height(system_.milestone.hash());
+    const auto checkpoint = get_active_height(system_.top_checkpoint().hash());
+    return std::max(milestone, checkpoint);
+}
+
+// The genesis block is never pruned.
+bool protocol::is_pruned_block(const database::header_link& link) const NOEXCEPT
+{
+    size_t height{};
+    const auto pruned = get_pruned_height();
+    return !is_zero(pruned) && archive().get_height(height, link) &&
+        !is_zero(height) && height <= pruned;
+}
+
+bool protocol::is_pruned_tx(const database::tx_link& link) const NOEXCEPT
+{
+    return is_pruned_block(archive().find_confirmed_block(link));
+}
+
+// private
+size_t protocol::get_active_height(const hash_digest& hash) const NOEXCEPT
+{
+    const auto& query = archive();
+    const auto link = query.to_header(hash);
+    chain::context ctx{};
+
+    // This uses candidate header vs. confirmed block so that stripping will
+    // show at heights below top checkpoint and milestone while still syncing.
+    // This can result in a weak branch milestone block implying a pruned
+    // height that doesn't confirm (ok), which can't happen for checkpoints.
+    // This can be mitigated by setting stripped on the object when it's a
+    // milestone or checked object and pruning is enabled. Pruning can be
+    // enabled after storage of non-stripped blocks, which does not strip them.
+    // This will return false is bip141 is not active by the milestone.
+    return query.get_context(ctx, link) &&
+        ctx.is_enabled(chain::bip141_rule) &&
+        query.is_candidate_header(link) ? ctx.height : zero;
+}
 
 } // namespace server
 } // namespace libbitcoin

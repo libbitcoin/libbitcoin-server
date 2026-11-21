@@ -3,8 +3,8 @@
 Generate the embedded web pages for libbitcoin-server.
 
 Source: web/admin_dashboard and web/native, each installed exactly from
-        its package-lock.json and built by its package.json build script,
-        and web/shared/favicon.svg.
+        its package-lock.json, tested by its package.json test script and
+        built by its package.json build script, and web/shared/favicon.svg.
 Output: console/embedded/{admin,native}_{html,css,ecma}.cpp, icon.cpp
 
 Run from the repository root:
@@ -95,7 +95,7 @@ def find_npm(npm):
 
 
 def build_site(npm, site):
-    """Install the site exactly from its lock file and build it."""
+    """Install the site exactly from its lock file, test it and build it."""
     # Package scripts resolve node from the path, so npm's node goes first.
     environment = dict(os.environ)
     environment["PATH"] = os.pathsep.join([os.path.dirname(npm),
@@ -103,12 +103,12 @@ def build_site(npm, site):
 
     directory = os.path.join(WEB, site)
     for arguments in [["ci", "--ignore-scripts", "--no-audit", "--no-fund"],
-        ["run", "build"]]:
+        ["test"], ["run", "build"]]:
         print("{}: npm {}".format(site, " ".join(arguments)), flush=True)
         result = subprocess.run([npm] + arguments, cwd=directory,
             env=environment)
         if result.returncode != 0:
-            sys.exit("{} build failed.".format(site))
+            sys.exit("{}: npm {} failed.".format(site, arguments[0]))
 
 # ── emit ────────────────────────────────────────────────────────────────────
 

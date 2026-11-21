@@ -1274,3 +1274,32 @@ BC_AUTO_TEST_CASE(native__top__no_credential__unauthorized)
 }
 
 BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(native_pruned_tests, native_pruned_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__block__pruned_data__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1?format=data"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block__pruned_text__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/9?format=text"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block__pruned_json__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/5?format=json"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block__pruned_genesis_data__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/0?format=data"), http::status::ok);
+}
+
+BC_AUTO_TEST_CASE(native__block__pruned_header_data__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/header?format=data"), http::status::ok);
+}
+
+BC_AUTO_TEST_SUITE_END()

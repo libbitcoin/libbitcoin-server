@@ -591,4 +591,16 @@ struct bitcoind_rest_credential_setup_fixture
     }
 };
 
+struct bitcoind_pruned_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_pruned_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_pruned_store(query);
+        }, test::configure_pruned)
+    {
+    }
+};
+
 #endif

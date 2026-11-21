@@ -28,6 +28,7 @@ import {
   outputAddresses,
 } from './libbitcoin-mapper';
 import { identifyMiner, type Miner } from '@/lib/utils/miner';
+import { isAddressPath } from '@/lib/utils/routes';
 
 interface LibbitcoinClientOptions {
   baseUrl: string;
@@ -39,6 +40,7 @@ const TRANSACTION_PAGE_SIZE = 25;
 // Bounds parallel node requests for multi-item fetches (block lists, tx pages,
 // prevout resolution) so bursts don't overwhelm the embedded node.
 const REQUEST_CONCURRENCY = 8;
+// Address queries are bounded by the server's history limit, not this deadline.
 const HTTP_REQUEST_TIMEOUT_MS = 30_000;
 const TOP_QUERY_PATH = '/v1/top?format=json';
 // Miners are cached by height only at this depth, below which reorganization is not expected.
@@ -263,13 +265,16 @@ async function fetchJson<T>(baseUrl: string, path: string, turbo?: boolean): Pro
 
   const controller = new AbortController();
   let timeout: ReturnType<typeof setTimeout> | undefined;
-  const deadline = new Promise<never>((_resolve, reject) => {
-    timeout = setTimeout(() => {
-      const error = new Error('Request timed out after 30 seconds');
-      reject(error);
-      controller.abort(error);
-    }, HTTP_REQUEST_TIMEOUT_MS);
-  });
+  const deadline = isAddressPath(normalized)
+    ? undefined
+    : new Promise<never>((_resolve, reject) => {
+        timeout = setTimeout(() => {
+          const seconds = String(HTTP_REQUEST_TIMEOUT_MS / 1_000);
+          const error = new Error(`Request timed out after ${seconds} seconds`);
+          reject(error);
+          controller.abort(error);
+        }, HTTP_REQUEST_TIMEOUT_MS);
+      });
   const request = (async () => {
     const response = await fetch(url, {
       signal: controller.signal,
@@ -296,7 +301,7 @@ async function fetchJson<T>(baseUrl: string, path: string, turbo?: boolean): Pro
   })();
   // Bound the whole response, including its body, and release shared requests
   // on timeout even if the transport is slow to react to cancellation.
-  const promise = Promise.race([request, deadline]);
+  const promise = deadline ? Promise.race([request, deadline]) : request;
 
   inFlightRequests.set(url, promise);
 
@@ -619,19 +624,28 @@ async function fetchOutputSpender(
 }
 
 // Runs `fn` over `items` with a bounded number of concurrent promises,
-// preserving input order in the result.
+// preserving input order in the result. No item starts after a failure or
+// after `signal` aborts.
 async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
-  fn: (item: T, index: number) => Promise<R>
+  fn: (item: T, index: number) => Promise<R>,
+  signal?: AbortSignal
 ): Promise<R[]> {
   const results = Array.from<R>({ length: items.length });
   let next = 0;
+  let failed = false;
   async function worker() {
-    while (next < items.length) {
+    while (next < items.length && !failed) {
+      signal?.throwIfAborted();
       const current = next;
       next += 1;
-      results[current] = await fn(items[current], current);
+      try {
+        results[current] = await fn(items[current], current);
+      } catch (error) {
+        failed = true;
+        throw error;
+      }
     }
   }
   const workerCount = Math.min(limit, items.length);
@@ -1009,7 +1023,7 @@ export function createLibbitcoinClient({
     }
 
     const activeSocket = socket;
-    let lastTopResponseAt = Date.now();
+    let probeSentAt: number | null = null;
     socketConnectTimer = setTimeout(() => {
       if (socket !== activeSocket) return;
       console.warn('Libbitcoin websocket connect timed out, falling back to polling');
@@ -1023,17 +1037,19 @@ export function createLibbitcoinClient({
         activeSocket.send(TOP_SUBSCRIBE_PATH);
         stopPolling();
         websocketUnavailable = false;
-        lastTopResponseAt = Date.now();
         socketHeartbeatTimer = setInterval(() => {
           if (socket !== activeSocket) return;
-          if (Date.now() - lastTopResponseAt >= WEBSOCKET_RESPONSE_TIMEOUT_MS) {
-            console.warn('Libbitcoin websocket response timed out, falling back to polling');
-            handleWebSocketFailure();
+          if (probeSentAt !== null) {
+            if (Date.now() - probeSentAt >= WEBSOCKET_RESPONSE_TIMEOUT_MS) {
+              console.warn('Libbitcoin websocket response timed out, falling back to polling');
+              handleWebSocketFailure();
+            }
             return;
           }
           try {
             // Native top queries reply even when no new block has arrived.
             activeSocket.send(TOP_QUERY_PATH);
+            probeSentAt = Date.now();
           } catch (error) {
             console.warn('Libbitcoin websocket heartbeat failed, falling back to polling', error);
             handleWebSocketFailure();
@@ -1056,7 +1072,7 @@ export function createLibbitcoinClient({
           if (text === null || socket !== activeSocket) return;
           const identifier = parseTopSubscriptionMessage(text);
           if (identifier === null) return;
-          lastTopResponseAt = Date.now();
+          probeSentAt = null;
           // An open but unresponsive socket must not reset reconnect backoff.
           websocketRetryDelayMs = WEBSOCKET_RETRY_MIN_DELAY_MS;
           if (identifier === lastBlockHash) {
@@ -1282,7 +1298,7 @@ export function createLibbitcoinClient({
       return fetchMiner(path);
     },
 
-    async getRecentMiners(count: number): Promise<RecentMiners> {
+    async getRecentMiners(count: number, signal?: AbortSignal): Promise<RecentMiners> {
       const top = await observeHttp(fetchTopHeightCached(baseUrl));
       const bottom = Math.max(0, top - count + 1);
       for (const height of minersByHeight.keys()) {
@@ -1296,7 +1312,7 @@ export function createLibbitcoinClient({
         const miner = await fetchMiner(`/v1/block/confirmed/${String(height)}`);
         if (height <= top - MINER_CACHE_DEPTH) minersByHeight.set(height, miner);
         return miner;
-      });
+      }, signal);
       return { top, miners };
     },
 

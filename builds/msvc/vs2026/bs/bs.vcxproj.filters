@@ -19,25 +19,25 @@
     <Filter Include="web">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000003}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\admin-dashboard">
+    <Filter Include="web\admin_dashboard">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000004}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\admin_dashboard">
+    <Filter Include="web\admin_dashboard\src">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\admin_dashboard\src">
+    <Filter Include="web\admin_dashboard\src\app">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\admin_dashboard\src\app">
+    <Filter Include="web\admin_dashboard\src\components">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\admin_dashboard\src\components">
+    <Filter Include="web\admin_dashboard\src\lib">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\admin_dashboard\src\lib">
+    <Filter Include="web\admin_dashboard\test">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\blockexplorer">
+    <Filter Include="web\admin_dashboard\test\lib">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000A}</UniqueIdentifier>
     </Filter>
     <Filter Include="web\native">
@@ -76,8 +76,17 @@
     <Filter Include="web\native\src\vendor\mining-pools">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\shared">
+    <Filter Include="web\native\test">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\test\lib">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000009}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\test\lib\utils">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000010}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\shared">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000A1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -328,6 +337,21 @@
     <None Include="..\..\..\..\web\admin_dashboard\tailwind.config.js">
       <Filter>web\admin_dashboard</Filter>
     </None>
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\endpoints.test.ts">
+      <Filter>web\admin_dashboard\test\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\fee-histogram.test.ts">
+      <Filter>web\admin_dashboard\test\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\format.test.ts">
+      <Filter>web\admin_dashboard\test\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\log-window.test.ts">
+      <Filter>web\admin_dashboard\test\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\sync-status.test.ts">
+      <Filter>web\admin_dashboard\test\lib</Filter>
+    </None>
     <None Include="..\..\..\..\web\admin_dashboard\tsconfig.json">
       <Filter>web\admin_dashboard</Filter>
     </None>
@@ -507,6 +531,21 @@
     </None>
     <None Include="..\..\..\..\web\native\tailwind.config.js">
       <Filter>web\native</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\address.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\format.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\miner.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\routes.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\search.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\tsconfig.json">
       <Filter>web\native</Filter>

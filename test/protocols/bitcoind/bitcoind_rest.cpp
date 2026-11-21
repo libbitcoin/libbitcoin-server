@@ -837,3 +837,27 @@ BC_AUTO_TEST_CASE(bitcoind_rest__chaininfo__rpc_scoped_credential__forbidden)
 }
 
 BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(bitcoind_rest_pruned_tests, bitcoind_pruned_setup_fixture)
+
+BC_AUTO_TEST_CASE(bitcoind_rest__block_bin__pruned__not_found)
+{
+    BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block9 + ".bin"), status::not_found);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rest__block_hex__pruned__not_found)
+{
+    BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block5 + ".hex"), status::not_found);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rest__block_json__pruned__not_found)
+{
+    BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block9 + ".json"), status::not_found);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rest__block_bin__pruned_genesis__ok)
+{
+    BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block0 + ".bin"), status::ok);
+}
+
+BC_AUTO_TEST_SUITE_END()

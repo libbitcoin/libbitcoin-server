@@ -59,6 +59,7 @@ enum block_verbosity : size_t
 
 // bitcoind defines only the "basic" (neutrino) block filter type.
 constexpr auto basic_filter = "basic";
+constexpr auto block_pruned = "Block not available (pruned data)";
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
@@ -166,6 +167,12 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
     constexpr auto witness = true;
     const auto& query = archive();
     const auto link = query.to_header(hash);
+    if (is_pruned_block(link))
+    {
+        send_error_message(error::bitcoind::misc_error, block_pruned);
+        return true;
+    }
+
     if (level == block_verbosity::hex)
     {
         size_t size{};

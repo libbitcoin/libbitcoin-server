@@ -151,7 +151,7 @@ bool protocol_native::handle_get_block(const code& ec, interface::block,
 
     const auto& query = archive();
     const auto link = to_header(height, hash, candidate);
-    if (link.is_terminal())
+    if (link.is_terminal() || is_pruned_block(link))
     {
         send_not_found();
         return true;

@@ -5414,3 +5414,34 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getblockcount__downgraded_credentials_configured
 }
 
 BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(bitcoind_pruned_tests, bitcoind_pruned_setup_fixture)
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__pruned_hex__misc_error)
+{
+    BC_REQUIRE(has_code(rpc("getblock", hash_param(test::block1_hash, "0")), -1));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__pruned_verbose__misc_error)
+{
+    BC_REQUIRE(has_code(rpc("getblock", hash_param(test::block9_hash, "2")), -1));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__pruned_genesis_hex__hex)
+{
+    BC_REQUIRE(rpc("getblock", hash_param(test::block0_hash, "0")).at("result").is_string());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__pruned_raw__invalid_address_or_key)
+{
+    const auto txid = test::block1.transactions_ptr()->front()->hash(false);
+    BC_REQUIRE(has_code(rpc("getrawtransaction", hash_param(txid, "0")), -5));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__pruned_verbose__invalid_address_or_key)
+{
+    const auto txid = test::block1.transactions_ptr()->front()->hash(false);
+    BC_REQUIRE(has_code(rpc("getrawtransaction", hash_param(txid, "1")), -5));
+}
+
+BC_AUTO_TEST_SUITE_END()
