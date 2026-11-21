@@ -122,6 +122,16 @@ protected:
         uint8_t version, uint8_t media, uint32_t position,
         std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool witness, bool candidate) NOEXCEPT;
+    bool handle_get_block_tx_input_script(const code& ec,
+        interface::block_tx_input_script, uint8_t version, uint8_t media,
+        uint32_t position, uint32_t index,
+        std::optional<system::hash_cptr> hash,
+        std::optional<uint32_t> height, bool candidate) NOEXCEPT;
+    bool handle_get_block_tx_output_script(const code& ec,
+        interface::block_tx_output_script, uint8_t version, uint8_t media,
+        uint32_t position, uint32_t index,
+        std::optional<system::hash_cptr> hash,
+        std::optional<uint32_t> height, bool candidate) NOEXCEPT;
     bool handle_get_block_subscribe(const code& ec, interface::block_subscribe,
         uint8_t version, uint8_t media, bool stop) NOEXCEPT;
 

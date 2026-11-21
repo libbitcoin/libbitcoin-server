@@ -67,6 +67,8 @@ void protocol_native::start() NOEXCEPT
     SUBSCRIBE_NATIVE(handle_get_block_filter_hash, _1, _2, _3, _4, _5, _6, _7, _8);
     SUBSCRIBE_NATIVE(handle_get_block_filter_header, _1, _2, _3, _4, _5, _6, _7, _8);
     SUBSCRIBE_NATIVE(handle_get_block_tx, _1, _2, _3, _4, _5, _6, _7, _8, _9);
+    SUBSCRIBE_NATIVE(handle_get_block_tx_input_script, _1, _2, _3, _4, _5, _6, _7, _8, _9);
+    SUBSCRIBE_NATIVE(handle_get_block_tx_output_script, _1, _2, _3, _4, _5, _6, _7, _8, _9);
     SUBSCRIBE_NATIVE(handle_get_block_subscribe, _1, _2, _3, _4, _5);
 
     // Transaction methods.
