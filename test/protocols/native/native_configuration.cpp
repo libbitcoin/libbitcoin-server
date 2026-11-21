@@ -263,3 +263,14 @@ BC_AUTO_TEST_CASE(server_node__run__stratum_v2_unavailable__failure)
 }
 
 BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(native_pruned_tests, native_pruned_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__configuration__limited_blocks_reached_milestone__pruned_milestone)
+{
+    const auto response = get_json("/v1/configuration?format=json");
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE_EQUAL(response.as_object().at("store").as_object().at("pruned").as_int64(), 9);
+}
+
+BC_AUTO_TEST_SUITE_END()

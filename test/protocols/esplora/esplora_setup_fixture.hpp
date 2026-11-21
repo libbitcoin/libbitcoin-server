@@ -286,4 +286,16 @@ struct esplora_v2_10_setup_fixture
     }
 };
 
+struct esplora_pruned_setup_fixture
+  : esplora_setup_fixture
+{
+    inline esplora_pruned_setup_fixture()
+      : esplora_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_pruned_store(query);
+        }, test::configure_pruned)
+    {
+    }
+};
+
 #endif

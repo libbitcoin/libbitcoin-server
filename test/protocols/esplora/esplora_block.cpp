@@ -380,3 +380,22 @@ BC_AUTO_TEST_CASE(esplora__compression__disabled__not_coded)
 }
 
 BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(esplora_pruned_tests, esplora_pruned_setup_fixture)
+
+BC_AUTO_TEST_CASE(esplora__block_raw__pruned__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(test::block1.hash()) + "/raw"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(esplora__block_raw__pruned_genesis__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(test::genesis.hash()) + "/raw"), http::status::ok);
+}
+
+BC_AUTO_TEST_CASE(esplora__block__pruned__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(test::block1.hash())), http::status::ok);
+}
+
+BC_AUTO_TEST_SUITE_END()

@@ -119,6 +119,29 @@ bool setup_ten_block_store(query_t& query, uint32_t top_flags) NOEXCEPT
         query.push_confirmed(query.to_header(block9_hash), true);
 }
 
+// Candidate through block9 with bip141 active there, for a block9 milestone.
+bool setup_ten_block_pruned_store(query_t& query) NOEXCEPT
+{
+    return setup_ten_block_store(query, system::chain::flags::bip141_rule) &&
+        query.push_candidate(query.to_header(block1_hash)) &&
+        query.push_candidate(query.to_header(block2_hash)) &&
+        query.push_candidate(query.to_header(block3_hash)) &&
+        query.push_candidate(query.to_header(block4_hash)) &&
+        query.push_candidate(query.to_header(block5_hash)) &&
+        query.push_candidate(query.to_header(block6_hash)) &&
+        query.push_candidate(query.to_header(block7_hash)) &&
+        query.push_candidate(query.to_header(block8_hash)) &&
+        query.push_candidate(query.to_header(block9_hash));
+}
+
+// Limited blocks with a block9 milestone, so blocks one through nine prune.
+void configure_pruned(server::configuration& config) NOEXCEPT
+{
+    config.node.limited_blocks = true;
+    config.database.envelope.provide_filters = false;
+    config.bitcoin.milestone = { block9_hash, 9 };
+}
+
 bool setup_three_block_store(query_t& query) NOEXCEPT
 {
     return query.initialize(genesis) &&

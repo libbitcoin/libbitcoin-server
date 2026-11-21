@@ -408,4 +408,16 @@ struct native_scoped_credential_setup_fixture
     }
 };
 
+struct native_pruned_setup_fixture
+  : native_setup_fixture
+{
+    inline native_pruned_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_pruned_store(query);
+        }, test::configure_pruned)
+    {
+    }
+};
+
 #endif
