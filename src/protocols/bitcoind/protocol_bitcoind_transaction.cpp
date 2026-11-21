@@ -48,6 +48,49 @@ static bool is_amount(double value) NOEXCEPT
     return to_units(units, value, btc_decimal_places);
 }
 
+constexpr auto decode_failed =
+    "TX decode failed. Make sure the tx has at least one input.";
+constexpr auto inputs_missing = "Inputs missing or spent";
+constexpr auto outputs_known = "Transaction outputs already in utxo set";
+
+// Absent and confirmed-spent inputs are missing coins.
+static bool is_missing(const code& ec) NOEXCEPT
+{
+    return (ec == system::error::missing_previous_output) ||
+        (ec == system::error::confirmed_double_spend);
+}
+
+// Any output of the tx is not spent by a confirmed tx.
+template <typename Query>
+static bool has_unspent_output(const Query& query,
+    const database::tx_link& link) NOEXCEPT
+{
+    const auto outs = query.to_outputs(link);
+    return std::any_of(outs.begin(), outs.end(),
+        [&query](const auto& out) NOEXCEPT
+        {
+            return !query.is_confirmed_spent(out);
+        });
+}
+
+template <typename Query>
+static std::string test_reject(const Query& query, const code& ec,
+    const chain::transaction& tx) NOEXCEPT
+{
+    if (is_missing(ec))
+        return "missing-inputs";
+
+    if (ec != node::error::duplicate_transaction)
+        return error::bitcoind::reject(ec);
+
+    const auto link = query.to_tx(tx.hash(false));
+    if (!query.is_confirmed_tx(link))
+        return "txn-already-in-mempool";
+
+    return has_unspent_output(query, link) ? "txn-already-known" :
+        "missing-inputs";
+}
+
 // Start.
 // ----------------------------------------------------------------------------
 
@@ -230,33 +273,28 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
     data_chunk data{};
     if (!decode_base16(data, hexstring))
     {
-        send_error(error::bitcoind::deserialization_error);
+        send_error_message(error::bitcoind::deserialization_error,
+            decode_failed);
         return true;
     }
 
     const auto tx = emplace_shared<chain::transaction>(data, true);
     if (!tx->is_valid())
     {
-        send_error(error::bitcoind::deserialization_error);
+        send_error_message(error::bitcoind::deserialization_error,
+            decode_failed);
         return true;
     }
 
     // A confirmed tx with any unspent output is reported without validating.
     const auto& query = archive();
     const auto link = query.to_tx(tx->hash(false));
-    if (!link.is_terminal() && query.is_confirmed_tx(link))
+    if (!link.is_terminal() && query.is_confirmed_tx(link) &&
+        has_unspent_output(query, link))
     {
-        const auto outs = query.to_outputs(link);
-        const auto unspent = [&query](const auto& out) NOEXCEPT
-        {
-            return !query.is_confirmed_spent(out);
-        };
-
-        if (std::any_of(outs.begin(), outs.end(), unspent))
-        {
-            send_error(error::bitcoind::verify_already_in_utxo_set);
-            return true;
-        }
+        send_error_message(error::bitcoind::verify_already_in_utxo_set,
+            outputs_known);
+        return true;
     }
 
     // A single tx is the minimal package.
@@ -287,7 +325,7 @@ void protocol_bitcoind_transaction::complete_submit_tx(const code& ec,
         const auto& query = archive();
         if (query.is_confirmed_tx(query.to_tx(tx->hash(false))))
         {
-            send_error(error::bitcoind::verify_error);
+            send_error_message(error::bitcoind::verify_error, inputs_missing);
             return;
         }
 
@@ -298,13 +336,18 @@ void protocol_bitcoind_transaction::complete_submit_tx(const code& ec,
     if (ec)
     {
         using namespace error::bitcoind;
+        if (is_missing(ec))
+        {
+            send_error_message(verify_error, inputs_missing);
+            return;
+        }
 
-        // Absent and confirmed-spent inputs are missing coins.
-        const auto missing =
-            (ec == system::error::missing_previous_output) ||
-            (ec == system::error::confirmed_double_spend);
+        const auto coded = translate(ec, verify_rejected);
+        if (coded == verify_rejected)
+            send_error_message(coded, reject(ec));
+        else
+            send_error(coded);
 
-        send_error(translate(ec, missing ? verify_error : verify_rejected));
         return;
     }
 
@@ -372,6 +415,7 @@ void protocol_bitcoind_transaction::complete_test_package(const code& ec,
     if (stopped())
         return;
 
+    const auto& query = archive();
     array_t results{};
     results.reserve(txs->size());
 
@@ -385,7 +429,7 @@ void protocol_bitcoind_transaction::complete_test_package(const code& ec,
         };
 
         if (ec)
-            result.emplace("reject-reason", error::bitcoind::reject(ec));
+            result.emplace("reject-reason", test_reject(query, ec, *tx));
 
         results.emplace_back(std::move(result));
     }

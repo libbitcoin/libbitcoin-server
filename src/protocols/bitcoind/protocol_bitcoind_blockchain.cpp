@@ -900,8 +900,8 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 
     if (query.address_enabled())
     {
-        // Indexed candidates avoid the full scan, so the scanned coin count
-        // reflects only examined candidates (bitcoind scans the whole set).
+        // Indexed candidates avoid the full scan, so no coins of the set are
+        // scanned and the scanned coin count is zero.
         for (const auto& script: scripts)
         {
             const auto data = script.to_data(false);
@@ -921,7 +921,6 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
                 if (is_zero(utxo.height) && is_zero(utxo.position))
                     continue;
 
-                ++txouts;
                 coins.push_back({ false, utxo.out, utxo.height,
                     is_zero(utxo.position), data });
             }
