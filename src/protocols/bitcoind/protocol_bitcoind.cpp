@@ -227,6 +227,22 @@ void protocol_bitcoind::send_error(const code& ec,
     });
 }
 
+void protocol_bitcoind::send_error_message(const code& ec,
+    std::string&& message) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    send_rpc(
+    {
+        .jsonrpc = version_,
+        .id = id_,
+        .error = result_t
+        {
+            .code = ec.value(),
+            .message = std::move(message)
+        }
+    });
+}
+
 void protocol_bitcoind::send_text(std::string&& hexidecimal) NOEXCEPT
 {
     BC_ASSERT(stranded());

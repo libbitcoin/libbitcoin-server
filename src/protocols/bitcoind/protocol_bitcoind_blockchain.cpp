@@ -644,6 +644,12 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_set_info(const code& ec,
     if (stopped(ec))
         return false;
 
+    if (!options().enable_utxo)
+    {
+        send_error(error::bitcoind::method_not_found);
+        return true;
+    }
+
     set_hash type{};
     if (hash_type == "hash_serialized_3")
         type = set_hash::serialized;
@@ -844,6 +850,13 @@ bool protocol_bitcoind_blockchain::handle_scan_tx_out_set(const code& ec,
         return true;
     }
 
+    // Without the address index the scan walks the utxo set.
+    if (!options().enable_utxo && !archive().address_enabled())
+    {
+        send_error(error::bitcoind::method_not_found);
+        return true;
+    }
+
     PARALLEL(do_scan_tx_out_set, emplace_shared<array_t>(scanobjects), gate());
     return true;
 }
@@ -887,8 +900,8 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 
     if (query.address_enabled())
     {
-        // Indexed candidates avoid the full scan, so the scanned coin count
-        // reflects only examined candidates (bitcoind scans the whole set).
+        // Indexed candidates avoid the full scan, so no coins of the set are
+        // scanned and the scanned coin count is zero.
         for (const auto& script: scripts)
         {
             const auto data = script.to_data(false);
@@ -898,7 +911,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 
             database::unspent_outputs outs{};
             ec = query.get_confirmed_unspent(stopping_, outs, key,
-                database_settings().turbo);
+                options().maximum_history, database_settings().turbo);
             if (ec)
                 break;
 
@@ -908,7 +921,6 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
                 if (is_zero(utxo.height) && is_zero(utxo.position))
                     continue;
 
-                ++txouts;
                 coins.push_back({ false, utxo.out, utxo.height,
                     is_zero(utxo.position), data });
             }
@@ -929,6 +941,12 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
             ec = query.get_unspent_matches(stopping_, coins, txouts, keys,
                 branch, database_settings().turbo);
         }
+    }
+
+    if (ec == database::error::depth_limited)
+    {
+        POST(fail, error::bitcoind::limit_exceeded, gate);
+        return;
     }
 
     if (ec)
@@ -1389,8 +1407,15 @@ void protocol_bitcoind_blockchain::do_get_descriptor_activity(
             database::histories history{};
             const auto key = sha256_hash(script.to_data(false));
             if (const auto ec = query.get_unconfirmed_history(stopping_,
-                history, key, max_size_t, database_settings().turbo))
+                history, key, options().maximum_history,
+                database_settings().turbo))
             {
+                if (ec == database::error::depth_limited)
+                {
+                    POST(fail, error::bitcoind::limit_exceeded, gate);
+                    return;
+                }
+
                 LOGF("Bitcoind::getdescriptoractivity, " << ec.message());
                 POST(fail, error::bitcoind::internal_error, gate);
                 return;

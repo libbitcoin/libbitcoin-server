@@ -69,8 +69,8 @@ public:
     /// -----------------------------------------------------------------------
 
     /// A notification requires a full duplex transport (ws or downgrade).
-    inline void send_notification(network::rpc::string_t&& method,
-        network::rpc::params_t&& params,
+    inline void send_notification(network::rpc::version version,
+        network::rpc::string_t&& method, network::rpc::params_t&& params,
         network::result_handler&& handler) NOEXCEPT
     {
         BC_ASSERT(stranded());
@@ -83,7 +83,7 @@ public:
 
         send_request(
         {
-            .jsonrpc = version_,
+            .jsonrpc = version,
             .method = std::move(method),
             .params = std::move(params)
         }, std::move(handler));

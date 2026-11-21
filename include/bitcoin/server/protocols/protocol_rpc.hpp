@@ -309,10 +309,11 @@ protected:
         send_result(std::move(result), default_handler());
     }
 
-    inline void send_notification(network::rpc::string_t&& method,
+    inline void send_notification(network::rpc::version version,
+        network::rpc::string_t&& method,
         network::rpc::params_t&& params) NOEXCEPT
     {
-        send_notification(std::move(method), std::move(params),
+        send_notification(version, std::move(method), std::move(params),
             default_handler());
     }
 
@@ -353,12 +354,12 @@ protected:
             std::move(handler));
     }
 
-    inline void send_notification(network::rpc::string_t&& method,
-        network::rpc::params_t&& params,
+    inline void send_notification(network::rpc::version version,
+        network::rpc::string_t&& method, network::rpc::params_t&& params,
         network::result_handler&& handler) NOEXCEPT
     {
-        channel_->send_notification(std::move(method), std::move(params),
-            std::move(handler));
+        channel_->send_notification(version, std::move(method),
+            std::move(params), std::move(handler));
     }
 
 private:

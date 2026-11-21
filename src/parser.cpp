@@ -1449,6 +1449,11 @@ options_metadata parser::load_settings() THROWS
         setting<std::string>(&configured.server.admin.default_),
         "The path of the default source page, defaults to {}."
     )
+    (
+        "admin.maximum_history",
+        setting<uint32_t>(&configured.server.admin.maximum_history),
+        "The maximum number of address history entries, defaults to {}."
+    )
 
     /* [native] */
     (
@@ -1566,6 +1571,11 @@ options_metadata parser::load_settings() THROWS
         setting<bool>(&configured.server.native.websocket),
         "Enable websocket interface, defaults to {}."
     )
+    (
+        "native.maximum_history",
+        setting<uint32_t>(&configured.server.native.maximum_history),
+        "The maximum number of address history entries, defaults to {}."
+    )
 
     /* [bitcoind] */
     (
@@ -1682,6 +1692,16 @@ options_metadata parser::load_settings() THROWS
         "bitcoind.compression",
         setting<bool>(&configured.server.bitcoind.compression),
         "Compress response bodies as accepted by the request (gzip, deflate), defaults to {}."
+    )
+    (
+        "bitcoind.enable_utxo",
+        setting<bool>(&configured.server.bitcoind.enable_utxo),
+        "Enable utxo set queries, disabling connection timeouts, defaults to {}."
+    )
+    (
+        "bitcoind.maximum_history",
+        setting<uint32_t>(&configured.server.bitcoind.maximum_history),
+        "The maximum number of address history entries, defaults to {}."
     )
 
     /* [zmq] */
@@ -1856,6 +1876,11 @@ options_metadata parser::load_settings() THROWS
         "btcd.compression",
         setting<bool>(&configured.server.btcd.compression),
         "Compress response bodies as accepted by the request (gzip, deflate), defaults to {}."
+    )
+    (
+        "btcd.enable_utxo",
+        setting<bool>(&configured.server.btcd.enable_utxo),
+        "Enable utxo set queries, disabling connection timeouts, defaults to {}."
     )
 
     /* [electrum] */

@@ -150,6 +150,9 @@ BC_AUTO_TEST_CASE(server__admin_server__defaults__expected)
     BC_REQUIRE(server.path.empty());
     BC_REQUIRE(server.websocket);
     BC_REQUIRE_EQUAL(server.default_, "index.html");
+
+    // native_server
+    BC_REQUIRE_EQUAL(server.maximum_history, 1'000'000u);
 }
 
 BC_AUTO_TEST_CASE(server__native_server__defaults__expected)
@@ -192,6 +195,9 @@ BC_AUTO_TEST_CASE(server__native_server__defaults__expected)
     BC_REQUIRE(server.path.empty());
     BC_REQUIRE(server.websocket);
     BC_REQUIRE_EQUAL(server.default_, "index.html");
+
+    // native_server
+    BC_REQUIRE_EQUAL(server.maximum_history, 1'000'000u);
 }
 
 // TODO: could add websocket under bitcoind as a custom property.
@@ -228,12 +234,34 @@ BC_AUTO_TEST_CASE(server__bitcoind_server__defaults__expected)
     // bitcoind_server
     BC_REQUIRE_EQUAL(server.protocol_minimum, 300000u);
     BC_REQUIRE_EQUAL(server.protocol_maximum, 320000u);
+    BC_REQUIRE(!server.enable_utxo);
+    BC_REQUIRE_EQUAL(server.maximum_history, 1'000'000u);
 }
 
 BC_AUTO_TEST_CASE(server__bitcoind_server__initialize_context_defaults__success)
 {
     server::settings::bitcoind_server instance{ "bitcoind" };
     BC_REQUIRE(!instance.initialize_context());
+    BC_REQUIRE_EQUAL(instance.inactivity_minutes, 10u);
+    BC_REQUIRE_EQUAL(instance.expiration_minutes, 60u);
+}
+
+BC_AUTO_TEST_CASE(server__bitcoind_server__initialize_context_enable_utxo__no_timeouts)
+{
+    server::settings::bitcoind_server instance{ "bitcoind" };
+    instance.enable_utxo = true;
+    BC_REQUIRE(!instance.initialize_context());
+    BC_REQUIRE_EQUAL(instance.inactivity_minutes, 0u);
+    BC_REQUIRE_EQUAL(instance.expiration_minutes, 0u);
+}
+
+BC_AUTO_TEST_CASE(server__btcd_server__initialize_context_enable_utxo__no_timeouts)
+{
+    server::settings::btcd_server instance{ "btcd" };
+    instance.enable_utxo = true;
+    BC_REQUIRE(!instance.initialize_context());
+    BC_REQUIRE_EQUAL(instance.inactivity_minutes, 0u);
+    BC_REQUIRE_EQUAL(instance.expiration_minutes, 0u);
 }
 
 BC_AUTO_TEST_CASE(server__bitcoind_server__initialize_context_minimum_below_implemented__invalid_configuration)

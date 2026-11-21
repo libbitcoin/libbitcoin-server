@@ -183,7 +183,6 @@ const std::vector<method_code> pending_methods
     { "getmempoolcluster", R"([""])", -33 },
     { "abortprivatebroadcast", R"([""])", -32601 },
     { "getprivatebroadcastinfo", "[]", -32601 },
-    { "submitblock", R"([""])", -33 },
     { "getprioritisedtransactions", "[]", -33 },
     { "prioritisetransaction", R"([""])", -33 }
 };
@@ -684,7 +683,8 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__invalid_hex__error)
 BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__malformed__error)
 {
     const auto response = rpc("sendrawtransaction", "[\"00\"]");
-    BC_REQUIRE(has_error(response));
+    BC_REQUIRE_MESSAGE(has_code(response, -22), response);
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "TX decode failed. Make sure the tx has at least one input.");
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__confirmed_unspent__verify_already_in_utxo_set)
@@ -692,6 +692,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__confirmed_unspent__verify_al
     const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
     const auto response = rpc("sendrawtransaction", "[\"" + tx0 + "\"]");
     BC_REQUIRE_MESSAGE(has_code(response, -27), response);
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "Transaction outputs already in utxo set");
 }
 
 // control, mining, rawtransactions, util (moved from btcd)
@@ -3263,6 +3264,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__block1_script__expected)
     BC_REQUIRE(result.at("success").as_bool());
     BC_REQUIRE_EQUAL(result.at("height").as_int64(), 9);
     BC_REQUIRE_EQUAL(as_text(result.at("bestblock")), block9);
+    BC_REQUIRE_EQUAL(result.at("txouts").as_int64(), 0);
     BC_REQUIRE_EQUAL(result.at("total_amount").as_double(), 50.0);
 
     const auto& unspents = result.at("unspents").as_array();
@@ -3485,6 +3487,24 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__submitheader__not_hex__deserialization_error)
 BC_AUTO_TEST_CASE(bitcoind_rpc__submitheader__truncated__deserialization_error)
 {
     BC_REQUIRE(has_code(rpc("submitheader", "[\"00\"]"), -22));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__submitblock__not_hex__deserialization_error)
+{
+    BC_REQUIRE(has_code(rpc("submitblock", "[\"zz\"]"), -22));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__submitblock__truncated__deserialization_error)
+{
+    BC_REQUIRE(has_code(rpc("submitblock", "[\"00\"]"), -22));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__submitblock__existing_block__duplicate)
+{
+    const auto block = encode_base16(test::block9.to_data(true));
+    const auto response = rpc("submitblock", "[\"" + block + "\"]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE(as_text(response.at("result")).starts_with("duplicate"));
 }
 
 // waitfor (all conditions immediately met or timing out on the fixture)
@@ -4224,6 +4244,24 @@ BC_AUTO_TEST_SUITE_END()
 // advertised inbound addresses
 // ----------------------------------------------------------------------------
 
+BC_FIXTURE_TEST_SUITE(bitcoind_utxo_disabled_tests, bitcoind_utxo_disabled_setup_fixture)
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__utxo_disabled__method_not_found)
+{
+    BC_REQUIRE(has_code(rpc("gettxoutsetinfo"), -32601));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__scantxoutset__utxo_disabled_address_index__empty)
+{
+    const auto response = rpc("scantxoutset", "[\"start\", []]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE(response.at("result").is_object());
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+// ----------------------------------------------------------------------------
+
 BC_FIXTURE_TEST_SUITE(bitcoind_selfs_tests, bitcoind_selfs_setup_fixture)
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__selfs__localaddresses)
@@ -4569,6 +4607,24 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__submitheader__unacceptable_header__error)
     BC_REQUIRE(has_error(rpc("submitheader", "[\"" + header + "\"]")));
 }
 
+// Mainnet block 10 header with the block 9 coinbase.
+BC_AUTO_TEST_CASE(bitcoind_rpc__submitblock__mismatched_body__bad_txnmrklroot)
+{
+    const auto coinbase = encode_base16(test::block9.transactions_ptr()->front()->to_data(true));
+    const auto response = rpc("submitblock", "[\"010000000508085c47cc849eb80ea905cc7800a3be674ffc57263cf210c59d8d00000000112ba175a1e04b14ba9e7ea5f76ab640affeef5ec98173ac9799a852fa39add320cd6649ffff001d1e2de56501" + coinbase + "\"]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(as_text(response.at("result")), "bad-txnmrklroot");
+}
+
+// Mainnet block 10 header with an unknown previous block.
+BC_AUTO_TEST_CASE(bitcoind_rpc__submitblock__unknown_parent__prev_blk_not_found)
+{
+    const auto coinbase = encode_base16(test::block9.transactions_ptr()->front()->to_data(true));
+    const auto response = rpc("submitblock", "[\"010000000608085c47cc849eb80ea905cc7800a3be674ffc57263cf210c59d8d00000000112ba175a1e04b14ba9e7ea5f76ab640affeef5ec98173ac9799a852fa39add320cd6649ffff001d1e2de56501" + coinbase + "\"]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(as_text(response.at("result")), "prev-blk-not-found");
+}
+
 // Mainnet block 10 header (000000002c05cc2e78923c34df87fd108b22221ac6076c18f3ade378a4d915e9).
 BC_AUTO_TEST_CASE(bitcoind_rpc__submitheader__mainnet_block10__null)
 {
@@ -4593,6 +4649,17 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__confirmed_spent__verify_erro
 
     const auto response = rpc("sendrawtransaction", "[\"" + encode_base16(test::mock_tx13.to_data(true)) + "\"]");
     BC_REQUIRE_MESSAGE(has_code(response, -25), response);
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "Inputs missing or spent");
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__confirmed_spent__missing_inputs_token)
+{
+    BC_REQUIRE(query_.set(test::mock_block13, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block13.hash()), true));
+
+    const auto response = rpc("testmempoolaccept", "[[\"" + encode_base16(test::mock_tx13.to_data(true)) + "\"]]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(response.at("result").at(0).at("reject-reason").as_string(), "missing-inputs");
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unsigned__not_allowed_with_reason)
@@ -4619,14 +4686,14 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__coinbase__coinbase_token)
     BC_REQUIRE_EQUAL(response.at("result").at(0).at("reject-reason").as_string(), "coinbase");
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unknown_inputs__missingorspent_token)
+BC_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__unknown_inputs__missing_inputs_token)
 {
     const chain::input input{ chain::point{ one_hash, 0 }, {}, 0xffffffff };
     const chain::output output{ 1, chain::script{ chain::script::to_pay_key_hash_pattern({ 0x42 }) } };
     const chain::transaction missing{ 1, { input }, { output }, 0 };
     const auto hex = encode_base16(missing.to_data(true));
     const auto response = rpc("testmempoolaccept", "[[\"" + hex + "\"]]");
-    BC_REQUIRE_EQUAL(response.at("result").at(0).at("reject-reason").as_string(), "bad-txns-inputs-missingorspent");
+    BC_REQUIRE_EQUAL(response.at("result").at(0).at("reject-reason").as_string(), "missing-inputs");
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__unknown_inputs__verify_error)
@@ -4637,6 +4704,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__unknown_inputs__verify_error
     const auto hex = encode_base16(missing.to_data(true));
     const auto response = rpc("sendrawtransaction", "[\"" + hex + "\"]");
     BC_REQUIRE_MESSAGE(has_code(response, -25), response);
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "Inputs missing or spent");
 }
 
 BC_AUTO_TEST_SUITE_END()
@@ -4661,6 +4729,17 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__pooled__txid)
     const auto response = rpc("sendrawtransaction", "[\"" + hex + "\"]");
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     BC_REQUIRE_EQUAL(as_text(response.at("result")), encode_hash(test::tx1c.hash(false)));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__testmempoolaccept__pooled__txn_already_in_mempool)
+{
+    const auto hex = encode_base16(test::tx1c.to_data(true));
+    BC_REQUIRE(rpc("sendrawtransaction", "[\"" + hex + "\"]").as_object().contains("result"));
+
+    const auto response = rpc("testmempoolaccept", "[[\"" + hex + "\"]]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE(!response.at("result").at(0).at("allowed").as_bool());
+    BC_REQUIRE_EQUAL(response.at("result").at(0).at("reject-reason").as_string(), "txn-already-in-mempool");
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__no_segwit_rule__invalid_parameter)

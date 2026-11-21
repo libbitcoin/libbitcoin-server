@@ -340,6 +340,12 @@ code settings::bitcoind_server::initialize_context() NOEXCEPT
         to_value(version_floor(protocol_maximum)) < protocol_minimum)
         return network::error::invalid_configuration;
 
+    if (enable_utxo)
+    {
+        inactivity_minutes = 0;
+        expiration_minutes = 0;
+    }
+
     return network::error::success;
 }
 

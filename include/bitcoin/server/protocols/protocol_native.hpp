@@ -36,6 +36,7 @@ class BCS_API protocol_native
 {
 public:
     typedef std::shared_ptr<protocol_native> ptr;
+    using options_t = server::settings::native_server;
     using interface = server::interface::native;
     using dispatcher = network::rpc::dispatcher<interface>;
 
@@ -44,6 +45,7 @@ public:
         const options_t& options) NOEXCEPT
       : protocol_html(session, channel, options),
         network::tracker<protocol_native>(session->log),
+        options_(options),
         notification_strand_(channel->service().get_executor()),
         turbo_(session->database_settings().turbo)
     {
@@ -53,6 +55,12 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
+    /// Configured native service options.
+    inline const options_t& options() const NOEXCEPT
+    {
+        return options_;
+    }
+
     template <class Derived, typename Method, typename... Args>
     inline void subscribe(Method&& method, Args&&... args) NOEXCEPT
     {
@@ -288,6 +296,9 @@ private:
     database::header_link to_header(const std::optional<uint32_t>& height,
         const std::optional<system::hash_cptr>& hash,
         bool candidate = false) NOEXCEPT;
+
+    // This is thread safe.
+    const options_t& options_;
 
     // These are thread safe, strand uses network threadpool.
     network::io::strand notification_strand_;

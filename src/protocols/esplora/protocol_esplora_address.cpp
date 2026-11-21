@@ -106,7 +106,7 @@ void protocol_esplora::do_get_address(const hash_digest& key,
     histories confirmed{}, unconfirmed{};
     height_link cursor{};
 
-    auto ec = query.get_address_totals(stopping_, chain, mempool, key);
+    auto ec = query.get_address_totals(stopping_, chain, mempool, key, limit);
     if (!ec)
         ec = query.get_confirmed_history(stopping_, cursor, confirmed, key,
             limit, true);
@@ -361,7 +361,8 @@ void protocol_esplora::do_get_address_utxo(const hash_digest& key,
     BC_ASSERT(!stranded());
 
     unspent_outputs unspent{};
-    const auto ec = archive().get_unspent(stopping_, unspent, key, true);
+    const auto ec = archive().get_unspent(stopping_, unspent, key,
+        options().maximum_history, true);
     POST(complete_get_address_utxo, ec, std::move(unspent), gate);
 }
 

@@ -80,7 +80,8 @@ void protocol_electrum::do_get_balance(const hash_digest& hash,
     BC_ASSERT(!stranded());
     const auto& query = archive();
     uint64_t confirmed{}, unconfirmed{};
-    auto ec = query.get_balance(stopping_, confirmed, unconfirmed, hash);
+    auto ec = query.get_balance(stopping_, confirmed, unconfirmed, hash,
+        options().maximum_history);
     POST(complete_get_balance, ec, confirmed, unconfirmed, gate);
 }
 
@@ -301,7 +302,8 @@ void protocol_electrum::do_list_unspent(const hash_digest& hash,
     BC_ASSERT(!stranded());
     unspent_outputs unspents{};
     const auto& query = archive();
-    const auto ec = query.get_unspent(stopping_, unspents, hash, turbo_);
+    const auto ec = query.get_unspent(stopping_, unspents, hash,
+        options().maximum_history, turbo_);
     POST(complete_list_unspent, ec, std::move(unspents), wrap, gate);
 }
 

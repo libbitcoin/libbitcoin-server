@@ -109,6 +109,7 @@ protected:
     void send_error(const code& ec, const code& close_reason) NOEXCEPT;
     void send_error(const code& ec,
         network::rpc::value_option&& error) NOEXCEPT;
+    void send_error_message(const code& ec, std::string&& message) NOEXCEPT;
     void send_text(std::string&& hexidecimal) NOEXCEPT;
     void send_result(network::rpc::value_option&& result) NOEXCEPT;
 

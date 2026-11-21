@@ -41,6 +41,7 @@ connections = 10
 bind = 0.0.0.0:8332
 bind = [::]:8332
 connections = 10
+enable_utxo = true
 
 [btcd]
 bind = 0.0.0.0:8334

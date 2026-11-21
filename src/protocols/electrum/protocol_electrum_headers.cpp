@@ -442,10 +442,11 @@ void protocol_electrum::do_height(node::header_t link) NOEXCEPT
     // Electrum expects singleton params (invalid json-rpc). This is enabled
     // via the relaxed rpc model which accepts a value_t "params" value.
     // electrum.readthedocs.io/en/latest/protocol.html#blockchain-numblocks-subscribe
-    send_notification("blockchain.numblocks.subscribe", value_t
-    {
-        height.value
-    });
+    send_notification(network::rpc::version::v2,
+        "blockchain.numblocks.subscribe", value_t
+        {
+            height.value
+        });
 }
 
 // Notifier for blockchain_headers_subscribe events.
@@ -463,14 +464,15 @@ void protocol_electrum::do_header(node::header_t link) NOEXCEPT
         return;
     }
 
-    send_notification("blockchain.headers.subscribe", array_t
-    {
-        object_t
+    send_notification(network::rpc::version::v2,
+        "blockchain.headers.subscribe", array_t
         {
-            { "height", height.value },
-            { "hex", encode_base16(header) }
-        }
-    });
+            object_t
+            {
+                { "height", height.value },
+                { "hex", encode_base16(header) }
+            }
+        });
 }
 
 BC_POP_WARNING()

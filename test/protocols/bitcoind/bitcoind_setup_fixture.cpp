@@ -82,6 +82,7 @@ bitcoind_setup_fixture::bitcoind_setup_fixture(const initializer& setup,
             auto& bitcoind = config.server.bitcoind;
             bitcoind.binds = { { BITCOIND_ENDPOINT } };
             bitcoind.connections = 1;
+            bitcoind.enable_utxo = true;
 
             if (configure)
                 configure(config);

@@ -301,7 +301,8 @@ void protocol_zmq::publish(const std::string_view& topic,
 {
     BC_ASSERT(stranded());
 
-    send_notification(rpc::string_t{ topic }, rpc::array_t
+    send_notification(network::rpc::version::v2,
+        rpc::string_t{ topic }, rpc::array_t
         {
             std::move(body),
             rpc::value_t{ sequence }
