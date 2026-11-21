@@ -49,13 +49,11 @@ export function MinerShareCard({ count }: { count: number }) {
   const percent = (value: number) =>
     `${formatNumber((100 * value) / total, { maximumFractionDigits: 1 })}%`;
 
-  let start = 0;
-  const slices = shares.map((share) => {
-    const end = start + share.count / total;
-    const slice = { ...share, start, end };
-    start = end;
-    return slice;
-  });
+  const slices: Array<Share & { start: number; end: number }> = [];
+  for (const share of shares) {
+    const start = slices.at(-1)?.end ?? 0;
+    slices.push({ ...share, start, end: start + share.count / total });
+  }
 
   return (
     <div className="border-accent/30 bg-surface/80 space-y-2 rounded-2xl border p-5">

@@ -115,6 +115,7 @@ export function AddressPage() {
     isFetchingMore,
     hasMore,
     loadMore,
+    loadMoreError,
   } = usePaginatedList<AddressActivityItem>({
     initialItems: initialTransactions,
     resetDeps: [client, queryAddressKey, initialTransactions],
@@ -145,7 +146,7 @@ export function AddressPage() {
   }, [canonicalLibbitcoinHash, navigate, network, paramValue, queryAddressKey]);
 
   useWindowScrollToBottom({
-    enabled: hasMore && !isFetchingMore,
+    enabled: hasMore && !isFetchingMore && loadMoreError === null,
     onBottomReached: () => {
       void loadMore();
     },
@@ -443,7 +444,12 @@ export function AddressPage() {
           </table>
         </div>
         {hasMore && (
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex flex-col items-center gap-3">
+            {loadMoreError && (
+              <p role="alert" className="text-accentSecondary text-center text-sm break-words">
+                Could not load more transactions. {loadMoreError}
+              </p>
+            )}
             <button
               type="button"
               onClick={() => {
@@ -452,7 +458,11 @@ export function AddressPage() {
               disabled={isFetchingMore}
               className="border-accent text-accent hover:border-accentSecondary hover:text-accentSecondary rounded-md border px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isFetchingMore ? 'Loading more…' : 'Load more transactions'}
+              {isFetchingMore
+                ? 'Loading more…'
+                : loadMoreError
+                  ? 'Retry loading transactions'
+                  : 'Load more transactions'}
             </button>
           </div>
         )}
