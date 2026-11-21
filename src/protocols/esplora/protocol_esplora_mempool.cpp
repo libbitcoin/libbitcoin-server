@@ -104,7 +104,7 @@ bool protocol_esplora::handle_get_fee_estimates(const code& ec,
         return true;
     }
 
-    next_estimate(zero, std::make_shared<system::json::object>(), gate());
+    next_estimate(zero, emplace_shared<system::json::object>(), gate());
     return true;
 }
 
