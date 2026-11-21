@@ -38,6 +38,10 @@ export function addressPath(addressOrHash: string) {
   return `/v1/address/${encodeURIComponent(addressOrHash)}`;
 }
 
+export function isAddressPath(pathname: string) {
+  return pathname.startsWith('/v1/address/');
+}
+
 export function searchPath(query: string) {
   return `/v1/search?q=${encodeURIComponent(query)}`;
 }
