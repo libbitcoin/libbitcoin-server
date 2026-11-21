@@ -335,11 +335,10 @@ bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
     if (stopped(ec))
         return false;
 
-    node_address_ = node.value_or(std::string{});
-
     const auto captured = to_shared<diagnostics::rows>();
     const auto complete = emplace_shared<diagnostics::race>(
-        BIND(handle_captured_manual, _1, captured, gate()));
+        BIND(handle_captured_manual, _1, captured,
+            node.value_or(std::string{}), gate()));
 
     BROADCAST(diagnostics, to_shared<diagnostics>(complete,
         to_collector(captured), diagnostics::target::manual));
@@ -349,16 +348,17 @@ bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
 
 void protocol_bitcoind_network::handle_captured_manual(const code&,
     const network::diagnostics::rows_ptr& captured,
-    const gate_t::ptr& gate) NOEXCEPT
+    const std::string& address, const gate_t::ptr& gate) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST(do_send_added_node_info, captured, gate);
+    POST(do_send_added_node_info, captured, address, gate);
 }
 
 void protocol_bitcoind_network::do_send_added_node_info(
-    const network::diagnostics::rows_ptr& captured, const gate_t::ptr&) NOEXCEPT
+    const network::diagnostics::rows_ptr& captured,
+    const std::string& address, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -366,7 +366,7 @@ void protocol_bitcoind_network::do_send_added_node_info(
     for (const auto& row: *captured)
     {
         const auto node = row.endpoint.to_string();
-        if (!node_address_.empty() && node_address_ != node)
+        if (!address.empty() && address != node)
             continue;
 
         // bitcoind reports the resolved addresses of a connected node.
@@ -386,7 +386,7 @@ void protocol_bitcoind_network::do_send_added_node_info(
     }
 
     // bitcoind fails the request for a node that has not been added.
-    if (!node_address_.empty() && out.empty())
+    if (!address.empty() && out.empty())
     {
         send_error(error::bitcoind::client_node_not_added);
         return;
@@ -454,29 +454,31 @@ bool protocol_bitcoind_network::handle_get_node_addresses(const code& ec,
     if (stopped(ec))
         return false;
 
-    if (!to_integer(node_count_, count) ||
+    size_t limit{};
+    if (!to_integer(limit, count) ||
         (!network.empty() && !contains(network_names, network)))
     {
         send_error(error::bitcoind::invalid_parameter);
         return true;
     }
 
-    node_network_ = network;
-    dump_addresses(BIND(handle_dump_nodes, _1, _2, gate()));
+    dump_addresses(BIND(handle_dump_nodes, _1, _2, limit, network, gate()));
     return true;
 }
 
 void protocol_bitcoind_network::handle_dump_nodes(const code& ec,
-    const address_cptr& message, const gate_t::ptr& gate) NOEXCEPT
+    const address_cptr& message, size_t limit,
+    const std::string& network_name, const gate_t::ptr& gate) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST(do_send_nodes, ec, message, gate);
+    POST(do_send_nodes, ec, message, limit, network_name, gate);
 }
 
 void protocol_bitcoind_network::do_send_nodes(const code& ec,
-    const address_cptr& message, const gate_t::ptr&) NOEXCEPT
+    const address_cptr& message, size_t limit,
+    const std::string& network_name, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -491,12 +493,12 @@ void protocol_bitcoind_network::do_send_nodes(const code& ec,
     array_t out{};
     for (const auto& item: message->addresses)
     {
-        if (!is_zero(node_count_) && out.size() >= node_count_)
+        if (!is_zero(limit) && out.size() >= limit)
             break;
 
         const network::config::address address{ item };
         const auto name = network_names.at(item.address.index());
-        if (!node_network_.empty() && node_network_ != name)
+        if (!network_name.empty() && network_name != name)
             continue;
 
         out.emplace_back(object_t

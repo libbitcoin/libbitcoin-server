@@ -265,11 +265,13 @@ private:
         const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
     bool send_closed(const code& ec) NOEXCEPT;
 
-    void next_estimate(size_t index, const gate_t::ptr& gate) NOEXCEPT;
-    void handle_estimate(const code& ec, uint64_t fee, size_t index,
+    using estimates_ptr = std::shared_ptr<system::json::object>;
+    void next_estimate(size_t index, const estimates_ptr& estimates,
         const gate_t::ptr& gate) NOEXCEPT;
-    void complete_estimate(const code& ec, uint64_t fee,
-        size_t index, const gate_t::ptr& gate) NOEXCEPT;
+    void handle_estimate(const code& ec, uint64_t fee, size_t index,
+        const estimates_ptr& estimates, const gate_t::ptr& gate) NOEXCEPT;
+    void complete_estimate(const code& ec, uint64_t fee, size_t index,
+        const estimates_ptr& estimates, const gate_t::ptr& gate) NOEXCEPT;
     // These are thread safe.
     const options_t& options_;
     std::atomic_bool stopping_{};
@@ -279,7 +281,6 @@ private:
     const std::string witness_;
 
     // These are protected by strand.
-    system::json::object estimates_{};
     dispatcher dispatcher_{};
 };
 

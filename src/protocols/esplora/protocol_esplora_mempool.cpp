@@ -104,8 +104,7 @@ bool protocol_esplora::handle_get_fee_estimates(const code& ec,
         return true;
     }
 
-    estimates_.clear();
-    next_estimate(zero, gate());
+    next_estimate(zero, std::make_shared<system::json::object>(), gate());
     return true;
 }
 
@@ -224,32 +223,33 @@ bool protocol_esplora::send_closed(const code& ec) NOEXCEPT
 }
 
 void protocol_esplora::next_estimate(size_t index,
-    const gate_t::ptr& gate) NOEXCEPT
+    const estimates_ptr& estimates, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (index == targets.size())
     {
-        send_json(std::move(estimates_));
-        estimates_.clear();
+        send_json(std::move(*estimates));
         return;
     }
 
     // The estimator targets the next block as zero.
     estimate(sub1(targets.at(index)), node::estimate_mode::basic,
-        BIND(handle_estimate, _1, _2, index, gate));
+        BIND(handle_estimate, _1, _2, index, estimates, gate));
 }
 
 void protocol_esplora::handle_estimate(const code& ec, uint64_t fee,
-    size_t index, const gate_t::ptr& gate) NOEXCEPT
+    size_t index, const estimates_ptr& estimates,
+    const gate_t::ptr& gate) NOEXCEPT
 {
-    POST(complete_estimate, ec, fee, index, gate);
+    POST(complete_estimate, ec, fee, index, estimates, gate);
 }
 
 constexpr double sats_per_vkbyte_to_sats_per_vbyte = 1'000.0;
 
 void protocol_esplora::complete_estimate(const code& ec, uint64_t fee,
-    size_t index, const gate_t::ptr& gate) NOEXCEPT
+    size_t index, const estimates_ptr& estimates,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -270,10 +270,10 @@ void protocol_esplora::complete_estimate(const code& ec, uint64_t fee,
 
     // An unavailable target is omitted, as there is no null convention.
     if (!disabled)
-        estimates_[system::serialize(targets.at(index))] =
+        (*estimates)[system::serialize(targets.at(index))] =
             fee / sats_per_vkbyte_to_sats_per_vbyte;
 
-    next_estimate(add1(index), gate);
+    next_estimate(add1(index), estimates, gate);
 }
 
 BC_POP_WARNING()
