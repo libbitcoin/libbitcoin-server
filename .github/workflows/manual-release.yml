@@ -206,7 +206,7 @@ jobs:
             "${FILES[@]}"
 
       - name: Apple signature
-        if: ${{ secrets.APPLE_API_KEY_ID != '' }}
+        if: ${{ vars.APPLE_SIGNING_ENABLED != '' }}
         working-directory: artifacts
         shell: bash
         env:
