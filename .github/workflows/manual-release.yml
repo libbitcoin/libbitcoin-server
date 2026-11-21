@@ -206,14 +206,14 @@ jobs:
             "${FILES[@]}"
 
       - name: Apple signature
-        if: ${{ vars.APPLE_API_KEY_ID != '' }}
+        if: ${{ secrets.APPLE_API_KEY_ID != '' }}
         working-directory: artifacts
         shell: bash
         env:
           CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          API_ISSUER: ${{ vars.APPLE_API_ISSUER }}
-          API_KEY_ID: ${{ vars.APPLE_API_KEY_ID }}
+          API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           API_KEY: ${{ secrets.APPLE_API_KEY }}
         run: |
           RELEASE="apple-codesign-0.29.0-x86_64-unknown-linux-musl"
