@@ -395,7 +395,7 @@ void protocol_bitcoind_mining::handle_archive_block(const code& ec,
 {
     if (!ec)
     {
-        notify_chase(ec, node::chases::checked{ height });
+        notify(ec, node::chases::checked{ height });
         fire(node::events::block_archived, height);
     }
 

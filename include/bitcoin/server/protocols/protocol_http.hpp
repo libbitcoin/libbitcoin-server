@@ -42,6 +42,9 @@ protected:
     {
     }
 
+    using network::protocol_http::notify;
+    using node::protocol::notify;
+
     /// Override to capture websocket and downgraded requests.
     void handle_receive_websocket(const code& ec,
         const network::http::method::websocket::cptr& websocket) NOEXCEPT override;
