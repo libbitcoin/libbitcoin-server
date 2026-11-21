@@ -41,8 +41,7 @@ struct btcd_setup_fixture
         bool address_index=true, const configurator& configure={});
     ~btcd_setup_fixture();
 
-    // JSON-RPC 1.0 over websocket. params must be a json array (json-rpc-v1
-    // does not support 'null' or omitted params, use "[]" for no arguments).
+    // JSON-RPC 1.0 over websocket. params is a raw json array.
     // Returns the parsed json-rpc response object (result/error).
     system::json::value rpc(std::string_view method,
         std::string_view params = "[]");
@@ -72,6 +71,15 @@ struct btcd_setup_fixture
     // As http_rpc(), returning only the http status.
     network::http::status http_rpc_status(std::string_view method,
         std::string_view params="[]");
+
+    // JSON-RPC over HTTP POST to "/" with a raw body (e.g. a batch).
+    system::json::value http_body(std::string_view body);
+
+    // As http_body(), returning only the http status.
+    network::http::status http_body_status(std::string_view body);
+
+    // Write a raw frame to the websocket (no response is read).
+    void ws_notify(std::string_view body);
 
     // As http_rpc(), with basic authorization.
     system::json::value http_rpc(std::string_view method,

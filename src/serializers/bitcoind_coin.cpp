@@ -41,13 +41,13 @@ uint64_t total_subsidy(const system::settings& settings,
 }
 
 // The block is read and populated, as bitcoind's index accumulates these.
-bool block_info(network::rpc::object_t& out, const node::query& query,
+code block_info(network::rpc::object_t& out, const node::query& query,
     const system::settings& settings, const database::header_link& link,
     size_t height) NOEXCEPT
 {
     database::block_amounts amounts{};
-    if (query.get_block_amounts(amounts, link))
-        return false;
+    if (const auto ec = query.get_block_amounts(amounts, link))
+        return ec;
 
     // Coins issued but not claimed by the coinbase are destroyed.
     const auto fees = floored_subtract(amounts.prevouts, amounts.outputs);
@@ -73,7 +73,7 @@ bool block_info(network::rpc::object_t& out, const node::query& query,
         }}
     };
 
-    return true;
+    return error::success;
 }
 
 network::rpc::object_t scan_result(

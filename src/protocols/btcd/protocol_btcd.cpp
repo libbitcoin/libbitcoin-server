@@ -111,13 +111,22 @@ void protocol_btcd::stopping(const code& ec) NOEXCEPT
 
 // Dispatch.
 // ----------------------------------------------------------------------------
+// Dispatch precedes the bitcoind interface subgroups, so protocol rules applied
+// here govern all methods of the channel.
+
+// A request without an id (or with a null id) is neither executed nor answered.
+static bool is_unanswered(const request_t& message) NOEXCEPT
+{
+    return !message.id.has_value() ||
+        std::holds_alternative<null_t>(message.id.value());
+}
 
 void protocol_btcd::handle_receive_post(const code& ec,
     const post::cptr& post) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    if (stopped(ec))
+    if (stopped(ec) || claimed())
         return;
 
     // Silently defer invalidated requests to the terminal responder.
@@ -127,6 +136,22 @@ void protocol_btcd::handle_receive_post(const code& ec,
         return;
 
     const auto& message = post->body().get<request>().message;
+    if (is_unanswered(message))
+    {
+        set_claimed();
+        set_rpc_request(version::v2, {}, post);
+        send_result({});
+        return;
+    }
+
+    // The credential may be restricted to a subset of channel methods.
+    if (!permitted(message.method))
+    {
+        set_claimed();
+        set_rpc_request(message.jsonrpc, message.id, post);
+        send_error(error::btcd::internal_error);
+        return;
+    }
 
     // authenticate is websocket-only: excluded from the post surface,
     // silently deferring to the terminal miss (method not found).
@@ -141,13 +166,6 @@ void protocol_btcd::handle_receive_post(const code& ec,
     set_claimed();
     set_rpc_request(message.jsonrpc, message.id, post);
 
-    // The credential may be restricted to a subset of interface methods.
-    if (!permitted(message.method))
-    {
-        send_error(error::btcd::invalid_params);
-        return;
-    }
-
     // Dispatch the request to the interface dispatcher.
     if (const auto code = btcd_dispatcher_.notify(message))
         handle_dispatch_fault(code);
@@ -159,7 +177,7 @@ void protocol_btcd::dispatch_websocket(
     BC_ASSERT(stranded());
 
     // Silently defer non-rpc frames to the terminal responder (which stops).
-    if (!request.body().contains<rpc::request>())
+    if (claimed() || !request.body().contains<rpc::request>())
         return;
 
     const auto& message = request.body().get<rpc::request>().message;
@@ -177,6 +195,23 @@ void protocol_btcd::dispatch_websocket(
         return;
     }
 
+    if (is_unanswered(message))
+    {
+        set_claimed();
+        set_rpc_request(request_t{ .jsonrpc = version::v2 });
+        send_result({});
+        return;
+    }
+
+    // The credential may be restricted to a subset of channel methods.
+    if (!authenticate && !permitted(message.method))
+    {
+        set_claimed();
+        set_rpc_request(message);
+        send_error(error::btcd::invalid_params);
+        return;
+    }
+
     // Silently defer methods not defined by the btcd interface.
     if (!btcd_dispatcher::contains(message.method))
         return;
@@ -184,13 +219,6 @@ void protocol_btcd::dispatch_websocket(
     // Claim the request (informs the terminal responder).
     set_claimed();
     set_rpc_request(message);
-
-    // The credential may be restricted to a subset of interface methods.
-    if (!authenticate && !permitted(message.method))
-    {
-        send_error(error::btcd::invalid_params);
-        return;
-    }
 
     // Dispatch the request to the interface dispatcher.
     if (const auto code = btcd_dispatcher_.notify(message))

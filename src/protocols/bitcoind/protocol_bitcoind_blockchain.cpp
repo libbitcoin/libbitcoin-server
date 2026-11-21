@@ -745,6 +745,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
 
     if (ec)
     {
+        LOGF("Bitcoind::gettxoutsetinfo, " << ec.message());
         POST(fail, error::bitcoind::internal_error, gate);
         return;
     }
@@ -780,8 +781,14 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
         floored_subtract(issued, totals.value) / bitcoin);
 
     object_t amounts{};
-    if (block_info(amounts, query, settings, link, height))
-        result.emplace("block_info", std::move(amounts));
+    if (const auto ec = block_info(amounts, query, settings, link, height))
+    {
+        LOGF("Bitcoind::gettxoutsetinfo, " << ec.message());
+        POST(fail, error::bitcoind::internal_error, gate);
+        return;
+    }
+
+    result.emplace("block_info", std::move(amounts));
 
     if (type == set_hash::serialized)
         result.emplace("hash_serialized_3", encode_hash(digest));
@@ -926,6 +933,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 
     if (ec)
     {
+        LOGF("Bitcoind::scantxoutset, " << ec.message());
         POST(fail, error::bitcoind::internal_error, gate);
         return;
     }
@@ -1380,9 +1388,10 @@ void protocol_bitcoind_blockchain::do_get_descriptor_activity(
         {
             database::histories history{};
             const auto key = sha256_hash(script.to_data(false));
-            if (query.get_unconfirmed_history(stopping_, history, key,
-                max_size_t, database_settings().turbo))
+            if (const auto ec = query.get_unconfirmed_history(stopping_,
+                history, key, max_size_t, database_settings().turbo))
             {
+                LOGF("Bitcoind::getdescriptoractivity, " << ec.message());
                 POST(fail, error::bitcoind::internal_error, gate);
                 return;
             }

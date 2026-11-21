@@ -39,16 +39,16 @@ BC_AUTO_TEST_CASE(parsers__native_target__missing_version__missing_version)
     BC_REQUIRE_EQUAL(native_target(out, "/block/confirmed/123"), server::error::missing_version);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__invalid_version__invalid_number)
+BC_AUTO_TEST_CASE(parsers__native_target__invalid_version__missing_version)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/vinvalid/block/confirmed/123"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(native_target(out, "/vinvalid/block/confirmed/123"), server::error::missing_version);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__version_leading_zero__invalid_number)
+BC_AUTO_TEST_CASE(parsers__native_target__version_leading_zero__missing_version)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v01/block/confirmed/123"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(native_target(out, "/v01/block/confirmed/123"), server::error::missing_version);
 }
 
 BC_AUTO_TEST_CASE(parsers__native_target__missing_target__missing_target)

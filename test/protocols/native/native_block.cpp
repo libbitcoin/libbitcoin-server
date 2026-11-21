@@ -915,6 +915,26 @@ BC_AUTO_TEST_SUITE_END()
 
 BC_FIXTURE_TEST_SUITE(native_embedded_tests, native_embedded_setup_fixture)
 
+BC_AUTO_TEST_CASE(native__embedded__unversioned__html)
+{
+    BC_REQUIRE_EQUAL(get_text("/bogus"), "<html></html>");
+}
+
+BC_AUTO_TEST_CASE(native__embedded__invalid_version__html)
+{
+    BC_REQUIRE_EQUAL(get_text("/vinvalid"), "<html></html>");
+}
+
+BC_AUTO_TEST_CASE(native__embedded__invalid_target__bad_request)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/bogus"), http::status::bad_request);
+}
+
+BC_AUTO_TEST_CASE(native__embedded__invalid_hash__bad_request)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/hash/invalid"), http::status::bad_request);
+}
+
 BC_AUTO_TEST_CASE(native__embedded__root__html)
 {
     BC_REQUIRE_EQUAL(get_text("/"), "<html></html>");

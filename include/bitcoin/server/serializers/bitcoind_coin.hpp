@@ -29,7 +29,7 @@ BCS_API uint64_t total_subsidy(const system::settings& settings,
     size_t height) NOEXCEPT;
 
 /// The gettxoutsetinfo block_info object for the block at the given height.
-BCS_API bool block_info(network::rpc::object_t& out, const node::query& query,
+BCS_API code block_info(network::rpc::object_t& out, const node::query& query,
     const system::settings& settings, const database::header_link& link,
     size_t height) NOEXCEPT;
 

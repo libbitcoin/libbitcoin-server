@@ -39,16 +39,16 @@ BC_AUTO_TEST_CASE(parsers__admin_target__missing_version__missing_version)
     BC_REQUIRE_EQUAL(admin_target(out, "/log/subscribe"), server::error::missing_version);
 }
 
-BC_AUTO_TEST_CASE(parsers__admin_target__invalid_version__invalid_number)
+BC_AUTO_TEST_CASE(parsers__admin_target__invalid_version__missing_version)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(admin_target(out, "/vinvalid/log/subscribe"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(admin_target(out, "/vinvalid/log/subscribe"), server::error::missing_version);
 }
 
-BC_AUTO_TEST_CASE(parsers__admin_target__version_leading_zero__invalid_number)
+BC_AUTO_TEST_CASE(parsers__admin_target__version_leading_zero__missing_version)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(admin_target(out, "/v01/log/subscribe"), server::error::invalid_number);
+    BC_REQUIRE_EQUAL(admin_target(out, "/v01/log/subscribe"), server::error::missing_version);
 }
 
 BC_AUTO_TEST_CASE(parsers__admin_target__missing_target__missing_target)
