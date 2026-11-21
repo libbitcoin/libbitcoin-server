@@ -911,7 +911,7 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 
             database::unspent_outputs outs{};
             ec = query.get_confirmed_unspent(stopping_, outs, key,
-                database_settings().turbo);
+                options().maximum_history, database_settings().turbo);
             if (ec)
                 break;
 
@@ -1402,7 +1402,8 @@ void protocol_bitcoind_blockchain::do_get_descriptor_activity(
             database::histories history{};
             const auto key = sha256_hash(script.to_data(false));
             if (const auto ec = query.get_unconfirmed_history(stopping_,
-                history, key, max_size_t, database_settings().turbo))
+                history, key, options().maximum_history,
+                database_settings().turbo))
             {
                 LOGF("Bitcoind::getdescriptoractivity, " << ec.message());
                 POST(fail, error::bitcoind::internal_error, gate);

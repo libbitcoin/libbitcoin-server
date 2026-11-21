@@ -192,6 +192,9 @@ BC_AUTO_TEST_CASE(server__native_server__defaults__expected)
     BC_REQUIRE(server.path.empty());
     BC_REQUIRE(server.websocket);
     BC_REQUIRE_EQUAL(server.default_, "index.html");
+
+    // native_server
+    BC_REQUIRE_EQUAL(server.maximum_history, 1'000'000u);
 }
 
 // TODO: could add websocket under bitcoind as a custom property.
@@ -229,6 +232,7 @@ BC_AUTO_TEST_CASE(server__bitcoind_server__defaults__expected)
     BC_REQUIRE_EQUAL(server.protocol_minimum, 300000u);
     BC_REQUIRE_EQUAL(server.protocol_maximum, 320000u);
     BC_REQUIRE(!server.enable_utxo);
+    BC_REQUIRE_EQUAL(server.maximum_history, 1'000'000u);
 }
 
 BC_AUTO_TEST_CASE(server__bitcoind_server__initialize_context_defaults__success)

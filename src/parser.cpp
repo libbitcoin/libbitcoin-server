@@ -1566,6 +1566,11 @@ options_metadata parser::load_settings() THROWS
         setting<bool>(&configured.server.native.websocket),
         "Enable websocket interface, defaults to {}."
     )
+    (
+        "native.maximum_history",
+        setting<uint32_t>(&configured.server.native.maximum_history),
+        "The maximum number of address history entries, defaults to {}."
+    )
 
     /* [bitcoind] */
     (
@@ -1687,6 +1692,11 @@ options_metadata parser::load_settings() THROWS
         "bitcoind.enable_utxo",
         setting<bool>(&configured.server.bitcoind.enable_utxo),
         "Enable utxo set queries, disabling connection timeouts, defaults to {}."
+    )
+    (
+        "bitcoind.maximum_history",
+        setting<uint32_t>(&configured.server.bitcoind.maximum_history),
+        "The maximum number of address history entries, defaults to {}."
     )
 
     /* [zmq] */

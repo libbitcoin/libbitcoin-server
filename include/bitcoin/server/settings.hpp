@@ -233,6 +233,17 @@ public:
         system::wallet::context to_context() const NOEXCEPT;
     };
 
+    /// Native interface settings (html server with address queries).
+    struct BCS_API native_server
+      : public html_server
+    {
+        using base = html_server;
+        using base::base;
+
+        /// Maximum number of address history entries upon one index walk.
+        uint32_t maximum_history{ 1'000'000 };
+    };
+
     struct BCS_API bitcoind_server
       : public network::settings::http_server
     {
@@ -253,6 +264,9 @@ public:
 
         /// Enable utxo set queries, which disables connection timeouts.
         bool enable_utxo{ false };
+
+        /// Maximum number of address history entries upon one index walk.
+        uint32_t maximum_history{ 1'000'000 };
     };
 
     struct BCS_API btcd_server
@@ -263,9 +277,6 @@ public:
 
         /// Maximum cumulative number of loadtxfilter watches per channel.
         uint32_t maximum_filters{ 1'000'000 };
-
-        /// Maximum number of address history entries upon one index walk.
-        uint32_t maximum_history{ 1'000'000 };
     };
 
     struct BCS_API zmq_server
@@ -303,7 +314,7 @@ public:
     server::settings::html_server admin;
 
     /// RESTful block explorer (http/s, stateless html/websocket)
-    server::settings::html_server native;
+    server::settings::native_server native;
 
     /// bitcoind compat interface (http/s, stateless json-rpc-v2)
     bitcoind_server bitcoind{ "bitcoind" };
