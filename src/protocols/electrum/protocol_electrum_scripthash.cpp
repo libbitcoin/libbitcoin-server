@@ -79,7 +79,8 @@ void protocol_electrum::do_get_balance(const hash_digest& hash,
 {
     BC_ASSERT(!stranded());
     const auto& query = archive();
-    uint64_t confirmed{}, unconfirmed{};
+    uint64_t confirmed{};
+    int64_t unconfirmed{};
     auto ec = query.get_balance(stopping_, confirmed, unconfirmed, hash);
     POST(complete_get_balance, ec, confirmed, unconfirmed, gate);
 }

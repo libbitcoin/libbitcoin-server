@@ -105,9 +105,8 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_get_balance__confirmed_and_u
     REQUIRE_NO_THROW_TRUE(result.at("unconfirmed").is_int64());
     BC_REQUIRE_EQUAL(result.at("confirmed").as_int64(), 0x09); // mock_block10
 
-    // Currently unconfirmed ALWAYS returns zero (no graph to order conflicts).
-    BC_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x00);
-    ////BC_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x10 + 0x11 + 0x12); // mock_block11
+    // mock_block11 pays 0x10 and 0x11 to the address (0x12 is p2sh).
+    BC_REQUIRE_EQUAL(result.at("unconfirmed").as_int64(), 0x10 + 0x11);
 }
 
 // blockchain.scriptpubkey.get_history
