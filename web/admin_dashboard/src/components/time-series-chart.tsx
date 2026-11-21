@@ -74,7 +74,11 @@ export function TimeSeriesChart({
             if (chart.select.width > 0) isZoomedReference.current = true;
           },
         ],
-        setCursor: [(chart) => placeValueLabels(chart, labels, valueFormatter, valueSuffix)],
+        setCursor: [
+          (chart) => {
+            placeValueLabels(chart, labels, valueFormatter, valueSuffix);
+          },
+        ],
         setSeries: [
           (chart, index) => {
             const item = index === null ? undefined : chart.series[index];
@@ -230,7 +234,7 @@ function placeValueLabels(
   const { idx, left } = chart.cursor;
   const width = chart.over.clientWidth;
   labels.forEach((label, index) => {
-    const series = chart.series[index + 1];
+    const series = chart.series.at(index + 1);
     const value = idx == null ? null : chart.data[index + 1]?.[idx];
     if (left == null || left < 0 || series?.show === false || value == null) {
       label.classList.add('hidden');

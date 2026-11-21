@@ -36,9 +36,13 @@ const TRANSACTION_PAGE_SIZE = 25;
 // Bounds parallel node requests for multi-item fetches (block lists, tx pages,
 // prevout resolution) so bursts don't overwhelm the embedded node.
 const REQUEST_CONCURRENCY = 8;
+const HTTP_REQUEST_TIMEOUT_MS = 30_000;
+const TOP_QUERY_PATH = '/v1/top?format=json';
 const TOP_SUBSCRIBE_PATH = '/v1/top/subscribe?format=json';
 const TOP_UNSUBSCRIBE_PATH = '/v1/top/subscribe?format=json&stop=true';
 const WEBSOCKET_CONNECT_TIMEOUT_MS = 5_000;
+const WEBSOCKET_HEARTBEAT_INTERVAL_MS = 15_000;
+const WEBSOCKET_RESPONSE_TIMEOUT_MS = 45_000;
 const EVENT_STREAM_STOP_DELAY_MS = 2_500;
 // After a websocket failure the client falls back to polling and retries the
 // websocket with exponential backoff between these bounds.
@@ -252,8 +256,18 @@ async function fetchJson<T>(baseUrl: string, path: string, turbo?: boolean): Pro
     return existing as Promise<T>;
   }
 
-  const promise = (async () => {
+  const controller = new AbortController();
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_resolve, reject) => {
+    timeout = setTimeout(() => {
+      const error = new Error('Request timed out after 30 seconds');
+      reject(error);
+      controller.abort(error);
+    }, HTTP_REQUEST_TIMEOUT_MS);
+  });
+  const request = (async () => {
     const response = await fetch(url, {
+      signal: controller.signal,
       headers: {
         Accept: 'application/json',
       },
@@ -275,12 +289,16 @@ async function fetchJson<T>(baseUrl: string, path: string, turbo?: boolean): Pro
       return text as unknown as T;
     }
   })();
+  // Bound the whole response, including its body, and release shared requests
+  // on timeout even if the transport is slow to react to cancellation.
+  const promise = Promise.race([request, deadline]);
 
   inFlightRequests.set(url, promise);
 
   try {
     return await promise;
   } finally {
+    clearTimeout(timeout);
     inFlightRequests.delete(url);
   }
 }
@@ -481,7 +499,10 @@ async function fetchBlockTransactionPositions(
 async function fetchBlockSummaries(baseUrl: string, heights: number[]): Promise<BlockSummary[]> {
   return mapWithConcurrency(heights, REQUEST_CONCURRENCY, async (h) => {
     const [header, context] = await Promise.all([
-      fetchJson<BlockHeaderResponse>(baseUrl, `/v1/block/confirmed/${String(h)}/header?format=json`),
+      fetchJson<BlockHeaderResponse>(
+        baseUrl,
+        `/v1/block/confirmed/${String(h)}/header?format=json`
+      ),
       tryFetchJson<unknown>(baseUrl, `/v1/block/confirmed/${String(h)}/header/context?format=json`),
     ]);
     const state = extractHeaderContextState(context);
@@ -682,6 +703,7 @@ export function createLibbitcoinClient({
   let poller: ReturnType<typeof setInterval> | null = null;
   let socket: WebSocket | null = null;
   let socketConnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let socketHeartbeatTimer: ReturnType<typeof setInterval> | null = null;
   let stopEventStreamTimer: ReturnType<typeof setTimeout> | null = null;
   let websocketRetryTimer: ReturnType<typeof setTimeout> | null = null;
   let websocketRetryDelayMs = WEBSOCKET_RETRY_MIN_DELAY_MS;
@@ -892,6 +914,13 @@ export function createLibbitcoinClient({
     }
   }
 
+  function clearSocketHeartbeatTimer() {
+    if (socketHeartbeatTimer !== null) {
+      clearInterval(socketHeartbeatTimer);
+      socketHeartbeatTimer = null;
+    }
+  }
+
   function clearStopEventStreamTimer() {
     if (stopEventStreamTimer) {
       clearTimeout(stopEventStreamTimer);
@@ -929,6 +958,7 @@ export function createLibbitcoinClient({
 
   function closeSocket(sendStop: boolean) {
     clearSocketConnectTimer();
+    clearSocketHeartbeatTimer();
     if (!socket) return;
     closingSocket = true;
     try {
@@ -964,6 +994,7 @@ export function createLibbitcoinClient({
     }
 
     const activeSocket = socket;
+    let lastTopResponseAt = Date.now();
     socketConnectTimer = setTimeout(() => {
       if (socket !== activeSocket) return;
       console.warn('Libbitcoin websocket connect timed out, falling back to polling');
@@ -977,7 +1008,22 @@ export function createLibbitcoinClient({
         activeSocket.send(TOP_SUBSCRIBE_PATH);
         stopPolling();
         websocketUnavailable = false;
-        websocketRetryDelayMs = WEBSOCKET_RETRY_MIN_DELAY_MS;
+        lastTopResponseAt = Date.now();
+        socketHeartbeatTimer = setInterval(() => {
+          if (socket !== activeSocket) return;
+          if (Date.now() - lastTopResponseAt >= WEBSOCKET_RESPONSE_TIMEOUT_MS) {
+            console.warn('Libbitcoin websocket response timed out, falling back to polling');
+            handleWebSocketFailure();
+            return;
+          }
+          try {
+            // Native top queries reply even when no new block has arrived.
+            activeSocket.send(TOP_QUERY_PATH);
+          } catch (error) {
+            console.warn('Libbitcoin websocket heartbeat failed, falling back to polling', error);
+            handleWebSocketFailure();
+          }
+        }, WEBSOCKET_HEARTBEAT_INTERVAL_MS);
         setEventTransport('websocket');
         // Verify HTTP has also recovered before clearing a degraded state.
         if (httpAvailable === false) void checkForNewTop();
@@ -988,12 +1034,22 @@ export function createLibbitcoinClient({
     });
 
     activeSocket.addEventListener('message', (event) => {
+      if (socket !== activeSocket) return;
       void (async () => {
         try {
           const text = await normalizeTextMessage(event.data);
-          if (text === null) return;
+          if (text === null || socket !== activeSocket) return;
           const identifier = parseTopSubscriptionMessage(text);
           if (identifier === null) return;
+          lastTopResponseAt = Date.now();
+          // An open but unresponsive socket must not reset reconnect backoff.
+          websocketRetryDelayMs = WEBSOCKET_RETRY_MIN_DELAY_MS;
+          if (identifier === lastBlockHash) {
+            // Heartbeats do not need to reload an unchanged block, but can
+            // check whether a previously unavailable HTTP endpoint recovered.
+            if (httpAvailable === false) void checkForNewTop();
+            return;
+          }
           await emitBlockEvent(identifier);
         } catch (error) {
           console.warn('Libbitcoin websocket event handling failed', error);
@@ -1011,6 +1067,7 @@ export function createLibbitcoinClient({
       // Ignore close events from a superseded socket (a reconnect is active).
       if (socket !== null && socket !== activeSocket) return;
       clearSocketConnectTimer();
+      clearSocketHeartbeatTimer();
       if (socket === activeSocket) {
         socket = null;
       }
