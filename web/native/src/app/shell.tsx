@@ -6,7 +6,7 @@ import { CommandPalette } from '@/components/command-palette';
 import { RouteContent } from './route-navigation';
 import { useTurbo } from '@/lib/api/client';
 import { useServerConfiguration } from '@/lib/hooks/useBlockchainData';
-import { blocksPath, dashboardPath, investigationsPath } from '@/lib/utils/routes';
+import { blocksPath, dashboardPath, investigationsPath, isAddressPath } from '@/lib/utils/routes';
 
 export function AppShell() {
   const { turbo, setTurbo } = useTurbo();
@@ -22,8 +22,9 @@ export function AppShell() {
   useLayoutEffect(() => {
     if (!configuration) return;
     const parameters = new URLSearchParams(location.search);
-    if ((parameters.get('turbo') === 'true') === turboActive) return;
-    if (turboActive) parameters.set('turbo', 'true');
+    const turboUrl = turboActive && isAddressPath(location.pathname);
+    if ((parameters.get('turbo') === 'true') === turboUrl) return;
+    if (turboUrl) parameters.set('turbo', 'true');
     else parameters.delete('turbo');
     const search = parameters.toString();
     void navigate(

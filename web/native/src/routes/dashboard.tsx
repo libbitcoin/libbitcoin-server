@@ -17,10 +17,13 @@ import {
   formatTimestamp,
 } from '@/lib/utils/format';
 import { HashText } from '@/components/hash-text';
+import { MinerShareCard } from '@/components/miner-share';
+import { BlockMinerValue } from '@/components/miner-value';
 import { blockByHashPath, blockByHeightPath, blocksPath } from '@/lib/utils/routes';
 
 const DASHBOARD_BLOCK_SAMPLE_SIZE = 24;
 const LATEST_BLOCK_TABLE_LIMIT = 8;
+const MINER_SHARE_BLOCKS = 1_008;
 
 export function DashboardPage() {
   usePageTitle();
@@ -91,7 +94,7 @@ export function DashboardPage() {
         </div>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         <OverviewCard
           label="Top"
           value={
@@ -140,6 +143,7 @@ export function DashboardPage() {
               : '—'
           }
         />
+        <MinerShareCard count={MINER_SHARE_BLOCKS} />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(20rem,1fr)]">
@@ -209,6 +213,7 @@ export function DashboardPage() {
                     : '—'
               }
             />
+            <PanelStat label="Miner" value={<BlockMinerValue hash={latestBlock?.hash} />} />
           </div>
         </div>
 
@@ -314,6 +319,7 @@ export function DashboardPage() {
                 <th className="px-4 py-3 text-left">Height</th>
                 <th className="px-4 py-3 text-left">Hash</th>
                 <th className="px-4 py-3 text-left">Age</th>
+                <th className="px-4 py-3 text-left">Miner</th>
                 <th className="px-4 py-3 text-right">Tx</th>
                 <th className="px-4 py-3 text-right">Size</th>
               </tr>
@@ -321,14 +327,14 @@ export function DashboardPage() {
             <tbody>
               {blocksLoading && (
                 <tr>
-                  <td colSpan={5} className="text-textMuted px-4 py-6 text-center">
+                  <td colSpan={6} className="text-textMuted px-4 py-6 text-center">
                     Loading latest blocks…
                   </td>
                 </tr>
               )}
               {!blocksLoading && sampleSize === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-textMuted px-4 py-6 text-center">
+                  <td colSpan={6} className="text-textMuted px-4 py-6 text-center">
                     No blocks available.
                   </td>
                 </tr>
@@ -351,6 +357,9 @@ export function DashboardPage() {
                     </td>
                     <td className="text-textMuted px-4 py-3">
                       {formatRelativeTime(block.timestamp, now)}
+                    </td>
+                    <td className="text-textPrimary px-4 py-3">
+                      <BlockMinerValue hash={block.hash} />
                     </td>
                     <td className="text-textPrimary px-4 py-3 text-right">
                       {formatNumber(block.txCount, { maximumFractionDigits: 0 })}

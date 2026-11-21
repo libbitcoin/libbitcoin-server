@@ -196,6 +196,7 @@
     <None Include="..\..\..\..\web\native\src\components\block-validation-inspector.tsx" />
     <None Include="..\..\..\..\web\native\src\components\command-palette.tsx" />
     <None Include="..\..\..\..\web\native\src\components\hash-text.tsx" />
+    <None Include="..\..\..\..\web\native\src\components\miner-share.tsx" />
     <None Include="..\..\..\..\web\native\src\components\miner-value.tsx" />
     <None Include="..\..\..\..\web\native\src\components\qr-code.tsx" />
     <None Include="..\..\..\..\web\native\src\components\save-bookmark.tsx" />

@@ -7,6 +7,7 @@ import { usePaginatedList } from '@/lib/hooks/usePaginatedList';
 import { useWindowScrollToBottom } from '@/lib/hooks/useWindowScrollToBottom';
 import { formatBytes, formatNumber, formatRelativeTime } from '@/lib/utils/format';
 import { HashText } from '@/components/hash-text';
+import { BlockMinerValue } from '@/components/miner-value';
 import { blockByHashPath, blockByHeightPath } from '@/lib/utils/routes';
 
 const PAGE_SIZE = 10;
@@ -91,6 +92,7 @@ export function BlocksPage() {
               <th className="px-4 py-3 text-left">Height</th>
               <th className="px-4 py-3 text-left">Hash</th>
               <th className="px-4 py-3 text-left">Age</th>
+              <th className="px-4 py-3 text-left">Miner</th>
               <th className="px-4 py-3 text-right">Tx</th>
               <th className="px-4 py-3 text-right">Size</th>
             </tr>
@@ -98,21 +100,21 @@ export function BlocksPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={5} className="text-textMuted px-4 py-6 text-center">
+                <td colSpan={6} className="text-textMuted px-4 py-6 text-center">
                   Loading blocks…
                 </td>
               </tr>
             )}
             {error && !isLoading && (
               <tr>
-                <td colSpan={5} className="text-accentSecondary px-4 py-6 text-center">
+                <td colSpan={6} className="text-accentSecondary px-4 py-6 text-center">
                   {error}
                 </td>
               </tr>
             )}
             {!isLoading && !error && blocks.length === 0 && (
               <tr>
-                <td colSpan={5} className="text-textMuted px-4 py-6 text-center">
+                <td colSpan={6} className="text-textMuted px-4 py-6 text-center">
                   No blocks available.
                 </td>
               </tr>
@@ -136,6 +138,9 @@ export function BlocksPage() {
                   </td>
                   <td className="text-textMuted px-4 py-3">
                     {formatRelativeTime(block.timestamp, now)}
+                  </td>
+                  <td className="text-textPrimary px-4 py-3">
+                    <BlockMinerValue hash={block.hash} />
                   </td>
                   <td className="text-textPrimary px-4 py-3 text-right">
                     {formatNumber(block.txCount)}

@@ -12,6 +12,10 @@
   --theme-notice-text: #ffffff;
   --chart-grid: #c8563733;
   --chart-ticks: #ffa0224d;
+  --chart-series-1: #3987e5;
+  --chart-series-2: #d95926;
+  --chart-series-3: #199e70;
+  --chart-series-other: #8b8a85;
 }
 
 :root[data-theme='light'] {
@@ -28,6 +32,10 @@
   --theme-notice-text: #222923;
   --chart-grid: #52605226;
   --chart-ticks: #52605266;
+  --chart-series-1: #2a78d6;
+  --chart-series-2: #eb6834;
+  --chart-series-3: #1baf7a;
+  --chart-series-other: #9a9994;
   --chart-color-0: #9c4a04;
   --chart-color-1: #0369a1;
   --chart-color-2: #047857;

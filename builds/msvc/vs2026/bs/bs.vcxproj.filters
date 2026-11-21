@@ -379,6 +379,9 @@
     <None Include="..\..\..\..\web\native\src\components\hash-text.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\components\miner-share.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\components\miner-value.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
