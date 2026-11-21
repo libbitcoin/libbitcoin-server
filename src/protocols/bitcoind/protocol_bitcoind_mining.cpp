@@ -140,8 +140,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
         return true;
     }
 
-    uint256_t start_work{};
-    uint256_t end_work{};
+    uint256_t start_work{}, end_work{};
     if (!query.get_branch_work(start_work, branch.back()) ||
         !query.get_branch_work(end_work, branch.front()))
     {
