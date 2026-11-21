@@ -28,6 +28,7 @@ import {
   outputAddresses,
 } from './libbitcoin-mapper';
 import { identifyMiner, type Miner } from '@/lib/utils/miner';
+import { isAddressPath } from '@/lib/utils/routes';
 
 interface LibbitcoinClientOptions {
   baseUrl: string;
@@ -39,6 +40,7 @@ const TRANSACTION_PAGE_SIZE = 25;
 // Bounds parallel node requests for multi-item fetches (block lists, tx pages,
 // prevout resolution) so bursts don't overwhelm the embedded node.
 const REQUEST_CONCURRENCY = 8;
+// Address queries are bounded by the server's history limit, not this deadline.
 const HTTP_REQUEST_TIMEOUT_MS = 30_000;
 const TOP_QUERY_PATH = '/v1/top?format=json';
 // Miners are cached by height only at this depth, below which reorganization is not expected.
@@ -263,13 +265,16 @@ async function fetchJson<T>(baseUrl: string, path: string, turbo?: boolean): Pro
 
   const controller = new AbortController();
   let timeout: ReturnType<typeof setTimeout> | undefined;
-  const deadline = new Promise<never>((_resolve, reject) => {
-    timeout = setTimeout(() => {
-      const error = new Error('Request timed out after 30 seconds');
-      reject(error);
-      controller.abort(error);
-    }, HTTP_REQUEST_TIMEOUT_MS);
-  });
+  const deadline = isAddressPath(normalized)
+    ? undefined
+    : new Promise<never>((_resolve, reject) => {
+        timeout = setTimeout(() => {
+          const seconds = String(HTTP_REQUEST_TIMEOUT_MS / 1_000);
+          const error = new Error(`Request timed out after ${seconds} seconds`);
+          reject(error);
+          controller.abort(error);
+        }, HTTP_REQUEST_TIMEOUT_MS);
+      });
   const request = (async () => {
     const response = await fetch(url, {
       signal: controller.signal,
@@ -296,7 +301,7 @@ async function fetchJson<T>(baseUrl: string, path: string, turbo?: boolean): Pro
   })();
   // Bound the whole response, including its body, and release shared requests
   // on timeout even if the transport is slow to react to cancellation.
-  const promise = Promise.race([request, deadline]);
+  const promise = deadline ? Promise.race([request, deadline]) : request;
 
   inFlightRequests.set(url, promise);
 
