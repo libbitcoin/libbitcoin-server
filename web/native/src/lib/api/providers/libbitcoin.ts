@@ -624,19 +624,28 @@ async function fetchOutputSpender(
 }
 
 // Runs `fn` over `items` with a bounded number of concurrent promises,
-// preserving input order in the result.
+// preserving input order in the result. No item starts after a failure or
+// after `signal` aborts.
 async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
-  fn: (item: T, index: number) => Promise<R>
+  fn: (item: T, index: number) => Promise<R>,
+  signal?: AbortSignal
 ): Promise<R[]> {
   const results = Array.from<R>({ length: items.length });
   let next = 0;
+  let failed = false;
   async function worker() {
-    while (next < items.length) {
+    while (next < items.length && !failed) {
+      signal?.throwIfAborted();
       const current = next;
       next += 1;
-      results[current] = await fn(items[current], current);
+      try {
+        results[current] = await fn(items[current], current);
+      } catch (error) {
+        failed = true;
+        throw error;
+      }
     }
   }
   const workerCount = Math.min(limit, items.length);
@@ -1289,7 +1298,7 @@ export function createLibbitcoinClient({
       return fetchMiner(path);
     },
 
-    async getRecentMiners(count: number): Promise<RecentMiners> {
+    async getRecentMiners(count: number, signal?: AbortSignal): Promise<RecentMiners> {
       const top = await observeHttp(fetchTopHeightCached(baseUrl));
       const bottom = Math.max(0, top - count + 1);
       for (const height of minersByHeight.keys()) {
@@ -1303,7 +1312,7 @@ export function createLibbitcoinClient({
         const miner = await fetchMiner(`/v1/block/confirmed/${String(height)}`);
         if (height <= top - MINER_CACHE_DEPTH) minersByHeight.set(height, miner);
         return miner;
-      });
+      }, signal);
       return { top, miners };
     },
 
