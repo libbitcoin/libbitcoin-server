@@ -740,6 +740,81 @@ BC_AUTO_TEST_CASE(native__block_tx__position_above_count__not_found)
     BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/tx/1?format=data"), http::status::not_found);
 }
 
+// block/tx/input/script
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(native__block_tx_input_script__data__expected)
+{
+    const auto& script = coinbase1().inputs_ptr()->at(0)->script();
+    BC_REQUIRE_EQUAL(get_data("/v1/block/confirmed/1/tx/0/input/0/script?format=data"), script.to_data(false));
+}
+
+BC_AUTO_TEST_CASE(native__block_tx_input_script__text__expected)
+{
+    const auto& script = coinbase1().inputs_ptr()->at(0)->script();
+    BC_REQUIRE_EQUAL(get_text("/v1/block/hash/" + block1_hash + "/tx/0/input/0/script?format=text"), encode_base16(script.to_data(false)));
+}
+
+BC_AUTO_TEST_CASE(native__block_tx_input_script__json__expected)
+{
+    const auto& script = coinbase1().inputs_ptr()->at(0)->script();
+    BC_REQUIRE_EQUAL(get_json("/v1/block/confirmed/1/tx/0/input/0/script?format=json"), value_from(script));
+}
+
+BC_AUTO_TEST_CASE(native__block_tx_input_script__candidate_unpushed__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/candidate/1/tx/0/input/0/script?format=data"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block_tx_input_script__candidate_pushed__expected)
+{
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    const auto& script = coinbase1().inputs_ptr()->at(0)->script();
+    BC_REQUIRE_EQUAL(get_data("/v1/block/candidate/1/tx/0/input/0/script?format=data"), script.to_data(false));
+}
+
+BC_AUTO_TEST_CASE(native__block_tx_input_script__index_above_count__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/tx/0/input/1/script?format=data"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block_tx_input_script__position_above_count__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/tx/1/input/0/script?format=data"), http::status::not_found);
+}
+
+// block/tx/output/script
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(native__block_tx_output_script__data__expected)
+{
+    const auto& script = coinbase1().outputs_ptr()->at(0)->script();
+    BC_REQUIRE_EQUAL(get_data("/v1/block/confirmed/1/tx/0/output/0/script?format=data"), script.to_data(false));
+}
+
+BC_AUTO_TEST_CASE(native__block_tx_output_script__text__expected)
+{
+    const auto& script = coinbase1().outputs_ptr()->at(0)->script();
+    BC_REQUIRE_EQUAL(get_text("/v1/block/hash/" + block1_hash + "/tx/0/output/0/script?format=text"), encode_base16(script.to_data(false)));
+}
+
+BC_AUTO_TEST_CASE(native__block_tx_output_script__json__expected)
+{
+    const auto& script = coinbase1().outputs_ptr()->at(0)->script();
+    BC_REQUIRE_EQUAL(get_json("/v1/block/confirmed/1/tx/0/output/0/script?format=json"), value_from(script));
+}
+
+BC_AUTO_TEST_CASE(native__block_tx_output_script__index_above_count__not_found)
+{
+    const auto index = std::to_string(coinbase1().outputs_ptr()->size());
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/tx/0/output/" + index + "/script?format=data"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block_tx_output_script__position_above_count__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/tx/1/output/0/script?format=data"), http::status::not_found);
+}
+
 // block/filter
 // ----------------------------------------------------------------------------
 
@@ -933,6 +1008,30 @@ BC_AUTO_TEST_CASE(native__embedded__invalid_target__bad_request)
 BC_AUTO_TEST_CASE(native__embedded__invalid_hash__bad_request)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/block/hash/invalid"), http::status::bad_request);
+}
+
+BC_AUTO_TEST_CASE(native__embedded__missing_target_accept_html__html)
+{
+    const auto response = get_response("/v1", http::field::accept, "text/html");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response.body(), "<html></html>");
+}
+
+BC_AUTO_TEST_CASE(native__embedded__missing_component_accept_html__html)
+{
+    const auto response = get_response("/v1/block", http::field::accept, "text/html");
+    BC_REQUIRE_EQUAL(response.result(), http::status::ok);
+    BC_REQUIRE_EQUAL(response.body(), "<html></html>");
+}
+
+BC_AUTO_TEST_CASE(native__embedded__invalid_target_format_html__html)
+{
+    BC_REQUIRE_EQUAL(get_text("/v1/bogus?format=html"), "<html></html>");
+}
+
+BC_AUTO_TEST_CASE(native__embedded__invalid_target_accept_json__bad_request)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/bogus", http::field::accept, "application/json"), http::status::bad_request);
 }
 
 BC_AUTO_TEST_CASE(native__embedded__root__html)

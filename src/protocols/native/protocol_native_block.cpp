@@ -571,6 +571,72 @@ bool protocol_native::handle_get_block_tx(const code& ec, interface::block_tx,
     return true;
 }
 
+bool protocol_native::handle_get_block_tx_input_script(const code& ec,
+    interface::block_tx_input_script, uint8_t, uint8_t media,
+    uint32_t position, uint32_t index, std::optional<hash_cptr> hash,
+    std::optional<uint32_t> height, bool candidate) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    const auto tx = query.to_transaction(to_header(height, hash, candidate),
+        position);
+
+    if (const auto script = query.get_input_script(query.to_point(tx, index)))
+    {
+        const auto size = script->serialized_size(false);
+        switch (media)
+        {
+            case data:
+                send_chunk(to_bin(*script, size, false));
+                return true;
+            case text:
+                send_text(to_hex(*script, size, false));
+                return true;
+            case json:
+                send_json(value_from(script));
+                return true;
+        }
+    }
+
+    send_not_found();
+    return true;
+}
+
+bool protocol_native::handle_get_block_tx_output_script(const code& ec,
+    interface::block_tx_output_script, uint8_t, uint8_t media,
+    uint32_t position, uint32_t index, std::optional<hash_cptr> hash,
+    std::optional<uint32_t> height, bool candidate) NOEXCEPT
+{
+    if (stopped(ec))
+        return false;
+
+    const auto& query = archive();
+    const auto tx = query.to_transaction(to_header(height, hash, candidate),
+        position);
+
+    if (const auto script = query.get_output_script(query.to_output(tx, index)))
+    {
+        const auto size = script->serialized_size(false);
+        switch (media)
+        {
+            case data:
+                send_chunk(to_bin(*script, size, false));
+                return true;
+            case text:
+                send_text(to_hex(*script, size, false));
+                return true;
+            case json:
+                send_json(value_from(script));
+                return true;
+        }
+    }
+
+    send_not_found();
+    return true;
+}
+
 bool protocol_native::handle_get_block_subscribe(const code& ec,
     interface::block_subscribe, uint8_t, uint8_t media, bool stop) NOEXCEPT
 {

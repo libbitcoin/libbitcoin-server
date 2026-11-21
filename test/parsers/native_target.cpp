@@ -619,10 +619,10 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_tx_confirmed_invalid_position__i
     BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/tx/invalid"), server::error::invalid_number);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_tx_confirmed_extra_segment__extra_segment)
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_confirmed_invalid_subcomponent__invalid_subcomponent)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/tx/7/extra"), server::error::extra_segment);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/tx/7/extra"), server::error::invalid_subcomponent);
 }
 
 // block_tx/hash
@@ -668,11 +668,110 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_tx_hash_invalid_position__invali
     BC_REQUIRE_EQUAL(native_target(out, "/v3/block/hash/0000000000000000000000000000000000000000000000000000000000000000/tx/invalid"), server::error::invalid_number);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_tx_hash_extra_segment__extra_segment)
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_hash_invalid_subcomponent__invalid_subcomponent)
 {
     const std::string path = "/v3/block/hash/0000000000000000000000000000000000000000000000000000000000000000/tx/7/extra";
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
+    BC_REQUIRE_EQUAL(native_target(out, path), server::error::invalid_subcomponent);
+}
+
+// block_tx_input_script, block_tx_output_script
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_input_script_confirmed_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/block/confirmed/123456/tx/7/input/3/script"));
+    BC_REQUIRE_EQUAL(request.method, "block_tx_input_script");
+    BC_REQUIRE(request.params.has_value());
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 4u);
+    BC_REQUIRE_EQUAL(std::get<uint8_t>(object.at("version").value()), 42u);
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("height").value()), 123456u);
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("position").value()), 7u);
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("index").value()), 3u);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_output_script_candidate_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/block/candidate/123456/tx/7/output/3/script"));
+    BC_REQUIRE_EQUAL(request.method, "block_tx_output_script");
+    BC_REQUIRE(request.params.has_value());
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 5u);
+    BC_REQUIRE_EQUAL(std::get<uint8_t>(object.at("version").value()), 42u);
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("height").value()), 123456u);
+    BC_REQUIRE(std::get<bool>(object.at("candidate").value()));
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("position").value()), 7u);
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("index").value()), 3u);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_output_script_hash_valid__expected)
+{
+    const std::string path = "/v42/block/hash/0000000000000000000000000000000000000000000000000000000000000042/tx/7/output/3/script";
+
+    request_t request{};
+    BC_REQUIRE(!native_target(request, path));
+    BC_REQUIRE_EQUAL(request.method, "block_tx_output_script");
+    BC_REQUIRE(request.params.has_value());
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 4u);
+    BC_REQUIRE_EQUAL(std::get<uint8_t>(object.at("version").value()), 42u);
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("position").value()), 7u);
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("index").value()), 3u);
+
+    const auto& any = std::get<any_t>(object.at("hash").value());
+    BC_REQUIRE(any.holds_alternative<const hash_digest>());
+
+    const auto& hash_cptr = any.get<const hash_digest>();
+    BC_REQUIRE(hash_cptr);
+    BC_REQUIRE_EQUAL(to_uintx(*hash_cptr), uint256_t{ 0x42 });
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_input_script_hash_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/block/hash/0000000000000000000000000000000000000000000000000000000000000000/tx/0/input/0/script"));
+    BC_REQUIRE_EQUAL(request.method, "block_tx_input_script");
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_input_script_missing_index__missing_position)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/tx/7/input"), server::error::missing_position);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_output_script_invalid_index__invalid_number)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/tx/7/output/invalid/script"), server::error::invalid_number);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_input_script_missing_script__missing_component)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/tx/7/input/3"), server::error::missing_component);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_input_witness__invalid_component)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/tx/7/input/3/witness"), server::error::invalid_component);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_output_spender__invalid_component)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/tx/7/output/3/spender"), server::error::invalid_component);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_tx_output_script_extra_segment__extra_segment)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/tx/7/output/3/script/extra"), server::error::extra_segment);
 }
 
 // block/subscribe

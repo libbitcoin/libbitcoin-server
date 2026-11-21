@@ -192,6 +192,18 @@ def test_block_tx_by_position_height(native_config):
     assert "hash" in data
 
 
+def test_block_tx_input_script_height(native_config):
+    """Test /v1/block/confirmed/{height}/tx/{position}/input/{index}/script"""
+    data = get_json(native_config["base_url"], f"block/confirmed/{ReferenceData.KNOWN_HEIGHT}/tx/0/input/0/script")
+    assert isinstance(data, (str, dict))
+
+
+def test_block_tx_output_script_hash(native_config):
+    """Test /v1/block/hash/{blockhash}/tx/{position}/output/{index}/script"""
+    data = get_json(native_config["base_url"], f"block/hash/{ReferenceData.KNOWN_BLOCK_HASH}/tx/0/output/0/script")
+    assert isinstance(data, (str, dict))
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # BLOCK FILTER ENDPOINTS (BIP 158)
 # ═══════════════════════════════════════════════════════════════════════════════

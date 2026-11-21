@@ -46,6 +46,8 @@ struct native_methods
         method<"block_filter_hash", uint8_t, uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<false>>{ "version", "media", "type", "hash", "height", "candidate" },
         method<"block_filter_header", uint8_t, uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<false>>{ "version", "media", "type", "hash", "height", "candidate" },
         method<"block_tx", uint8_t, uint8_t, uint32_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<true>, optional<false>>{ "version", "media", "position", "hash", "height", "witness", "candidate" },
+        method<"block_tx_input_script", uint8_t, uint8_t, uint32_t, uint32_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<false>>{ "version", "media", "position", "index", "hash", "height", "candidate" },
+        method<"block_tx_output_script", uint8_t, uint8_t, uint32_t, uint32_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<false>>{ "version", "media", "position", "index", "hash", "height", "candidate" },
         method<"block_subscribe", uint8_t, uint8_t, optional<false>>{ "version", "media", "stop" },
 
         method<"tx", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "witness" },
@@ -98,32 +100,34 @@ struct native_methods
     using block_filter_hash = at<11>;
     using block_filter_header = at<12>;
     using block_tx = at<13>;
-    using block_subscribe = at<14>;
+    using block_tx_input_script = at<14>;
+    using block_tx_output_script = at<15>;
+    using block_subscribe = at<16>;
 
-    using tx = at<15>;
-    using tx_header = at<16>;
-    using tx_details = at<17>;
-    using tx_subscribe = at<18>;
+    using tx = at<17>;
+    using tx_header = at<18>;
+    using tx_details = at<19>;
+    using tx_subscribe = at<20>;
 
-    using inputs = at<19>;
-    using input = at<20>;
-    using input_script = at<21>;
-    using input_witness = at<22>;
+    using inputs = at<21>;
+    using input = at<22>;
+    using input_script = at<23>;
+    using input_witness = at<24>;
 
-    using outputs = at<23>;
-    using output = at<24>;
-    using output_script = at<25>;
-    using output_spender = at<26>;
-    using output_spenders = at<27>;
-    using output_subscribe = at<28>;
+    using outputs = at<25>;
+    using output = at<26>;
+    using output_script = at<27>;
+    using output_spender = at<28>;
+    using output_spenders = at<29>;
+    using output_subscribe = at<30>;
 
-    using address = at<29>;
-    using address_confirmed = at<30>;
-    using address_unconfirmed = at<31>;
-    using address_balance = at<32>;
-    using address_subscribe = at<33>;
+    using address = at<31>;
+    using address_confirmed = at<32>;
+    using address_unconfirmed = at<33>;
+    using address_balance = at<34>;
+    using address_subscribe = at<35>;
 
-    using fees = at<34>;
+    using fees = at<36>;
 };
 
 /// ?format=data|text|json (via query string).
@@ -172,6 +176,14 @@ struct native_methods
 /// /v1/block/hash/[bkhash]/tx/[position] {1}
 /// /v1/block/confirmed/[height]/tx/[position] {1}
 /// /v1/block/candidate/[height]/tx/[position] {1}
+
+/// /v1/block/hash/[bkhash]/tx/[position]/input/[index]/script {1}
+/// /v1/block/confirmed/[height]/tx/[position]/input/[index]/script {1}
+/// /v1/block/candidate/[height]/tx/[position]/input/[index]/script {1}
+
+/// /v1/block/hash/[bkhash]/tx/[position]/output/[index]/script {1}
+/// /v1/block/confirmed/[height]/tx/[position]/output/[index]/script {1}
+/// /v1/block/candidate/[height]/tx/[position]/output/[index]/script {1}
 
 /// ---------------------------------------------------------------------------
 

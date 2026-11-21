@@ -323,7 +323,33 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
                         return error::invalid_number;
 
                     params["position"] = position;
-                    method = "block_tx";
+                    if (segment == segments.size())
+                    {
+                        method = "block_tx";
+                    }
+                    else
+                    {
+                        const auto subcomponent = segments[segment++];
+                        if (subcomponent != "input" && subcomponent != "output")
+                            return error::invalid_subcomponent;
+
+                        if (segment == segments.size())
+                            return error::missing_position;
+
+                        uint32_t index{};
+                        if (!to_number(index, segments[segment++]))
+                            return error::invalid_number;
+
+                        params["index"] = index;
+                        if (segment == segments.size())
+                            return error::missing_component;
+
+                        if (segments[segment++] != "script")
+                            return error::invalid_component;
+
+                        method = subcomponent == "input" ?
+                            "block_tx_input_script" : "block_tx_output_script";
+                    }
                 }
                 else if (component == "header")
                 {
