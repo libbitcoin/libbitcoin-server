@@ -460,7 +460,7 @@ BC_AUTO_TEST_CASE(error_t__bitcoind_reject__block_weight_limit__bad_blk_weight)
 
 BC_AUTO_TEST_CASE(error_t__bitcoind_reject__unmapped_block_code__message)
 {
-    const code ec{ system::error::checkpoint_conflict };
+    const code ec{ system::error::negative_timespan };
     BC_REQUIRE_EQUAL(error::bitcoind::reject(ec), ec.message());
 }
 

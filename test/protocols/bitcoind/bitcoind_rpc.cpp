@@ -3504,7 +3504,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__submitblock__existing_block__duplicate)
     const auto block = encode_base16(test::block9.to_data(true));
     const auto response = rpc("submitblock", "[\"" + block + "\"]");
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    BC_REQUIRE(as_text(response.at("result")).starts_with("duplicate"));
+    BC_REQUIRE_EQUAL(as_text(response.at("result")), "duplicate");
 }
 
 // waitfor (all conditions immediately met or timing out on the fixture)

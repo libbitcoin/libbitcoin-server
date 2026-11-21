@@ -751,7 +751,11 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
 
     if (ec)
     {
-        LOGF("Bitcoind::gettxoutsetinfo, " << ec.message());
+        if (ec != database::error::query_canceled)
+        {
+            LOGF("Bitcoind::gettxoutsetinfo, " << ec.message());
+        }
+
         POST(fail, error::bitcoind::internal_error, gate);
         return;
     }
@@ -951,7 +955,11 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 
     if (ec)
     {
-        LOGF("Bitcoind::scantxoutset, " << ec.message());
+        if (ec != database::error::query_canceled)
+        {
+            LOGF("Bitcoind::scantxoutset, " << ec.message());
+        }
+
         POST(fail, error::bitcoind::internal_error, gate);
         return;
     }
@@ -1416,7 +1424,11 @@ void protocol_bitcoind_blockchain::do_get_descriptor_activity(
                     return;
                 }
 
-                LOGF("Bitcoind::getdescriptoractivity, " << ec.message());
+                if (ec != database::error::query_canceled)
+                {
+                    LOGF("Bitcoind::getdescriptoractivity, " << ec.message());
+                }
+
                 POST(fail, error::bitcoind::internal_error, gate);
                 return;
             }

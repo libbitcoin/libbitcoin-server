@@ -304,6 +304,13 @@ void protocol_bitcoind_mining::do_organize_block(const code& ec,
     if (stopped())
         return;
 
+    // An unknown header is unconfirmable only by its parent.
+    if (ec == database::error::block_unconfirmable)
+    {
+        send_result(string_t{ "bad-prevblk" });
+        return;
+    }
+
     if (ec && (ec != node::error::duplicate_header))
     {
         if (block_error_category::contains(ec) ||
@@ -337,8 +344,11 @@ void protocol_bitcoind_mining::submit_block(const block_cptr& block,
     const auto state = query.get_block_state(link);
     if (is_associated(state))
     {
-        send_result(string_t{ is_unconfirmable(state) ? "duplicate-invalid" :
-            (is_validated(state) ? "duplicate" : "duplicate-inconclusive") });
+        const auto confirmed = query.is_confirmed_block(link);
+        const auto valid = is_validated(state) || confirmed;
+        const auto duplicate = valid ? "duplicate" : "duplicate-inconclusive";
+        const auto invalid = is_unconfirmable(state);
+        send_result(string_t{ invalid ? "duplicate-invalid" : duplicate });
         return;
     }
 
@@ -382,21 +392,30 @@ void protocol_bitcoind_mining::submit_block(const block_cptr& block,
     const auto bypass = is_bypass(state);
     const auto prune = bypass && node_settings().limited_blocks;
     const auto strong = is_any(state, checkpointed);
+    const auto hash = block->hash();
     if (!archive_block(stored, block, link, strong, bypass, height, prune,
-        BIND(handle_archive_block, _1, height)))
+        BIND(handle_archive_block, _1, hash, height)))
         return;
 
-    handle_archive_block(stored, height);
+    handle_archive_block(stored, hash, height);
 }
 
-// A block archived meanwhile by another channel is awaited as submitted.
+// A block archived meanwhile by another channel is awaited as submitted, and a
+// failure to store one is a fault, whether or not the channel has stopped.
 void protocol_bitcoind_mining::handle_archive_block(const code& ec,
-    size_t height) NOEXCEPT
+    const hash_digest& hash, size_t height) NOEXCEPT
 {
     if (!ec)
     {
         notify(ec, node::chases::checked{ height });
         fire(node::events::block_archived, height);
+    }
+    else if ((ec != node::error::duplicate_block) &&
+        (ec != network::error::service_stopped))
+    {
+        LOGF("Failure storing block [" << encode_hash(hash) << ":" << height
+            << "] " << ec.message());
+        fault(ec);
     }
 
     if (stopped())
@@ -411,9 +430,6 @@ void protocol_bitcoind_mining::do_archive_block(const code& ec) NOEXCEPT
 
     if (stopped() || !ec || (ec == node::error::duplicate_block))
         return;
-
-    if (ec != network::error::service_stopped)
-        fault(ec);
 
     submitted_ = {};
     send_error(error::bitcoind::internal_error);

@@ -1072,6 +1072,11 @@ options_metadata parser::load_settings() THROWS
         "The target number of outgoing connections when current, defaults to {} (0 disables)."
     )
     (
+        "outbound.relay_slots",
+        setting<uint16_t>(&configured.node.outbound_relay_slots),
+        "The relay slots reserved for outbound peers, defaults to {}."
+    )
+    (
         "outbound.rate_limit",
         setting<uint32_t>(&configured.network.outbound.rate_limit),
         "The send rate limit in bytes per second, defaults to {} (network controls)."
@@ -1240,6 +1245,11 @@ options_metadata parser::load_settings() THROWS
     ////    setting<uint16_t>(&configured.network.manual.connections),
     ////    "The target number of outgoing manual connections (not implemented)."
     ////)
+    (
+        "manual.relay_slots",
+        setting<uint16_t>(&configured.node.manual_relay_slots),
+        "The relay slots reserved for manual peers, defaults to {}."
+    )
     (
         "manual.rate_limit",
         setting<uint32_t>(&configured.network.manual.rate_limit),

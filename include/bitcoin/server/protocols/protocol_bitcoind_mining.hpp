@@ -97,7 +97,8 @@ private:
         const gate_t::ptr& gate) NOEXCEPT;
     void submit_block(const block_cptr& block,
         const database::header_link& link, const gate_t::ptr& gate) NOEXCEPT;
-    void handle_archive_block(const code& ec, size_t height) NOEXCEPT;
+    void handle_archive_block(const code& ec, const system::hash_digest& hash,
+        size_t height) NOEXCEPT;
     void do_archive_block(const code& ec) NOEXCEPT;
     void do_submitted(const code& ec, node::event_value value) NOEXCEPT;
     void send_submitted(network::rpc::value_option&& result) NOEXCEPT;
