@@ -58,6 +58,7 @@ export function BlockPage() {
     isFetchingMore,
     hasMore,
     loadMore,
+    loadMoreError,
   } = usePaginatedList<TransactionSummary>({
     initialItems: initialTransactions,
     resetDeps: [client, identifier],
@@ -118,7 +119,7 @@ export function BlockPage() {
   }, [block?.hash, hash, inspectValidation, navigate]);
 
   useWindowScrollToBottom({
-    enabled: hasMore && !isFetchingMore && transactions.length > 0,
+    enabled: hasMore && !isFetchingMore && loadMoreError === null && transactions.length > 0,
     onBottomReached: () => {
       void loadMore();
     },
@@ -304,7 +305,12 @@ export function BlockPage() {
           </table>
         </div>
         {hasMore && (
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex flex-col items-center gap-3">
+            {loadMoreError && (
+              <p role="alert" className="text-accentSecondary text-center text-sm break-words">
+                Could not load more transactions. {loadMoreError}
+              </p>
+            )}
             <button
               type="button"
               onClick={() => {
@@ -313,7 +319,11 @@ export function BlockPage() {
               disabled={isFetchingMore}
               className="border-accent text-accent hover:border-accentSecondary hover:text-accentSecondary rounded-md border px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isFetchingMore ? 'Loading more…' : 'Load more transactions'}
+              {isFetchingMore
+                ? 'Loading more…'
+                : loadMoreError
+                  ? 'Retry loading transactions'
+                  : 'Load more transactions'}
             </button>
           </div>
         )}

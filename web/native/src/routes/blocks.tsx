@@ -65,10 +65,9 @@ export function BlocksPage() {
     canFetchMore: (items) => items.length > 0,
     pageSize: PAGE_SIZE,
   });
-  const error = initialError ?? loadMoreError;
-
   useWindowScrollToBottom({
-    enabled: hasMore && !isLoading && error === null && !isFetchingMore,
+    enabled:
+      hasMore && !isLoading && initialError === null && loadMoreError === null && !isFetchingMore,
     onBottomReached: () => {
       void loadMore();
     },
@@ -105,14 +104,14 @@ export function BlocksPage() {
                 </td>
               </tr>
             )}
-            {error && !isLoading && (
+            {initialError && !isLoading && (
               <tr>
                 <td colSpan={6} className="text-accentSecondary px-4 py-6 text-center">
-                  {error}
+                  {initialError}
                 </td>
               </tr>
             )}
-            {!isLoading && !error && blocks.length === 0 && (
+            {!isLoading && !initialError && blocks.length === 0 && (
               <tr>
                 <td colSpan={6} className="text-textMuted px-4 py-6 text-center">
                   No blocks available.
@@ -120,7 +119,7 @@ export function BlocksPage() {
               </tr>
             )}
             {!isLoading &&
-              !error &&
+              !initialError &&
               blocks.map((block) => (
                 <tr key={block.hash} className="hover:bg-accentSecondary/10">
                   <td className="px-4 py-3">
@@ -154,8 +153,13 @@ export function BlocksPage() {
         </table>
       </div>
 
-      {hasMore && !isLoading && !error && (
-        <div className="flex justify-center">
+      {hasMore && !isLoading && !initialError && (
+        <div className="flex flex-col items-center gap-3">
+          {loadMoreError && (
+            <p role="alert" className="text-accentSecondary text-center text-sm break-words">
+              Could not load more blocks. {loadMoreError}
+            </p>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -164,7 +168,11 @@ export function BlocksPage() {
             disabled={isFetchingMore}
             className="border-accent text-accent hover:border-accentSecondary hover:text-accentSecondary rounded-md border px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isFetchingMore ? 'Loading more…' : 'Load more blocks'}
+            {isFetchingMore
+              ? 'Loading more…'
+              : loadMoreError
+                ? 'Retry loading blocks'
+                : 'Load more blocks'}
           </button>
         </div>
       )}
