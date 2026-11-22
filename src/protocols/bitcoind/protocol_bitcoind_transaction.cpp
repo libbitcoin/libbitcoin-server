@@ -114,7 +114,7 @@ static bool get_fee(uint64_t& fee, const chain::transaction& tx,
         in = ceilinged_add(in, value);
     }
 
-    fee = floored_subtract(in, tx.value());
+    fee = floored_subtract(in, tx.spend());
     return true;
 }
 

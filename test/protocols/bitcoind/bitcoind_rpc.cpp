@@ -4710,6 +4710,20 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__spendable__txid)
     BC_REQUIRE_EQUAL(as_text(response.at("result")), encode_hash(test::tx1c.hash(false)));
 }
 
+// tx1c pays a 10 satoshi fee from a 100 satoshi input (62 bytes).
+BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__fee_below_maxfeerate__txid)
+{
+    const auto response = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\", 0.000008]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(as_text(response.at("result")), encode_hash(test::tx1c.hash(false)));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__fee_above_maxfeerate__verify_error)
+{
+    const auto response = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\", 0.000001]");
+    BC_REQUIRE_MESSAGE(has_code(response, -25), response);
+}
+
 BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__pooled__txid)
 {
     const auto hex = encode_base16(test::tx1c.to_data(true));
