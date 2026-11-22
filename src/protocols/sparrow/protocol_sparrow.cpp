@@ -100,8 +100,8 @@ bool protocol_sparrow::handle_chase(const code& ec,
 // Dispatch.
 // ----------------------------------------------------------------------------
 
-// A method the electrum interface does not define is the sparrow interface,
-// or is not served at all (the electrum terminal responds).
+// Method electrum interface does not define is sparrow interface, or is not
+// served at all (electrum terminal responds).
 void protocol_sparrow::handle_unclaimed(const request_t& message) NOEXCEPT
 {
     BC_ASSERT(stranded());

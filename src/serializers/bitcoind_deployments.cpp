@@ -28,9 +28,9 @@ using namespace network::rpc;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-// An activation reported as bitcoind's "buried" type, which assumes depth.
-// bitcoind reports it as active from one block below the activation height
-// (the rules are enforced for the block that follows).
+// Activation reported as bitcoind's "buried" type, which assumes depth.
+// bitcoind reports it active from one block below activation height (rules
+// enforced for block that follows).
 static void push_buried(object_t& out, const node::query& query,
     const std::string& name, bool enabled, chain::flags flag,
     size_t height) NOEXCEPT
@@ -58,9 +58,9 @@ static void push_buried(object_t& out, const node::query& query,
     });
 }
 
-// Deployments are configured, so this reads settings and needs no chain state.
-// Taproot is excluded, as bitcoind froze it and no longer reports it here
-// (btcd reports it under getblockchaininfo's bip9_softforks, which lnd reads).
+// Deployments are configured, so reads settings and needs no chain state.
+// Taproot excluded, as bitcoind froze it and no longer reports it here (btcd
+// reports it under getblockchaininfo's bip9_softforks, which lnd reads).
 object_t deployment_info(const node::query& query,
     const system::settings& settings, const database::header_link& link,
     size_t height) NOEXCEPT

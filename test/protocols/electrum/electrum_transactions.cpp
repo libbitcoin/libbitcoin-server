@@ -768,8 +768,8 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__broadcast__receiv
     BC_REQUIRE_EQUAL(tx.at("fee").as_int64(), tx1c_fee);
 }
 
-// The configured rate is btc/vkb, so derive it from the tx1c rate to pin the
-// conversion (an error of scale would break both directions).
+// Configured rate is btc/vkb, so derive it from tx1c rate to pin conversion
+// (error of scale would break both directions).
 static double tx1c_rate(double factor) NOEXCEPT
 {
     constexpr auto vbytes_per_vkbyte = 1'000.0;
@@ -806,7 +806,7 @@ BC_AUTO_TEST_SUITE_END()
 
 // closed tx pool
 // ----------------------------------------------------------------------------
-// The tx chaser refuses submission and testing while the pool is closed.
+// Tx chaser refuses submission and testing while pool closed.
 
 BC_FIXTURE_TEST_SUITE(electrum_closed_tests, electrum_closed_setup_fixture)
 

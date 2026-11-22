@@ -91,8 +91,7 @@ object_t block_stats(const chain::block& block, size_t height,
         {
             tx_total_output += out->value();
 
-            // The genesis coinbase does not add to the utxo set, and
-            // unspendable outputs are not included in it.
+            // Genesis coinbase not added to utxo set, nor unspendable outputs.
             if (is_zero(height) || out->script().is_unspendable())
                 continue;
 

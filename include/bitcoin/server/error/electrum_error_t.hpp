@@ -27,8 +27,8 @@ namespace server {
 namespace error {
 namespace electrum {
 
-/// Values are electrumx/aiorpcx wire codes, published as the json-rpc error
-/// code. The electrum client disconnects on method_not_found, internal_error,
+/// Values are electrumx/aiorpcx wire codes, published as json-rpc error code.
+/// Electrum client disconnects on method_not_found, internal_error,
 /// excessive_resource_usage and server_busy.
 enum error_t : int32_t
 {
@@ -56,10 +56,10 @@ enum error_t : int32_t
 // No current need for error_code equivalence mapping.
 DECLARE_ERROR_T_CODE_CATEGORY(error, BCS_API);
 
-/// Map a foreign category code to the electrum code space, where a depth
-/// limit is excessive history, any other store fault is a daemon error, and
-/// any other failure is reported as the given code. A code of this category
-/// passes through unchanged.
+/// Map foreign category code to electrum code space, where depth limit is
+/// excessive history, any other store fault is daemon error, and any other
+/// failure is reported as given code.
+/// Code of this category passes through unchanged.
 BCS_API code translate(const code& ec, error_t failure) NOEXCEPT;
 
 } // namespace electrum

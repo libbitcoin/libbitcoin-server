@@ -42,9 +42,9 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
 // Terminal dispatch.
 // ----------------------------------------------------------------------------
-// This class is attached to the channel after the subgroup protocols, which
-// claim requests defined by their interfaces. Defaults are sent here exactly
-// once and only when no subgroup has claimed the request.
+// Attached to channel after subgroup protocols, which claim requests defined by
+// their interfaces. Defaults are sent here exactly once and only when no
+// subgroup has claimed request.
 
 // Claimed by rest (when attached), otherwise disallowed.
 void protocol_bitcoind::handle_receive_get(const code& ec,
@@ -121,7 +121,7 @@ void protocol_bitcoind::handle_receive_post(const code& ec,
         return;
     }
 
-    // Get the parsed json-rpc request object (v1 or v2, singleton or batch).
+    // Get parsed json-rpc request object (v1 or v2, singleton or batch).
     // v2 missing id is a notification (no response object is sent).
     // v1 null id is also a notification, but bitcoind answers (non-compliant).
     const auto& message = post->body().get<request>().message;
@@ -140,8 +140,8 @@ void protocol_bitcoind::handle_receive_post(const code& ec,
     send_error(error::bitcoind::method_not_found);
 }
 
-// The websocket transport of the interface: subgroup protocols handle claimed
-// frames, all others are answered here.
+// Websocket transport of interface: subgroup protocols handle claimed frames,
+// all others are answered here.
 void protocol_bitcoind::dispatch_websocket(
     const network::http::request& request) NOEXCEPT
 {
@@ -163,9 +163,9 @@ void protocol_bitcoind::dispatch_websocket(
     // Cache request context for response building (version + id).
     set_rpc_request(message);
 
-    // ws frames carry no headers, so ws authorization is enforced here, not
-    // by the channel (established by basic auth on the upgrade request).
-    // The credential may be restricted to a subset of interface methods.
+    // ws frames carry no headers, so ws authorization is enforced here, not by
+    // channel (established by basic auth on upgrade request). Credential may be
+    // restricted to a subset of interface methods.
     if (!authorized() || !permitted(message.method))
     {
         const code unauthorized{ network::error::unauthorized };
@@ -252,9 +252,8 @@ void protocol_bitcoind::send_text(std::string&& hexidecimal) NOEXCEPT
 // The result is the final member of the response text.
 constexpr std::string_view result_tail{ "\"}" };
 
-// The hex is written into its place in the response text, which is written
-// into the socket buffer. Responses framed by the model receive the hex as a
-// string result.
+// Hex is written into its place in response text, which is written into socket
+// buffer. Responses framed by model receive hex as a string result.
 bool protocol_bitcoind::send_hex(size_t size, hex_writer&& writer) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -516,8 +515,8 @@ void protocol_bitcoind::handle_fetch_totals(const code& ec,
     POST(do_invoke_totals, ec, totals, captured, handler);
 }
 
-// An active channel is counted by its captured row, a closed channel by the
-// accumulated totals, which are read with the active identifiers.
+// Active channel is counted by its captured row, closed channel by accumulated
+// totals, which are read with active identifiers.
 void protocol_bitcoind::do_invoke_totals(const code& ec,
     const net::totals& totals, const diagnostics::rows_ptr& captured,
     const totals_handler& handler) NOEXCEPT

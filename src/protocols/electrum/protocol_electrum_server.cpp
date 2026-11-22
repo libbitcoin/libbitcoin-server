@@ -49,8 +49,8 @@ void protocol_electrum::handle_server_add_peer(const code& ec,
         return;
     }
 
-    // This is an unsafe feature and server outbound connections are a bad idea.
-    // Instead we rely strictly on a configured list servers to advertise.
+    // Unsafe feature, and server outbound connections are a bad idea. Relies
+    // strictly on a configured list of servers to advertise.
     send_code(error::electrum::method_not_found);
 }
 

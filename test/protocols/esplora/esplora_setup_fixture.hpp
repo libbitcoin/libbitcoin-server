@@ -85,8 +85,8 @@ private:
     std::optional<websocket_stream> websocket_{};
 };
 
-// Configured with the chasers started and no currency window -- for tests of
-// transaction submission, which the tx chaser refuses unless the top is current.
+// Configured with chasers started and no currency window -- for tests of
+// transaction submission, which tx chaser refuses unless top is current.
 struct esplora_submit_setup_fixture
   : esplora_setup_fixture
 {

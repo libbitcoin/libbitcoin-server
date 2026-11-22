@@ -64,9 +64,8 @@ protected:
     /// Obtain cached request without clearing cache (requires strand).
     const network::http::request_cptr& get_request() const NOEXCEPT;
 
-    /// Response to the cached request, with its version and the common,
-    /// access control and coding headers, clearing the cache (requires
-    /// strand).
+    /// Response to cached request, with its version and common, access control
+    /// and coding headers, clearing cache (requires strand).
     network::http::response to_response(network::http::status status) NOEXCEPT;
 
     /// Senders, responding to the cached request (requires strand).

@@ -24,8 +24,8 @@
 
 #define ZMQ_ENDPOINT "127.0.0.1"
 
-// A server with the zmq (zmtp publisher) service bound, and a plain socket
-// connected to it for a synchronous ZMTP subscriber peer.
+// Server with zmq (zmtp publisher) service bound, and plain socket connected to
+// it for synchronous ZMTP subscriber peer.
 struct zmq_setup_fixture
 {
     DELETE_COPY_MOVE(zmq_setup_fixture);
@@ -70,9 +70,8 @@ struct zmq_ten_block_setup_fixture
     }
 };
 
-// The rfc7748 (section 6.1) bob secret key as the CURVE server key (its
-// public key is the server cert) and the alice public key as the sole
-// authorized client cert.
+// rfc7748 (section 6.1) bob secret key as CURVE server key (its public key is
+// server cert) and alice public key as sole authorized client cert.
 #define ZMQ_CURVE_KEY \
     "5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb"
 #define ZMQ_CURVE_SERVER \

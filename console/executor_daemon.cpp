@@ -60,8 +60,8 @@ constexpr uint32_t daemon_absent = ENOENT;
 
 #if defined(HAVE_WINDOWS)
 
-// Node drain exceeds the default shutdown window, so preshutdown is required.
-// This has no effect until the service accepts SERVICE_ACCEPT_PRESHUTDOWN.
+// Node drain exceeds default shutdown window, so preshutdown is required. No
+// effect until service accepts SERVICE_ACCEPT_PRESHUTDOWN.
 constexpr DWORD preshutdown_milliseconds = 600'000;
 
 // The manager terminates a pending start that does not progress within this.
@@ -77,10 +77,10 @@ parser* executor::service_metadata_{};
 // Service runtime.
 // ----------------------------------------------------------------------------
 
-// A null status handle implies console mode, in which this is a noop. Pending
-// states must advance the checkpoint, as the manager otherwise assumes a hang.
-// Reported from the manager, network, and poller threads, so holds no state
-// apart from the atomics that the reported status is composed from.
+// Null status handle implies console mode, in which this is a noop. Pending
+// states must advance checkpoint, as manager otherwise assumes hang. Reported
+// from manager, network, and poller threads, so holds no state apart from
+// atomics reported status is composed from.
 void executor::report_status(DWORD state) NOEXCEPT
 {
     if (is_null(status_handle_))
@@ -146,13 +146,13 @@ void WINAPI executor::service_main(DWORD, LPWSTR*) NOEXCEPT
     if (is_null(status_handle_))
         return;
 
-    // Suppresses the hidden window and console capture, which have no meaning
-    // in session zero, and are otherwise created by the executor constructor.
+    // Suppresses hidden window and console capture, which have no meaning in
+    // session zero, otherwise created by executor constructor.
     service_ = true;
     report_status(SERVICE_START_PENDING);
 
-    // The service has no console, so console output is discarded. This must
-    // outlive the executor, which retains a reference to it.
+    // Service has no console, so console output is discarded. Must outlive
+    // executor, which retains reference to it.
     static std::ostream discard{ nullptr };
     auto& host = executor::factory(*service_metadata_, *service_input_,
         discard, *service_error_);
@@ -166,9 +166,9 @@ void WINAPI executor::service_main(DWORD, LPWSTR*) NOEXCEPT
     report_status(SERVICE_STOPPED);
 }
 
-// Grant the account the right to log on as a service, without which the
-// service control manager cannot start the service. This is idempotent, and
-// is not revoked on removal, as other services may rely upon it.
+// Grant account the right to log on as a service, without which service control
+// manager cannot start service. Idempotent, and not revoked on removal, as
+// other services may rely upon it.
 DWORD executor::grant_logon_right(const std::string& account) NOEXCEPT
 {
     using namespace system;
@@ -265,8 +265,8 @@ uint32_t executor::create_service(const std::filesystem::path& config,
         return result;
     }
 
-    // Delayed start defers the node until boot completes, so that its startup
-    // does not contend with that of the operating system.
+    // Delayed start defers node until boot completes, so its startup does not
+    // contend with that of operating system.
     constexpr auto text = SERVICE_CONFIG_DESCRIPTION;
     constexpr auto start = SERVICE_CONFIG_DELAYED_AUTO_START_INFO;
     constexpr auto info = SERVICE_CONFIG_PRESHUTDOWN_INFO;
@@ -329,8 +329,8 @@ uint32_t executor::delete_service() NOEXCEPT
 #if defined(HAVE_POSIX)
 
 #if defined(HAVE_LINUX) || defined(HAVE_APPLE)
-// The drain exceeds the default stop timeout on both platforms, and can run
-// to minutes, depending on dirty page volume and disk speed.
+// Drain exceeds default stop timeout on both platforms, and can run to minutes,
+// depending on dirty page volume and disk speed.
 constexpr auto stop_timeout_seconds = 600;
 #endif
 
@@ -347,10 +347,10 @@ static std::filesystem::path enabled_path(const std::string& name) NOEXCEPT
     return { "/etc/systemd/system/multi-user.target.wants/" + name + ".service" };
 }
 
-// Type=notify defers dependent units until the node reports ready, which is
-// the posix counterpart to reporting SERVICE_RUNNING to the manager. Restart
-// is not configured, as a store that fails to open does so deterministically,
-// and retrying only obscures the fault (as does the manager on windows).
+// Type=notify defers dependent units until node reports ready, posix
+// counterpart to reporting SERVICE_RUNNING to manager. Restart not configured,
+// as a store that fails to open does so deterministically, and retrying only
+// obscures fault (as does manager on windows).
 static std::string unit_text(const std::string&, const std::string& command,
     const std::string&, const std::string& account) NOEXCEPT
 {
@@ -373,9 +373,9 @@ static std::string unit_text(const std::string&, const std::string& command,
 
 #elif defined(HAVE_APPLE)
 
-// launchd clamps a positive ExitTimeOut to 60 seconds (600 reports as 60), so
-// this is the effective drain ceiling on osx. Do not "fix" this with zero,
-// which launchd documents as infinite but which kills without draining.
+// launchd clamps positive ExitTimeOut to 60 seconds (600 reports as 60), so
+// this is effective drain ceiling on osx. Do not "fix" this with zero, which
+// launchd documents as infinite but which kills without draining.
 constexpr auto exit_timeout_seconds = stop_timeout_seconds;
 
 static std::filesystem::path unit_path(const std::string&) NOEXCEPT
@@ -383,11 +383,11 @@ static std::filesystem::path unit_path(const std::string&) NOEXCEPT
     return { "/Library/LaunchDaemons/" BS_SERVICE_LABEL ".plist" };
 }
 
-// launchd has no readiness protocol, so the job is simply run at load.
-// KeepAlive is not configured, as it restarts upon any exit, and a store that
-// fails to open does so deterministically (as with the other two managers).
-// launchd discards console output, and the log file is buffered, so redirect
-// it to obtain the live view that the journal provides on linux.
+// launchd has no readiness protocol, so job runs at load. KeepAlive
+// not configured, as it restarts on any exit, and a store that fails
+// to open does so deterministically (as with other two managers).
+// launchd discards console output and log file is buffered, so
+// redirect it to obtain live view journal provides on linux.
 static std::string unit_text(const std::string&, const std::string& command,
     const std::string& console, const std::string& account) NOEXCEPT
 {
@@ -430,11 +430,11 @@ static std::filesystem::path enabled_path(const std::string& name) NOEXCEPT
 // Set by the rc.d script, as rc.subr exports nothing by which to detect it.
 constexpr auto service_variable = "BS_SERVICE";
 
-// rc.subr has no readiness protocol, so daemon(8) detaches the node, records
-// its pid for rc.subr, and redirects console output (otherwise discarded).
-// Restart is not configured (as with the other managers). rc.subr stops with
-// SIGTERM and waits without limit, but rc.shutdown terminates the system after
-// rcshutdown_timeout (90 seconds by default), which may not cover the drain.
+// rc.subr has no readiness protocol, so daemon(8) detaches node, records its
+// pid for rc.subr, and redirects console output (otherwise discarded). Restart
+// not configured (as with other managers). rc.subr stops with SIGTERM and waits
+// without limit, but rc.shutdown terminates system after rcshutdown_timeout (90
+// seconds by default), which may not cover drain.
 static std::string unit_text(const std::string& name,
     const std::string& command, const std::string& console,
     const std::string& account) NOEXCEPT
@@ -470,8 +470,8 @@ static std::string unit_text(const std::string& name,
 
 #endif // HAVE_LINUX
 
-// Console redirection file, within the configured log directory. Distinct
-// from the rotated log files, which the node writes and buffers itself.
+// Console redirection file, within configured log directory. Distinct from
+// rotated log files, which node writes and buffers itself.
 constexpr auto console_file = "console.log";
 
 // Returns an errno value, where zero is success.
@@ -506,8 +506,8 @@ uint32_t executor::create_service(const std::filesystem::path& config,
         return EIO;
 
 #if defined(HAVE_LINUX)
-    // This is what enabling a unit does, avoiding a systemctl invocation.
-    // A reload is required before the unit can be started without a reboot.
+    // What enabling a unit does, avoiding a systemctl invocation. Reload is
+    // required before unit can be started without reboot.
     file.close();
     const auto enabled = enabled_path(name_);
     std::filesystem::create_directories(enabled.parent_path(), ec);
@@ -518,8 +518,8 @@ uint32_t executor::create_service(const std::filesystem::path& config,
     if (ec)
         return EACCES;
 #elif defined(HAVE_FREEBSD)
-    // rc.d requires an executable script, and rc.subr sources the rc.conf.d
-    // file of the same name, in which the script is enabled.
+    // rc.d requires an executable script, and rc.subr sources rc.conf.d file of
+    // same name, in which script is enabled.
     file.close();
     using perms = std::filesystem::perms;
     std::filesystem::permissions(unit, perms::owner_all | perms::group_read |
@@ -605,9 +605,9 @@ std::string executor::command_line(const std::filesystem::path& config) NOEXCEPT
 
 #if defined(HAVE_LINUX)
 
-// Notify the service manager, as defined by sd_notify(3). The socket is unset
-// unless the unit is Type=notify, in which case this is a noop. Implemented
-// here to avoid a libsystemd dependency for two datagrams.
+// Notify service manager, as defined by sd_notify(3). Socket is unset unless
+// unit is Type=notify, in which case this is a noop. Implemented here to avoid
+// libsystemd dependency for two datagrams.
 static void notify_manager(const std::string& state) NOEXCEPT
 {
     const auto path = std::getenv("NOTIFY_SOCKET");
@@ -686,8 +686,8 @@ bool executor::service(parser& metadata, std::istream& input,
         { NULL, NULL }
     };
 
-    // Blocks until the service stops, and fails immediately (without any
-    // connection attempt) when the process was not started by the manager.
+    // Blocks until service stops, fails immediately (without any connection
+    // attempt) when process was not started by manager.
     if (!is_zero(::StartServiceCtrlDispatcherW(table)))
         return true;
 
@@ -696,8 +696,8 @@ bool executor::service(parser& metadata, std::istream& input,
 
 #else
 
-// A posix daemon runs in the foreground under its manager, so there is no
-// dispatcher to connect. This only detects that a manager is supervising.
+// Posix daemon runs in foreground under its manager, so there is no dispatcher
+// to connect. Only detects that a manager is supervising.
 bool executor::service(parser&, std::istream&, std::ostream&)
 {
 #if defined(HAVE_LINUX)

@@ -118,8 +118,8 @@ bool protocol_btcd::handle_get_best_block(const code& ec,
     return true;
 }
 
-// Overrides the bitcoind method (btcd is attached first, so it claims the
-// request). Required, an unsubscribed method drops the request.
+// Overrides bitcoind method (btcd is attached first, so it claims request).
+// Required, an unsubscribed method drops request.
 bool protocol_btcd::handle_get_block_chain_info(const code& ec,
     btcd_interface::get_block_chain_info) NOEXCEPT
 {

@@ -287,8 +287,7 @@ struct native_origins_hosts_setup_fixture
     }
 };
 
-// Configured with the chasers started, relay and no currency window, so that
-// the pool is open.
+// Configured with chasers started, relay and no currency window, so pool open.
 struct native_pooling_setup_fixture
   : native_setup_fixture
 {

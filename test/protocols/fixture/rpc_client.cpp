@@ -79,8 +79,8 @@ network::io::socket& rpc_client::stream()
 // tcp
 // ----------------------------------------------------------------------------
 
-// A write failure is never expected, so it is checked on every transport.
-// Checked governs the read, as a dropped channel is a tested outcome.
+// Write failure never expected, so checked on every transport. Checked governs
+// read, as dropped channel is tested outcome.
 system::json::value rpc_client::send(const std::string& text, bool checked)
 {
     error_code ec{};

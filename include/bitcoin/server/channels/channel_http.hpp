@@ -25,10 +25,10 @@
 namespace libbitcoin {
 namespace server {
 
-/// Common base for http service channels. A service channel overrides
-/// default_body to preselect its reader body, and a json-rpc body also
-/// implies tcp downgrade detection. An in-band service (e.g. btcd
-/// authenticate) authorizes after upgrade, so its upgrade is open.
+/// Common base for http service channels. Service channel overrides
+/// default_body to preselect its reader body, and a json-rpc body also implies
+/// tcp downgrade detection. In-band service (e.g. btcd authenticate) authorizes
+/// after upgrade, so its upgrade is open.
 class BCS_API channel_http
   : public server::channel,
     public network::channel_http

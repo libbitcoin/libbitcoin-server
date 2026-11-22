@@ -49,11 +49,11 @@ struct admin_methods
 /// ?format=json|html (via query string).
 /// ---------------------------------------------------------------------------
 
-/// The filter parameter is a decimal integer bit mask, where bit position
-/// corresponds to log level/event enum value. Zero matches nothing, which
-/// clears the subscription; an omitted filter defaults to zero. The response
-/// is {"previous":[filter]}, the previous filter value as a json number
-/// (masks are constrained to exact json numbers).
+/// Filter parameter is a decimal integer bit mask, where bit position
+/// corresponds to log level/event enum value. Zero matches nothing, clearing
+/// subscription; omitted filter defaults to zero. Response is
+/// {"previous":[filter]}, previous filter value as json number (masks are
+/// constrained to exact json numbers).
 
 /// /v1/log/subscribe?filter=[mask] {stream}
 /// /v1/event/subscribe?filter=[mask] {stream}

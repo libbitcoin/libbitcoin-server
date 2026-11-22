@@ -76,8 +76,8 @@ public:
     virtual bool parse(int argc, const char* argv[],
         std::ostream& error) THROWS;
 
-    /// Read the envelope of an existing store, reset defaults to its network,
-    /// and apply its stored values to configuration.
+    /// Read envelope of existing store, reset defaults to its network, and
+    /// apply its stored values to configuration.
     virtual void read_envelope() NOEXCEPT;
 
     /// The populated configuration settings values.

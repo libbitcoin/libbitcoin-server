@@ -31,8 +31,8 @@ static size_t tree_width(size_t txs, size_t height) NOEXCEPT
     return ceilinged_divide(txs, power2(height));
 }
 
-// The merkle node hash of a pair (double sha256 of the concatenation). The
-// two-element merkle_root is a single bitcoin merkle level.
+// Merkle node hash of pair (double sha256 of concatenation). Two-element
+// merkle_root is single bitcoin merkle level.
 static hash_digest node_hash(const hash_digest& left,
     const hash_digest& right) NOEXCEPT
 {
@@ -181,8 +181,8 @@ bool extract_partial_merkle(hash_digest& root, hashes& matched,
     matched.clear();
     positions.clear();
 
-    // An empty tree, or more hashes than leaves, is malformed. There must be
-    // at least one flag bit per branch hash.
+    // Empty tree, or more hashes than leaves, is malformed. At least one flag
+    // bit required per branch hash.
     const auto bits = bytes_to_bits(flags);
     if (is_zero(txs) || branch.size() > txs || bits.size() < branch.size())
         return false;

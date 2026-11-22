@@ -149,8 +149,8 @@ struct electrum_methods
     using mempool_recent = at<43>;
 };
 
-/// The electrum handshake, published separately as it is served by its own
-/// protocol (attached first), which claims server.version alone.
+/// electrum handshake, published separately as served by its own protocol
+/// (attached first), which claims server.version alone.
 struct electrum_handshake_methods
 {
     static constexpr std::tuple methods
@@ -200,8 +200,9 @@ namespace electrum
         /// 2019, removed deserialized headers and added merkle proof features.
         v1_4,
 
-        /// 2019, modifications for auxiliary proof-of-work handling (unsupported).
-        /// The version number is allowed but there is no difference from v1.4.
+        /// 2019, modifications for auxiliary proof-of-work handling
+        /// (unsupported).
+        /// Version number allowed but no difference from v1.4.
         v1_4_1,
 
         /// 2020, added scripthash unsubscribe functionality.

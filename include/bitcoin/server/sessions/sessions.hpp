@@ -29,8 +29,8 @@ namespace libbitcoin {
 namespace server {
 
 /// Alias server sessions, all derived from node::session.
-/// The first protocol supplies channel_t/options_t, protocol_bitcoind is the
-/// terminal default responder and must be attached (subscribed) last.
+/// First protocol supplies channel_t/options_t, protocol_bitcoind is terminal
+/// default responder and must be attached (subscribed) last.
 using session_admin = session_server<protocol_admin>;
 using session_native = session_server<protocol_native>;
 using session_esplora = session_server<protocol_esplora>;

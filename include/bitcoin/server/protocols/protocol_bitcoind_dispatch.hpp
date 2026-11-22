@@ -25,12 +25,12 @@
 namespace libbitcoin {
 namespace server {
 
-/// Interface subgroup dispatch, the common shape of the bitcoind subgroup
-/// protocols. Carries the subgroup interface dispatcher and claims each
-/// request defined by the interface, silently deferring all others to the
-/// terminal responder (protocol_bitcoind, attached last). All subgroups are
-/// explicitly instantiated (with their dispatchers) in the implementation
-/// translation unit, isolating the dispatch metaprogramming there.
+/// Interface subgroup dispatch, common shape of bitcoind subgroup protocols.
+/// Carries subgroup interface dispatcher and claims each request defined by
+/// interface, silently deferring all others to terminal responder
+/// (protocol_bitcoind, attached last). All subgroups are explicitly
+/// instantiated (with their dispatchers) in implementation translation unit,
+/// isolating dispatch metaprogramming there.
 template <typename Interface>
 class protocol_bitcoind_dispatch
   : public protocol_bitcoind

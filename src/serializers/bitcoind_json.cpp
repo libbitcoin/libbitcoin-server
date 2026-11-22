@@ -283,8 +283,8 @@ std::string chain_name(const system::settings& settings) NOEXCEPT
     }
 }
 
-// Shared by the bitcoind blockchain subgroup and the btcd endpoint, which
-// augments the result with bip9_softforks (required by lnd).
+// Shared by bitcoind blockchain subgroup and btcd endpoint, which augments
+// result with bip9_softforks (required by lnd).
 bool chain_info(network::rpc::object_t& out,
     const node::query& query, const system::settings& settings,
     bool pruned, bool current) NOEXCEPT
@@ -459,8 +459,8 @@ bool raw_mempool(system::json::value& out, const node::query& query,
     return true;
 }
 
-// The pool is stored, so usage is the size of its tables, and the maximum is
-// the space available to the store (shared with all tables and the volume).
+// Pool is stored, so usage is size of its tables, maximum is space available to
+// store (shared with all tables and volume).
 bool mempool_info(system::json::object& out, const node::query& query,
     const database::fee_rates& rates, const std::filesystem::path& store,
     uint64_t minimum, uint64_t relay, uint64_t increment) NOEXCEPT

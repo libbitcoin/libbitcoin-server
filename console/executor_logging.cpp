@@ -42,10 +42,9 @@ const std::unordered_map<uint8_t, bool> executor::defined_
 
 // Logging.
 // ----------------------------------------------------------------------------
-// Logging uses underling std::ostream. It is possible that these may throw
-// upon certain unexpected failures, such as a disconnected device. Presently
-// the writes are not wrapped in a try block (performance) but this can be
-// appplied centrally below if desired.
+// Logging uses underlying std::ostream, which may throw upon unexpected
+// failures, such as a disconnected device. Writes are not wrapped in a try
+// block (performance), but this can be applied centrally below if desired.
 
 executor::log_sink executor::create_log_sink() const
 {
@@ -107,16 +106,16 @@ void executor::subscribe_log(std::ostream* sink)
                 output_ << prefix << message << std::endl;
                 output_ << prefix << BS_NODE_FOOTER << std::endl;
 
-                // A service has no console to await, and posix captures
-                // console output to the service log, where this is noise.
+                // Service has no console to await, and posix captures console
+                // output to service log, where this is noise.
                 if (!service_)
                     output_ << prefix << BS_NODE_TERMINATE << std::endl;
 
-                // Release subscription and signal termination of log.
-                // Log destruct blocks on its own threadpool join, which occurs
-                // only after all logging work is completed. After the above
-                // message is queued, no more are accepted, and the executor
-                // may initiate its own (and thereby this log's) destruction.
+                // Release subscription and signal termination of log. Log
+                // destruct blocks on its own threadpool join, which occurs only
+                // after all logging work completes. After above message is
+                // queued, no more are accepted, and executor may initiate its
+                // own (and thereby this log's) destruction.
                 stopped_.set_value(true);
                 return false;
             }

@@ -22,11 +22,10 @@
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
 
-/// One client connection to a universal json-rpc service, over any of its
-/// three transports: raw tcp (which the server downgrades to a newline
-/// delimited stream), http POST, and websocket (by http upgrade). The service
-/// fixtures compose this, as they differ only in settings and in how they
-/// shape a request.
+/// One client connection to universal json-rpc service, over any of its three
+/// transports: raw tcp (which server downgrades to newline delimited stream),
+/// http POST, and websocket (by http upgrade). Service fixtures compose this,
+/// as they differ only in settings and in how they shape request.
 class rpc_client
 {
 public:
@@ -43,13 +42,13 @@ public:
     void connect(const network::io::endpoint& endpoint);
     void close();
 
-    /// Raw tcp, newline delimited (the server detects and downgrades).
+    /// Raw tcp, newline delimited (server detects and downgrades).
     /// Returns {"dropped":true} on transport error, which checked asserts.
     system::json::value send(const std::string& text, bool checked=false);
     system::json::value receive(bool checked=false);
 
-    /// http POST of a body to target (empty content_type omits the field),
-    /// and the request builders.
+    /// http POST of body to target
+    /// (empty content_type omits field), and request builders.
     system::json::value post(const std::string& body,
         const std::string& target="/", bool checked=false,
         std::string_view content_type="application/json");
@@ -71,8 +70,7 @@ public:
         get_authorized(std::string_view target, const std::string& username,
             const std::string& password);
 
-    /// http POST to "/" with an origin field unless empty (returns the full
-    /// response).
+    /// http POST to "/" with origin field unless empty (returns full response).
     using response = network::http::message<false, network::http::string_body>;
     response post_response(const std::string& body, std::string_view origin={},
         uint32_t version=network::http::version_1_1);

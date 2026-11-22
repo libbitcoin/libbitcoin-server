@@ -26,8 +26,8 @@
 namespace libbitcoin {
 namespace server {
 
-/// The sparrow interface, added to the inherited electrum interface, as
-/// protocol_btcd adds the btcd interface to bitcoind.
+/// sparrow interface, added to inherited electrum interface, as protocol_btcd
+/// adds btcd interface to bitcoind.
 class BCS_API protocol_sparrow
   : public server::protocol_electrum,
     protected network::tracker<protocol_sparrow>

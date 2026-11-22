@@ -523,8 +523,8 @@ bool protocol_bitcoind_blockchain::handle_get_block_stats(const code& ec,
     return true;
 }
 
-// The window tx count is summed over the window (cost is linear in the window
-// requested by the caller); txcount is cumulative from genesis (chain walk).
+// Window tx count is summed over window (cost is linear in window requested by
+// caller); txcount is cumulative from genesis (chain walk).
 bool protocol_bitcoind_blockchain::handle_get_chain_tx_stats(const code& ec,
     rpc_interface::get_chain_tx_stats, double nblocks,
     const std::string& blockhash) NOEXCEPT
@@ -690,8 +690,8 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
     return true;
 }
 
-// The response defers to completion of the store scan (see dispatch). This is
-// an administrative query, expected to run long, performed off the strand.
+// Response defers to completion of store scan (see dispatch). An administrative
+// query, expected to run long, performed off strand.
 bool protocol_bitcoind_blockchain::handle_get_tx_out_set_info(const code& ec,
     rpc_interface::get_tx_out_set_info, const std::string& hash_type,
     const value_t& hash_or_height, bool use_index) NOEXCEPT
@@ -878,9 +878,9 @@ bool protocol_bitcoind_blockchain::handle_save_mempool(const code& ec,
     return true;
 }
 
-// The response defers to completion of the utxo scan (see dispatch). The
-// expansion may require a million derivations and without the address index
-// the scan walks the full utxo set (recovery-grade), both off the strand.
+// Response defers to completion of utxo scan (see dispatch). Expansion may
+// require a million derivations and without address index scan walks full utxo
+// set (recovery-grade), both off strand.
 bool protocol_bitcoind_blockchain::handle_scan_tx_out_set(const code& ec,
     rpc_interface::scan_tx_out_set, const std::string& action,
     const array_t& scanobjects) NOEXCEPT
@@ -933,9 +933,9 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
         }
     }
 
-    // The needle set is keyed by output script hash (the address index key).
-    // The utxo set excludes unspendable outputs, so those needles are
-    // dropped, and the set deduplicates repeated expressions.
+    // Needle set is keyed by output script hash (address index key).
+    // Utxo set excludes unspendable outputs, so those needles are dropped.
+    // Set deduplicates repeated expressions.
     std::unordered_set<hash_digest> keys{};
     for (const auto& script: scripts)
         if (!script.is_unspendable())
@@ -957,8 +957,8 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
 
     if (query.address_enabled())
     {
-        // Indexed candidates avoid the full scan, so no coins of the set are
-        // scanned and the scanned coin count is zero.
+        // Indexed candidates avoid full scan, so no coins of set are scanned
+        // and scanned coin count is zero.
         for (const auto& script: scripts)
         {
             const auto data = script.to_data(false);
@@ -997,8 +997,8 @@ void protocol_bitcoind_blockchain::do_scan_tx_out_set(
         }
         else
         {
-            // The store matches by script hash over the scan (the set size is
-            // the count of coins examined, as bitcoind scans the whole set).
+            // Store matches by script hash over scan (set size is count of
+            // coins examined, as bitcoind scans whole set).
             ec = query.get_unspent_matches(stopping_, coins, txouts, keys,
                 branch, database_settings().turbo);
         }
@@ -1117,8 +1117,8 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_proof(const code& ec,
         return true;
     }
 
-    // All targets must be in the block (matched in block order).
-    // Not ranges algorithms, as the vector<bool> proxy iterator does not
+    // All targets must be in block (matched in block order).
+    // Not ranges algorithms, as vector<bool> proxy iterator does not
     // satisfy indirectly_writable under libc++.
     std::vector<bool> match(keys.size());
     std::transform(keys.begin(), keys.end(), match.begin(),
@@ -1164,8 +1164,8 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out_proof(const code& ec,
     return true;
 }
 
-// Verifies a serialized merkle block, returning the array of proven txids, or
-// an empty array if the proof is invalid.
+// Verifies serialized merkle block, returning array of proven txids, or empty
+// array if proof is invalid.
 bool protocol_bitcoind_blockchain::handle_verify_tx_out_proof(const code& ec,
     rpc_interface::verify_tx_out_proof, const std::string& proof) NOEXCEPT
 {
@@ -1195,8 +1195,8 @@ bool protocol_bitcoind_blockchain::handle_verify_tx_out_proof(const code& ec,
     const auto ok = extract_partial_merkle(root, matched, positions,
         merkle->transactions, merkle->flags, merkle->hashes);
 
-    // An invalid proof, or one not matching the block's merkle root, proves
-    // nothing (empty result, as bitcoind).
+    // Invalid proof, or one not matching block's merkle root, proves nothing
+    // (empty result, as bitcoind).
     if (!ok || root != merkle->header->merkle_root())
     {
         send_result(array_t{});
@@ -1318,9 +1318,9 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tips(const code& ec,
     const auto branchlen = floored_subtract(candidate, query.get_fork());
     if (!is_zero(branchlen))
     {
-        // Parent traversal is reorg-stable without the reorg lock. A hole in
-        // the branch makes it headers-only, otherwise valid-headers; candidate
-        // is the strongest valid chain so is never invalid or valid-fork.
+        // Parent traversal is reorg-stable without reorg lock. Hole in branch
+        // makes it headers-only, otherwise valid-headers; candidate is
+        // strongest valid chain so is never invalid or valid-fork.
         database::header_links branch{};
         if (query.get_ancestry(branch, candidate_link, branchlen))
         {
@@ -1674,8 +1674,8 @@ bool protocol_bitcoind_blockchain::handle_scan_blocks(const code& ec,
     return true;
 }
 
-// The response defers to the chase event or the timeout (long poll). The
-// saved request context carries the deferred send (see dispatch).
+// Response defers to chase event or timeout (long poll). Saved request context
+// carries deferred send (see dispatch).
 bool protocol_bitcoind_blockchain::handle_wait_for_block(const code& ec,
     rpc_interface::wait_for_block, const std::string& blockhash,
     double timeout) NOEXCEPT
@@ -1819,8 +1819,7 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_entry(const code& ec,
     return true;
 }
 
-// The minimum is that sent to peers (feefilter), while the relay minimum is
-// the configured rate.
+// Minimum is that sent to peers (feefilter), relay minimum is configured rate.
 bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
     rpc_interface::get_mempool_info) NOEXCEPT
 {

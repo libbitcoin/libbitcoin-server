@@ -21,7 +21,7 @@
 BC_AUTO_TEST_SUITE(error_tests)
 
 // error_t
-// These test std::error_code equality operator overrides.
+// Tests of std::error_code equality operator overrides.
 
 // general
 

@@ -28,8 +28,8 @@ namespace interface {
 
 struct btcd_methods
 {
-    /// BTCD protocol (json-rpc v2.0 over http/ws). Named arguments are
-    /// required by v2.0, but btcd does not support them (supported here).
+    /// BTCD protocol (json-rpc v2.0 over http/ws). Named arguments required by
+    /// v2.0, but btcd does not support them (supported here).
     static constexpr std::tuple methods
     {
         /// Administrative.
@@ -41,8 +41,8 @@ struct btcd_methods
         method<"estimatefee", number_t>{ "numblocks" },
         method<"getbestblock">{},
 
-        /// Overrides the bitcoind method, adding bip9_softforks (real btcd
-        /// reports it, and lnd requires the taproot key to accept a backend).
+        /// Overrides bitcoind method, adding bip9_softforks (real btcd reports
+        /// it, and lnd requires taproot key to accept a backend).
         method<"getblockchaininfo">{},
 
         method<"getcfilter", string_t, number_t>{ "hash", "filtertype" },

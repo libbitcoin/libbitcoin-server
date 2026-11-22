@@ -146,8 +146,8 @@ bool version_range(config::version& min, config::version& max,
     return false;
 }
 
-// Clients may specify undefined (e.g. future) versions, negotiation is
-// numeric and settles on the greatest defined version in the overlap.
+// Clients may specify undefined (e.g. future) versions, negotiation is numeric
+// and settles on greatest defined version in overlap.
 version negotiate(const value_t& value, const config::version& minimum,
     const config::version& maximum) NOEXCEPT
 {

@@ -29,8 +29,7 @@ using namespace network::rpc;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-// btcd templates carry the coinbase flags and the latest block time, without
-// the bip9 rules.
+// btcd templates carry coinbase flags and latest block time, no bip9 rules.
 void protocol_btcd_mining::finish_template(object_t& out) const NOEXCEPT
 {
     constexpr auto max_time_offset = 2_u64 * 60_u64 * 60_u64;

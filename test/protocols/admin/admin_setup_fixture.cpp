@@ -211,9 +211,9 @@ system::data_chunk admin_setup_fixture::get_data(std::string_view target)
     return system::data_chunk(response.body().cbegin(), response.body().cend());
 }
 
-// The network json body does not support reading a document consisting
-// of only a top-level primitive, because it supports streaming and non-
-// streaming. So instead just use a string buffer and parse explicitly.
+// Network json body does not support reading document of only top-level
+// primitive, as it supports streaming and non-streaming,
+// so use string buffer and parse explicitly.
 system::json::value admin_setup_fixture::get_json(std::string_view target)
 {
     test::write_http(socket_, create_request(target));

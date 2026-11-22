@@ -72,9 +72,9 @@ static bool is_named(const std::string_view& name,
     return false;
 }
 
-// Named arguments are transformed as by bitcoind: options members are
-// collected into the options parameter, and the positional arguments of
-// "args" are named by the leading parameters. Otherwise out is not set.
+// Named arguments are transformed as by bitcoind: options members are collected
+// into options parameter, and positional arguments of "args" are named by
+// leading parameters. Otherwise out is not set.
 TEMPLATE
 code CLASS::transform(std::optional<network::rpc::request_t>& out,
     const network::rpc::request_t& in) NOEXCEPT
@@ -208,8 +208,8 @@ void CLASS::handle_receive_post(const code& ec,
     const auto& message =
         post->body().template get<network::rpc::request>().message;
 
-    // Silently defer methods not defined by the interface subgroup, or not
-    // introduced at the interface version of the channel.
+    // Silently defer methods not defined by interface subgroup, or not
+    // introduced at interface version of channel.
     if (!rpc_dispatcher::contains(message.method) ||
         !is_active(message.method))
         return;
@@ -217,8 +217,8 @@ void CLASS::handle_receive_post(const code& ec,
     // Claim the request (informs the terminal responder).
     set_claimed();
 
-    // The post is saved off during asynchronous handling and used by the
-    // senders to formulate response headers, isolating handlers from http.
+    // Post is saved off during asynchronous handling and used by senders to
+    // formulate response headers, isolating handlers from http.
     set_rpc_request(message.jsonrpc, message.id, post);
 
     // The credential may be restricted to a subset of interface methods.
@@ -258,9 +258,9 @@ void CLASS::dispatch_websocket(
     if (claimed())
         return;
 
-    // ws frames carry no headers, so ws authorization is enforced here,
-    // not by the channel. Unauthorized and non-rpc frames are silently
-    // deferred to the terminal responder.
+    // ws frames carry no headers, so ws authorization is enforced here, not
+    // by channel. Unauthorized and non-rpc frames are silently
+    // deferred to terminal responder.
     if (!authorized() ||
         !request.body().template contains<network::rpc::request>())
         return;
@@ -268,8 +268,8 @@ void CLASS::dispatch_websocket(
     const auto& message =
         request.body().template get<network::rpc::request>().message;
 
-    // Silently defer methods not defined by the interface subgroup, or not
-    // introduced at the interface version of the channel.
+    // Silently defer methods not defined by interface subgroup, or not
+    // introduced at interface version of channel.
     if (!rpc_dispatcher::contains(message.method) ||
         !is_active(message.method))
         return;
@@ -312,8 +312,8 @@ BC_POP_WARNING()
 #undef CLASS
 #undef TEMPLATE
 
-// Explicit instantiation of the subgroup dispatch protocols, isolating the
-// dispatch metaprogramming to this translation unit.
+// Explicit instantiation of subgroup dispatch protocols, isolating dispatch
+// metaprogramming to this translation unit.
 template class protocol_bitcoind_dispatch<interface::bitcoind_blockchain>;
 template class protocol_bitcoind_dispatch<interface::bitcoind_control>;
 template class protocol_bitcoind_dispatch<interface::bitcoind_handshake>;
@@ -327,8 +327,8 @@ template class protocol_bitcoind_dispatch<interface::bitcoind_wallet>;
 
 } // namespace server
 
-// Explicit instantiation of the subgroup dispatchers, from a namespace
-// enclosing network::rpc (as required and declared in the subgroup headers).
+// Explicit instantiation of subgroup dispatchers, from a namespace enclosing
+// network::rpc (as required and declared in subgroup headers).
 template class network::rpc::dispatcher<
     server::interface::bitcoind_blockchain>;
 template class network::rpc::dispatcher<

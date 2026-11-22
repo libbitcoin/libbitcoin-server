@@ -31,9 +31,9 @@ typedef std::error_code code;
 
 namespace error {
 
-/// Asio failures are normalized to the error codes below.
+/// Asio failures are normalized to error codes below.
 /// Stop by explicit call is mapped to channel_stopped or service_stopped
-/// depending on the context. Asio errors returned on cancel calls are ignored.
+/// depending on context. Asio errors returned on cancel calls are ignored.
 enum error_t : uint8_t
 {
     /// general

@@ -72,8 +72,8 @@ void protocol_zmq::stopping(const code& ec) NOEXCEPT
 // Handlers.
 // ----------------------------------------------------------------------------
 
-// A subscription is a topic prefix, so it applies to every topic that it
-// matches, and the empty prefix applies to all.
+// Subscription is topic prefix, so applies to every topic it matches, and empty
+// prefix applies to all.
 bool protocol_zmq::handle_subscribe(const code& ec,
     const chunk_cptr& prefix, bool cancel) NOEXCEPT
 {

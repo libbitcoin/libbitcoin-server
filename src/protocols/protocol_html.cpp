@@ -99,8 +99,7 @@ bool protocol_html::try_dispatch_object(const request&) NOEXCEPT
     return false;
 }
 
-// The entity tag matches the If-None-Match list, by weak comparison
-// (rfc9110 13.1.2).
+// Entity tag matches If-None-Match list, by weak comparison (rfc9110 13.1.2).
 static bool is_unmodified(const std::string_view& list,
     const std::string& tag) NOEXCEPT
 {
@@ -121,7 +120,7 @@ static bool is_unmodified(const std::string_view& list,
 
 // Accept field (RFC 7231) and ?format=<format> parameter are ignored.
 // Return embedded page based on file extension only (defaulting to html).
-// The content-type field is determined by the requested file extension.
+// Content-type field is determined by requested file extension.
 void protocol_html::dispatch_embedded(const request& request) NOEXCEPT
 {
     const auto& pages = options_.pages;
@@ -174,8 +173,8 @@ void protocol_html::dispatch_embedded(const request& request) NOEXCEPT
 
 // Accept field (media type) and ?format=<format> parameter are ignored.
 // Return requested page only if there is a path file extension (.*).
-// Otherwise return the sanitized home page (configured or default).
-// The content-type field is determined by the requested file extension.
+// Otherwise return sanitized home page (configured or default).
+// Content-type field is determined by requested file extension.
 void protocol_html::dispatch_file(const request& request) NOEXCEPT
 {
     // Empty path implies malformed target (terminal).

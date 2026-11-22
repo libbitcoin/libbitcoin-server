@@ -216,8 +216,8 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
         return true;
     }
 
-    // An invalid key (bitcoind -5) and an oversized script (-8) are not
-    // distinguished by the helper.
+    // Invalid key (bitcoind -5) and oversized script (-8)
+    // are not distinguished by helper.
     auto result = create_multisig(required, keys, address_type, p2sh_,
         witness_);
     if (result.empty())
@@ -350,7 +350,7 @@ bool protocol_bitcoind_utility::handle_get_index_info(const code& ec,
         return false;
 
     // Indexes track the confirmed chain only; all txs are archived (lookup).
-    // synced: current chain and confirmation coalesced with the candidate top.
+    // synced: current chain and confirmation coalesced with candidate top.
     const auto& query = archive();
     const object_t status
     {

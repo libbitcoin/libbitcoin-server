@@ -246,8 +246,8 @@ void executor::subscribe_capture()
 {
     using namespace system;
 
-    // This is not on a network thread, so the node may call close() while this
-    // is running a backup (for example), resulting in a try_lock warning loop.
+    // Not on a network thread, so node may call close() while this is running a
+    // backup (for example), resulting in try_lock warning loop.
     capture_.subscribe(
         [&](const code& ec, const std::string& line)
         {

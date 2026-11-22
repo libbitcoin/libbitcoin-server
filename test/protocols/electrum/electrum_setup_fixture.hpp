@@ -118,8 +118,8 @@ struct electrum_ten_block_setup_fixture
     }
 };
 
-/// The sparrow service, which reuses this harness (same transports, same
-/// handshake, same electrum interface).
+/// Sparrow service, which reuses this harness
+/// (same transports, handshake and electrum interface).
 struct sparrow_ten_block_setup_fixture
   : electrum_setup_fixture
 {
@@ -144,8 +144,8 @@ struct electrum_three_block_confirmed_address_setup_fixture
     }
 };
 
-// Configured with a currency window -- the test store is historical, so the
-// tx pool is closed and the tx chaser refuses submission.
+// Configured with currency window -- test store is historical, so tx pool is
+// closed and tx chaser refuses submission.
 struct electrum_closed_setup_fixture
   : electrum_setup_fixture
 {

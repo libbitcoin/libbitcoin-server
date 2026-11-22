@@ -27,13 +27,13 @@
 namespace libbitcoin {
 namespace server {
 
-/// Universal json-rpc service protocol, the common shape of a service (and
-/// its derivations) over channel_rpc. Carries the interface dispatcher and
-/// claims each request defined by the interface, deferring all others to the
-/// protocol attached last (see handle_unclaimed). Protocols attached to one
-/// channel (e.g. a handshake) therefore publish disjoint interfaces. The
-/// responses carry the request context of the channel, so a service is served
-/// identically over tcp/s (by downgrade), http/s and ws/s (by upgrade).
+/// Universal json-rpc service protocol, common shape of a service (and its
+/// derivations) over channel_rpc. Carries interface dispatcher and claims each
+/// request defined by interface, deferring all others to protocol attached last
+/// (see handle_unclaimed). Protocols attached to one channel (e.g. a handshake)
+/// therefore publish disjoint interfaces. Responses carry request context of
+/// channel, so a service is served identically over tcp/s (by downgrade),
+/// http/s and ws/s (by upgrade).
 template <typename Interface>
 class protocol_rpc
   : public server::protocol_http
@@ -247,8 +247,8 @@ protected:
             handle_dispatch_fault(code);
     }
 
-    /// Invoked for a request not defined by the interface, which the protocol
-    /// attached last overrides to respond (all others defer by default).
+    /// Invoked for a request not defined by interface, which protocol attached
+    /// last overrides to respond (all others defer by default).
     virtual void handle_unclaimed(
         const network::rpc::request_t&) NOEXCEPT
     {
@@ -371,8 +371,8 @@ private:
         name_data.data(), name_data.size()
     };
 
-    // The socket writes the body alone on a full duplex transport (ws frame
-    // or downgraded stream), and the full http response otherwise.
+    // Socket writes body alone on a full duplex transport (ws frame or
+    // downgraded stream), and full http response otherwise.
     inline void send_response(network::rpc::response_t&& model,
         network::result_handler&& handler) NOEXCEPT
     {

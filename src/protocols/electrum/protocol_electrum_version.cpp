@@ -41,7 +41,7 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 // Start/finished (handshake).
 // ----------------------------------------------------------------------------
 
-// Session resumes the channel following return from start().
+// Session resumes channel following return from start().
 // Sends are not precluded, but no messages can be received while paused.
 void protocol_electrum_version::shake(result_handler&& handler) NOEXCEPT
 {
@@ -79,9 +79,9 @@ void protocol_electrum_version::finished(const code& ec,
 // Handler.
 // ----------------------------------------------------------------------------
 
-// A non-version opener is a pre-1.6 client. The handshake passes at the
-// minimum version, restricted until (unless) a server.version arrives.
-// The channel dispatches the opener again once the service is attached.
+// Non-version opener is a pre-1.6 client. Handshake passes at minimum version,
+// restricted until (unless) a server.version arrives. Channel dispatches opener
+// again once service is attached.
 void protocol_electrum_version::handle_unclaimed(
     const request_t&) NOEXCEPT
 {

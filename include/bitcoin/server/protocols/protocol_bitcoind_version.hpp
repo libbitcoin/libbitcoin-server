@@ -35,9 +35,9 @@ namespace server {
 extern template class protocol_bitcoind_dispatch<
     interface::bitcoind_handshake>;
 
-/// The bitcoind handshake, attached first. A negotiateversion opener sets the
-/// interface version of the channel, any other opener passes at the
-/// configured version and is dispatched again once the service is attached.
+/// bitcoind handshake, attached first. A negotiateversion opener sets interface
+/// version of channel, any other opener passes at configured version and is
+/// dispatched again once service is attached.
 class BCS_API protocol_bitcoind_version
   : public protocol_bitcoind_dispatch<interface::bitcoind_handshake>,
     protected network::tracker<protocol_bitcoind_version>

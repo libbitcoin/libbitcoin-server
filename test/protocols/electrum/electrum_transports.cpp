@@ -20,8 +20,8 @@
 
 using namespace system;
 
-// The method suites cover tcp (downgrade); these cover http and ws, which
-// differ only in framing and in the push of notifications.
+// Method suites cover tcp (downgrade); these cover http and ws, which differ
+// only in framing and in push of notifications.
 
 static const code not_implemented{ server::error::electrum::method_not_found };
 static const code bad_request{ server::error::electrum::bad_request };

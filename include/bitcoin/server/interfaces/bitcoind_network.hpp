@@ -78,8 +78,8 @@ struct bitcoind_network_methods
     using set_network_active = at<14>;
 };
 
-/// The bitcoind handshake, published separately as it is served by its own
-/// protocol (attached first), which claims negotiateversion alone.
+/// bitcoind handshake, published separately as served by its own protocol
+/// (attached first), which claims negotiateversion alone.
 struct bitcoind_handshake_methods
 {
     static constexpr std::tuple methods
@@ -103,8 +103,8 @@ struct bitcoind_handshake_methods
 
 namespace bitcoind
 {
-    /// Implemented interface versions, valued in the bitcoind version
-    /// encoding (10'000 major, 100 minor, patch).
+    /// Implemented interface versions, valued in bitcoind version encoding
+    /// (10'000 major, 100 minor, patch).
     enum class version : uint32_t
     {
         /// Invalid version.

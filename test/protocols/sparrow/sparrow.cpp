@@ -167,8 +167,8 @@ static const chain::transaction simple_send
     0u
 };
 
-/// Silent payments enabled from genesis, with the simple send (unconfirmed)
-/// archived and indexed.
+/// Silent payments enabled from genesis,
+/// simple send (unconfirmed) archived and indexed.
 struct sparrow_silent_setup_fixture
   : electrum_setup_fixture
 {

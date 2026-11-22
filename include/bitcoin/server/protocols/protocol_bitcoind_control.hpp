@@ -62,8 +62,8 @@ protected:
     /// Answer help for a command that is not served.
     virtual void send_help_unknown(const std::string& command) NOEXCEPT;
 
-    /// Set the usage line of the command if defined by the methods, with
-    /// optional parameters parenthesized.
+    /// Set usage line of command if defined by methods,
+    /// with optional parameters parenthesized.
     template <typename Methods>
     static void find_usage(std::string& out, const std::string& command,
         interface::bitcoind::version version) NOEXCEPT

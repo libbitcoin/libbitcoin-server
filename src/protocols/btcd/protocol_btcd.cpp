@@ -111,8 +111,8 @@ void protocol_btcd::stopping(const code& ec) NOEXCEPT
 
 // Dispatch.
 // ----------------------------------------------------------------------------
-// Dispatch precedes the bitcoind interface subgroups, so protocol rules applied
-// here govern all methods of the channel.
+// Dispatch precedes bitcoind interface subgroups, so protocol rules applied
+// here govern all methods of channel.
 
 // A request without an id (or with a null id) is neither executed nor answered.
 static bool is_unanswered(const request_t& message) NOEXCEPT
@@ -207,8 +207,8 @@ void protocol_btcd::dispatch_websocket(
 
     // In-band authorization: until authorized, every method (of any attached
     // interface) is unauthorized except authenticate, which is thereafter.
-    // Claimed here so the connection stays open for the authentication flow.
-    // A repeated authenticate ends the connection once the error is sent.
+    // Claimed here so connection stays open for authentication flow. Repeated
+    // authenticate ends connection once error is sent.
     if (authenticate == authorized())
     {
         set_claimed();
@@ -347,8 +347,8 @@ bool protocol_btcd::handle_stop_notify_new_transactions(const code& ec,
 // ----------------------------------------------------------------------------
 // notify_received/notify_spent bodies live in protocol_btcd_filter.cpp.
 
-// Implemented only for the empty addresses/outpoints case.
-// This is the call btcwallet makes to bootstrap its sync starting point.
+// Implemented only for empty addresses/outpoints case.
+// Call btcwallet makes to bootstrap its sync starting point.
 bool protocol_btcd::handle_rescan(const code& ec,
     btcd_interface::rescan, const std::string& beginblock,
     const std::optional<value_t>& addresses,

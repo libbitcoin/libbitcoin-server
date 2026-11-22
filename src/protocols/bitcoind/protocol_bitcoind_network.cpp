@@ -588,10 +588,10 @@ void protocol_bitcoind_network::do_send_net_totals(const code& ec,
         return;
     }
 
-    // Outbound is rate limited, so the target is the most that automatic
-    // connections can send in the timeframe. Manual connections are added by
-    // the operator and are not bounded by configuration. An unlimited rate
-    // on a connectable section is reported as no target (as bitcoind).
+    // Outbound is rate limited, so target is the most automatic connections can
+    // send in timeframe. Manual connections are added by operator and are not
+    // bounded by configuration. Unlimited rate on a connectable section is
+    // reported as no target (as bitcoind).
     constexpr uint64_t timeframe = 24 * 60 * 60;
     const auto& net_settings = network_settings();
     const auto& in = net_settings.inbound;

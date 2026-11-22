@@ -45,10 +45,10 @@ constexpr size_t depth_limit{ 32 };
 using namespace bc;
 using namespace system;
 
-// The dump runs on a crashed thread, so it must not allocate (the fault may
-// be heap corruption), must not throw (it may run inside an seh filter or a
-// terminate handler), and must serialize (a fault storm crashes many threads
-// at once). All state is static and the first crasher wins.
+// Dump runs on a crashed thread, so must not allocate (fault may be heap
+// corruption), must not throw (may run inside an seh filter or terminate
+// handler), and must serialize (a fault storm crashes many threads at once).
+// All state is static and first crasher wins.
 static std::atomic_bool dumping{};
 static char tracer[16384];
 static size_t tracer_at{};
@@ -98,8 +98,8 @@ inline STACKFRAME64 get_stack_frame(const CONTEXT& context) NOEXCEPT
     return frame;
 }
 
-// Static symbol buffer (no allocation on the crashed thread). SYMOPT_UNDNAME
-// has dbghelp undecorate in place, so no separate undecorate pass or buffer.
+// Static symbol buffer (no allocation on crashed thread). SYMOPT_UNDNAME has
+// dbghelp undecorate in place, so no separate undecorate pass or buffer.
 static const char* get_name(HANDLE process, DWORD64 address) NOEXCEPT
 {
     // Including null terminator.
@@ -126,8 +126,7 @@ static const char* get_name(HANDLE process, DWORD64 address) NOEXCEPT
 }
 
 // Walks and emits every frame it can: a frame without line information (crt,
-// system module, missing pdb) reports symbol or raw address and the walk
-// CONTINUES, as breaking there was the main source of empty dumps.
+// system module, missing pdb) reports symbol or raw address and walk CONTINUES.
 DWORD dump_stack_trace(unsigned code, EXCEPTION_POINTERS* exception) NOEXCEPT
 {
     if (is_null(exception) || is_null(exception->ContextRecord))
@@ -199,8 +198,8 @@ DWORD dump_stack_trace(unsigned code, EXCEPTION_POINTERS* exception) NOEXCEPT
     return EXCEPTION_EXECUTE_HANDLER;
 }
 
-// Process-wide coverage: seh frames are per-thread, so the wmain __except
-// never sees a worker thread fault (the dominant cause of missing dumps).
+// Process-wide coverage: seh frames are per-thread, so wmain __except never
+// sees a worker thread fault.
 static LONG WINAPI unhandled_stack_trace(EXCEPTION_POINTERS* exception) NOEXCEPT
 {
     const auto record = exception->ExceptionRecord;
@@ -208,9 +207,9 @@ static LONG WINAPI unhandled_stack_trace(EXCEPTION_POINTERS* exception) NOEXCEPT
     return EXCEPTION_EXECUTE_HANDLER;
 }
 
-// An exception escaping a NOEXCEPT boundary invokes terminate directly (no
-// seh search phase), bypassing both filters. Capture here and walk from the
-// handler: the throwing frames remain below on an unwound-free msvc stack.
+// Exception escaping a NOEXCEPT boundary invokes terminate directly (no seh
+// search phase), bypassing both filters. Capture here and walk from handler:
+// throwing frames remain below on an unwound-free msvc stack.
 static void terminate_stack_trace() NOEXCEPT
 {
     CONTEXT context{};
@@ -248,9 +247,9 @@ using namespace system;
 static std::atomic_bool dumping{};
 static void* frames[depth_limit]{};
 
-// Emission is direct and self-contained: the handler runs on a faulted thread
-// that may hold the stream lock, and the only walk apple documents for a
-// signal handler writes to a descriptor (so frames cannot be buffered).
+// Emission is direct and self-contained: handler runs on a faulted thread that
+// may hold stream lock, and only walk apple documents for a signal handler
+// writes to a descriptor (so frames cannot be buffered).
 static void emit(const char* text) NOEXCEPT
 {
     ::write(STDOUT_FILENO, text, std::char_traits<char>::length(text));

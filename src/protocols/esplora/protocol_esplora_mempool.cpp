@@ -203,7 +203,7 @@ void protocol_esplora::complete_get_mempool_recent(const code& ec,
     send_json(value{ std::move(recent) });
 }
 
-// A closed pool is not implemented with relay disabled, and is otherwise
+// Closed pool is not implemented with relay disabled, and is otherwise
 // unavailable until it opens.
 bool protocol_esplora::send_closed(const code& ec) NOEXCEPT
 {

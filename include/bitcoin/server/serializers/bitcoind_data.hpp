@@ -37,8 +37,7 @@ system::data_chunk to_data(const Object& object, size_t size,
     return out;
 }
 
-/// Serialize an object (chain::header, chain::transaction, ...) to a
-/// base16 string.
+/// Serialize object (chain::header, chain::transaction, ...) to base16 string.
 template <typename Object, typename ...Args>
 std::string to_text(const Object& object, size_t size,
     Args&&... args) NOEXCEPT

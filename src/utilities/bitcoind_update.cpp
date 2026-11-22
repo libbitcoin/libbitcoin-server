@@ -42,8 +42,8 @@ static const descriptor::signing* find_signing(
     return (it == signings.end()) ? nullptr : &(*it);
 }
 
-// Attachments are consistent by construction: the embedded scripts and
-// derived keys come from the same expansion as the matched script.
+// Attachments consistent by construction: embedded scripts and derived keys
+// come from same expansion as matched script.
 template <typename Entry>
 static void update_entry(Entry& entry,
     const descriptor::signing& found) NOEXCEPT

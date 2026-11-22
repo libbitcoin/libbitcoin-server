@@ -163,8 +163,8 @@ static void peer_cancel(peer_socket& peer, std::string_view topic)
     peer_write(peer, command("CANCEL", { topic.begin(), topic.end() }));
 }
 
-// Send a PING and require the echoed PONG, proving all prior frames were
-// consumed by the server (the stream is ordered).
+// Send PING and require echoed PONG, proving all prior frames consumed by
+// server (stream is ordered).
 static void peer_ping_pong(peer_socket& peer)
 {
     const auto context_bytes = base16_chunk("0011223344556677");
@@ -279,8 +279,8 @@ static zmtp_cipher curve_client()
     return { alice_secret, alice_public, bob_public };
 }
 
-// Send a boxed PING and require the boxed PONG, proving all prior frames
-// were consumed by the server (the stream is ordered).
+// Send boxed PING and require boxed PONG, proving all prior frames consumed by
+// server (stream is ordered).
 static void peer_curve_ping_pong(peer_socket& peer, zmtp_cipher& client)
 {
     const std::string name{ "PING" };
@@ -310,8 +310,8 @@ static void peer_curve_ping_pong(peer_socket& peer, zmtp_cipher& client)
     BC_REQUIRE_EQUAL(echo_name, "PONG");
 }
 
-// Synchronously attempt the CURVE handshake, returning the frame following
-// INITIATE (READY if authorized, otherwise ERROR).
+// Synchronously attempt CURVE handshake, returning frame following INITIATE
+// (READY if authorized, otherwise ERROR).
 static data_chunk peer_curve_initiate(peer_socket& peer, zmtp_cipher& client)
 {
     peer_write(peer, zmtp_stream::make_greeting(false, true));

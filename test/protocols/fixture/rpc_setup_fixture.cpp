@@ -52,8 +52,8 @@ rpc_setup_fixture::rpc_setup_fixture(const initializer& setup,
             config_.network.inbound.connections = 0;
             config_.network.outbound.connections = 0;
 
-            // Last, so the service settings and any test override win, and
-            // before construction, as the store snapshots these settings.
+            // Last, so service settings and any test override win, and before
+            // construction, as store snapshots these settings.
             if (configure)
                 configure(config_);
 

@@ -42,4 +42,4 @@
 // server_node    : /sessions
 
 // When a symbol is unexplainably undefined, its defining include is probably
-// creating the circularity.
+// creating circularity.

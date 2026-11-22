@@ -241,8 +241,8 @@ bool protocol_bitcoind_control::handle_rpc_discover(const code& ec,
     return true;
 }
 
-// Dispatch is synchronous on the channel strand, so there is no set of
-// in-flight commands to report (bitcoind lists its own call here).
+// Dispatch is synchronous on channel strand, so there is no set of in-flight
+// commands to report (bitcoind lists its own call here).
 bool protocol_bitcoind_control::handle_get_rpc_info(const code& ec,
     rpc_interface::get_rpc_info) NOEXCEPT
 {

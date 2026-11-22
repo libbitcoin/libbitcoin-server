@@ -71,7 +71,7 @@ object_t protocol_btcd_transaction::test_result(const code& ec,
         { "package-error", std::string{} }
     };
 
-    // An accepted tx is populated, so its fee is known. btcd defaults a zero
+    // Accepted tx is populated, so its fee is known. btcd defaults a zero
     // maximum rate.
     constexpr auto default_rate = 0.1;
     const auto maximum = is_zero(maxfeerate) ? default_rate : maxfeerate;

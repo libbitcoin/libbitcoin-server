@@ -36,8 +36,8 @@ constexpr auto relaxed = std::memory_order_relaxed;
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 // Electrum could be factored into protocols by version, with version-dependent
-// protocol attachment and with protocol derivations (see p2p). Currently all
-// methods apart from version are in one protocol class.
+// protocol attachment and protocol derivations (see p2p). All methods apart
+// from version are in one protocol class.
 
 // Start.
 // ----------------------------------------------------------------------------

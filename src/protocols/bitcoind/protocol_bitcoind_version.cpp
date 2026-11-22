@@ -41,7 +41,7 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 // Start/finished (handshake).
 // ----------------------------------------------------------------------------
 
-// Session resumes the channel following return from start().
+// Session resumes channel following return from start().
 // Sends are not precluded, but no messages can be received while paused.
 void protocol_bitcoind_version::shake(result_handler&& handler) NOEXCEPT
 {
@@ -83,8 +83,8 @@ void protocol_bitcoind_version::finished(const code& ec,
     }
 }
 
-// While shaking, the only send is the response to a negotiateversion opener,
-// which completes the handshake (failed unless negotiated).
+// While shaking, only send is response to a negotiateversion opener, which
+// completes handshake (failed unless negotiated).
 void protocol_bitcoind_version::handle_complete(const code& ec,
     const code& reason) NOEXCEPT
 {
@@ -117,8 +117,8 @@ bool protocol_bitcoind_version::is_negotiation(
     return message.method == rpc_interface::negotiate_version::name;
 }
 
-// The handshake is not subject to authorization or method permission, as it
-// is not a method of the service.
+// Handshake is not subject to authorization or method permission, as it is not
+// a method of service.
 void protocol_bitcoind_version::negotiate(const request_t& message) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -129,8 +129,8 @@ void protocol_bitcoind_version::negotiate(const request_t& message) NOEXCEPT
         handle_dispatch_fault(code);
 }
 
-// Any other opener passes at the configured version, dispatched again once
-// the service is attached.
+// Any other opener passes at configured version,
+// dispatched again once service is attached.
 void protocol_bitcoind_version::pass_opener() NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -253,8 +253,8 @@ void protocol_bitcoind_version::handle_receive_unknown(const code& ec,
 // Handler.
 // ----------------------------------------------------------------------------
 
-// Interface version negotiation (libbitcoin extension), accepted only as the
-// opener of the channel.
+// Interface version negotiation (libbitcoin extension),
+// accepted only as opener of channel.
 bool protocol_bitcoind_version::handle_negotiate_version(const code& ec,
     rpc_interface::negotiate_version, const std::optional<double>& minimum,
     const std::optional<double>& maximum) NOEXCEPT

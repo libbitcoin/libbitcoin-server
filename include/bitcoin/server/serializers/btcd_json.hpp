@@ -46,18 +46,18 @@ BCS_API system::json::value script_public_key(
     const system::chain::script& script, uint8_t p2kh, uint8_t p2sh,
     const std::string& witness, uint32_t flags) NOEXCEPT;
 
-/// Add btcd script fields to the outputs of a bitcoind transaction model,
-/// and disassemble its input scripts without sighash types.
+/// Add btcd script fields to outputs of a bitcoind transaction model, and
+/// disassemble its input scripts without sighash types.
 BCS_API void inject_scripts(system::json::object& out,
     const system::chain::transaction& tx, uint8_t p2kh, uint8_t p2sh,
     const std::string& witness, uint32_t flags) NOEXCEPT;
 
-/// Add the btcd block context of a transaction (no in_active_chain, and no
+/// Add btcd block context of a transaction (no in_active_chain, and no
 /// confirmations when unconfirmed).
 BCS_API void inject_tx_context(system::json::object& out,
     const node::query& query, const database::tx_link& link) NOEXCEPT;
 
-/// The btcd verbose transaction, with btcd's prevOut extension and address
+/// btcd verbose transaction, with btcd's prevOut extension and address
 /// filtering.
 BCS_API system::json::object verbose_transaction(const node::query& query,
     const database::tx_link& link, const system::chain::transaction& tx,

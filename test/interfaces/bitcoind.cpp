@@ -23,8 +23,8 @@ using namespace interface;
 // setup
 // -----------------------------------------------------------------------------
 
-// Keyed by name, so that assertions are independent of interface order. A
-// misspelled name matches neither, failing both served and unserved.
+// Keyed by name, so assertions independent of interface order. Misspelled name
+// matches neither, failing both served and unserved.
 template <typename Methods>
 constexpr bool declared(const std::string_view& name,
     bool implemented) NOEXCEPT
@@ -119,8 +119,8 @@ static_assert(!declared<bitcoind_blockchain_methods>("getindexinfo", true));
 // names
 // -----------------------------------------------------------------------------
 
-// The published lists are the served subsets, in interface order. Subgroups
-// with only unimplemented methods publish no names.
+// Published lists are served subsets, in interface order. Subgroups with only
+// unimplemented methods publish no names.
 static_assert(bitcoind_blockchain_methods::names ==
     "getbestblockhash getblock getblockchaininfo getblockcount "
     "getblockfilter getblockhash getblockheader getblockstats "

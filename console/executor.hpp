@@ -48,8 +48,8 @@ public:
     // Called from main.
     bool dispatch();
 
-    // Called from main, blocks until stopped if started by the service
-    // control manager, otherwise returns false (and is a noop on posix).
+    // Called from main, blocks until stopped if started by service control
+    // manager, otherwise returns false (noop on posix).
     static bool service(parser& metadata, std::istream& input,
         std::ostream& error);
 

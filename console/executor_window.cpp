@@ -33,7 +33,7 @@ LRESULT CALLBACK executor::window_proc(HWND handle, UINT message,
     switch (message)
     {
         // Reject session close until process completion, initiate stop, and
-        // provide reason text that the operating system may show to the user.
+        // provide reason text operating system may show to user.
         case WM_QUERYENDSESSION:
         {
             ::ShutdownBlockReasonCreate(handle, BS_WINDOW_TEXT);

@@ -355,11 +355,11 @@ array_t protocol_electrum::transform(const histories& ins) NOEXCEPT
 
         if (!in.confirmed())
         {
-            // A fee of max_uint64 implies missing prevout(s). This will happen
-            // for a block-downloaded tx queried during parallel block download
-            // when the prevout block(s) are not yet archived or even if the tx
-            // turned out to be in an invalid block after its block download. A
-            // transaction is technically never invalid absent a block context.
+            // Fee of max_uint64 implies missing prevout(s). Happens for a
+            // block-downloaded tx queried during parallel block download when
+            // prevout block(s) are not yet archived, or even if tx turned out
+            // to be in an invalid block after its block download. Transaction
+            // is technically never invalid absent a block context.
             object["fee"] = in.fee;
         }
 

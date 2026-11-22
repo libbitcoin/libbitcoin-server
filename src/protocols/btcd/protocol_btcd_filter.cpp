@@ -740,8 +740,8 @@ void protocol_btcd::do_connected(node::header_t link_value) NOEXCEPT
     if (!header)
         return;
 
-    // Cursors advance in the matchers, so this stays on the notification
-    // strand, and receives are matched first, as each arms a spent-watch.
+    // Cursors advance in matchers, so this stays on notification strand, and
+    // receives are matched first, as each arms a spent-watch.
     const sizes heights{ height };
     array_t txs{};
     if (const auto fault = match_filters(txs, height, heights))

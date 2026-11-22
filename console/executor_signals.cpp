@@ -30,15 +30,15 @@ BOOL WINAPI executor::control_handler(DWORD signal)
 {
     switch (signal)
     {
-        // Keyboard events. These prevent exit altogether when TRUE returned.
-        // handle_stop(signal) therefore shuts down gracefully/completely.
+        // Keyboard events, prevent exit altogether when TRUE returned, so
+        // handle_stop(signal) shuts down gracefully/completely.
         case CTRL_C_EVENT:
         case CTRL_BREAK_EVENT:
 
-        // A signal that the system sends to all processes attached to a
-        // console when the user closes the console (by clicking Close on the
-        // console window's window menu). Returning TRUE here does not
-        // materially delay exit, so aside from capture this is a noop.
+        // Signal system sends to all processes attached to a console when user
+        // closes console (by clicking Close on console window's window menu).
+        // Returning TRUE here does not materially delay exit, so aside from
+        // capture this is a noop.
         case CTRL_CLOSE_EVENT:
         {
             const auto value = system::possible_narrow_sign_cast<int>(signal);

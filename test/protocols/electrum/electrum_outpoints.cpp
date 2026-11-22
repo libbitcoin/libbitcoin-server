@@ -578,8 +578,8 @@ BC_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progressive
     BC_REQUIRE_EQUAL(history3.at("spender_height").as_int64(), 0); // rooted
     BC_REQUIRE_EQUAL(history3.at("spender_txhash").as_string(), hash4);
 
-    // Multipled notifications are sent given multiple spender changes.
-    // block3a (unconfirmed) spends block1a (confirmed), so height is rooted (0).
+    // Multiple notifications sent given multiple spender changes.
+    // block3a (unconfirmed) spends block1a (confirmed), so height rooted (0).
     
     // always same
     const auto notification4 = receive();
