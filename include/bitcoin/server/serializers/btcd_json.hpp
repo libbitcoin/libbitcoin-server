@@ -29,8 +29,7 @@ namespace btcd {
 /// The network is a btcd testnet (testnet3 or testnet4).
 BCS_API bool is_testnet(const system::settings& settings) NOEXCEPT;
 
-/// Difficulty relative to the network proof of work limit, rounded to eight
-/// places.
+/// Difficulty relative to network proof of work limit, rounded to eight places.
 BCS_API double difficulty(uint32_t bits, uint32_t limit) NOEXCEPT;
 
 /// The btcd verbose getrawmempool entry of a pooled tx.
