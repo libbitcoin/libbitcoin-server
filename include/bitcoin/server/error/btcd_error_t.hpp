@@ -88,6 +88,10 @@ BCS_API code translate(const code& ec, error_t failure) NOEXCEPT;
 /// Any other code is mapped to success.
 BCS_API code parameter_error(const code& ec) NOEXCEPT;
 
+/// The btcd reject text and code for a validation code, the message and
+/// verify_rejected otherwise.
+BCS_API error_t reject(std::string& out, const code& ec) NOEXCEPT;
+
 } // namespace btcd
 } // namespace error
 } // namespace server

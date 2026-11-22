@@ -53,6 +53,21 @@ public:
     void start() NOEXCEPT override;
 
 protected:
+    /// Answer a submission the pool did not accept (a pooled duplicate is
+    /// accepted).
+    virtual void send_rejected(const code& ec,
+        const system::chain::transaction& tx) NOEXCEPT;
+
+    /// The testmempoolaccept result of the tx, given the package code.
+    virtual network::rpc::object_t test_result(const code& ec,
+        const system::chain::transaction& tx) NOEXCEPT;
+
+    /// Absent and confirmed-spent inputs are missing coins.
+    static bool is_missing(const code& ec) NOEXCEPT;
+
+    /// Any output of the tx is not spent by a confirmed tx.
+    bool has_unspent_output(const database::tx_link& link) const NOEXCEPT;
+
     /// Handlers.
     bool handle_create_raw_transaction(const code& ec,
         rpc_interface::create_raw_transaction,

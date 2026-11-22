@@ -34,6 +34,7 @@
 #include <bitcoin/server/protocols/protocol_bitcoind_version.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_wallet.hpp>
 #include <bitcoin/server/protocols/protocol_btcd.hpp>
+#include <bitcoin/server/protocols/protocol_btcd_transaction.hpp>
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 #include <bitcoin/server/protocols/protocol_electrum_version.hpp>
 #include <bitcoin/server/protocols/protocol_esplora.hpp>
