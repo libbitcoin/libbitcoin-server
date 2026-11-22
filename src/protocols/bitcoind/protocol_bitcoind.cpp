@@ -471,6 +471,11 @@ code protocol_bitcoind::to_parameter_error(const code& ec) const NOEXCEPT
     return error::bitcoind::parameter_error(ec);
 }
 
+code protocol_bitcoind::to_hex_error(const code& ec) const NOEXCEPT
+{
+    return ec;
+}
+
 void protocol_bitcoind::handle_dispatch_fault(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());

@@ -1010,6 +1010,11 @@ BC_AUTO_TEST_CASE(btcd_rpc__getblockhash__above_top__out_of_range)
     BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "Block number out of range");
 }
 
+BC_AUTO_TEST_CASE(btcd_rpc__getblock__bad_hex__deserialization)
+{
+    BC_REQUIRE_EQUAL(rpc_error("getblock", R"(["zz"])"), deserialization.value());
+}
+
 BC_AUTO_TEST_CASE(btcd_rpc__getblock__verbosity_2__rawtx)
 {
     const auto response = rpc("getblock", std::format(R"(["{}",2])", block9));

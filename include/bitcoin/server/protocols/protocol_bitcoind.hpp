@@ -145,6 +145,9 @@ protected:
     /// The rpc error for a dispatch parameter fault, success for other faults.
     virtual code to_parameter_error(const code& ec) const NOEXCEPT;
 
+    /// The rpc error for an undecodable hex parameter, given the default.
+    virtual code to_hex_error(const code& ec) const NOEXCEPT;
+
     /// Answer a dispatch parameter fault, stop the channel for other faults.
     void handle_dispatch_fault(const code& ec) NOEXCEPT;
 

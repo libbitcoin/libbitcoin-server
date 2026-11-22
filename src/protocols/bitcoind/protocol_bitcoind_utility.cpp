@@ -76,7 +76,7 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     data_chunk data{};
     if (!decode_base16(data, hexstring))
     {
-        send_error(error::bitcoind::invalid_parameter);
+        send_error(to_hex_error(error::bitcoind::invalid_parameter));
         return true;
     }
 

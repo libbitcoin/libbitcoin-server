@@ -263,7 +263,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     hash_digest hash{};
     if (!decode_hash(hash, txid))
     {
-        send_error(error::bitcoind::invalid_parameter);
+        send_error(to_hex_error(error::bitcoind::invalid_parameter));
         return true;
     }
 

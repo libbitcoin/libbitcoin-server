@@ -202,7 +202,7 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
     hash_digest hash{};
     if (!decode_hash(hash, blockhash))
     {
-        send_error(error::bitcoind::invalid_parameter);
+        send_error(to_hex_error(error::bitcoind::invalid_parameter));
         return true;
     }
 
@@ -385,7 +385,7 @@ bool protocol_bitcoind_blockchain::handle_get_block_header(const code& ec,
     hash_digest hash{};
     if (!decode_hash(hash, blockhash))
     {
-        send_error(error::bitcoind::invalid_parameter);
+        send_error(to_hex_error(error::bitcoind::invalid_parameter));
         return true;
     }
 
@@ -635,7 +635,13 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
 
     uint32_t index{};
     hash_digest hash{};
-    if (!decode_hash(hash, txid) || !to_integer(index, n))
+    if (!decode_hash(hash, txid))
+    {
+        send_error(to_hex_error(error::bitcoind::invalid_parameter));
+        return true;
+    }
+
+    if (!to_integer(index, n))
     {
         send_error(error::bitcoind::invalid_parameter);
         return true;

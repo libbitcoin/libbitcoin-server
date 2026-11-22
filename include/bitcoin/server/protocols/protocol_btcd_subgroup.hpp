@@ -40,6 +40,11 @@ protected:
         return error::btcd::parameter_error(ec);
     }
 
+    inline code to_hex_error(const code&) const NOEXCEPT override
+    {
+        return error::btcd::deserialization_error;
+    }
+
     inline system::json::value script_public_key(
         const system::chain::script& script) const NOEXCEPT override
     {
