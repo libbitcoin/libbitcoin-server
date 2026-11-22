@@ -29,7 +29,7 @@ bool setup_candidate_store(test::query_t& query, bool associated) NOEXCEPT
 {
     const auto& header = test::mock_block10.header();
     const database::context context{ 0, 10, 0 };
-    const auto pushed = test::setup_ten_block_store(query) &&
+    return test::setup_ten_block_store(query) &&
         query.push_candidate(query.to_header(test::block1_hash)) &&
         query.push_candidate(query.to_header(test::block2_hash)) &&
         query.push_candidate(query.to_header(test::block3_hash)) &&
