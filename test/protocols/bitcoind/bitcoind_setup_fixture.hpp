@@ -104,6 +104,8 @@ struct bitcoind_setup_fixture
     status rest_status(std::string_view target);
     status rest_status(std::string_view target, const std::string& username,
         const std::string& password);
+    status rest_hosts_status(std::string_view target, std::string_view host,
+        std::string_view other);
     system::json::value rest_json(std::string_view target);
     std::string rest_text(std::string_view target);
     system::data_chunk rest_data(std::string_view target);
