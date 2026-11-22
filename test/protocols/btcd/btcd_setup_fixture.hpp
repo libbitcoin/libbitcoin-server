@@ -145,8 +145,10 @@ struct btcd_scoped_credential_setup_fixture
         {
             config.server.btcd.credentials =
             {
-                { BTCD_TEST_USERNAME ":" BTCD_TEST_PASSWORD ":"
-                    BTCD_TEST_SCOPED_METHOD }
+                {
+                    BTCD_TEST_USERNAME ":" BTCD_TEST_PASSWORD ":"
+                    BTCD_TEST_SCOPED_METHOD
+                }
             };
         })
     {

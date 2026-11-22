@@ -58,7 +58,6 @@ static void push_buried(object_t& out, const node::query& query,
     });
 }
 
-// Deployments are configured, so reads settings and needs no chain state.
 // Taproot excluded, as bitcoind froze it and no longer reports it here (btcd
 // reports it under getblockchaininfo's bip9_softforks, which lnd reads).
 object_t deployment_info(const node::query& query,

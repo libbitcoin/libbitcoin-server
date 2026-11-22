@@ -27,23 +27,32 @@ constexpr uint64_t test_subsidy = 5'000'000'000;
 
 static transaction make_coinbase(const script& out_script = {}) NOEXCEPT
 {
-    return { 1, inputs{ { point{}, script{}, 0 } },
-        outputs{ { test_subsidy, out_script } }, 0 };
+    return
+    {
+        1, inputs{ { point{}, script{}, 0 } },
+        outputs{ { test_subsidy, out_script } }, 0
+    };
 }
 
 // A paying tx with a populated prevout of the given value.
 static transaction make_paying(uint64_t in_value, uint64_t out_value) NOEXCEPT
 {
-    transaction tx{ 1, inputs{ { point{ one_hash, 0 }, script{}, 0 } },
-        outputs{ { out_value, script{} } }, 0 };
+    transaction tx
+    {
+        1, inputs{ { point{ one_hash, 0 }, script{}, 0 } },
+        outputs{ { out_value, script{} } }, 0
+    };
+
     tx.inputs_ptr()->front()->prevout = to_shared<output>(in_value, script{});
     return tx;
 }
 
 static block make_block(transactions&& txs) NOEXCEPT
 {
-    return { header{ 1, null_hash, null_hash, 42, 0x1d00ffff, 0 },
-        std::move(txs) };
+    return
+    {
+        header{ 1, null_hash, null_hash, 42, 0x1d00ffff, 0 }, std::move(txs)
+    };
 }
 
 BC_AUTO_TEST_CASE(bitcoind_block_stats__coinbase_only__no_fees)

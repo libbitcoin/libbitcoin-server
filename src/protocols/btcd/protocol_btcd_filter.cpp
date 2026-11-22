@@ -684,9 +684,9 @@ void protocol_btcd::do_search_raw_transactions(const hashes& keys,
             continue;
         }
 
-        found.emplace_back(system::json::value{ btcd::search_transaction(
-            query, link, *tx, filter, prevouts, p2kh_, p2sh_, witness_,
-            flags_) });
+        auto model = btcd::search_transaction(query, link, *tx, filter,
+            prevouts, p2kh_, p2sh_, witness_, flags_);
+        found.emplace_back(system::json::value{ std::move(model) });
     }
 
     POST_BTCD(complete_search_raw_transactions, error::success,
@@ -986,9 +986,10 @@ void protocol_btcd::notify_connected(const header_cptr& header,
         connected.emplace_back(header->timestamp());
         send_notification("blockconnected", std::move(connected));
 
+        const auto size = chain::header::serialized_size();
         array_t filtered{};
         filtered.emplace_back(to64(height));
-        filtered.emplace_back(to_text(*header, chain::header::serialized_size()));
+        filtered.emplace_back(to_text(*header, size));
         filtered.emplace_back(std::move(*txs));
         send_notification("filteredblockconnected", std::move(filtered));
     }

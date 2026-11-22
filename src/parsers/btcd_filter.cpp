@@ -97,10 +97,9 @@ code search_keys(hashes& out, const std::string& address, uint8_t p2kh,
     if (decode_base16(point, address) && is_public_key(point))
     {
         const auto hash = bitcoin_short_hash(point);
-        out.push_back(script{ script::to_pay_public_key_pattern(
-            point) }.hash());
-        out.push_back(script{ script::to_pay_key_hash_pattern(
-            hash) }.hash());
+        const script public_key{ script::to_pay_public_key_pattern(point) };
+        out.push_back(public_key.hash());
+        out.push_back(script{ script::to_pay_key_hash_pattern(hash) }.hash());
         return error::success;
     }
 

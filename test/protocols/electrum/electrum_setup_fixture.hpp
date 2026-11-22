@@ -261,8 +261,10 @@ struct electrum_scoped_credential_setup_fixture
         {
             config.server.electrum.credentials =
             {
-                { ELECTRUM_TEST_USERNAME ":" ELECTRUM_TEST_PASSWORD ":"
-                    ELECTRUM_TEST_SCOPED_METHOD }
+                {
+                    ELECTRUM_TEST_USERNAME ":" ELECTRUM_TEST_PASSWORD ":"
+                    ELECTRUM_TEST_SCOPED_METHOD
+                }
             };
         })
     {
@@ -300,8 +302,9 @@ struct electrum_duplicate_setup_fixture
     inline electrum_duplicate_setup_fixture()
       : electrum_setup_fixture([](test::query_t& query)
         {
+            const database::context context{ 0, 10, 0 };
             return test::setup_ten_block_store(query) &&
-                query.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false) &&
+                query.set(test::mock_block10, context, {}, false, false) &&
                 query.set(*test::mock_block10.transactions_ptr()->at(1));
         })
     {
@@ -320,8 +323,10 @@ struct sparrow_scoped_credential_setup_fixture
         {
             config.server.sparrow.credentials =
             {
-                { ELECTRUM_TEST_USERNAME ":" ELECTRUM_TEST_PASSWORD ":"
-                    ELECTRUM_TEST_SCOPED_METHOD }
+                {
+                    ELECTRUM_TEST_USERNAME ":" ELECTRUM_TEST_PASSWORD ":"
+                    ELECTRUM_TEST_SCOPED_METHOD
+                }
             };
         }, service::sparrow)
     {

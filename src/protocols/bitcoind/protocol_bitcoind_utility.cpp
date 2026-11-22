@@ -143,12 +143,12 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
     const payment_address base58(address);
     if (base58 && ((base58.prefix() == p2kh_) || (base58.prefix() == p2sh_)))
     {
+        const auto output = base58.output_script(p2kh_, p2sh_);
         object_t result
         {
             { "isvalid", true },
             { "address", base58.encoded() },
-            { "scriptPubKey", encode_base16(base58.output_script(p2kh_,
-                p2sh_).to_data(false)) },
+            { "scriptPubKey", encode_base16(output.to_data(false)) },
             { "isscript", base58.prefix() == p2sh_ },
             { "iswitness", false }
         };
@@ -432,10 +432,10 @@ void protocol_bitcoind_utility::complete_estimate(const code& ec,
     // Estimate unavailability is reported in-band.
     if (unavailable)
     {
+        const std::string reason{ "Insufficient data or no feerate found" };
         send_result(object_t
         {
-            { "errors", array_t{ std::string{
-                "Insufficient data or no feerate found" } } },
+            { "errors", array_t{ reason } },
             { "blocks", to64(target) }
         });
         return;

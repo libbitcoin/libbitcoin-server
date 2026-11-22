@@ -166,14 +166,19 @@ static void append_method(array_t& out, const Method& entry,
 
     array_t parameters{};
     const auto& names = entry.parameter_names();
+    const auto append = [&](const auto& name, bool required) NOEXCEPT
+    {
+        parameters.emplace_back(object_t
+        {
+            { "name", std::string{ primary_name(name) } },
+            { "required", required }
+        });
+    };
+
     [&]<size_t... Index>(std::index_sequence<Index...>) NOEXCEPT
     {
-        (parameters.emplace_back(object_t
-        {
-            { "name", std::string{ primary_name(names.at(Index)) } },
-            { "required", !is_defaulted<std::tuple_element_t<Index,
-                typename Method::args_native>> }
-        }), ...);
+        (append(names.at(Index), !is_defaulted<std::tuple_element_t<Index,
+            typename Method::args_native>>), ...);
     }(std::make_index_sequence<Method::size>{});
 
     out.emplace_back(object_t

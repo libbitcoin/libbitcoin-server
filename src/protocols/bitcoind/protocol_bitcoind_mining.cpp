@@ -786,8 +786,8 @@ void protocol_bitcoind_mining::finish_template(object_t&) const NOEXCEPT
 {
 }
 
-bool protocol_bitcoind_mining::handle_get_prioritised_transactions(const code& ec,
-    rpc_interface::get_prioritised_transactions) NOEXCEPT
+bool protocol_bitcoind_mining::handle_get_prioritised_transactions(
+    const code& ec, rpc_interface::get_prioritised_transactions) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::bitcoind::client_mempool_disabled);

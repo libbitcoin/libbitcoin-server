@@ -214,10 +214,10 @@ namespace electrum
         /// There is no v1.5 release (skipped).
         //v1_5,
 
-        /// 2022, updated response formats, added fee estimation modes (maximum).
+        /// 2022, updated response formats, added fee estimation modes.
         v1_6,
 
-        /// Not yet valid, just defined for out of bounds testing.
+        /// Adds outpoint, scriptpubkey and mempool methods (maximum).
         v1_7
     };
 } // namespace electrum

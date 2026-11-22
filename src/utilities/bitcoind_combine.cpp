@@ -108,8 +108,9 @@ code combine_input(input::cptr& out, const node::query& query,
 
         if (!sigs.empty())
         {
-            out = emplace_shared<input>(in.point(), script{ merge_endorsements(
-                base, index, value, pay, script_version::unversioned, sigs) },
+            const auto merged = merge_endorsements(base, index, value, pay,
+                script_version::unversioned, sigs);
+            out = emplace_shared<input>(in.point(), script{ merged },
                 witness{}, in.sequence());
             return error::success;
         }

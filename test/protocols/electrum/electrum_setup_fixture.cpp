@@ -30,10 +30,9 @@ electrum_setup_fixture::electrum_setup_fixture(const initializer& setup,
         {
             // Only the configured service binds.
             const auto sparrow = (which == service::sparrow);
-            auto& electrum = sparrow ?
-                static_cast<server::settings::electrum_server&>(
-                    config.server.sparrow) :
-                config.server.electrum;
+            using electrum_server = server::settings::electrum_server;
+            electrum_server& sparrow_base = config.server.sparrow;
+            auto& electrum = sparrow ? sparrow_base : config.server.electrum;
 
             electrum.binds =
             {
@@ -90,10 +89,9 @@ system::json::value electrum_setup_fixture::receive()
 const server::settings::electrum_server&
 electrum_setup_fixture::options() const
 {
-    return which_ == service::sparrow ?
-        static_cast<const server::settings::electrum_server&>(
-            config_.server.sparrow) :
-        config_.server.electrum;
+    using electrum_server = server::settings::electrum_server;
+    const electrum_server& sparrow = config_.server.sparrow;
+    return which_ == service::sparrow ? sparrow : config_.server.electrum;
 }
 
 bool electrum_setup_fixture::verify(const system::json::value& response,

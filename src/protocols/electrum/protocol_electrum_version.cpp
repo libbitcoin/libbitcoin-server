@@ -182,10 +182,10 @@ bool protocol_electrum_version::set_version(const value_t& version) NOEXCEPT
 {
     // A non-version opener restricts negotiation to below 1.6.
     const auto minimum = options().protocol_minimum;
-    const auto maximum = channel_->restricted() ?
-        std::min(options().protocol_maximum,
-            electrum::version_to_number(electrum::restricted_maximum)) :
-        options().protocol_maximum;
+    const auto configured = options().protocol_maximum;
+    const auto cap = electrum::version_to_number(electrum::restricted_maximum);
+    const auto capped = std::min(configured, cap);
+    const auto maximum = channel_->restricted() ? capped : configured;
 
     // Below 1.4 a repeat must agree with the negotiated version.
     const auto floor = electrum::negotiate(version, minimum, maximum);

@@ -31,8 +31,10 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 system::json::value to_btc(uint64_t satoshis) NOEXCEPT
 {
-    return system::json::decimal{ sign_cast<int64_t>(satoshis),
-        btc_decimal_places };
+    return system::json::decimal
+    {
+        sign_cast<int64_t>(satoshis), btc_decimal_places
+    };
 }
 
 // Clamped ratio of validated blocks to chain height.
@@ -84,8 +86,8 @@ void inject_block_context(system::json::object& out,
     out["height"] = height;
 
     // bitcoind reports -1 confirmations for a block not on the active chain.
-    out["confirmations"] = confirmed ?
-        to_signed(add1(floored_subtract(top, height))) : -1;
+    const auto confirmations = to_signed(add1(floored_subtract(top, height)));
+    out["confirmations"] = confirmed ? confirmations : -1;
     out["mediantime"] = median_time(query, settings, link);
 
     // Cumulative work to this block, big-endian per bitcoind chainwork.

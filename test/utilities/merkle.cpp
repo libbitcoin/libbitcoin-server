@@ -55,7 +55,8 @@ static void verify_round_trip(size_t count,
     hash_digest root{};
     hashes matched{};
     std::vector<size_t> positions{};
-    BC_REQUIRE(server::extract_partial_merkle(root, matched, positions, count, flags, branch));
+    BC_REQUIRE(server::extract_partial_merkle(root, matched, positions, count,
+        flags, branch));
 
     BC_REQUIRE_EQUAL(root, full_root(txids));
     BC_REQUIRE_EQUAL(positions.size(), matches.size());

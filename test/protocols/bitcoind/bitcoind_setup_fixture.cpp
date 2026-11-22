@@ -49,7 +49,11 @@ bool setup_simultaneous_store(test::query_t& query) NOEXCEPT
 {
     const auto& header = test::block3.header();
     const auto timestamp = test::block2.header().timestamp();
-    const system::chain::header top{ header.version(), test::block2_hash, header.merkle_root(), timestamp, header.bits(), header.nonce() };
+    const system::chain::header top
+    {
+        header.version(), test::block2_hash, header.merkle_root(), timestamp,
+        header.bits(), header.nonce()
+    };
     return test::setup_three_block_store(query) &&
         query.set(top, database::context{ 0, 3, 0 }, {}, false) &&
         query.push_confirmed(query.to_header(top.hash()), false);
@@ -59,7 +63,11 @@ bool setup_simultaneous_store(test::query_t& query) NOEXCEPT
 bool setup_unrooted_store(test::query_t& query) NOEXCEPT
 {
     const auto& header = test::block3.header();
-    const system::chain::header top{ header.version(), system::null_hash, header.merkle_root(), header.timestamp(), header.bits(), header.nonce() };
+    const system::chain::header top
+    {
+        header.version(), system::null_hash, header.merkle_root(),
+        header.timestamp(), header.bits(), header.nonce()
+    };
     return test::setup_three_block_store(query) &&
         query.set(top, database::context{ 0, 3, 0 }, {}, false) &&
         query.push_confirmed(query.to_header(top.hash()), false);

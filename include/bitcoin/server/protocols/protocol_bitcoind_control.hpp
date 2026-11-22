@@ -106,13 +106,16 @@ private:
 
         out = command;
         const auto& names = entry.parameter_names();
+        const auto append = [&](const auto& name, bool optional) NOEXCEPT
+        {
+            const std::string text{ primary_name(name) };
+            out += optional ? " ( " + text + " )" : " " + text;
+        };
+
         [&]<size_t... Index>(std::index_sequence<Index...>) NOEXCEPT
         {
-            ((out += is_defaulted<std::tuple_element_t<Index,
-                typename Method::args_native>> ?
-                    " ( " + std::string{ primary_name(names.at(Index)) } +
-                        " )" :
-                    " " + std::string{ primary_name(names.at(Index)) }), ...);
+            (append(names.at(Index), is_defaulted<std::tuple_element_t<Index,
+                typename Method::args_native>>), ...);
         }(std::make_index_sequence<Method::size>{});
     }
 

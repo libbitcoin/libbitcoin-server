@@ -30,14 +30,16 @@ static const chain::transaction& coinbase1() NOEXCEPT
 
 static std::string funded() NOEXCEPT
 {
-    return encode_hash(sha256_hash(coinbase1().outputs_ptr()->front()->script().to_data(false)));
+    const auto& output = *coinbase1().outputs_ptr()->front();
+    return encode_hash(sha256_hash(output.script().to_data(false)));
 }
 
 static const std::string unfunded = encode_hash(null_hash);
 
 static chain::outpoint outpoint1() NOEXCEPT
 {
-    return chain::outpoint{ chain::point{ coinbase1().hash(false), 0 }, 5000000000 };
+    const chain::point point{ coinbase1().hash(false), 0 };
+    return chain::outpoint{ point, 5000000000 };
 }
 
 BC_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
@@ -181,7 +183,8 @@ BC_FIXTURE_TEST_SUITE(native_unconfirmed_tests, native_unconfirmed_setup_fixture
 
 static std::string unconfirmed() NOEXCEPT
 {
-    return encode_hash(sha256_hash(test::tx4.outputs_ptr()->front()->script().to_data(false)));
+    const auto& output = *test::tx4.outputs_ptr()->front();
+    return encode_hash(sha256_hash(output.script().to_data(false)));
 }
 
 BC_AUTO_TEST_CASE(native__address_unconfirmed__json__unconfirmed_outputs)

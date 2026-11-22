@@ -836,7 +836,6 @@ BC_AUTO_TEST_CASE(electrum__blockchain_block_headers__start_plus_count_huge__not
 {
     BC_REQUIRE(handshake(electrum::version::v1_6));
 
-    // argument_overflow is not actually reachable via json due to its integer limits.
     const auto response = get(R"({"id":70,"method":"blockchain.block.headers","params":[9007199254740991,2]})" "\n");
     REQUIRE_NO_THROW_TRUE(response.at("error").is_object());
     REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());

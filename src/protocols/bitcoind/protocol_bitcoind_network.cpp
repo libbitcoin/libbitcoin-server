@@ -695,13 +695,15 @@ void protocol_bitcoind_network::do_send_peer_info(
 {
     BC_ASSERT(stranded());
 
+    using endpoint = network::config::endpoint;
     array_t out{};
     for (const auto& row: *captured)
     {
         // A proxied connection is unresolved, so reports its intended target.
-        const auto peer = row.address ? network::config::endpoint{ row.address } :
-            row.endpoint;
+        const auto peer = row.address ? endpoint{ row.address } : row.endpoint;
 
+        const auto& sent_by_message = row.bytes_sent_by_message;
+        const auto& received_by_message = row.bytes_received_by_message;
         object_t info
         {
             { "id", row.identifier },
@@ -728,10 +730,8 @@ void protocol_bitcoind_network::do_send_peer_info(
             { "lastrecv", row.last_read },
             { "bytessent", row.bytes_sent },
             { "bytesrecv", row.bytes_received },
-            { "bytessent_per_msg",
-                to_message_bytes(row.bytes_sent_by_message) },
-            { "bytesrecv_per_msg",
-                to_message_bytes(row.bytes_received_by_message) },
+            { "bytessent_per_msg", to_message_bytes(sent_by_message) },
+            { "bytesrecv_per_msg", to_message_bytes(received_by_message) },
             { "transport_protocol_type", row.encrypted ? "v2" : "v1" }
         };
 

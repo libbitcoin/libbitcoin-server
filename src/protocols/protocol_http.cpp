@@ -69,7 +69,6 @@ void protocol_http::dispatch_websocket(const request& ) NOEXCEPT
 // Cache request for serialization, keeping it out of dispatch.
 void protocol_http::set_request(const request_cptr& request) NOEXCEPT
 {
-    ////BC_ASSERT(stranded());
     BC_ASSERT(request);
     request_ = request;
 }
@@ -78,7 +77,6 @@ void protocol_http::set_request(const request_cptr& request) NOEXCEPT
 // envelope (asserts correctness otherwise).
 request_cptr protocol_http::reset_request() NOEXCEPT
 {
-    ////BC_ASSERT(stranded());
     BC_ASSERT(request_ || websocket() || downgraded());
 
     if (request_)
@@ -93,7 +91,6 @@ request_cptr protocol_http::reset_request() NOEXCEPT
 
 const request_cptr& protocol_http::get_request() const NOEXCEPT
 {
-    ////BC_ASSERT(stranded());
     return request_;
 }
 

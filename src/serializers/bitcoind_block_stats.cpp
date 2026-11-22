@@ -132,8 +132,8 @@ object_t block_stats(const chain::block& block, size_t height,
         total_fee += fee;
 
         // The fee rate is satoshis per virtual byte.
-        const auto rate = is_zero(weight) ? zero :
-            (chain::light_weight_factor * fee) / weight;
+        const auto weighted = chain::light_weight_factor * fee;
+        const auto rate = is_zero(weight) ? zero : weighted / weight;
         rates.emplace_back(rate, weight);
         max_fee_rate = std::max(max_fee_rate, rate);
         min_fee_rate = std::min(min_fee_rate, rate);
@@ -146,11 +146,14 @@ object_t block_stats(const chain::block& block, size_t height,
     // The count of non-coinbase txs (zero for a coinbase-only block).
     const auto paying = sub1(txs.size());
 
+    const auto weightless = is_zero(total_weight);
+    const auto weighted_fee = chain::light_weight_factor * total_fee;
+    const auto average_rate = weightless ? zero : weighted_fee / total_weight;
+
     return object_t
     {
         { "avgfee", is_zero(paying) ? zero : total_fee / paying },
-        { "avgfeerate", is_zero(total_weight) ? zero :
-            (chain::light_weight_factor * total_fee) / total_weight },
+        { "avgfeerate", average_rate },
         { "avgtxsize", is_zero(paying) ? zero : total_size / paying },
         { "blockhash", encode_hash(block.hash()) },
         { "feerate_percentiles", rates_result },

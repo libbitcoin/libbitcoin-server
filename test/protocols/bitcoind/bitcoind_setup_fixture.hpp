@@ -175,8 +175,10 @@ struct bitcoind_scoped_credential_setup_fixture
         {
             config.server.bitcoind.credentials =
             {
-                { BITCOIND_TEST_USERNAME ":" BITCOIND_TEST_PASSWORD ":"
-                    BITCOIND_TEST_SCOPED_METHOD }
+                {
+                    BITCOIND_TEST_USERNAME ":" BITCOIND_TEST_PASSWORD ":"
+                    BITCOIND_TEST_SCOPED_METHOD
+                }
             };
         })
     {
@@ -381,7 +383,8 @@ struct bitcoind_csv_unconfirmed_setup_fixture
         {
             const auto stored = test::setup_ten_block_store(query);
             const auto link = query.to_header(test::block9_hash);
-            return stored && query.set_activation(system::chain::flags::bip68_rule, link);
+            const auto rule = system::chain::flags::bip68_rule;
+            return stored && query.set_activation(rule, link);
         })
     {
     }
@@ -583,8 +586,10 @@ struct bitcoind_rest_credential_setup_fixture
         {
             config.server.bitcoind.credentials =
             {
-                { BITCOIND_TEST_USERNAME ":" BITCOIND_TEST_PASSWORD ":"
-                    BITCOIND_TEST_REST_METHOD }
+                {
+                    BITCOIND_TEST_USERNAME ":" BITCOIND_TEST_PASSWORD ":"
+                    BITCOIND_TEST_REST_METHOD
+                }
             };
         })
     {

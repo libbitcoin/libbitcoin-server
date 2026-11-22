@@ -220,9 +220,9 @@ bool protocol_bitcoind_transaction::handle_create_raw_transaction(
     return true;
 }
 
-bool protocol_bitcoind_transaction::handle_decode_raw_transaction(const code& ec,
-    rpc_interface::decode_raw_transaction, const std::string& hexstring,
-    const std::optional<bool>& iswitness) NOEXCEPT
+bool protocol_bitcoind_transaction::handle_decode_raw_transaction(
+    const code& ec, rpc_interface::decode_raw_transaction,
+    const std::string& hexstring, const std::optional<bool>& iswitness) NOEXCEPT
 {
     if (stopped(ec))
         return false;
@@ -840,11 +840,11 @@ bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
         {
             auto checked = key.key;
             append_checksum(checked);
+            const auto fingerprint = to_little_endian(key.origin.fingerprint);
             xpubs.emplace_back(object_t
             {
                 { "xpub", encode_base58(checked) },
-                { "master_fingerprint", encode_base16(to_little_endian(
-                    key.origin.fingerprint)) },
+                { "master_fingerprint", encode_base16(fingerprint) },
                 { "path", to_key_path(key.origin.path) }
             });
         }
@@ -966,8 +966,8 @@ bool protocol_bitcoind_transaction::handle_join_psbts(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_transaction::handle_descriptor_process_psbt(const code& ec,
-    rpc_interface::descriptor_process_psbt) NOEXCEPT
+bool protocol_bitcoind_transaction::handle_descriptor_process_psbt(
+    const code& ec, rpc_interface::descriptor_process_psbt) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::bitcoind::method_not_found);
@@ -1004,16 +1004,16 @@ bool protocol_bitcoind_transaction::handle_utxo_update_psbt(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_transaction::handle_abort_private_broadcast(const code& ec,
-    rpc_interface::abort_private_broadcast) NOEXCEPT
+bool protocol_bitcoind_transaction::handle_abort_private_broadcast(
+    const code& ec, rpc_interface::abort_private_broadcast) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::bitcoind::method_not_found);
     return true;
 }
 
-bool protocol_bitcoind_transaction::handle_get_private_broadcast_info(const code& ec,
-    rpc_interface::get_private_broadcast_info) NOEXCEPT
+bool protocol_bitcoind_transaction::handle_get_private_broadcast_info(
+    const code& ec, rpc_interface::get_private_broadcast_info) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::bitcoind::method_not_found);

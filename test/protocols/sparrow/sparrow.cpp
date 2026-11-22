@@ -230,9 +230,10 @@ struct sparrow_silent_mapped_setup_fixture
     inline sparrow_silent_mapped_setup_fixture()
       : electrum_setup_fixture([](test::query_t& query)
         {
+            const auto genesis = test::genesis.hash();
             return test::setup_ten_block_store(query)
                 && query.set_silent(5, simple_send)
-                && query.set_scan_start(query.to_header(test::genesis.hash()), 0)
+                && query.set_scan_start(query.to_header(genesis), 0)
                 && query.set_scan_start(query.to_header(test::block1_hash), 0)
                 && query.set_scan_start(query.to_header(test::block2_hash), 0)
                 && query.set_scan_start(query.to_header(test::block3_hash), 0)

@@ -58,19 +58,21 @@ code block_info(network::rpc::object_t& out, const node::query& query,
     const auto unclaimed = floored_subtract(reward, amounts.coinbase);
     const auto unspendable = unclaimed + amounts.unspendable + amounts.bip30;
 
+    network::rpc::object_t unspendables
+    {
+        { "genesis_block", to_btc(0_u64) },
+        { "bip30", to_btc(amounts.bip30) },
+        { "scripts", to_btc(amounts.unspendable) },
+        { "unclaimed_rewards", to_btc(unclaimed) }
+    };
+
     out = network::rpc::object_t
     {
         { "prevout_spent", to_btc(amounts.prevouts) },
         { "coinbase", to_btc(amounts.coinbase) },
         { "new_outputs_ex_coinbase", to_btc(amounts.outputs) },
         { "unspendable", to_btc(unspendable) },
-        { "unspendables", network::rpc::object_t
-        {
-            { "genesis_block", to_btc(0_u64) },
-            { "bip30", to_btc(amounts.bip30) },
-            { "scripts", to_btc(amounts.unspendable) },
-            { "unclaimed_rewards", to_btc(unclaimed) }
-        }}
+        { "unspendables", std::move(unspendables) }
     };
 
     return error::success;
@@ -124,6 +126,7 @@ network::rpc::object_t scan_result(
             coin.height = (coin.height == 91812) ? 91842 :
                 (coin.height == 91722) ? 91880 : coin.height;
 
+        const auto link = query.to_confirmed(coin.height);
         unspents.emplace_back(object_t
         {
             { "txid", encode_hash(coin.out.point().hash()) },
@@ -133,21 +136,20 @@ network::rpc::object_t scan_result(
             { "amount", to_btc(coin.out.value()) },
             { "coinbase", coin.coinbase },
             { "height", to64(coin.height) },
-            { "blockhash", encode_hash(query.get_header_key(
-                query.to_confirmed(coin.height))) },
+            { "blockhash", encode_hash(query.get_header_key(link)) },
             { "confirmations", to64(add1(floored_subtract(top, coin.height))) }
         });
 
         amount += coin.out.value();
     }
 
+    const auto best = query.to_confirmed(top);
     return object_t
     {
         { "success", true },
         { "txouts", txouts },
         { "height", to64(top) },
-        { "bestblock", encode_hash(query.get_header_key(
-            query.to_confirmed(top))) },
+        { "bestblock", encode_hash(query.get_header_key(best)) },
         { "unspents", std::move(unspents) },
         { "total_amount", to_btc(amount) }
     };

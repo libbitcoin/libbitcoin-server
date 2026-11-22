@@ -1330,13 +1330,13 @@ bool protocol_bitcoind_blockchain::handle_get_chain_tips(const code& ec,
                     return query.is_associated(link);
                 });
 
+            const auto status = present ? "valid-headers" : "headers-only";
             tips.emplace_back(object_t
             {
                 { "height", to64(candidate) },
                 { "hash", encode_hash(query.get_header_key(candidate_link)) },
                 { "branchlen", to64(branchlen) },
-                { "status", std::string{ present ? "valid-headers" :
-                    "headers-only" } }
+                { "status", std::string{ status } }
             });
         }
     }
@@ -1749,9 +1749,9 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_cluster(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_blockchain::handle_get_mempool_descendants(const code& ec,
-    rpc_interface::get_mempool_descendants, const std::string& txid,
-    bool verbose) NOEXCEPT
+bool protocol_bitcoind_blockchain::handle_get_mempool_descendants(
+    const code& ec, rpc_interface::get_mempool_descendants,
+    const std::string& txid, bool verbose) NOEXCEPT
 {
     if (stopped(ec)) return false;
     return get_mempool_relatives(txid, verbose, false);
@@ -1944,9 +1944,9 @@ database::tx_link protocol_bitcoind_blockchain::to_mempool_tx(
 }
 
 // The spender index is complete, so mempool_only defaults to false.
-bool protocol_bitcoind_blockchain::handle_get_tx_spending_prevout(const code& ec,
-    rpc_interface::get_tx_spending_prevout, const array_t& outputs,
-    const std::optional<object_t>& options) NOEXCEPT
+bool protocol_bitcoind_blockchain::handle_get_tx_spending_prevout(
+    const code& ec, rpc_interface::get_tx_spending_prevout,
+    const array_t& outputs, const std::optional<object_t>& options) NOEXCEPT
 {
     if (stopped(ec)) return false;
 
@@ -2288,10 +2288,12 @@ void protocol_bitcoind_blockchain::do_save_mempool(const code& ec,
         return;
     }
 
-    POST(complete_value, value_t{ object_t
+    object_t result
     {
         { "filename", from_path(absolute) }
-    } }, gate);
+    };
+
+    POST(complete_value, value_t{ std::move(result) }, gate);
 }
 
 void protocol_bitcoind_blockchain::do_import_mempool(

@@ -29,12 +29,14 @@ using peer_socket = network::io::socket;
 
 static network::wire_tx::view::cptr to_tx(const data_chunk& data)
 {
-    return emplace_shared<const network::wire_tx::view>(data_chunk{ data }, false, true);
+    using view = network::wire_tx::view;
+    return emplace_shared<const view>(data_chunk{ data }, false, true);
 }
 
 static network::wire_block::view::cptr to_block(const data_chunk& data)
 {
-    return emplace_shared<const network::wire_block::view>(data_chunk{ data }, true);
+    using view = network::wire_block::view;
+    return emplace_shared<const view>(data_chunk{ data }, true);
 }
 
 // Build a command frame with the given name and trailing content.

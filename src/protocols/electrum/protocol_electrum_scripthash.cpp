@@ -256,8 +256,8 @@ void protocol_electrum::complete_get_mempool(const code& ec,
 // list_unspent
 // ----------------------------------------------------------------------------
 
-void protocol_electrum::handle_blockchain_scripthash_list_unspent(const code& ec,
-    rpc_interface::blockchain_scripthash_list_unspent,
+void protocol_electrum::handle_blockchain_scripthash_list_unspent(
+    const code& ec, rpc_interface::blockchain_scripthash_list_unspent,
     const std::string& scripthash) NOEXCEPT
 {
     BC_ASSERT(stranded());

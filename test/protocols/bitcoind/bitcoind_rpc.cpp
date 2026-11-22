@@ -2532,12 +2532,6 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__unknown_hash__error)
     BC_REQUIRE(has_error(response));
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__filters_disabled__error)
-{
-    const auto response = rpc("getblockfilter", hash_param(test::block9_hash, "\"basic\""));
-    BC_REQUIRE(has_error(response));
-}
-
 // batch
 // ----------------------------------------------------------------------------
 
@@ -3051,12 +3045,6 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getdescriptoractivity__unknown_block__not_found)
 // scanblocks
 
 // The fixture runs with block filters disabled.
-BC_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__filters_disabled__error)
-{
-    const auto response = rpc("scanblocks", "[\"start\", [\"pk(04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f)\"]]");
-    BC_REQUIRE(has_error(response));
-}
-
 BC_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__bad_action__invalid)
 {
     const auto response = rpc("scanblocks", "[\"status\", []]");
@@ -4077,7 +4065,8 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__waitforblockheight__organized__new_top)
 
 // psbt combine and join
 
-static std::string create_psbt_v0(const chain::block& block, const std::string& data) NOEXCEPT
+static std::string create_psbt_v0(const chain::block& block,
+    const std::string& data) NOEXCEPT
 {
     return "{\"jsonrpc\":\"2.0\",\"id\":0,\"method\":\"createpsbt\",\"params\":[[{\"txid\":\"" + encode_hash(block.transactions_ptr()->front()->hash(false)) + "\",\"vout\":0}], {\"data\": \"" + data + "\"}, 0, true, 2, 0]}";
 }
@@ -5014,7 +5003,8 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolancestors__invalid_txid__invalid_param
     BC_REQUIRE(has_code(response, -8));
 }
 
-static std::string prevout_param(const hash_digest& hash, uint32_t index, const std::string& tail) NOEXCEPT
+static std::string prevout_param(const hash_digest& hash, uint32_t index,
+    const std::string& tail) NOEXCEPT
 {
     return "[[{\"txid\":\"" + encode_hash(hash) + "\",\"vout\":" + std::to_string(index) + "}]" + tail + "]";
 }

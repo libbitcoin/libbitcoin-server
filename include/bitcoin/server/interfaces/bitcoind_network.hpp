@@ -92,8 +92,10 @@ struct bitcoind_handshake_methods
 
     /// Method names as reported by help.
     static constexpr auto name_data = method_names<methods>();
-    static constexpr std::string_view names{ name_data.data(),
-        name_data.size() };
+    static constexpr std::string_view names
+    {
+        name_data.data(), name_data.size()
+    };
 
     template <size_t Index>
     using at = method_at<methods, Index>;

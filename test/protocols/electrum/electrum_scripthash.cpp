@@ -52,15 +52,14 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__insufficient_vers
     BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 }
 
-// Not yet.
-////BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__obsoleted_version__wrong_version)
-////{
-////    BC_REQUIRE(handshake(electrum::version::v1_7));
-////
-////    const auto response = get(R"({"id":902,"method":"blockchain.scripthash.get_balance","params":[""]})" "\n");
-////    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-////    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
-////}
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__obsoleted_version__wrong_version)
+{
+    BC_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto response = get(R"({"id":902,"method":"blockchain.scripthash.get_balance","params":[""]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_balance__invalid_address__invalid_argument)
 {
@@ -146,15 +145,14 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__insufficient_vers
     BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 }
 
-// Not yet.
-////BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__obsoleted_version__wrong_version)
-////{
-////    BC_REQUIRE(handshake(electrum::version::v1_7));
-////
-////    const auto response = get(R"({"id":1003,"method":"blockchain.scripthash.get_history","params":[""]})" "\n");
-////    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-////    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
-////}
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__obsoleted_version__wrong_version)
+{
+    BC_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto response = get(R"({"id":1003,"method":"blockchain.scripthash.get_history","params":[""]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__invalid_address__invalid_argument)
 {
@@ -263,15 +261,14 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__insufficient_vers
     BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 }
 
-// Not yet.
-////BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__obsoleted_version__wrong_version)
-////{
-////    BC_REQUIRE(handshake(electrum::version::v1_7));
-////
-////    const auto response = get(R"({"id":1003,"method":"blockchain.scripthash.get_mempool","params":[""]})" "\n");
-////    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-////    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
-////}
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__obsoleted_version__wrong_version)
+{
+    BC_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto response = get(R"({"id":1003,"method":"blockchain.scripthash.get_mempool","params":[""]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_mempool__invalid_address__invalid_argument)
 {
@@ -371,15 +368,14 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__insufficient_ver
     BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
 }
 
-// Not yet.
-////BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__obsoleted_version__wrong_version)
-////{
-////    BC_REQUIRE(handshake(electrum::version::v1_7));
-////
-////    const auto response = get(R"({"id":1003,"method":"blockchain.scripthash.listunspent","params":[""]})" "\n");
-////    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
-////    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
-////}
+BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__obsoleted_version__wrong_version)
+{
+    BC_REQUIRE(handshake(electrum::version::v1_7));
+
+    const auto response = get(R"({"id":1003,"method":"blockchain.scripthash.listunspent","params":[""]})" "\n");
+    REQUIRE_NO_THROW_TRUE(response.at("error").as_object().at("code").is_int64());
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), wrong_version.value());
+}
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_list_unspent__invalid_address__invalid_argument)
 {
@@ -472,7 +468,8 @@ BC_FIXTURE_TEST_SUITE(electrum_duplicate_tests, electrum_duplicate_setup_fixture
 
 static std::string duplicate_hash() NOEXCEPT
 {
-    return encode_hash(test::mock_block10.transactions_ptr()->at(1)->hash(false));
+    const auto& tx = *test::mock_block10.transactions_ptr()->at(1);
+    return encode_hash(tx.hash(false));
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_get_history__duplicate__strong_instance)

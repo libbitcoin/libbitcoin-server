@@ -46,9 +46,11 @@ static hash_digest calc_hash(size_t height, size_t pos,
     if (is_zero(height))
         return txids.at(pos);
 
-    const auto left = calc_hash(sub1(height), pos * two, txids);
-    const auto right = add1(pos * two) < tree_width(txids.size(), sub1(height)) ?
-        calc_hash(sub1(height), add1(pos * two), txids) : left;
+    const auto child = sub1(height);
+    const auto next = add1(pos * two);
+    const auto width = tree_width(txids.size(), child);
+    const auto left = calc_hash(child, pos * two, txids);
+    const auto right = next < width ? calc_hash(child, next, txids) : left;
 
     return node_hash(left, right);
 }

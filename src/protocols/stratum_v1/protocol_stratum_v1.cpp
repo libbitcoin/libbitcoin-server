@@ -54,8 +54,8 @@ void protocol_stratum_v1::start() NOEXCEPT
     // Server notifications.
     SUBSCRIBE_CHANNEL(void, handle_mining_configure, _1, _2, _3);
     SUBSCRIBE_CHANNEL(void, handle_mining_set_difficulty, _1, _2, _3);
-    SUBSCRIBE_CHANNEL(void, handle_mining_notify, _1, _2, _3, _4, _5, _6, _7, _8, _9,
-        _10, _11, _12, _13);
+    SUBSCRIBE_CHANNEL(void, handle_mining_notify, _1, _2, _3, _4, _5, _6, _7,
+        _8, _9, _10, _11, _12, _13);
     SUBSCRIBE_CHANNEL(void, handle_client_reconnect, _1, _2, _3, _4, _5);
     SUBSCRIBE_CHANNEL(void, handle_client_hello, _1, _2, _3);
     SUBSCRIBE_CHANNEL(void, handle_client_rejected, _1, _2, _3, _4);

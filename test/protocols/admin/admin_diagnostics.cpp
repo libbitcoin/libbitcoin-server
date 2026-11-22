@@ -341,7 +341,8 @@ BC_AUTO_TEST_CASE(admin__ws_event_subscribe__unsubscribed__not_notified)
 
 BC_AUTO_TEST_SUITE_END()
 
-BC_FIXTURE_TEST_SUITE(admin_scoped_credential_tests, admin_scoped_credential_setup_fixture)
+BC_FIXTURE_TEST_SUITE(admin_scoped_credential_tests,
+    admin_scoped_credential_setup_fixture)
 
 BC_AUTO_TEST_CASE(admin__event_subscribe__scoped_credential__ok)
 {

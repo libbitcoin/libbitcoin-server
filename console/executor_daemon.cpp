@@ -93,19 +93,22 @@ void executor::report_status(DWORD state) NOEXCEPT
     const auto failed = failed_.load();
     const DWORD code = failed ? ERROR_SERVICE_SPECIFIC_ERROR : NO_ERROR;
     const DWORD specific = failed ? 1u : 0u;
+    const auto running = (state == SERVICE_RUNNING);
+    const DWORD controls = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PRESHUTDOWN;
+    const DWORD accepted = running ? controls : 0u;
+    const DWORD stop_hint = stopping ? preshutdown_milliseconds : 0u;
+    const DWORD hint = starting ? pending_milliseconds : stop_hint;
     state_.store(state);
 
     SERVICE_STATUS status
     {
         .dwServiceType = SERVICE_WIN32_OWN_PROCESS,
         .dwCurrentState = state,
-        .dwControlsAccepted = (state == SERVICE_RUNNING) ?
-            (SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PRESHUTDOWN) : 0u,
+        .dwControlsAccepted = accepted,
         .dwWin32ExitCode = code,
         .dwServiceSpecificExitCode = specific,
         .dwCheckPoint = (starting || stopping) ? ++checkpoint : 0u,
-        .dwWaitHint = starting ? pending_milliseconds :
-            (stopping ? preshutdown_milliseconds : 0u)
+        .dwWaitHint = hint
     };
 
     ::SetServiceStatus(status_handle_, &status);
