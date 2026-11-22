@@ -54,6 +54,9 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
+    /// Complete a getblocktemplate result.
+    virtual void finish_template(network::rpc::object_t& out) const NOEXCEPT;
+
     /// Handlers.
     bool handle_get_network_hash_ps(const code& ec,
         rpc_interface::get_network_hash_ps, double nblocks,
@@ -82,7 +85,8 @@ private:
     /// Pool completions (bounced to the channel strand).
     void handle_mining_info(const code& ec, const database::tx_links& links,
         const gate_t::ptr& gate) NOEXCEPT;
-    void do_mining_info(const code& ec, const database::tx_links& links,
+    virtual void do_mining_info(const code& ec,
+        const database::tx_links& links,
         const gate_t::ptr& gate) NOEXCEPT;
 
     /// Organize completions (bounced to the channel strand).

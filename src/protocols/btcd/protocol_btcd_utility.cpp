@@ -41,13 +41,6 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
-static bool is_testnet(const system::settings& settings) NOEXCEPT
-{
-    const auto network = settings.genesis_network;
-    return network == chain::selection::testnet3
-        || network == chain::selection::testnet4;
-}
-
 // Handlers (getters).
 // ----------------------------------------------------------------------------
 
@@ -316,7 +309,7 @@ bool protocol_btcd::handle_get_info(const code& ec,
         { "connections", to64(channel_count()) },
         { "proxy", proxy },
         { "difficulty", btcd::difficulty(header->bits(), limit) },
-        { "testnet", is_testnet(settings) },
+        { "testnet", btcd::is_testnet(settings) },
         { "relayfee", node_settings().pool.minimum_fee_rate },
         { "errors", std::string{} }
     });

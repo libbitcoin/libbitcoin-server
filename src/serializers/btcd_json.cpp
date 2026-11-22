@@ -50,6 +50,13 @@ static size_t required_signatures(const chain::script& script) NOEXCEPT
     }
 }
 
+bool is_testnet(const system::settings& settings) NOEXCEPT
+{
+    const auto network = settings.genesis_network;
+    return network == chain::selection::testnet3
+        || network == chain::selection::testnet4;
+}
+
 double difficulty(uint32_t bits, uint32_t limit) NOEXCEPT
 {
     constexpr auto scale = 100'000'000.0;

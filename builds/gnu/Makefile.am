@@ -94,6 +94,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd_blockchain.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd_filter.cpp \
+    ${srcdir}/../../src/protocols/btcd/protocol_btcd_mining.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd_transaction.cpp \
     ${srcdir}/../../src/protocols/btcd/protocol_btcd_utility.cpp \
     ${srcdir}/../../src/protocols/electrum/protocol_electrum.cpp \
@@ -271,6 +272,7 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_bitcoind_wallet.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd_blockchain.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd_mining.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd_subgroup.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd_transaction.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd_utility.hpp \

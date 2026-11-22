@@ -1043,6 +1043,19 @@ BC_AUTO_TEST_CASE(btcd_rpc__getblockheader__verbose__btcd_fields)
     BC_REQUIRE_EQUAL(header.at("difficulty").as_double(), 1.0);
 }
 
+BC_AUTO_TEST_CASE(btcd_rpc__getmininginfo__ten_block_store__btcd_fields)
+{
+    const auto response = rpc("getmininginfo");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& info = response.at("result").as_object();
+    BC_REQUIRE_EQUAL(info.at("blocks").as_int64(), 9);
+    BC_REQUIRE_EQUAL(info.at("currentblocktx").as_int64(), 1);
+    BC_REQUIRE_EQUAL(info.at("difficulty").as_double(), 1.0);
+    BC_REQUIRE_EQUAL(info.at("testnet").as_bool(), false);
+    BC_REQUIRE(!info.contains("chain"));
+}
+
 // tcp (downgrade)
 // ----------------------------------------------------------------------------
 // btcd is served over the same universal json-rpc channel as bitcoind, so raw

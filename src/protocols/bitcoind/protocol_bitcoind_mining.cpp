@@ -768,7 +768,12 @@ void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
             encode_base16(splice(prefix, commitment)));
     }
 
+    finish_template(result);
     send_result(std::move(result));
+}
+
+void protocol_bitcoind_mining::finish_template(object_t&) const NOEXCEPT
+{
 }
 
 bool protocol_bitcoind_mining::handle_get_prioritised_transactions(const code& ec,
