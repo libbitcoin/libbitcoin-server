@@ -60,6 +60,8 @@ public:
     {
     }
 
+    void start() NOEXCEPT override;
+
 protected:
     using post = network::http::method::post;
     using options_verb = network::http::method::options;

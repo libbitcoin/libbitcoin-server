@@ -49,6 +49,9 @@ void protocol_esplora::start() NOEXCEPT
     if (started())
         return;
 
+    allow("GET");
+    allow("POST");
+
     // Address methods.
     SUBSCRIBE_ESPLORA(handle_get_address, _1, _2, _3, _4, _5);
     SUBSCRIBE_ESPLORA(handle_get_address_txs, _1, _2, _3, _4, _5);
@@ -92,6 +95,16 @@ void protocol_esplora::stopping(const code& ec) NOEXCEPT
     stopping_.store(true);
     dispatcher_.stop(ec);
     protocol_http::stopping(ec);
+}
+
+std::string protocol_esplora::allowed(
+    const http::request& request) const NOEXCEPT
+{
+    rpc::request_t model{};
+    if (esplora_target(model, request.target()) || !is_active(model.method))
+        return protocol_http::allowed(request);
+
+    return takes_body(model.method) ? "POST" : "GET";
 }
 
 // Handle get method.

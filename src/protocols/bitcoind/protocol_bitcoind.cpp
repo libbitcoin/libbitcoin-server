@@ -40,6 +40,18 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
+void protocol_bitcoind::start() NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (started())
+        return;
+
+    allow("OPTIONS");
+    allow("POST");
+    protocol_http::start();
+}
+
 // Terminal dispatch.
 // ----------------------------------------------------------------------------
 // Attached to channel after subgroup protocols, which claim requests defined by

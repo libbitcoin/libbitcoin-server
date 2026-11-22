@@ -126,6 +126,13 @@ BC_AUTO_TEST_CASE(esplora__broadcast__get__method_not_allowed)
     BC_REQUIRE_EQUAL(get_status("/tx"), http::status::method_not_allowed);
 }
 
+BC_AUTO_TEST_CASE(esplora__broadcast__get__allow_post)
+{
+    const auto response = get_response("/tx", http::field::user_agent, "libbitcoin");
+    BC_REQUIRE(response.result() == http::status::method_not_allowed);
+    BC_REQUIRE_EQUAL(response[http::field::allow], "POST");
+}
+
 BC_AUTO_TEST_CASE(esplora__broadcast_package__get__method_not_allowed)
 {
     BC_REQUIRE_EQUAL(get_status("/txs/package"), http::status::method_not_allowed);
