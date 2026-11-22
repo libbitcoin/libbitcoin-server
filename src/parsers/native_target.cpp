@@ -368,7 +368,20 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
                     }
                 }
                 else if (component == "txs")
-                    method = "block_txs";
+                {
+                    if (segment == segments.size())
+                    {
+                        method = "block_txs";
+                    }
+                    else
+                    {
+                        const auto subcomponent = segments[segment++];
+                        if (subcomponent == "details")
+                            method = "block_txs_details";
+                        else
+                            return error::invalid_subcomponent;
+                    }
+                }
                 else if (component == "details")
                     method = "block_details";
                 else if (component == "filter")

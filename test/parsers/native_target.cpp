@@ -541,10 +541,10 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_txs_confirmed_valid__expected)
     BC_REQUIRE_EQUAL(height, 123456u);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_txs_confirmed_extra_segment__extra_segment)
+BC_AUTO_TEST_CASE(parsers__native_target__block_txs_confirmed_invalid_subcomponent__invalid_subcomponent)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/txs/extra"), server::error::extra_segment);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/txs/invalid"), server::error::invalid_subcomponent);
 }
 
 // block_txs/hash
@@ -575,9 +575,88 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_txs_hash_valid__expected)
     BC_REQUIRE_EQUAL(to_uintx(*hash_cptr), uint256_t{ 0x42 });
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__block_txs_hash_extra_segment__extra_segment)
+BC_AUTO_TEST_CASE(parsers__native_target__block_txs_hash_invalid_subcomponent__invalid_subcomponent)
 {
-    const std::string path = "/v3/block/hash/0000000000000000000000000000000000000000000000000000000000000000/txs/extra";
+    const std::string path = "/v3/block/hash/0000000000000000000000000000000000000000000000000000000000000000/txs/invalid";
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, path), server::error::invalid_subcomponent);
+}
+
+// block_txs_details/confirmed
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_txs_details_confirmed_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/block/confirmed/123456/txs/details"));
+    BC_REQUIRE_EQUAL(request.method, "block_txs_details");
+    BC_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BC_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 2u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BC_REQUIRE_EQUAL(version, 42u);
+
+    const auto height = std::get<uint32_t>(object.at("height").value());
+    BC_REQUIRE_EQUAL(height, 123456u);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_txs_details_confirmed_extra_segment__extra_segment)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/block/confirmed/123/txs/details/extra"), server::error::extra_segment);
+}
+
+// block_txs_details/candidate
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_txs_details_candidate_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/block/candidate/123456/txs/details"));
+    BC_REQUIRE_EQUAL(request.method, "block_txs_details");
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 3u);
+
+    const auto height = std::get<uint32_t>(object.at("height").value());
+    BC_REQUIRE_EQUAL(height, 123456u);
+    BC_REQUIRE(std::get<bool>(object.at("candidate").value()));
+}
+
+// block_txs_details/hash
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_txs_details_hash_valid__expected)
+{
+    const std::string path = "/v42/block/hash/0000000000000000000000000000000000000000000000000000000000000042/txs/details";
+
+    request_t request{};
+    BC_REQUIRE(!native_target(request, path));
+    BC_REQUIRE_EQUAL(request.method, "block_txs_details");
+    BC_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BC_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 2u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BC_REQUIRE_EQUAL(version, 42u);
+
+    const auto& any = std::get<any_t>(object.at("hash").value());
+    BC_REQUIRE(any.holds_alternative<const hash_digest>());
+
+    const auto& hash_cptr = any.get<const hash_digest>();
+    BC_REQUIRE(hash_cptr);
+    BC_REQUIRE_EQUAL(to_uintx(*hash_cptr), uint256_t{ 0x42 });
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__block_txs_details_hash_extra_segment__extra_segment)
+{
+    const std::string path = "/v3/block/hash/0000000000000000000000000000000000000000000000000000000000000000/txs/details/extra";
     request_t out{};
     BC_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
