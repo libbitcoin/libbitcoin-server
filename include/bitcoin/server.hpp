@@ -91,6 +91,7 @@
 #include <bitcoin/server/protocols/protocol_btcd_blockchain.hpp>
 #include <bitcoin/server/protocols/protocol_btcd_subgroup.hpp>
 #include <bitcoin/server/protocols/protocol_btcd_transaction.hpp>
+#include <bitcoin/server/protocols/protocol_btcd_utility.hpp>
 #include <bitcoin/server/protocols/protocol_electrum.hpp>
 #include <bitcoin/server/protocols/protocol_electrum_version.hpp>
 #include <bitcoin/server/protocols/protocol_esplora.hpp>

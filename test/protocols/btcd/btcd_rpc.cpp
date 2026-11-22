@@ -419,6 +419,9 @@ BC_AUTO_TEST_CASE(btcd_rpc__decodescript__pay_public_key__pubkey)
     BC_REQUIRE_EQUAL(as_text(result.at("type")), "pubkey");
     BC_REQUIRE(result.contains("asm"));
     BC_REQUIRE(result.contains("p2sh"));
+    BC_REQUIRE_EQUAL(result.at("reqSigs").as_int64(), 1);
+    BC_REQUIRE(!result.contains("desc"));
+    BC_REQUIRE(!result.contains("segwit"));
 }
 
 BC_AUTO_TEST_CASE(btcd_rpc__validateaddress__valid_address__isvalid_true)
@@ -432,6 +435,7 @@ BC_AUTO_TEST_CASE(btcd_rpc__validateaddress__valid_address__isvalid_true)
     BC_REQUIRE_EQUAL(result.at("isvalid").as_bool(), true);
     BC_REQUIRE_EQUAL(as_text(result.at("address")), found_address);
     BC_REQUIRE_EQUAL(result.at("iswitness").as_bool(), false);
+    BC_REQUIRE(!result.contains("scriptPubKey"));
 }
 
 BC_AUTO_TEST_CASE(btcd_rpc__validateaddress__invalid_address__isvalid_false)

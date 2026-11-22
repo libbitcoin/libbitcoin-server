@@ -95,6 +95,7 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
         const auto body = "raw(" + encode_base16(data) + ")";
         result["desc"] = body + "#" + wallet::descriptor::to_checksum(body);
         result.stable_erase("address");
+        finish_script(result);
         send_result(std::move(model));
         return true;
     }
@@ -117,8 +118,18 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
         result.emplace("segwit", std::move(segwit));
     }
 
+    finish_script(result);
     send_result(std::move(model));
     return true;
+}
+
+void protocol_bitcoind_utility::finish_script(
+    system::json::object&) const NOEXCEPT
+{
+}
+
+void protocol_bitcoind_utility::finish_validation(object_t&) const NOEXCEPT
+{
 }
 
 bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
@@ -131,7 +142,7 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
     const payment_address base58(address);
     if (base58 && ((base58.prefix() == p2kh_) || (base58.prefix() == p2sh_)))
     {
-        send_result(object_t
+        object_t result
         {
             { "isvalid", true },
             { "address", base58.encoded() },
@@ -139,7 +150,10 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
                 p2sh_).to_data(false)) },
             { "isscript", base58.prefix() == p2sh_ },
             { "iswitness", false }
-        });
+        };
+
+        finish_validation(result);
+        send_result(std::move(result));
         return true;
     }
 
@@ -149,7 +163,7 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
         const auto version0_p2sh = (witness.identifier() ==
             witness_address::program_type::version0_p2sh);
 
-        send_result(object_t
+        object_t result
         {
             { "isvalid", true },
             { "address", witness.encoded() },
@@ -158,7 +172,10 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
             { "iswitness", true },
             { "witness_version", witness.version() },
             { "witness_program", encode_base16(witness.program()) }
-        });
+        };
+
+        finish_validation(result);
+        send_result(std::move(result));
         return true;
     }
 

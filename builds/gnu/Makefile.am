@@ -273,6 +273,7 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd_blockchain.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd_subgroup.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd_transaction.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_btcd_utility.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_electrum.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_electrum_version.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_esplora.hpp \

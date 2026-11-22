@@ -272,6 +272,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_blockchain.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_subgroup.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_transaction.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_utility.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum_version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_esplora.hpp" />

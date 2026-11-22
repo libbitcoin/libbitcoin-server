@@ -51,8 +51,6 @@ using protocol_btcd_notifications =
     protocol_btcd_subgroup<protocol_bitcoind_notifications>;
 using protocol_btcd_test =
     protocol_btcd_subgroup<protocol_bitcoind_test>;
-using protocol_btcd_utility =
-    protocol_btcd_subgroup<protocol_bitcoind_utility>;
 using protocol_btcd_wallet =
     protocol_btcd_subgroup<protocol_bitcoind_wallet>;
 using session_btcd = session_handshake<protocol_bitcoind_version,
