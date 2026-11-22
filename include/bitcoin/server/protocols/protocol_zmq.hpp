@@ -20,6 +20,7 @@
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_ZMQ_HPP
 
 #include <atomic>
+#include <set>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -103,9 +104,8 @@ private:
     bool transactions() const NOEXCEPT;
     bool sequences() const NOEXCEPT;
 
-    static bool set_subscription(std::atomic_bool& subscribed,
-        const std::string_view& topic, const std::string& prefix,
-        bool cancel) NOEXCEPT;
+    bool set_subscription(std::atomic_bool& subscribed,
+        const std::string_view& topic) const NOEXCEPT;
     static system::data_chunk sequence_body(label value,
         system::hash_digest&& hash, uint64_t pool=zero) NOEXCEPT;
 
@@ -118,7 +118,7 @@ private:
     std::atomic_bool subscribed_sequence_{};
 
     // These are protected by the strand.
-    uint32_t subscriptions_{};
+    std::set<std::string> prefixes_{};
     uint32_t sequences_{};
     uint32_t hash_blocks_{};
     uint32_t raw_blocks_{};

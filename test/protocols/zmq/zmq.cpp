@@ -500,15 +500,52 @@ BC_AUTO_TEST_CASE(zmq__subscribe__hash_prefix__wire_undemanded)
     BC_REQUIRE(!wire_block_demanded());
 }
 
-BC_AUTO_TEST_CASE(zmq__subscribe__overlapping_prefixes_cancel_one__wire_tx_undemanded)
+BC_AUTO_TEST_CASE(zmq__subscribe__overlapping_prefixes_cancel_longer__wire_tx_demanded)
 {
     peer_handshake(socket_);
     peer_subscribe(socket_, "raw");
     peer_subscribe(socket_, "rawtx");
     peer_cancel(socket_, "rawtx");
     peer_ping_pong(socket_);
-    BC_REQUIRE(!wire_tx_demanded());
+    BC_REQUIRE(wire_tx_demanded());
     BC_REQUIRE(wire_block_demanded());
+}
+
+BC_AUTO_TEST_CASE(zmq__subscribe__overlapping_prefixes_cancel_shorter__wire_tx_demanded)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "raw");
+    peer_subscribe(socket_, "rawtx");
+    peer_cancel(socket_, "raw");
+    peer_ping_pong(socket_);
+    BC_REQUIRE(wire_tx_demanded());
+    BC_REQUIRE(wire_block_demanded());
+}
+
+BC_AUTO_TEST_CASE(zmq__subscribe__cancel_unsubscribed_prefix__wire_tx_demanded)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "rawtx");
+    peer_cancel(socket_, "raw");
+    peer_ping_pong(socket_);
+    BC_REQUIRE(wire_tx_demanded());
+    BC_REQUIRE(wire_block_demanded());
+}
+
+BC_AUTO_TEST_CASE(zmq__hashtx__overlapping_prefixes_cancel_longer__published)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "hash");
+    peer_subscribe(socket_, "hashtx");
+    peer_cancel(socket_, "hashtx");
+    peer_ping_pong(socket_);
+
+    const auto hash = test::block1.transactions_ptr()->front()->hash(false);
+    notify(node::chases::transaction{ query_.to_tx(hash).value });
+    const auto message = peer_read_message(socket_);
+    BC_REQUIRE_EQUAL(message.size(), 3u);
+    BC_REQUIRE_EQUAL(message.at(0), to_chunk("hashtx"));
+    BC_REQUIRE_EQUAL(message.at(1), to_chunk(reverse_copy(hash)));
 }
 
 BC_AUTO_TEST_CASE(zmq__sequence__organized__reversed_hash_and_connected_label)
@@ -572,6 +609,16 @@ BC_AUTO_TEST_CASE(zmq__maximum_subscriptions__third_subscription__channel_closed
     // The fixture limit is two, and there is no response to carry a reject.
     peer_subscribe(socket_, "hashtx");
     peer_subscribe(socket_, "rawtx");
+    peer_subscribe(socket_, "hashblock");
+    peer_read_closed(socket_);
+}
+
+BC_AUTO_TEST_CASE(zmq__maximum_subscriptions__cancel_unsubscribed_prefix__channel_closed)
+{
+    peer_handshake(socket_);
+    peer_subscribe(socket_, "hashtx");
+    peer_subscribe(socket_, "rawtx");
+    peer_cancel(socket_, "hash");
     peer_subscribe(socket_, "hashblock");
     peer_read_closed(socket_);
 }
