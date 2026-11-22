@@ -996,6 +996,41 @@ BC_AUTO_TEST_CASE(btcd_rpc__getrawtransaction__verbose__btcd_fields)
     BC_REQUIRE(!script.contains("desc"));
 }
 
+BC_AUTO_TEST_CASE(btcd_rpc__getblockhash__above_top__out_of_range)
+{
+    const auto response = rpc("getblockhash", "[10]");
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), -1);
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "Block number out of range");
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__getblock__verbosity_2__rawtx)
+{
+    const auto response = rpc("getblock", std::format(R"(["{}",2])", block9));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& block = response.at("result").as_object();
+    BC_REQUIRE(!block.contains("tx"));
+    BC_REQUIRE(!block.contains("chainwork"));
+    BC_REQUIRE(!block.contains("mediantime"));
+    BC_REQUIRE(!block.contains("nTx"));
+    BC_REQUIRE_EQUAL(block.at("difficulty").as_double(), 1.0);
+
+    const auto& tx = block.at("rawtx").as_array().front().as_object();
+    BC_REQUIRE_EQUAL(as_text(tx.at("blockhash")), block9);
+    BC_REQUIRE(!tx.contains("fee"));
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__getblockheader__verbose__btcd_fields)
+{
+    const auto response = rpc("getblockheader", std::format(R"(["{}",true])", block9));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& header = response.at("result").as_object();
+    BC_REQUIRE(!header.contains("chainwork"));
+    BC_REQUIRE(!header.contains("target"));
+    BC_REQUIRE_EQUAL(header.at("difficulty").as_double(), 1.0);
+}
+
 // tcp (downgrade)
 // ----------------------------------------------------------------------------
 // btcd is served over the same universal json-rpc channel as bitcoind, so raw

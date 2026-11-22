@@ -26,6 +26,14 @@ namespace libbitcoin {
 namespace server {
 namespace btcd {
 
+/// Difficulty relative to the network proof of work limit, rounded to eight
+/// places.
+BCS_API double difficulty(uint32_t bits, uint32_t limit) NOEXCEPT;
+
+/// The btcd verbose getrawmempool entry of a pooled tx.
+BCS_API bool mempool_entry(system::json::object& out,
+    const node::query& query, const database::tx_link& link) NOEXCEPT;
+
 /// Add btcd's reqSigs, address and addresses to an output script model.
 BCS_API void inject_script(system::json::object& out,
     const system::chain::script& script, uint8_t p2kh, uint8_t p2sh,

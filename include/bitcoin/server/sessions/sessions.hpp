@@ -41,8 +41,6 @@ using session_bitcoind = session_handshake<protocol_bitcoind_version,
     protocol_bitcoind_notifications, protocol_bitcoind_test,
     protocol_bitcoind_transaction, protocol_bitcoind_utility,
     protocol_bitcoind_wallet, protocol_bitcoind>;
-using protocol_btcd_blockchain =
-    protocol_btcd_subgroup<protocol_bitcoind_blockchain>;
 using protocol_btcd_control =
     protocol_btcd_subgroup<protocol_bitcoind_control>;
 using protocol_btcd_mining =

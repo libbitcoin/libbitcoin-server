@@ -50,6 +50,51 @@ static size_t required_signatures(const chain::script& script) NOEXCEPT
     }
 }
 
+double difficulty(uint32_t bits, uint32_t limit) NOEXCEPT
+{
+    constexpr auto scale = 100'000'000.0;
+    constexpr auto mantissa = 0x007fffff_u32;
+    const auto exponents = to_floating(shift_right(limit, 24)) -
+        to_floating(shift_right(bits, 24));
+
+    const auto ratio = to_floating(bit_and(limit, mantissa)) /
+        to_floating(bit_and(bits, mantissa)) * std::pow(256.0, exponents);
+
+    return std::round(ratio * scale) / scale;
+}
+
+bool mempool_entry(system::json::object& out, const node::query& query,
+    const database::tx_link& link) NOEXCEPT
+{
+    uint32_t time{};
+    size_t light{}, heavy{};
+    database::fee_rate rate{};
+    if (!query.get_tx_fees(rate, link) ||
+        !query.get_tx_sizes(light, heavy, link) ||
+        !query.get_pooled_time(time, link))
+        return false;
+
+    system::json::array depends{};
+    for (const auto& parent: query.to_confirmable_parents(link))
+        depends.emplace_back(encode_hash(query.get_tx_key(parent)));
+
+    constexpr auto coin = to_floating(chain::satoshi_per_bitcoin);
+    out = system::json::object
+    {
+        { "size", heavy },
+        { "vsize", rate.bytes },
+        { "weight", chain::weighted_size(light, heavy) },
+        { "fee", rate.fee / coin },
+        { "time", time },
+        { "height", sub1(rate.pooled_height) },
+        { "startingpriority", 0.0 },
+        { "currentpriority", 0.0 },
+        { "depends", std::move(depends) }
+    };
+
+    return true;
+}
+
 void inject_script(system::json::object& out, const chain::script& script,
     uint8_t p2kh, uint8_t p2sh, const std::string& witness) NOEXCEPT
 {

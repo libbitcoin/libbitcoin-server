@@ -41,20 +41,6 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
-// Relative to the network proof of work limit, rounded to eight places.
-static double difficulty(uint32_t bits, uint32_t limit) NOEXCEPT
-{
-    constexpr auto scale = 100'000'000.0;
-    constexpr auto mantissa = 0x007fffff_u32;
-    const auto exponents = to_floating(shift_right(limit, 24)) -
-        to_floating(shift_right(bits, 24));
-
-    const auto ratio = to_floating(bit_and(limit, mantissa)) /
-        to_floating(bit_and(bits, mantissa)) * std::pow(256.0, exponents);
-
-    return std::round(ratio * scale) / scale;
-}
-
 static bool is_testnet(const system::settings& settings) NOEXCEPT
 {
     const auto network = settings.genesis_network;
@@ -250,7 +236,7 @@ bool protocol_btcd::handle_get_difficulty(const code& ec,
     }
 
     const auto limit = system_settings().proof_of_work_limit;
-    send_result(difficulty(header->bits(), limit));
+    send_result(btcd::difficulty(header->bits(), limit));
     return true;
 }
 
@@ -329,7 +315,7 @@ bool protocol_btcd::handle_get_info(const code& ec,
         { "timeoffset", 0 },
         { "connections", to64(channel_count()) },
         { "proxy", proxy },
-        { "difficulty", difficulty(header->bits(), limit) },
+        { "difficulty", btcd::difficulty(header->bits(), limit) },
         { "testnet", is_testnet(settings) },
         { "relayfee", node_settings().pool.minimum_fee_rate },
         { "errors", std::string{} }
