@@ -2597,6 +2597,11 @@ options_metadata parser::load_settings() THROWS
         "Declared weight of the miner's coinbase transaction, defaults to {}."
     )
     (
+        "pool.coinbase_sigops",
+        setting<uint32_t>(&configured.node.pool.coinbase_sigops),
+        "Declared sigops of the miner's coinbase transaction, counted as the block limit is, defaults to {}."
+    )
+    (
         "pool.maximum_chunk_depth",
         setting<uint32_t>(&configured.node.pool.maximum_chunk_depth),
         "Maximum ancestor depth of a block template chunk, defaults to {}."
