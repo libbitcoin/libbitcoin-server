@@ -666,25 +666,31 @@ void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
     const auto bip141 = ctx.is_enabled(flags::bip141_rule);
 
     // A tx depends on the txs of the template that it spends, by position
-    // from one (the coinbase is zero).
+    // from one (the coinbase is zero). Each is read as stored, its wire
+    // serialization, identifiers and sizes, with no tx object.
     uint64_t fees{};
     array_t transactions{};
     hashes witnesses{ null_hash };
     std::unordered_map<hash_digest, size_t> positions{};
     for (const auto& tx_link: links)
     {
+        size_t light{};
+        size_t heavy{};
         system::pool::algorithm::totals_t totals{};
-        const auto tx = query.get_transaction(tx_link, true);
-        if (!tx || !query.get_pooled_totals(totals, tx_link))
+        const auto row = query.to_pool_row(tx_link);
+        const auto data = query.get_wire_tx(tx_link, bip141);
+        if (row.is_terminal() || data.empty() ||
+            !query.get_pooled_totals(totals, tx_link) ||
+            !query.get_tx_sizes(light, heavy, tx_link))
         {
             send_error(error::bitcoind::internal_error);
             return;
         }
 
         std::vector<size_t> parents{};
-        for (const auto& input: *tx->inputs_ptr())
+        for (const auto& point: query.to_points(tx_link))
         {
-            const auto it = positions.find(input->point().hash());
+            const auto it = positions.find(query.get_point_hash(point));
             if (it != positions.end() &&
                 std::ranges::find(parents, it->second) == parents.end())
                 parents.push_back(it->second);
@@ -694,18 +700,24 @@ void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
         for (const auto parent: parents)
             depends.emplace_back(to64(parent));
 
-        positions.emplace(tx->hash(false), add1(transactions.size()));
-        witnesses.push_back(tx->hash(true));
+        const auto txid = query.get_tx_key(tx_link);
+        const auto wtxid = query.get_wtxid_key(row);
+        const auto weight = ceilinged_add(
+            ceilinged_multiply(base_size_contribution, light),
+            ceilinged_multiply(total_size_contribution, heavy));
+
+        positions.emplace(txid, add1(transactions.size()));
+        witnesses.push_back(wtxid);
         fees = ceilinged_add(fees, totals.fee);
         transactions.emplace_back(object_t
         {
-            { "data", encode_base16(tx->to_data(bip141)) },
-            { "txid", encode_hash(tx->hash(false)) },
-            { "hash", encode_hash(tx->hash(true)) },
+            { "data", encode_base16(data) },
+            { "txid", encode_hash(txid) },
+            { "hash", encode_hash(wtxid) },
             { "depends", std::move(depends) },
             { "fee", totals.fee },
             { "sigops", totals.sigops },
-            { "weight", to64(tx->weight()) }
+            { "weight", to64(weight) }
         });
     }
 
