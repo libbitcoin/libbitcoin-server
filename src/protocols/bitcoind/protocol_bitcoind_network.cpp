@@ -314,9 +314,19 @@ void protocol_bitcoind_network::do_send_stopped(const code& ec,
     BC_ASSERT(stranded());
 
     if (ec)
-        send_error(absent);
+        send_absent(absent);
     else
         send_result(null_t{});
+}
+
+void protocol_bitcoind_network::send_absent(const code& absent) NOEXCEPT
+{
+    send_error(absent);
+}
+
+void protocol_bitcoind_network::finish_peer(object_t&,
+    const diagnostics::row&) const NOEXCEPT
+{
 }
 
 bool protocol_bitcoind_network::handle_export_asmap(const code& ec,
@@ -740,6 +750,7 @@ void protocol_bitcoind_network::do_send_peer_info(
         if (is_nonzero(row.pending_ping_time.count()))
             info.emplace("pingwait", to_ping_seconds(row.pending_ping_time));
 
+        finish_peer(info, row);
         out.emplace_back(std::move(info));
     }
 

@@ -90,6 +90,7 @@
 #include <bitcoin/server/protocols/protocol_btcd.hpp>
 #include <bitcoin/server/protocols/protocol_btcd_blockchain.hpp>
 #include <bitcoin/server/protocols/protocol_btcd_mining.hpp>
+#include <bitcoin/server/protocols/protocol_btcd_network.hpp>
 #include <bitcoin/server/protocols/protocol_btcd_subgroup.hpp>
 #include <bitcoin/server/protocols/protocol_btcd_transaction.hpp>
 #include <bitcoin/server/protocols/protocol_btcd_utility.hpp>

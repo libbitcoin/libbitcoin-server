@@ -1056,6 +1056,13 @@ BC_AUTO_TEST_CASE(btcd_rpc__getmininginfo__ten_block_store__btcd_fields)
     BC_REQUIRE(!info.contains("chain"));
 }
 
+BC_AUTO_TEST_CASE(btcd_rpc__disconnectnode__no_channels__peer_not_found)
+{
+    const auto response = rpc("disconnectnode", R"(["1.2.3.4:8333"])");
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), invalid_parameter.value());
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "peer not found");
+}
+
 // tcp (downgrade)
 // ----------------------------------------------------------------------------
 // btcd is served over the same universal json-rpc channel as bitcoind, so raw

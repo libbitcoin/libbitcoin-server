@@ -53,6 +53,13 @@ public:
     void start() NOEXCEPT override;
 
 protected:
+    /// Answer a node removal or disconnection that matched no peer.
+    virtual void send_absent(const code& absent) NOEXCEPT;
+
+    /// Complete the getpeerinfo entry of a peer.
+    virtual void finish_peer(network::rpc::object_t& out,
+        const network::diagnostics::row& row) const NOEXCEPT;
+
     /// Handlers.
     bool handle_get_network_info(const code& ec,
         rpc_interface::get_network_info) NOEXCEPT;

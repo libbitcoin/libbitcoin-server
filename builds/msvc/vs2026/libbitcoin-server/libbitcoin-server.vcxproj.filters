@@ -204,6 +204,9 @@
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_mining.cpp">
       <Filter>src\protocols\btcd</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_network.cpp">
+      <Filter>src\protocols\btcd</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_transaction.cpp">
       <Filter>src\protocols\btcd</Filter>
     </ClCompile>
@@ -567,6 +570,9 @@
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_mining.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_network.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_subgroup.hpp">
