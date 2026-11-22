@@ -416,8 +416,22 @@ object_t protocol_bitcoind_transaction::test_result(const code& ec,
         { "allowed", !ec }
     };
 
+    // An accepted tx is populated, so its fee is known.
     if (!ec)
+    {
+        const auto fee = tx.fee();
+        const auto vsize = tx.virtual_size();
+        const auto rate = fee * 1'000u / possible_wide_cast<uint64_t>(vsize);
+        result.emplace("vsize", to64(vsize));
+        result.emplace("fees", object_t
+        {
+            { "base", to_btc(fee) },
+            { "effective-feerate", to_btc(rate) },
+            { "effective-includes", array_t{ encode_hash(tx.hash(true)) } }
+        });
+
         return result;
+    }
 
     std::string reason{ "missing-inputs" };
     if (ec != node::error::duplicate_transaction && !is_missing(ec))

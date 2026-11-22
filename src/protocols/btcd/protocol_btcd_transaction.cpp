@@ -53,9 +53,22 @@ object_t protocol_btcd_transaction::test_result(const code& ec,
         { "package-error", std::string{} }
     };
 
+    // An accepted tx is populated, so its fee is known.
     if (!ec)
     {
+        constexpr auto coin = to_floating(chain::satoshi_per_bitcoin);
+        const auto fee = tx.fee();
+        const auto vsize = tx.virtual_size();
+        const auto rate = fee * 1'000u / possible_wide_cast<uint64_t>(vsize);
         result.emplace("allowed", true);
+        result.emplace("vsize", to64(vsize));
+        result.emplace("fees", object_t
+        {
+            { "base", fee / coin },
+            { "effective-feerate", rate / coin },
+            { "effective-includes", null_t{} }
+        });
+
         return result;
     }
 
