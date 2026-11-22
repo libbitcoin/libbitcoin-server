@@ -1063,6 +1063,20 @@ BC_AUTO_TEST_CASE(btcd_rpc__disconnectnode__no_channels__peer_not_found)
     BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "peer not found");
 }
 
+BC_AUTO_TEST_CASE(btcd_rpc__help__default__usage_lines)
+{
+    const auto usage = as_text(rpc("help").at("result"));
+    BC_REQUIRE_NE(usage.find("\ngetblockhash height\n"), std::string::npos);
+    BC_REQUIRE_NE(usage.find("\nsearchrawtransactions address ( verbose )"), std::string::npos);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__help__unknown_command__invalid_parameter)
+{
+    const auto response = rpc("help", R"(["nosuchmethod"])");
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), invalid_parameter.value());
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "Unknown command: nosuchmethod");
+}
+
 // tcp (downgrade)
 // ----------------------------------------------------------------------------
 // btcd is served over the same universal json-rpc channel as bitcoind, so raw

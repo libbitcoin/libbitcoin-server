@@ -53,6 +53,27 @@ public:
     void start() NOEXCEPT override;
 
 protected:
+    /// The usage line of a served command, empty if none.
+    virtual std::string usage(const std::string& command) const NOEXCEPT;
+
+    /// Answer help without a command.
+    virtual void send_help_list() NOEXCEPT;
+
+    /// Answer help for a command that is not served.
+    virtual void send_help_unknown(const std::string& command) NOEXCEPT;
+
+    /// Set the usage line of the command if defined by the methods, with
+    /// optional parameters parenthesized.
+    template <typename Methods>
+    static void find_usage(std::string& out, const std::string& command,
+        interface::bitcoind::version version) NOEXCEPT
+    {
+        std::apply([&](const auto&... entries) NOEXCEPT
+        {
+            (append_usage(out, entries, command, version), ...);
+        }, Methods::methods);
+    }
+
     /// Handlers.
     bool handle_help(const code& ec, rpc_interface::help,
         const std::string& command) NOEXCEPT;
@@ -73,6 +94,28 @@ protected:
         rpc_interface::rpc_discover, bool show_hidden) NOEXCEPT;
 
 private:
+    template <typename Method>
+    static void append_usage(std::string& out, const Method& entry,
+        const std::string& command,
+        interface::bitcoind::version version) NOEXCEPT
+    {
+        using namespace network::rpc;
+        if (!entry.implemented() || entry.name != command ||
+            version < interface::bitcoind::introduced(entry.name))
+            return;
+
+        out = command;
+        const auto& names = entry.parameter_names();
+        [&]<size_t... Index>(std::index_sequence<Index...>) NOEXCEPT
+        {
+            ((out += is_defaulted<std::tuple_element_t<Index,
+                typename Method::args_native>> ?
+                    " ( " + std::string{ primary_name(names.at(Index)) } +
+                        " )" :
+                    " " + std::string{ primary_name(names.at(Index)) }), ...);
+        }(std::make_index_sequence<Method::size>{});
+    }
+
     void send_openrpc() NOEXCEPT;
 };
 
