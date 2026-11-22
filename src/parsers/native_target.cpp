@@ -414,6 +414,18 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
             }
         }
     }
+    else if (target == "template")
+    {
+        if (segment == segments.size())
+            return error::missing_height;
+
+        uint32_t height{};
+        if (!to_number(height, segments[segment++]))
+            return error::invalid_number;
+
+        params["height"] = height;
+        method = "template";
+    }
     else if (target == "fees")
     {
         method = "fees";

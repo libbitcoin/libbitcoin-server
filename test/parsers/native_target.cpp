@@ -1828,6 +1828,46 @@ BC_AUTO_TEST_CASE(parsers__native_target__block_details_hash_extra_segment__extr
     BC_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
 
+// template
+
+BC_AUTO_TEST_CASE(parsers__native_target__template_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/template/123456"));
+    BC_REQUIRE_EQUAL(request.method, "template");
+    BC_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BC_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 2u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BC_REQUIRE_EQUAL(version, 42u);
+
+    const auto height = std::get<uint32_t>(object.at("height").value());
+    BC_REQUIRE_EQUAL(height, 123456u);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__template_missing_height__missing_height)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/template"), server::error::missing_height);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__template_invalid_height__invalid_number)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/template/invalid"), server::error::invalid_number);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__template_extra_segment__extra_segment)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/template/123/extra"), server::error::extra_segment);
+}
+
 // fees
 
 BC_AUTO_TEST_CASE(parsers__native_target__fees_valid__expected)
