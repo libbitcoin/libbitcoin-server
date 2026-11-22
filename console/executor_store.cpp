@@ -124,7 +124,7 @@ code executor::open_store_coded(bool details)
     {
         logger(std::format(BS_DATABASE_START_FAIL,
             metadata_.stored_code.message()));
-        logger(std::format(BS_DATABASE_SCHEMA_MISMATCH,
+        logger(std::format(BS_DATABASE_NOT_UPGRADEABLE,
             metadata_.stored.schema.to_string(),
             database::envelope::compiled.to_string()));
         return metadata_.stored_code;

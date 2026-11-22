@@ -60,13 +60,13 @@
 #define BS_MIGRATE_PROMPT1 \
     "Database schema {} must be migrated to compiled schema {}."
 #define BS_MIGRATE_PROMPT2 \
-    "Existing snapshots are deleted and an interruption is not recoverable."
+    "Existing snapshots will be deleted and interruption is not recoverable."
 #define BS_MIGRATE_CHOICE1 \
     "Press <enter> to migrate the store now."
 #define BS_MIGRATE_CHOICE2 \
     "Enter 'c' to stop without changing the store."
 #define BS_MIGRATE_HALTED \
-    "Database not migrated, start with --accept or run --transform."
+    "Database requires migration, start with --accept or run --transform."
 
 // startup warnings
 #define BS_WARNINGS_CHOICE1 \
@@ -383,8 +383,8 @@
     "Database failed to start with error '{}'."
 #define BS_DATABASE_SCHEMA_FAIL \
     "Database schema failed to read with error '{}'."
-#define BS_DATABASE_SCHEMA_MISMATCH \
-    "Database schema {} does not match compiled schema {}."
+#define BS_DATABASE_NOT_UPGRADEABLE \
+    "Database schema {} cannot be migrated to compiled schema {}."
 #define BS_DATABASE_ENVELOPE_OVERRIDE \
     "Database envelope [{}] overrides configuration."
 #define BS_DATABASE_MIGRATING \
