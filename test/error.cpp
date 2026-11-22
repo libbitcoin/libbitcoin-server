@@ -281,6 +281,15 @@ BC_AUTO_TEST_CASE(error_t__code__server_error__true_expected_message)
     BC_REQUIRE_EQUAL(ec.message(), "server_error");
 }
 
+BC_AUTO_TEST_CASE(error_t__code__max_fee_exceeded__true_expected_message)
+{
+    constexpr auto value = error::max_fee_exceeded;
+    const auto ec = code(value);
+    BC_REQUIRE(ec);
+    BC_REQUIRE(ec == value);
+    BC_REQUIRE_EQUAL(ec.message(), "max_fee_exceeded");
+}
+
 // bitcoind::parameter_error
 
 BC_AUTO_TEST_CASE(error_t__bitcoind_parameter_error__mistyped__type_error)
@@ -416,6 +425,11 @@ BC_AUTO_TEST_CASE(error_t__bitcoind_translate__other_code__failure)
 }
 
 // bitcoind::reject
+
+BC_AUTO_TEST_CASE(error_t__bitcoind_reject__max_fee_exceeded__max_feerate_exceeded)
+{
+    BC_REQUIRE_EQUAL(error::bitcoind::reject(error::max_fee_exceeded), "max feerate exceeded");
+}
 
 BC_AUTO_TEST_CASE(error_t__bitcoind_reject__node_orphan_block__prev_blk_not_found)
 {

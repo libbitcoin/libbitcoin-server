@@ -53,18 +53,16 @@ constexpr auto decode_failed =
 constexpr auto inputs_missing = "Inputs missing or spent";
 constexpr auto outputs_known = "Transaction outputs already in utxo set";
 
-// Absent and confirmed-spent inputs are missing coins.
-static bool is_missing(const code& ec) NOEXCEPT
+bool protocol_bitcoind_transaction::is_missing(const code& ec) NOEXCEPT
 {
     return (ec == system::error::missing_previous_output) ||
         (ec == system::error::confirmed_double_spend);
 }
 
-// Any output of the tx is not spent by a confirmed tx.
-template <typename Query>
-static bool has_unspent_output(const Query& query,
-    const database::tx_link& link) NOEXCEPT
+bool protocol_bitcoind_transaction::has_unspent_output(
+    const database::tx_link& link) const NOEXCEPT
 {
+    const auto& query = archive();
     const auto outs = query.to_outputs(link);
     return std::any_of(outs.begin(), outs.end(),
         [&query](const auto& out) NOEXCEPT
@@ -73,23 +71,85 @@ static bool has_unspent_output(const Query& query,
         });
 }
 
-template <typename Query>
-static std::string test_reject(const Query& query, const code& ec,
-    const chain::transaction& tx) NOEXCEPT
+// The fee is unknown if a prevout is neither archived nor in the package.
+static bool get_fee(uint64_t& fee, const chain::transaction& tx,
+    const chain::transaction_cptrs& package, const node::query& query) NOEXCEPT
 {
-    if (is_missing(ec))
-        return "missing-inputs";
+    uint64_t in{};
+    for (const auto& input: *tx.inputs_ptr())
+    {
+        uint64_t value{};
+        const auto& prevout = input->point();
+        const auto parent = std::find_if(package.begin(), package.end(),
+            [&](const auto& candidate) NOEXCEPT
+            {
+                return candidate->hash(false) == prevout.hash();
+            });
 
-    if (ec != node::error::duplicate_transaction)
-        return error::bitcoind::reject(ec);
+        if (parent != package.end())
+        {
+            const auto& outs = *(*parent)->outputs_ptr();
+            if (prevout.index() >= outs.size())
+                return false;
 
-    const auto link = query.to_tx(tx.hash(false));
-    if (!query.is_confirmed_tx(link))
-        return "txn-already-in-mempool";
+            value = outs.at(prevout.index())->value();
+        }
+        else if (!query.get_value(value, query.to_output(prevout)))
+        {
+            return false;
+        }
 
-    return has_unspent_output(query, link) ? "txn-already-known" :
-        "missing-inputs";
+        in = ceilinged_add(in, value);
+    }
+
+    fee = floored_subtract(in, tx.value());
+    return true;
 }
+
+// Compared in satoshis per virtual kilobyte, zero disables.
+static bool excessive(uint64_t fee, size_t vsize, double maxfeerate) NOEXCEPT
+{
+    if (is_zero(maxfeerate))
+        return false;
+
+    const auto rate = to_rounded_integer<uint64_t>(maxfeerate *
+        chain::satoshi_per_bitcoin);
+    const auto size = possible_wide_cast<uint64_t>(vsize);
+    return ceilinged_multiply(fee, 1'000_u64) > ceilinged_multiply(rate, size);
+}
+
+static bool exceeds_fee_rate(const chain::transaction& tx,
+    const chain::transaction_cptrs& package, double maxfeerate,
+    const node::query& query) NOEXCEPT
+{
+    uint64_t fee{};
+    return get_fee(fee, tx, package, query) &&
+        excessive(fee, tx.virtual_size(), maxfeerate);
+}
+
+bool protocol_bitcoind_transaction::is_excessive(uint64_t fee, size_t vsize,
+    double maxfeerate) NOEXCEPT
+{
+    return excessive(fee, vsize, maxfeerate);
+}
+
+static bool exceeds_burn(const chain::transaction& tx,
+    double maxburnamount) NOEXCEPT
+{
+    const auto limit = to_rounded_integer<uint64_t>(maxburnamount *
+        chain::satoshi_per_bitcoin);
+
+    const auto& outs = *tx.outputs_ptr();
+    return std::any_of(outs.begin(), outs.end(), [=](const auto& out) NOEXCEPT
+    {
+        return out->script().is_unspendable() && out->value() > limit;
+    });
+}
+
+static constexpr auto burn_exceeded =
+    "Unspendable output exceeds maximum configured by user (maxburnamount)";
+static constexpr auto fee_exceeded =
+    "Fee exceeds maximum configured by user (e.g. -maxtxfee, maxfeerate)";
 
 // Start.
 // ----------------------------------------------------------------------------
@@ -286,14 +346,25 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
         return true;
     }
 
+    if (exceeds_burn(*tx, maxburnamount))
+    {
+        send_error_message(error::bitcoind::verify_error, burn_exceeded);
+        return true;
+    }
+
     // A confirmed tx with any unspent output is reported without validating.
     const auto& query = archive();
     const auto link = query.to_tx(tx->hash(false));
     if (!link.is_terminal() && query.is_confirmed_tx(link) &&
-        has_unspent_output(query, link))
+        has_unspent_output(link))
     {
-        send_error_message(error::bitcoind::verify_already_in_utxo_set,
-            outputs_known);
+        send_rejected(node::error::duplicate_transaction, *tx);
+        return true;
+    }
+
+    if (link.is_terminal() && exceeds_fee_rate(*tx, {}, maxfeerate, query))
+    {
+        send_error_message(error::bitcoind::verify_error, fee_exceeded);
         return true;
     }
 
@@ -318,40 +389,44 @@ void protocol_bitcoind_transaction::complete_submit_tx(const code& ec,
     if (stopped())
         return;
 
-    // A pooled tx is accepted, and a confirmed tx has only spent outputs (any
-    // unspent output is reported before submission).
-    if (ec == node::error::duplicate_transaction)
-    {
-        const auto& query = archive();
-        if (query.is_confirmed_tx(query.to_tx(tx->hash(false))))
-        {
-            send_error_message(error::bitcoind::verify_error, inputs_missing);
-            return;
-        }
-
-        send_result(encode_hash(tx->hash(false)));
-        return;
-    }
-
     if (ec)
     {
-        using namespace error::bitcoind;
-        if (is_missing(ec))
-        {
-            send_error_message(verify_error, inputs_missing);
-            return;
-        }
-
-        const auto coded = translate(ec, verify_rejected);
-        if (coded == verify_rejected)
-            send_error_message(coded, reject(ec));
-        else
-            send_error(coded);
-
+        send_rejected(ec, *tx);
         return;
     }
 
     send_result(encode_hash(tx->hash(false)));
+}
+
+void protocol_bitcoind_transaction::send_rejected(const code& ec,
+    const chain::transaction& tx) NOEXCEPT
+{
+    using namespace error::bitcoind;
+    if (ec == node::error::duplicate_transaction)
+    {
+        const auto& query = archive();
+        const auto link = query.to_tx(tx.hash(false));
+        if (!query.is_confirmed_tx(link))
+            send_result(encode_hash(tx.hash(false)));
+        else if (has_unspent_output(link))
+            send_error_message(verify_already_in_utxo_set, outputs_known);
+        else
+            send_error_message(verify_error, inputs_missing);
+
+        return;
+    }
+
+    if (is_missing(ec))
+    {
+        send_error_message(verify_error, inputs_missing);
+        return;
+    }
+
+    const auto coded = translate(ec, verify_rejected);
+    if (coded == verify_rejected)
+        send_error_message(coded, reject(ec));
+    else
+        send_error(coded);
 }
 
 bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
@@ -396,45 +471,89 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
 
     constexpr auto test = true;
     const auto package = to_shared<chain::transaction_cptrs>(std::move(txs));
-    submit(package, test, BIND(handle_test_package, _1, _2, package, gate()));
+    submit(package, test, BIND(handle_test_package, _1, _2, package,
+        maxfeerate, gate()));
     return true;
 }
 
 void protocol_bitcoind_transaction::handle_test_package(const code& ec, size_t,
-    const chain::transactions_cptr& txs, const gate_t::ptr& gate) NOEXCEPT
+    const chain::transactions_cptr& txs, double maxfeerate,
+    const gate_t::ptr& gate) NOEXCEPT
 {
-    POST(complete_test_package, ec, txs, gate);
+    POST(complete_test_package, ec, txs, maxfeerate, gate);
 }
 
 // The package is accepted as a whole, so its code applies to each of its txs.
 void protocol_bitcoind_transaction::complete_test_package(const code& ec,
-    const chain::transactions_cptr& txs, const gate_t::ptr&) NOEXCEPT
+    const chain::transactions_cptr& txs, double maxfeerate,
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (stopped())
         return;
 
-    const auto& query = archive();
     array_t results{};
     results.reserve(txs->size());
-
     for (const auto& tx: *txs)
-    {
-        object_t result
-        {
-            { "txid", encode_hash(tx->hash(false)) },
-            { "wtxid", encode_hash(tx->hash(true)) },
-            { "allowed", !ec }
-        };
-
-        if (ec)
-            result.emplace("reject-reason", test_reject(query, ec, *tx));
-
-        results.emplace_back(std::move(result));
-    }
+        results.emplace_back(test_result(ec, *tx, maxfeerate));
 
     send_result(std::move(results));
+}
+
+object_t protocol_bitcoind_transaction::test_result(const code& ec,
+    const chain::transaction& tx, double maxfeerate) NOEXCEPT
+{
+    object_t result
+    {
+        { "txid", encode_hash(tx.hash(false)) },
+        { "wtxid", encode_hash(tx.hash(true)) }
+    };
+
+    // An accepted tx is populated, so its fee is known.
+    uint64_t fee{};
+    if (!ec)
+        fee = tx.fee();
+
+    const auto vsize = tx.virtual_size();
+    if (!ec && is_excessive(fee, vsize, maxfeerate))
+    {
+        result.emplace("allowed", false);
+        result.emplace("reject-reason", std::string{ "max-fee-exceeded" });
+        return result;
+    }
+
+    result.emplace("allowed", !ec);
+    if (!ec)
+    {
+        const auto rate = fee * 1'000u / possible_wide_cast<uint64_t>(vsize);
+        result.emplace("vsize", to64(vsize));
+        result.emplace("fees", object_t
+        {
+            { "base", to_btc(fee) },
+            { "effective-feerate", to_btc(rate) },
+            { "effective-includes", array_t{ encode_hash(tx.hash(true)) } }
+        });
+
+        return result;
+    }
+
+    std::string reason{ "missing-inputs" };
+    if (ec != node::error::duplicate_transaction && !is_missing(ec))
+        reason = error::bitcoind::reject(ec);
+
+    if (ec == node::error::duplicate_transaction)
+    {
+        const auto& query = archive();
+        const auto link = query.to_tx(tx.hash(false));
+        if (!query.is_confirmed_tx(link))
+            reason = "txn-already-in-mempool";
+        else if (has_unspent_output(link))
+            reason = "txn-already-known";
+    }
+
+    result.emplace("reject-reason", std::move(reason));
+    return result;
 }
 
 // PSBT methods.
@@ -929,8 +1048,25 @@ bool protocol_bitcoind_transaction::handle_submit_package(const code& ec,
         txs.push_back(tx);
     }
 
-    constexpr auto test = false;
+    const auto& query = archive();
     const auto txs_ptr = to_shared<chain::transaction_cptrs>(std::move(txs));
+    for (size_t index{}; index < txs_ptr->size(); ++index)
+    {
+        const auto& tx = *txs_ptr->at(index);
+        if (exceeds_burn(tx, maxburnamount))
+        {
+            send_error_message(error::bitcoind::verify_error, burn_exceeded);
+            return true;
+        }
+
+        if (exceeds_fee_rate(tx, *txs_ptr, maxfeerate, query))
+        {
+            complete_package(error::max_fee_exceeded, index, txs_ptr, gate());
+            return true;
+        }
+    }
+
+    constexpr auto test = false;
     submit(txs_ptr, test, BIND(handle_package, _1, _2, txs_ptr, gate()));
     return true;
 }

@@ -286,6 +286,9 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\native-contract.ts">
       <Filter>web\admin_dashboard\src\lib</Filter>
     </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\pool-rates.ts">
+      <Filter>web\admin_dashboard\src\lib</Filter>
+    </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\reconnecting-websocket.ts">
       <Filter>web\admin_dashboard\src\lib</Filter>
     </None>
@@ -337,6 +340,9 @@
     <None Include="..\..\..\..\web\admin_dashboard\tailwind.config.js">
       <Filter>web\admin_dashboard</Filter>
     </None>
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\admin-contract.test.ts">
+      <Filter>web\admin_dashboard\test\lib</Filter>
+    </None>
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\endpoints.test.ts">
       <Filter>web\admin_dashboard\test\lib</Filter>
     </None>
@@ -347,6 +353,9 @@
       <Filter>web\admin_dashboard\test\lib</Filter>
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\log-window.test.ts">
+      <Filter>web\admin_dashboard\test\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\pool-rates.test.ts">
       <Filter>web\admin_dashboard\test\lib</Filter>
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\sync-status.test.ts">
@@ -431,6 +440,9 @@
       <Filter>web\native\src</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\api\client.tsx">
+      <Filter>web\native\src\lib\api</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\api\errors.ts">
       <Filter>web\native\src\lib\api</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\api\providers\libbitcoin-mapper.ts">

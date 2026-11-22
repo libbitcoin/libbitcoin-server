@@ -1,4 +1,5 @@
 import {
+  EVENT_DEFINITIONS,
   type AdminEventFrame,
   type AdminFrame,
   type AdminLogFrame,
@@ -28,8 +29,10 @@ export interface NodeActivity {
     | 'Validating blocks'
     | 'Confirming blocks'
     | 'Reorganizing'
+    | 'Pooling'
     | 'Idle';
   rate: number;
+  unit: 'blocks' | 'headers' | 'txs' | '';
 }
 
 export interface RecentLog extends AdminLogFrame {
@@ -524,7 +527,15 @@ export function signalRateOverWindow(
   return elapsedSeconds > 0 ? total / elapsedSeconds : 0;
 }
 
-export function detectNodeActivity(snapshot: MetricsSnapshot, seconds: number): NodeActivity {
+const POOL_ADMIT = EVENT_DEFINITIONS.findIndex((event) => event.name === 'pool_admit_usecs');
+
+// A current node relaying transactions is pooling when no block lifecycle
+// events occur, at the rate of transaction pool admissions.
+export function detectNodeActivity(
+  snapshot: MetricsSnapshot,
+  seconds: number,
+  pooling = false
+): NodeActivity {
   const rate = (event: number) =>
     signalRateOverWindow(
       snapshot.buckets,
@@ -534,16 +545,20 @@ export function detectNodeActivity(snapshot: MetricsSnapshot, seconds: number): 
       snapshot.sessionStartedAt
     );
   const reorganizationRate = rate(2) + rate(14);
-  if (reorganizationRate > 0) return { label: 'Reorganizing', rate: reorganizationRate };
+  if (reorganizationRate > 0)
+    return { label: 'Reorganizing', rate: reorganizationRate, unit: 'blocks' };
 
   const candidates: NodeActivity[] = [
-    { label: 'Confirming blocks', rate: rate(6) },
-    { label: 'Validating blocks', rate: rate(5) },
-    { label: 'Archiving blocks', rate: rate(3) },
-    { label: 'Synchronizing headers', rate: Math.max(rate(0), rate(1)) },
+    { label: 'Confirming blocks', rate: rate(6), unit: 'blocks' },
+    { label: 'Validating blocks', rate: rate(5), unit: 'blocks' },
+    { label: 'Archiving blocks', rate: rate(3), unit: 'blocks' },
+    { label: 'Synchronizing headers', rate: Math.max(rate(0), rate(1)), unit: 'headers' },
   ];
   const activity = candidates.reduce((highest, candidate) =>
     candidate.rate > highest.rate ? candidate : highest
   );
-  return activity.rate > 0 ? activity : { label: 'Idle', rate: 0 };
+  if (activity.rate > 0) return activity;
+  return pooling
+    ? { label: 'Pooling', rate: rate(POOL_ADMIT), unit: 'txs' }
+    : { label: 'Idle', rate: 0, unit: '' };
 }

@@ -92,6 +92,101 @@ code parameter_error(const code& ec) NOEXCEPT
     return network::error::is_parameter_fault(ec) ? invalid_params : success;
 }
 
+struct rejection
+{
+    std::string_view text;
+    error_t code;
+};
+
+// btcd reject texts by transaction code, without btcd's interpolated values.
+// Chain rule failures are verify_error, mempool policy is verify_rejected.
+static const std::unordered_map<system::error::transaction_error_t, rejection>
+transaction_rejects
+{
+    {
+        system::error::empty_transaction,
+        { "transaction has no inputs", verify_error }
+    },
+    {
+        system::error::previous_output_null,
+        { "transaction input refers to previous output that is null", verify_error }
+    },
+    {
+        system::error::spend_overflow,
+        {
+            "total value of all transaction outputs exceeds max allowed value",
+            verify_error
+        }
+    },
+    {
+        system::error::coinbase_transaction,
+        { "transaction is an invalid coinbase", verify_rejected }
+    },
+    {
+        system::error::transaction_internal_double_spend,
+        { "transaction contains duplicate inputs", verify_error }
+    },
+    {
+        system::error::transaction_size_limit,
+        { "serialized transaction is too big", verify_error }
+    },
+    {
+        system::error::transaction_legacy_sigop_limit,
+        { "sigop cost is too high", verify_rejected }
+    },
+    {
+        system::error::coinbase_maturity,
+        { "tried to spend coinbase transaction output", verify_error }
+    },
+    {
+        system::error::spend_exceeds_value,
+        {
+            "total value of all transaction inputs is less than the amount spent",
+            verify_error
+        }
+    },
+    {
+        system::error::transaction_sigop_limit,
+        { "sigop cost is too high", verify_rejected }
+    },
+    {
+        system::error::absolute_time_locked,
+        { "transaction is not finalized", verify_rejected }
+    },
+    {
+        system::error::relative_time_locked,
+        { "transaction's sequence locks on inputs not met", verify_rejected }
+    },
+    {
+        system::error::transaction_weight_limit,
+        { "weight of transaction is larger than max allowed", verify_rejected }
+    }
+};
+
+error_t reject(std::string& out, const code& ec) NOEXCEPT
+{
+    if (ec == node::error::insufficient_fee)
+    {
+        out = "transaction has fees which is under the required amount";
+        return verify_rejected;
+    }
+
+    using namespace system::error;
+    if (transaction_error_category::contains(ec))
+    {
+        const auto entry = transaction_rejects.find(
+            static_cast<transaction_error_t>(ec.value()));
+        if (entry != transaction_rejects.end())
+        {
+            out = entry->second.text;
+            return entry->second.code;
+        }
+    }
+
+    out = ec.message();
+    return verify_rejected;
+}
+
 } // namespace btcd
 } // namespace error
 } // namespace server

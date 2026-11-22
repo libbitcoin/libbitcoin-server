@@ -53,6 +53,25 @@ public:
     void start() NOEXCEPT override;
 
 protected:
+    /// Answer a submission the pool did not accept (a pooled duplicate is
+    /// accepted).
+    virtual void send_rejected(const code& ec,
+        const system::chain::transaction& tx) NOEXCEPT;
+
+    /// The testmempoolaccept result of the tx, given the package code.
+    virtual network::rpc::object_t test_result(const code& ec,
+        const system::chain::transaction& tx, double maxfeerate) NOEXCEPT;
+
+    /// The fee exceeds the rate (btc/kvB) for the virtual size, zero disables.
+    static bool is_excessive(uint64_t fee, size_t vsize,
+        double maxfeerate) NOEXCEPT;
+
+    /// Absent and confirmed-spent inputs are missing coins.
+    static bool is_missing(const code& ec) NOEXCEPT;
+
+    /// Any output of the tx is not spent by a confirmed tx.
+    bool has_unspent_output(const database::tx_link& link) const NOEXCEPT;
+
     /// Handlers.
     bool handle_create_raw_transaction(const code& ec,
         rpc_interface::create_raw_transaction,
@@ -99,10 +118,10 @@ protected:
         const network::rpc::array_t& descriptors) NOEXCEPT;
 
     void handle_test_package(const code& ec, size_t index,
-        const system::chain::transactions_cptr& txs,
+        const system::chain::transactions_cptr& txs, double maxfeerate,
         const gate_t::ptr& gate) NOEXCEPT;
     void complete_test_package(const code& ec,
-        const system::chain::transactions_cptr& txs,
+        const system::chain::transactions_cptr& txs, double maxfeerate,
         const gate_t::ptr& gate) NOEXCEPT;
 
     void handle_submit_tx(const code& ec, size_t link,

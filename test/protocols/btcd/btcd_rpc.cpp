@@ -963,6 +963,14 @@ BC_AUTO_TEST_CASE(btcd_rpc__getblockcount__ten_block_store__nine)
     BC_REQUIRE_EQUAL(response.at("result").as_int64(), 9);
 }
 
+BC_AUTO_TEST_CASE(btcd_rpc__sendrawtransaction__confirmed_unspent__already_in_chain)
+{
+    const auto tx0 = encode_base16(test::genesis.transactions_ptr()->front()->to_data(true));
+    const auto response = rpc("sendrawtransaction", "[\"" + tx0 + "\"]");
+    BC_REQUIRE_MESSAGE(response.at("error").at("code").as_int64() == -27, serialize(response));
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "TX rejected: transaction already exists in blockchain");
+}
+
 // tcp (downgrade)
 // ----------------------------------------------------------------------------
 // btcd is served over the same universal json-rpc channel as bitcoind, so raw

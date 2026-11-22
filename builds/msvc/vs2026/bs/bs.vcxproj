@@ -162,6 +162,7 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\log-window.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\native-client.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\native-contract.ts" />
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\pool-rates.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\reconnecting-websocket.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\signal-catalog.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\stream-window.ts" />
@@ -179,10 +180,12 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\themes.css" />
     <None Include="..\..\..\..\web\admin_dashboard\src\vite-env.d.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\tailwind.config.js" />
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\admin-contract.test.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\endpoints.test.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\fee-histogram.test.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\format.test.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\log-window.test.ts" />
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\pool-rates.test.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\sync-status.test.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\tsconfig.json" />
     <None Include="..\..\..\..\web\admin_dashboard\tsconfig.node.json" />
@@ -211,6 +214,7 @@
     <None Include="..\..\..\..\web\native\src\components\theme-select.tsx" />
     <None Include="..\..\..\..\web\native\src\index.css" />
     <None Include="..\..\..\..\web\native\src\lib\api\client.tsx" />
+    <None Include="..\..\..\..\web\native\src\lib\api\errors.ts" />
     <None Include="..\..\..\..\web\native\src\lib\api\providers\libbitcoin-mapper.ts" />
     <None Include="..\..\..\..\web\native\src\lib\api\providers\libbitcoin.ts" />
     <None Include="..\..\..\..\web\native\src\lib\hooks\useBlockchainData.ts" />

@@ -170,6 +170,9 @@ block_rejects
 
 std::string reject(const code& ec) NOEXCEPT
 {
+    if (ec == server::error::max_fee_exceeded)
+        return "max feerate exceeded";
+
     // The organizer reports an unassociated block as a node orphan.
     if ((ec == node::error::orphan_block) || (ec == node::error::orphan_header))
         return "prev-blk-not-found";
