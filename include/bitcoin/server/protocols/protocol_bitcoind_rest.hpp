@@ -99,11 +99,11 @@ protected:
     void complete_mempool(const code& ec, const database::tx_links& links,
         bool verbose, bool sequence, const gate_t::ptr& gate) NOEXCEPT;
     void handle_mempool_information(const code& ec,
-        const database::fee_rates& rates, double minimum, double relay,
-        double increment, const gate_t::ptr& gate) NOEXCEPT;
+        const database::fee_rates& rates, uint64_t minimum, uint64_t relay,
+        uint64_t increment, const gate_t::ptr& gate) NOEXCEPT;
     void complete_mempool_information(const code& ec,
-        const database::fee_rates& rates, double minimum, double relay,
-        double increment, const gate_t::ptr& gate) NOEXCEPT;
+        const database::fee_rates& rates, uint64_t minimum, uint64_t relay,
+        uint64_t increment, const gate_t::ptr& gate) NOEXCEPT;
 
 private:
     template <class Derived, typename Method, typename... Args>

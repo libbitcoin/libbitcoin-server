@@ -20,6 +20,7 @@
 
 #include <unordered_map>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/serializers/bitcoind_json.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
 
 namespace libbitcoin {
@@ -56,20 +57,19 @@ code block_info(network::rpc::object_t& out, const node::query& query,
         settings.forks.bip42) + fees;
     const auto unclaimed = floored_subtract(reward, amounts.coinbase);
     const auto unspendable = unclaimed + amounts.unspendable + amounts.bip30;
-    const auto bitcoin = to_floating(chain::satoshi_per_bitcoin);
 
     out = network::rpc::object_t
     {
-        { "prevout_spent", amounts.prevouts / bitcoin },
-        { "coinbase", amounts.coinbase / bitcoin },
-        { "new_outputs_ex_coinbase", amounts.outputs / bitcoin },
-        { "unspendable", unspendable / bitcoin },
+        { "prevout_spent", to_btc(amounts.prevouts) },
+        { "coinbase", to_btc(amounts.coinbase) },
+        { "new_outputs_ex_coinbase", to_btc(amounts.outputs) },
+        { "unspendable", to_btc(unspendable) },
         { "unspendables", network::rpc::object_t
         {
-            { "genesis_block", to64(zero) },
-            { "bip30", amounts.bip30 / bitcoin },
-            { "scripts", amounts.unspendable / bitcoin },
-            { "unclaimed_rewards", unclaimed / bitcoin }
+            { "genesis_block", to_btc(0_u64) },
+            { "bip30", to_btc(amounts.bip30) },
+            { "scripts", to_btc(amounts.unspendable) },
+            { "unclaimed_rewards", to_btc(unclaimed) }
         }}
     };
 
@@ -128,8 +128,7 @@ network::rpc::object_t scan_result(
             { "vout", coin.out.point().index() },
             { "scriptPubKey", found->second.hex },
             { "desc", found->second.desc },
-            { "amount", to_floating(coin.out.value()) /
-                chain::satoshi_per_bitcoin },
+            { "amount", to_btc(coin.out.value()) },
             { "coinbase", coin.coinbase },
             { "height", to64(coin.height) },
             { "blockhash", encode_hash(query.get_header_key(
@@ -148,7 +147,7 @@ network::rpc::object_t scan_result(
         { "bestblock", encode_hash(query.get_header_key(
             query.to_confirmed(top))) },
         { "unspents", std::move(unspents) },
-        { "total_amount", to_floating(amount) / chain::satoshi_per_bitcoin }
+        { "total_amount", to_btc(amount) }
     };
 }
 

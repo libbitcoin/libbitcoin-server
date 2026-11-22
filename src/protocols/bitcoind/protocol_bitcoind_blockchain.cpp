@@ -224,8 +224,7 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
                     inject_tx_prevouts(object, query, *tx, p2kh_, p2sh_,
                         witness_, flags_);
 
-                object["fee"] =
-                    tx->fee() / to_floating(chain::satoshi_per_bitcoin);
+                object["fee"] = to_btc(tx->fee());
             }
 
             ++entry;
@@ -634,14 +633,11 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
         return true;
     }
 
-    const auto coins = to_floating(output->value()) /
-        chain::satoshi_per_bitcoin;
-
     send_result(object_t
     {
         { "bestblock", encode_hash(query.get_header_key(header_link)) },
         { "confirmations", to64(depth) },
-        { "value", coins },
+        { "value", to_btc(output->value()) },
         { "scriptPubKey", script_public_key(output->script()) },
         { "coinbase", query.is_coinbase(tx_link) }
     });
@@ -792,16 +788,14 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
 
         // The coin-serialized set size (bitcoind estimates leveldb size).
         { "disk_size", to64(totals.coin_bytes) },
-        { "total_amount", to_floating(totals.value) /
-            chain::satoshi_per_bitcoin }
+        { "total_amount", to_btc(totals.value) }
     };
 
     // Coins issued but not in the set are permanently unspendable.
     const auto& settings = system_settings();
     const auto issued = total_subsidy(settings, height);
-    const auto bitcoin = to_floating(chain::satoshi_per_bitcoin);
     result.emplace("total_unspendable_amount",
-        floored_subtract(issued, totals.value) / bitcoin);
+        to_btc(floored_subtract(issued, totals.value)));
 
     object_t amounts{};
     if (const auto ec = block_info(amounts, query, settings, link, height))
@@ -1783,27 +1777,22 @@ bool protocol_bitcoind_blockchain::handle_get_mempool_info(const code& ec,
 {
     if (stopped(ec)) return false;
 
-    const auto& settings = node_settings().pool;
-    const auto minimum = to_floating(minimum_fee_rate()) /
-        chain::satoshi_per_bitcoin;
-    const auto relay = to_floating(settings.minimum_fee_rate_()) /
-        chain::satoshi_per_bitcoin;
-
-    get_confirmable_fees(BIND(handle_mempool_info, _1, _2, minimum, relay,
-        settings.minimum_fee_rate, gate()));
+    const auto relay = node_settings().pool.minimum_fee_rate_();
+    get_confirmable_fees(BIND(handle_mempool_info, _1, _2, minimum_fee_rate(),
+        relay, relay, gate()));
     return true;
 }
 
 void protocol_bitcoind_blockchain::handle_mempool_info(const code& ec,
-    const database::fee_rates& rates, double minimum, double relay,
-    double increment, const gate_t::ptr& gate) NOEXCEPT
+    const database::fee_rates& rates, uint64_t minimum, uint64_t relay,
+    uint64_t increment, const gate_t::ptr& gate) NOEXCEPT
 {
     POST(complete_mempool_info, ec, rates, minimum, relay, increment, gate);
 }
 
 void protocol_bitcoind_blockchain::complete_mempool_info(const code& ec,
-    const database::fee_rates& rates, double minimum, double relay,
-    double increment, const gate_t::ptr&) NOEXCEPT
+    const database::fee_rates& rates, uint64_t minimum, uint64_t relay,
+    uint64_t increment, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 

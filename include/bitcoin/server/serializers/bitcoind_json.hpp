@@ -28,6 +28,9 @@ namespace server {
 /// Clamped ratio of validated blocks to chain height.
 BCS_API double progress(size_t blocks, size_t headers) NOEXCEPT;
 
+/// Satoshis as bitcoin, written with eight decimal places as bitcoind does.
+BCS_API system::json::value to_btc(uint64_t satoshis) NOEXCEPT;
+
 /// A getchainstates entry for candidate or confirmed at the link (top).
 BCS_API network::rpc::object_t chain_states_entry(const node::query& query,
     const database::header_link& link, double progress,
@@ -101,8 +104,8 @@ BCS_API bool raw_mempool(system::json::value& out, const node::query& query,
 /// store sizes.
 BCS_API bool mempool_info(system::json::object& out,
     const node::query& query, const database::fee_rates& rates,
-    const std::filesystem::path& store, double minimum, double relay,
-    double increment) NOEXCEPT;
+    const std::filesystem::path& store, uint64_t minimum, uint64_t relay,
+    uint64_t increment) NOEXCEPT;
 
 /// The bitcoind chain name of the genesis network.
 BCS_API std::string chain_name(const system::settings& settings) NOEXCEPT;
