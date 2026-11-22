@@ -14,6 +14,8 @@ import type { ConnectionPhase, ConnectionStatus } from '@/lib/reconnecting-webso
 import { eventSignalId } from '@/lib/signal-catalog';
 import { type ChainSync, SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS } from '@/lib/sync-status';
 import type { NativeTelemetry } from '@/lib/use-telemetry';
+import { averageRate, nextBlockRate } from '@/lib/pool-rates';
+import type { NativeFees } from '@/lib/native-contract';
 import { MetricItem } from './metric-item';
 import { NodeSyncProgress } from './node-sync-progress';
 import { TelemetryDashboard } from './telemetry-dashboard';
@@ -35,8 +37,10 @@ const lifecycleEvents: ReadonlyArray<{ event: number; label: string }> = [
 ];
 
 export function Overview({ adminStatus, endpoints, metrics, native, sync }: OverviewProps) {
-  const activity = detectNodeActivity(metrics, 10);
   const configuration = native.configuration;
+  const pooling = configuration?.network?.relay === true && sync?.blocksRemaining === 0;
+  const activity = detectNodeActivity(metrics, 10, pooling);
+  const pool = pooling ? metrics.poolSnapshot?.data : undefined;
   const coin = coinOf(configuration?.forks ?? []);
   // Admin and native share one socket when their endpoints match.
   const shared = endpoints.adminUrl === endpoints.nativeUrl;
@@ -89,8 +93,10 @@ export function Overview({ adminStatus, endpoints, metrics, native, sync }: Over
           value={activity.label}
           detail={
             activity.rate > 0
-              ? `${formatRate(activity.rate)} over the last 10 seconds`
-              : 'No lifecycle events in the last 10 seconds'
+              ? `${formatRate(activity.rate, activity.unit)} over the last 10 seconds`
+              : activity.label === 'Pooling'
+                ? 'No pool admissions in the last 10 seconds'
+                : 'No lifecycle events in the last 10 seconds'
           }
           numeric={false}
         />
@@ -113,6 +119,20 @@ export function Overview({ adminStatus, endpoints, metrics, native, sync }: Over
           } · ${String(connection.reconnects)} reconnect${connection.reconnects === 1 ? '' : 's'}`}
           numeric={false}
         />
+        {pool && (
+          <MetricItem
+            label="Pool size"
+            value={`${formatInteger(pool.count)} transactions`}
+            detail={`${formatBtc(pool.fee)} btc fees · ${formatMvb(pool.virtual)} MvB`}
+          />
+        )}
+        {pool && (
+          <MetricItem
+            label="Fee rate"
+            value={`${formatSatsPerVbyte(averageRate(pool))} sat/vB`}
+            detail={nextBlockDetail(pool)}
+          />
+        )}
       </dl>
 
       <TelemetryDashboard metrics={metrics} />
@@ -390,4 +410,26 @@ function nativeSyncDescription(sync: ChainSync | null): string {
   return sync.blocksRemaining <= SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS
     ? `Near current, ${formatInteger(sync.blocksRemaining)} blocks remaining`
     : `${formatInteger(sync.blocksRemaining)} blocks remaining`;
+}
+
+const btcFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 8 });
+const mvbFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
+const rateFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
+
+function formatBtc(sats: number): string {
+  return btcFormatter.format(sats / 100_000_000);
+}
+
+function formatMvb(virtual: number): string {
+  return mvbFormatter.format(virtual / 1_000_000);
+}
+
+function formatSatsPerVbyte(rate: number | null): string {
+  return rate === null ? '—' : rateFormatter.format(rate);
+}
+
+function nextBlockDetail(pool: NativeFees): string {
+  const rate = nextBlockRate(pool);
+  if (rate === null) return 'Pool fits in the next block';
+  return `next block ≥ ${formatSatsPerVbyte(rate)} sat/vB`;
 }

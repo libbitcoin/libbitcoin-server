@@ -86,9 +86,10 @@ export function formatEventValue(event: number, value: number): string {
   }
 }
 
-export function formatRate(value: number): string {
-  if (value >= 100) return `${formatNumber(value, 0)}/s`;
-  if (value >= 10) return `${formatNumber(value, 1)}/s`;
-  return `${formatNumber(value, 2)}/s`;
+export function formatRate(value: number, unit = ''): string {
+  const per = unit ? ` ${unit}/s` : '/s';
+  if (value >= 100) return `${formatNumber(value, 0)}${per}`;
+  if (value >= 10) return `${formatNumber(value, 1)}${per}`;
+  return `${formatNumber(value, 2)}${per}`;
 }
 
