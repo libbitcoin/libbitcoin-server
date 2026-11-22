@@ -38,8 +38,6 @@ static const code invalid_parameter{ server::error::btcd::invalid_parameter };
 static const code invalid_params{ server::error::btcd::invalid_params };
 static const code internal{ server::error::btcd::internal_error };
 static const code block_not_found{ server::error::btcd::invalid_address_or_key };
-static const code node_not_added{ server::error::btcd::client_node_not_added };
-static const code node_not_connected{ server::error::btcd::client_node_not_connected };
 
 // mock_block10 chains onto block9 and pays found_address from its second
 // transaction only (its other outputs pay distinct key/script hashes), so a
@@ -198,15 +196,19 @@ BC_AUTO_TEST_CASE(btcd_rpc__node__unknown_connect_subcommand__invalid_parameter)
     BC_REQUIRE_EQUAL(rpc_error("node", R"(["connect","1.2.3.4:8333","forever"])"), invalid_parameter.value());
 }
 
-BC_AUTO_TEST_CASE(btcd_rpc__node__disconnect_no_channels__node_not_connected)
+BC_AUTO_TEST_CASE(btcd_rpc__node__disconnect_no_channels__peer_not_found)
 {
     // The fixture runs no peer sessions, so the terminator identifies none.
-    BC_REQUIRE_EQUAL(rpc_error("node", R"(["disconnect","1.2.3.4:8333"])"), node_not_connected.value());
+    const auto response = rpc("node", R"(["disconnect","1.2.3.4:8333"])");
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), invalid_parameter.value());
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "peer not found");
 }
 
-BC_AUTO_TEST_CASE(btcd_rpc__node__remove_no_channels__node_not_added)
+BC_AUTO_TEST_CASE(btcd_rpc__node__remove_no_channels__peer_not_found)
 {
-    BC_REQUIRE_EQUAL(rpc_error("node", R"(["remove","42"])"), node_not_added.value());
+    const auto response = rpc("node", R"(["remove","42"])");
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), invalid_parameter.value());
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "peer not found");
 }
 
 // getters
@@ -924,9 +926,9 @@ BC_AUTO_TEST_CASE(btcd_rpc__rescan__unknown_beginblock__not_found)
     BC_REQUIRE_EQUAL(result, block_not_found.value());
 }
 
-BC_AUTO_TEST_CASE(btcd_rpc__rescan__invalid_beginblock__not_found)
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__invalid_beginblock__deserialization)
 {
-    BC_REQUIRE_EQUAL(rpc_error("rescan", R"(["not-a-hash",[],[],""])"), block_not_found.value());
+    BC_REQUIRE_EQUAL(rpc_error("rescan", R"(["not-a-hash",[],[],""])"), deserialization.value());
 }
 
 BC_AUTO_TEST_CASE(btcd_rpc__rescan__null_lists__rescan_finished)
@@ -1327,6 +1329,13 @@ BC_AUTO_TEST_CASE(btcd_rpc__getheaders__malformed_hashstop__deserialization)
 BC_AUTO_TEST_CASE(btcd_rpc__node__connect_temp__null_result)
 {
     const auto response = rpc("node", R"(["connect","127.0.0.1:1","temp"])");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__node__connect_default__null_result)
+{
+    const auto response = rpc("node", R"(["connect","127.0.0.1:1"])");
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }

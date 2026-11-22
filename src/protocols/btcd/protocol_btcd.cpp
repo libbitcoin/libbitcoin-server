@@ -360,7 +360,7 @@ bool protocol_btcd::handle_rescan(const code& ec,
     hash_digest begin_hash{};
     if (!decode_hash(begin_hash, beginblock))
     {
-        send_error(error::btcd::invalid_address_or_key);
+        send_error(error::btcd::deserialization_error);
         return true;
     }
 

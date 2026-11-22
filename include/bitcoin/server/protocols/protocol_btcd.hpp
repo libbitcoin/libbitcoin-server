@@ -100,10 +100,8 @@ protected:
     bool handle_node(const code& ec, btcd_interface::node,
         const std::string& subcmd, const std::string& target,
         const std::string& connectsubcmd) NOEXCEPT;
-    void handle_stopped(const code& ec,
-        error::btcd::error_t absent, const gate_t::ptr& gate) NOEXCEPT;
-    void do_send_stopped(const code& ec,
-        error::btcd::error_t absent, const gate_t::ptr& gate) NOEXCEPT;
+    void handle_stopped(const code& ec, const gate_t::ptr& gate) NOEXCEPT;
+    void do_send_stopped(const code& ec, const gate_t::ptr& gate) NOEXCEPT;
     bool handle_search_raw_transactions(const code& ec,
         btcd_interface::search_raw_transactions, const std::string& address,
         double verbose, double skip, double count, double prevouts,
