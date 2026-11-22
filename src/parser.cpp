@@ -2616,6 +2616,16 @@ options_metadata parser::load_settings() THROWS
         "Virtual bytes of block room below a fee estimate's rate, defaults to {}."
     )
     (
+        "pool.maximum_requests",
+        setting<uint32_t>(&configured.node.pool.maximum_requests),
+        "Maximum unanswered tx requests of a peer before it is dropped, defaults to {}."
+    )
+    (
+        "pool.request_timeout_seconds",
+        setting<uint16_t>(&configured.node.pool.request_timeout_seconds),
+        "Seconds a peer has to answer its oldest tx request before it is dropped, defaults to {} (0 disables)."
+    )
+    (
         "pool.thread_priority",
         setting<bool>(&configured.node.pool.thread_priority),
         "Set the transaction pool thread to high processing priority, defaults to {}."
