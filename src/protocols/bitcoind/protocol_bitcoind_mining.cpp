@@ -665,9 +665,7 @@ void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
     const auto ctx = pool.context();
     const auto bip141 = ctx.is_enabled(flags::bip141_rule);
 
-    // A tx depends on the txs of the template that it spends, by position
-    // from one (the coinbase is zero). Each is read as stored, its wire
-    // serialization, identifiers and sizes, with no tx object.
+    // Tx depends on template txs it spends, by position from one (coinbase 0).
     uint64_t fees{};
     array_t transactions{};
     hashes witnesses{ null_hash };
