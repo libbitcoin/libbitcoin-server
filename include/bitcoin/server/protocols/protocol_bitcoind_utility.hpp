@@ -53,6 +53,13 @@ public:
     void start() NOEXCEPT override;
 
 protected:
+    /// Complete a decodescript model.
+    virtual void finish_script(system::json::object& out) const NOEXCEPT;
+
+    /// Complete a validateaddress result of a valid address.
+    virtual void finish_validation(
+        network::rpc::object_t& out) const NOEXCEPT;
+
     /// Handlers.
     bool handle_decode_script(const code& ec,
         rpc_interface::decode_script, const std::string& hexstring) NOEXCEPT;

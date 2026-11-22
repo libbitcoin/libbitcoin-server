@@ -321,27 +321,34 @@ bool chain_info(network::rpc::object_t& out,
         { "warnings", network::rpc::array_t{} }
     };
 
-    // Taproot is active if flagged in the top confirmed header context.
+    // A deployment is active if flagged in the top confirmed header context.
     network::rpc::object_t soft_forks{};
-    if (context.is_enabled(chain::flags::bip341_rule) &&
-        context.is_enabled(chain::flags::bip342_rule))
+    const auto add_fork = [&](const std::string& name, int32_t bit,
+        chain::flags first, chain::flags second) NOEXCEPT
     {
-        network::rpc::object_t taproot
+        if (!context.is_enabled(first) || !context.is_enabled(second))
+            return;
+
+        network::rpc::object_t fork
         {
             { "status", std::string{ "active" } },
-            { "bit", 2 },
+            { "bit", bit },
             { "startTime", -1 },
             { "timeout", -1 },
             { "min_activation_height", 0 }
         };
 
         size_t since{};
-        if (query.get_activation(since, chain::flags::bip341_rule))
-            taproot.emplace("since", to64(since));
+        if (query.get_activation(since, first))
+            fork.emplace("since", to64(since));
 
-        soft_forks.emplace("taproot", std::move(taproot));
-    }
+        soft_forks.emplace(name, std::move(fork));
+    };
 
+    using namespace chain;
+    add_fork("csv", 0, flags::bip68_rule, flags::bip112_rule);
+    add_fork("segwit", 1, flags::bip141_rule, flags::bip143_rule);
+    add_fork("taproot", 2, flags::bip341_rule, flags::bip342_rule);
     out.emplace("bip9_softforks", std::move(soft_forks));
 
     return true;

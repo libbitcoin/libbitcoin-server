@@ -41,27 +41,6 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
-// Relative to the network proof of work limit, rounded to eight places.
-static double difficulty(uint32_t bits, uint32_t limit) NOEXCEPT
-{
-    constexpr auto scale = 100'000'000.0;
-    constexpr auto mantissa = 0x007fffff_u32;
-    const auto exponents = to_floating(shift_right(limit, 24)) -
-        to_floating(shift_right(bits, 24));
-
-    const auto ratio = to_floating(bit_and(limit, mantissa)) /
-        to_floating(bit_and(bits, mantissa)) * std::pow(256.0, exponents);
-
-    return std::round(ratio * scale) / scale;
-}
-
-static bool is_testnet(const system::settings& settings) NOEXCEPT
-{
-    const auto network = settings.genesis_network;
-    return network == chain::selection::testnet3
-        || network == chain::selection::testnet4;
-}
-
 // Handlers (getters).
 // ----------------------------------------------------------------------------
 
@@ -250,7 +229,7 @@ bool protocol_btcd::handle_get_difficulty(const code& ec,
     }
 
     const auto limit = system_settings().proof_of_work_limit;
-    send_result(difficulty(header->bits(), limit));
+    send_result(btcd::difficulty(header->bits(), limit));
     return true;
 }
 
@@ -329,8 +308,8 @@ bool protocol_btcd::handle_get_info(const code& ec,
         { "timeoffset", 0 },
         { "connections", to64(channel_count()) },
         { "proxy", proxy },
-        { "difficulty", difficulty(header->bits(), limit) },
-        { "testnet", is_testnet(settings) },
+        { "difficulty", btcd::difficulty(header->bits(), limit) },
+        { "testnet", btcd::is_testnet(settings) },
         { "relayfee", node_settings().pool.minimum_fee_rate },
         { "errors", std::string{} }
     });
@@ -382,7 +361,7 @@ bool protocol_btcd::handle_node(const code& ec, btcd_interface::node,
     {
         if (subcmd == "connect")
         {
-            // btcd connects temporarily or permanently (the default).
+            // btcd connects temporarily (the default) or permanently.
             if (connectsubcmd != "temp" && connectsubcmd != "perm" &&
                 !connectsubcmd.empty())
             {
@@ -390,10 +369,10 @@ bool protocol_btcd::handle_node(const code& ec, btcd_interface::node,
                 return true;
             }
 
-            if (connectsubcmd == "temp")
-                connect(network::config::endpoint{ target }, to_once());
-            else
+            if (connectsubcmd == "perm")
                 connect(network::config::endpoint{ target });
+            else
+                connect(network::config::endpoint{ target }, to_once());
 
             send_result(null_t{});
             return true;
@@ -409,11 +388,9 @@ bool protocol_btcd::handle_node(const code& ec, btcd_interface::node,
         const auto drop = (subcmd == "remove");
         const auto reason = drop ? network::error::channel_dropped :
             network::error::channel_stopped;
-        const auto absent = drop ? error::btcd::client_node_not_added :
-            error::btcd::client_node_not_connected;
 
         const auto complete = emplace_shared<terminator::race>(
-            BIND(handle_stopped, _1, absent, gate()));
+            BIND(handle_stopped, _1, gate()));
 
         BROADCAST(terminator, to_shared<terminator>(complete, reason,
             numeric ? identifier : zero, numeric ?
@@ -429,21 +406,21 @@ bool protocol_btcd::handle_node(const code& ec, btcd_interface::node,
 }
 
 void protocol_btcd::handle_stopped(const code& ec,
-    error::btcd::error_t absent, const gate_t::ptr& gate) NOEXCEPT
+    const gate_t::ptr& gate) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST_BTCD(do_send_stopped, ec, absent, gate);
+    POST_BTCD(do_send_stopped, ec, gate);
 }
 
 void protocol_btcd::do_send_stopped(const code& ec,
-    error::btcd::error_t absent, const gate_t::ptr&) NOEXCEPT
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (ec)
-        send_error(absent);
+        send_error_message(error::btcd::invalid_parameter, "peer not found");
     else
         send_result(null_t{});
 }

@@ -38,8 +38,6 @@ static const code invalid_parameter{ server::error::btcd::invalid_parameter };
 static const code invalid_params{ server::error::btcd::invalid_params };
 static const code internal{ server::error::btcd::internal_error };
 static const code block_not_found{ server::error::btcd::invalid_address_or_key };
-static const code node_not_added{ server::error::btcd::client_node_not_added };
-static const code node_not_connected{ server::error::btcd::client_node_not_connected };
 
 // mock_block10 chains onto block9 and pays found_address from its second
 // transaction only (its other outputs pay distinct key/script hashes), so a
@@ -198,15 +196,19 @@ BC_AUTO_TEST_CASE(btcd_rpc__node__unknown_connect_subcommand__invalid_parameter)
     BC_REQUIRE_EQUAL(rpc_error("node", R"(["connect","1.2.3.4:8333","forever"])"), invalid_parameter.value());
 }
 
-BC_AUTO_TEST_CASE(btcd_rpc__node__disconnect_no_channels__node_not_connected)
+BC_AUTO_TEST_CASE(btcd_rpc__node__disconnect_no_channels__peer_not_found)
 {
     // The fixture runs no peer sessions, so the terminator identifies none.
-    BC_REQUIRE_EQUAL(rpc_error("node", R"(["disconnect","1.2.3.4:8333"])"), node_not_connected.value());
+    const auto response = rpc("node", R"(["disconnect","1.2.3.4:8333"])");
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), invalid_parameter.value());
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "peer not found");
 }
 
-BC_AUTO_TEST_CASE(btcd_rpc__node__remove_no_channels__node_not_added)
+BC_AUTO_TEST_CASE(btcd_rpc__node__remove_no_channels__peer_not_found)
 {
-    BC_REQUIRE_EQUAL(rpc_error("node", R"(["remove","42"])"), node_not_added.value());
+    const auto response = rpc("node", R"(["remove","42"])");
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), invalid_parameter.value());
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "peer not found");
 }
 
 // getters
@@ -383,6 +385,7 @@ BC_AUTO_TEST_CASE(btcd_rpc__createrawtransaction__one_input_one_output__decodes)
 
     const chain::transaction tx{ data, false };
     BC_REQUIRE(tx.is_valid());
+    BC_REQUIRE_EQUAL(tx.version(), 1u);
     BC_REQUIRE_EQUAL(tx.inputs_ptr()->size(), 1u);
     BC_REQUIRE_EQUAL(tx.outputs_ptr()->size(), 1u);
 }
@@ -395,6 +398,8 @@ BC_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__block1_coinbase__expected_txid
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
     BC_REQUIRE_EQUAL(as_text(response.at("result").at("txid")), encode_hash(coinbase.hash(false)));
+    BC_REQUIRE(!response.at("result").as_object().contains("hash"));
+    BC_REQUIRE(!response.at("result").as_object().contains("size"));
 }
 
 BC_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__malformed_hex__deserialization)
@@ -416,6 +421,9 @@ BC_AUTO_TEST_CASE(btcd_rpc__decodescript__pay_public_key__pubkey)
     BC_REQUIRE_EQUAL(as_text(result.at("type")), "pubkey");
     BC_REQUIRE(result.contains("asm"));
     BC_REQUIRE(result.contains("p2sh"));
+    BC_REQUIRE_EQUAL(result.at("reqSigs").as_int64(), 1);
+    BC_REQUIRE(!result.contains("desc"));
+    BC_REQUIRE(!result.contains("segwit"));
 }
 
 BC_AUTO_TEST_CASE(btcd_rpc__validateaddress__valid_address__isvalid_true)
@@ -429,6 +437,7 @@ BC_AUTO_TEST_CASE(btcd_rpc__validateaddress__valid_address__isvalid_true)
     BC_REQUIRE_EQUAL(result.at("isvalid").as_bool(), true);
     BC_REQUIRE_EQUAL(as_text(result.at("address")), found_address);
     BC_REQUIRE_EQUAL(result.at("iswitness").as_bool(), false);
+    BC_REQUIRE(!result.contains("scriptPubKey"));
 }
 
 BC_AUTO_TEST_CASE(btcd_rpc__validateaddress__invalid_address__isvalid_false)
@@ -917,9 +926,9 @@ BC_AUTO_TEST_CASE(btcd_rpc__rescan__unknown_beginblock__not_found)
     BC_REQUIRE_EQUAL(result, block_not_found.value());
 }
 
-BC_AUTO_TEST_CASE(btcd_rpc__rescan__invalid_beginblock__not_found)
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__invalid_beginblock__deserialization)
 {
-    BC_REQUIRE_EQUAL(rpc_error("rescan", R"(["not-a-hash",[],[],""])"), block_not_found.value());
+    BC_REQUIRE_EQUAL(rpc_error("rescan", R"(["not-a-hash",[],[],""])"), deserialization.value());
 }
 
 BC_AUTO_TEST_CASE(btcd_rpc__rescan__null_lists__rescan_finished)
@@ -969,6 +978,105 @@ BC_AUTO_TEST_CASE(btcd_rpc__sendrawtransaction__confirmed_unspent__already_in_ch
     const auto response = rpc("sendrawtransaction", "[\"" + tx0 + "\"]");
     BC_REQUIRE_MESSAGE(response.at("error").at("code").as_int64() == -27, serialize(response));
     BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "TX rejected: transaction already exists in blockchain");
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__getblockhash__missing_parameter__invalid_params)
+{
+    BC_REQUIRE_EQUAL(rpc_error("getblockhash"), invalid_params.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__getblockhash__mistyped_parameter__invalid_params)
+{
+    BC_REQUIRE_EQUAL(rpc_error("getblockhash", R"(["one"])"), invalid_params.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__getrawtransaction__verbose__btcd_fields)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto response = rpc("getrawtransaction", std::format(R"(["{}",1])", txid));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& tx = response.at("result").as_object();
+    BC_REQUIRE(!tx.contains("in_active_chain"));
+    BC_REQUIRE_EQUAL(tx.at("confirmations").as_int64(), 9);
+
+    const auto& script = tx.at("vout").as_array().front().at("scriptPubKey").as_object();
+    BC_REQUIRE_EQUAL(script.at("reqSigs").as_int64(), 1);
+    BC_REQUIRE(!script.contains("desc"));
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__getblockhash__above_top__out_of_range)
+{
+    const auto response = rpc("getblockhash", "[10]");
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), -1);
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "Block number out of range");
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__getblock__bad_hex__deserialization)
+{
+    BC_REQUIRE_EQUAL(rpc_error("getblock", R"(["zz"])"), deserialization.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__getblock__verbosity_2__rawtx)
+{
+    const auto response = rpc("getblock", std::format(R"(["{}",2])", block9));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& block = response.at("result").as_object();
+    BC_REQUIRE(!block.contains("tx"));
+    BC_REQUIRE(!block.contains("chainwork"));
+    BC_REQUIRE(!block.contains("mediantime"));
+    BC_REQUIRE(!block.contains("nTx"));
+    BC_REQUIRE_EQUAL(block.at("difficulty").as_double(), 1.0);
+
+    const auto& tx = block.at("rawtx").as_array().front().as_object();
+    BC_REQUIRE_EQUAL(as_text(tx.at("blockhash")), block9);
+    BC_REQUIRE(!tx.contains("fee"));
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__getblockheader__verbose__btcd_fields)
+{
+    const auto response = rpc("getblockheader", std::format(R"(["{}",true])", block9));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& header = response.at("result").as_object();
+    BC_REQUIRE(!header.contains("chainwork"));
+    BC_REQUIRE(!header.contains("target"));
+    BC_REQUIRE_EQUAL(header.at("difficulty").as_double(), 1.0);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__getmininginfo__ten_block_store__btcd_fields)
+{
+    const auto response = rpc("getmininginfo");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& info = response.at("result").as_object();
+    BC_REQUIRE_EQUAL(info.at("blocks").as_int64(), 9);
+    BC_REQUIRE_EQUAL(info.at("currentblocktx").as_int64(), 1);
+    BC_REQUIRE_EQUAL(info.at("difficulty").as_double(), 1.0);
+    BC_REQUIRE_EQUAL(info.at("testnet").as_bool(), false);
+    BC_REQUIRE(!info.contains("chain"));
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__disconnectnode__no_channels__peer_not_found)
+{
+    const auto response = rpc("disconnectnode", R"(["1.2.3.4:8333"])");
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), invalid_parameter.value());
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "peer not found");
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__help__default__usage_lines)
+{
+    const auto usage = as_text(rpc("help").at("result"));
+    BC_REQUIRE_NE(usage.find("\ngetblockhash height\n"), std::string::npos);
+    BC_REQUIRE_NE(usage.find("\nsearchrawtransactions address ( verbose )"), std::string::npos);
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__help__unknown_command__invalid_parameter)
+{
+    const auto response = rpc("help", R"(["nosuchmethod"])");
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), invalid_parameter.value());
+    BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "Unknown command: nosuchmethod");
 }
 
 // tcp (downgrade)
@@ -1221,6 +1329,13 @@ BC_AUTO_TEST_CASE(btcd_rpc__getheaders__malformed_hashstop__deserialization)
 BC_AUTO_TEST_CASE(btcd_rpc__node__connect_temp__null_result)
 {
     const auto response = rpc("node", R"(["connect","127.0.0.1:1","temp"])");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__node__connect_default__null_result)
+{
+    const auto response = rpc("node", R"(["connect","127.0.0.1:1"])");
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }

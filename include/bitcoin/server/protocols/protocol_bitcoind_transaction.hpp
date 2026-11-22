@@ -66,6 +66,13 @@ protected:
     static bool is_excessive(uint64_t fee, size_t vsize,
         double maxfeerate) NOEXCEPT;
 
+    /// The version of a created transaction, given the requested version.
+    virtual double created_version(double requested) const NOEXCEPT;
+
+    /// Add the context of a decoded transaction to its model.
+    virtual void inject_decoded(system::json::object& out,
+        const system::chain::transaction& tx) const NOEXCEPT;
+
     /// Absent and confirmed-spent inputs are missing coins.
     static bool is_missing(const code& ec) NOEXCEPT;
 

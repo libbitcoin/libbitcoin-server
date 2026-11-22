@@ -66,34 +66,34 @@ void protocol_bitcoind_control::start() NOEXCEPT
 // Control methods.
 // ----------------------------------------------------------------------------
 
-// One usage line synthesized from interface metadata, optionals parenthesized.
-template <typename Method>
-static void append_usage(std::string& out, const Method& entry,
-    const std::string& command, interface::bitcoind::version version) NOEXCEPT
+std::string protocol_bitcoind_control::usage(
+    const std::string& command) const NOEXCEPT
 {
-    if (!entry.implemented() || entry.name != command ||
-        version < interface::bitcoind::introduced(entry.name))
-        return;
-
-    out = command;
-    const auto& names = entry.parameter_names();
-    [&]<size_t... Index>(std::index_sequence<Index...>) NOEXCEPT
-    {
-        ((out += is_defaulted<std::tuple_element_t<Index,
-            typename Method::args_native>> ?
-                " ( " + std::string{ primary_name(names.at(Index)) } + " )" :
-                " " + std::string{ primary_name(names.at(Index)) }), ...);
-    }(std::make_index_sequence<Method::size>{});
+    using namespace interface;
+    const auto version = interface_version();
+    std::string out{};
+    find_usage<bitcoind_blockchain_methods>(out, command, version);
+    find_usage<bitcoind_control_methods>(out, command, version);
+    find_usage<bitcoind_mining_methods>(out, command, version);
+    find_usage<bitcoind_network_methods>(out, command, version);
+    find_usage<bitcoind_notifications_methods>(out, command, version);
+    find_usage<bitcoind_test_methods>(out, command, version);
+    find_usage<bitcoind_transaction_methods>(out, command, version);
+    find_usage<bitcoind_utility_methods>(out, command, version);
+    find_usage<bitcoind_wallet_methods>(out, command, version);
+    return out;
 }
 
-template <typename Methods>
-static void find_usage(std::string& out, const std::string& command,
-    interface::bitcoind::version version) NOEXCEPT
+void protocol_bitcoind_control::send_help_list() NOEXCEPT
 {
-    std::apply([&](const auto&... entries) NOEXCEPT
-    {
-        (append_usage(out, entries, command, version), ...);
-    }, Methods::methods);
+    send_result(help_names());
+}
+
+// bitcoind reports an unknown command in the result text.
+void protocol_bitcoind_control::send_help_unknown(
+    const std::string& command) NOEXCEPT
+{
+    send_result("help: unknown command: " + command);
 }
 
 bool protocol_bitcoind_control::handle_help(const code& ec, rpc_interface::help,
@@ -104,29 +104,16 @@ bool protocol_bitcoind_control::handle_help(const code& ec, rpc_interface::help,
 
     if (command.empty())
     {
-        auto names = help_names();
-        send_result(std::move(names));
+        send_help_list();
         return true;
     }
 
-    using namespace interface;
-    const auto version = interface_version();
-    std::string usage{};
-    find_usage<bitcoind_blockchain_methods>(usage, command, version);
-    find_usage<bitcoind_control_methods>(usage, command, version);
-    find_usage<bitcoind_mining_methods>(usage, command, version);
-    find_usage<bitcoind_network_methods>(usage, command, version);
-    find_usage<bitcoind_notifications_methods>(usage, command, version);
-    find_usage<bitcoind_test_methods>(usage, command, version);
-    find_usage<bitcoind_transaction_methods>(usage, command, version);
-    find_usage<bitcoind_utility_methods>(usage, command, version);
-    find_usage<bitcoind_wallet_methods>(usage, command, version);
+    auto line = usage(command);
+    if (line.empty())
+        send_help_unknown(command);
+    else
+        send_result(std::move(line));
 
-    // bitcoind reports an unknown command in the result text.
-    if (usage.empty())
-        usage = "help: unknown command: " + command;
-
-    send_result(std::move(usage));
     return true;
 }
 

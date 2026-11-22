@@ -28,6 +28,24 @@ using namespace network::rpc;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
+// btcd creates version one transactions.
+double protocol_btcd_transaction::created_version(double) const NOEXCEPT
+{
+    return 1.0;
+}
+
+// btcd decodes without hash, sizes or hex.
+void protocol_btcd_transaction::inject_decoded(json::object& out,
+    const chain::transaction& tx) const NOEXCEPT
+{
+    inject_scripts(out, tx);
+    out.stable_erase("hash");
+    out.stable_erase("size");
+    out.stable_erase("vsize");
+    out.stable_erase("weight");
+    out.stable_erase("hex");
+}
+
 void protocol_btcd_transaction::send_rejected(const code& ec,
     const chain::transaction& tx) NOEXCEPT
 {

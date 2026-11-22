@@ -126,6 +126,58 @@ void protocol_bitcoind_blockchain::stopping(const code& ec) NOEXCEPT
     protocol_bitcoind_dispatch<rpc_interface>::stopping(ec);
 }
 
+// Hooks.
+// ----------------------------------------------------------------------------
+
+void protocol_bitcoind_blockchain::inject_block(system::json::object& out,
+    const database::header_link& link,
+    const chain::header& header) const NOEXCEPT
+{
+    inject_block_context(out, archive(), system_settings(), link, header);
+}
+
+void protocol_bitcoind_blockchain::inject_block_tx(system::json::object& out,
+    const chain::transaction& tx, bool populated, bool prevouts) const NOEXCEPT
+{
+    inject_scripts(out, tx);
+    if (!populated || tx.is_coinbase())
+        return;
+
+    if (prevouts)
+        inject_tx_prevouts(out, archive(), tx, p2kh_, p2sh_, witness_, flags_);
+
+    out["fee"] = to_btc(tx.fee());
+}
+
+void protocol_bitcoind_blockchain::finish_block(
+    system::json::object&) const NOEXCEPT
+{
+}
+
+bool protocol_bitcoind_blockchain::is_spent(const database::output_link& link,
+    bool include_mempool) const NOEXCEPT
+{
+    const auto& query = archive();
+    return query.is_confirmed_spent(link) ||
+        (include_mempool && query.is_confirmable_spent(link));
+}
+
+bool protocol_bitcoind_blockchain::verbose_mempool(system::json::value& out,
+    const database::tx_links& links) const NOEXCEPT
+{
+    constexpr auto verbose = true;
+    constexpr auto sequence = false;
+    return raw_mempool(out, archive(), links, verbose, sequence);
+}
+
+bool protocol_bitcoind_blockchain::mempool_information(
+    system::json::object& out, const database::fee_rates& rates,
+    uint64_t minimum, uint64_t relay, uint64_t increment) const NOEXCEPT
+{
+    return mempool_info(out, archive(), rates, database_settings().path,
+        minimum, relay, increment);
+}
+
 // Blockchain methods.
 // ----------------------------------------------------------------------------
 
@@ -150,7 +202,7 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
     hash_digest hash{};
     if (!decode_hash(hash, blockhash))
     {
-        send_error(error::bitcoind::invalid_parameter);
+        send_error(to_hex_error(error::bitcoind::invalid_parameter));
         return true;
     }
 
@@ -205,30 +257,19 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
         value_from(bitcoind_hashed(*block)) :
         value_from(bitcoind_verbose(*block, flags_));
 
-    const auto& settings = system_settings();
-    const auto& header = block->header();
-    inject_block_context(model.as_object(), query, settings, link, header);
-
+    inject_block(model.as_object(), link, block->header());
     if (level >= block_verbosity::verbose)
     {
+        const auto prevouts = (level == block_verbosity::prevouts);
         const auto populated = query.populate_with_metadata(*block);
         auto entry = model.as_object().at("tx").as_array().begin();
         std::ranges::for_each(*block->transactions_ptr(),
             [&](const auto& tx) NOEXCEPT
         {
-            auto& object = entry->as_object();
-            inject_tx_scripts(object, *tx, p2kh_, p2sh_, witness_);
-            if (populated && !tx->is_coinbase())
-            {
-                if (level == block_verbosity::prevouts)
-                    inject_tx_prevouts(object, query, *tx, p2kh_, p2sh_,
-                        witness_, flags_);
-
-                object["fee"] = to_btc(tx->fee());
-            }
-
-            ++entry;
+            inject_block_tx((entry++)->as_object(), *tx, populated, prevouts);
         });
+
+        finish_block(model.as_object());
     }
 
     send_result(std::move(model));
@@ -344,7 +385,7 @@ bool protocol_bitcoind_blockchain::handle_get_block_header(const code& ec,
     hash_digest hash{};
     if (!decode_hash(hash, blockhash))
     {
-        send_error(error::bitcoind::invalid_parameter);
+        send_error(to_hex_error(error::bitcoind::invalid_parameter));
         return true;
     }
 
@@ -374,7 +415,7 @@ bool protocol_bitcoind_blockchain::handle_get_block_header(const code& ec,
     auto model = value_from(bitcoind(*header));
     auto& out = model.as_object();
     out["nTx"] = query.get_tx_count(link);
-    inject_block_context(out, query, system_settings(), link, *header);
+    inject_block(out, link, *header);
     send_result(std::move(model));
     return true;
 }
@@ -594,7 +635,13 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
 
     uint32_t index{};
     hash_digest hash{};
-    if (!decode_hash(hash, txid) || !to_integer(index, n))
+    if (!decode_hash(hash, txid))
+    {
+        send_error(to_hex_error(error::bitcoind::invalid_parameter));
+        return true;
+    }
+
+    if (!to_integer(index, n))
     {
         send_error(error::bitcoind::invalid_parameter);
         return true;
@@ -603,8 +650,7 @@ bool protocol_bitcoind_blockchain::handle_get_tx_out(const code& ec,
     // Return only unspent output.
     const auto& query = archive();
     const auto output_link = query.to_output(hash, index);
-    if (output_link.is_terminal() || query.is_confirmed_spent(output_link) ||
-        (include_mempool && query.is_confirmable_spent(output_link)))
+    if (output_link.is_terminal() || is_spent(output_link, include_mempool))
     {
         send_result(null_t{});
         return true;
@@ -1806,8 +1852,7 @@ void protocol_bitcoind_blockchain::complete_mempool_info(const code& ec,
     }
 
     system::json::object result{};
-    if (ec || !mempool_info(result, archive(), rates,
-        database_settings().path, minimum, relay, increment))
+    if (ec || !mempool_information(result, rates, minimum, relay, increment))
     {
         send_error(error::bitcoind::internal_error);
         return;
@@ -1874,10 +1919,8 @@ void protocol_bitcoind_blockchain::do_get_raw_mempool(
 {
     BC_ASSERT(!stranded());
 
-    constexpr auto verbose = true;
-    constexpr auto sequence = false;
     system::json::value result{};
-    if (!raw_mempool(result, archive(), links, verbose, sequence))
+    if (!verbose_mempool(result, links))
     {
         POST(fail, error::bitcoind::internal_error, gate);
         return;

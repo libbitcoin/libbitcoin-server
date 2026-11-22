@@ -195,7 +195,19 @@
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd.cpp">
       <Filter>src\protocols\btcd</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_blockchain.cpp">
+      <Filter>src\protocols\btcd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_control.cpp">
+      <Filter>src\protocols\btcd</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_filter.cpp">
+      <Filter>src\protocols\btcd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_mining.cpp">
+      <Filter>src\protocols\btcd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_network.cpp">
       <Filter>src\protocols\btcd</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\btcd\protocol_btcd_transaction.cpp">
@@ -557,7 +569,25 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_blockchain.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_control.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_mining.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_network.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_subgroup.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_transaction.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_utility.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum.hpp">

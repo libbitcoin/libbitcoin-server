@@ -50,28 +50,93 @@ static size_t required_signatures(const chain::script& script) NOEXCEPT
     }
 }
 
-// btcd scripts carry reqSigs and addresses, no descriptor, and signatures
-// without sighash types.
-static void inject_scripts(system::json::object& out,
-    const chain::transaction& tx, uint8_t p2kh, uint8_t p2sh,
-    const std::string& witness, uint32_t flags) NOEXCEPT
+bool is_testnet(const system::settings& settings) NOEXCEPT
+{
+    const auto network = settings.genesis_network;
+    return network == chain::selection::testnet3
+        || network == chain::selection::testnet4;
+}
+
+double difficulty(uint32_t bits, uint32_t limit) NOEXCEPT
+{
+    constexpr auto scale = 100'000'000.0;
+    constexpr auto mantissa = 0x007fffff_u32;
+    const auto exponents = to_floating(shift_right(limit, 24)) -
+        to_floating(shift_right(bits, 24));
+
+    const auto ratio = to_floating(bit_and(limit, mantissa)) /
+        to_floating(bit_and(bits, mantissa)) * std::pow(256.0, exponents);
+
+    return std::round(ratio * scale) / scale;
+}
+
+bool mempool_entry(system::json::object& out, const node::query& query,
+    const database::tx_link& link) NOEXCEPT
+{
+    uint32_t time{};
+    size_t light{}, heavy{};
+    database::fee_rate rate{};
+    if (!query.get_tx_fees(rate, link) ||
+        !query.get_tx_sizes(light, heavy, link) ||
+        !query.get_pooled_time(time, link))
+        return false;
+
+    system::json::array depends{};
+    for (const auto& parent: query.to_confirmable_parents(link))
+        depends.emplace_back(encode_hash(query.get_tx_key(parent)));
+
+    constexpr auto coin = to_floating(chain::satoshi_per_bitcoin);
+    out = system::json::object
+    {
+        { "size", heavy },
+        { "vsize", rate.bytes },
+        { "weight", chain::weighted_size(light, heavy) },
+        { "fee", rate.fee / coin },
+        { "time", time },
+        { "height", sub1(rate.pooled_height) },
+        { "startingpriority", 0.0 },
+        { "currentpriority", 0.0 },
+        { "depends", std::move(depends) }
+    };
+
+    return true;
+}
+
+void inject_script(system::json::object& out, const chain::script& script,
+    uint8_t p2kh, uint8_t p2sh, const std::string& witness) NOEXCEPT
+{
+    const auto signatures = required_signatures(script);
+    if (!is_zero(signatures))
+        out["reqSigs"] = signatures;
+
+    auto address = to_address(script, p2kh, p2sh, witness);
+    if (!address.empty())
+    {
+        system::json::array addresses{};
+        addresses.emplace_back(address);
+        out["address"] = std::move(address);
+        out["addresses"] = std::move(addresses);
+    }
+}
+
+system::json::value script_public_key(const chain::script& script,
+    uint8_t p2kh, uint8_t p2sh, const std::string& witness,
+    uint32_t flags) NOEXCEPT
+{
+    auto value = value_from(bitcoind(script, flags));
+    inject_script(value.as_object(), script, p2kh, p2sh, witness);
+    return value;
+}
+
+void inject_scripts(system::json::object& out, const chain::transaction& tx,
+    uint8_t p2kh, uint8_t p2sh, const std::string& witness,
+    uint32_t flags) NOEXCEPT
 {
     auto output = out.at("vout").as_array().begin();
     for (const auto& put: *tx.outputs_ptr())
     {
         auto& script = (output++)->as_object().at("scriptPubKey").as_object();
-        const auto signatures = required_signatures(put->script());
-        if (!is_zero(signatures))
-            script["reqSigs"] = signatures;
-
-        auto address = to_address(put->script(), p2kh, p2sh, witness);
-        if (!address.empty())
-        {
-            system::json::array addresses{};
-            addresses.emplace_back(address);
-            script["address"] = std::move(address);
-            script["addresses"] = std::move(addresses);
-        }
+        inject_script(script, put->script(), p2kh, p2sh, witness);
     }
 
     if (tx.is_coinbase())
@@ -85,6 +150,17 @@ static void inject_scripts(system::json::object& out,
     }
 }
 
+void inject_tx_context(system::json::object& out, const node::query& query,
+    const database::tx_link& link) NOEXCEPT
+{
+    server::inject_tx_context(out, query, link);
+    out.stable_erase("in_active_chain");
+
+    size_t height{};
+    if (!query.get_tx_height(height, link))
+        out.stable_erase("confirmations");
+}
+
 system::json::object verbose_transaction(const node::query& query,
     const database::tx_link& link, const chain::transaction& tx,
     const std::set<std::string>& filter, bool prevouts, uint8_t p2kh,
@@ -93,11 +169,6 @@ system::json::object verbose_transaction(const node::query& query,
     auto model = system::json::value_from(bitcoind(tx, flags)).as_object();
     inject_tx_context(model, query, link);
     inject_scripts(model, tx, p2kh, p2sh, witness, flags);
-    model.stable_erase("in_active_chain");
-
-    size_t height{};
-    if (!query.get_tx_height(height, link))
-        model.stable_erase("confirmations");
 
     // Prevout resolution serves the prevOut extension and the filter.
     const auto populated = (prevouts || !filter.empty()) &&

@@ -56,6 +56,32 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
+    /// Add the block context to a block or header model.
+    virtual void inject_block(system::json::object& out,
+        const database::header_link& link,
+        const system::chain::header& header) const NOEXCEPT;
+
+    /// Add context to a transaction model of a block with embedded txs.
+    virtual void inject_block_tx(system::json::object& out,
+        const system::chain::transaction& tx, bool populated,
+        bool prevouts) const NOEXCEPT;
+
+    /// Complete the model of a block with embedded txs.
+    virtual void finish_block(system::json::object& out) const NOEXCEPT;
+
+    /// The output is spent (confirmed, or by a pooled tx when included).
+    virtual bool is_spent(const database::output_link& link,
+        bool include_mempool) const NOEXCEPT;
+
+    /// The verbose getrawmempool result of the txs.
+    virtual bool verbose_mempool(system::json::value& out,
+        const database::tx_links& links) const NOEXCEPT;
+
+    /// The getmempoolinfo result of the pool fee rates.
+    virtual bool mempool_information(system::json::object& out,
+        const database::fee_rates& rates, uint64_t minimum, uint64_t relay,
+        uint64_t increment) const NOEXCEPT;
+
     /// Handlers.
     bool handle_get_best_block_hash(const code& ec,
         rpc_interface::get_best_block_hash) NOEXCEPT;
@@ -69,7 +95,7 @@ protected:
     bool handle_get_block_filter(const code& ec,
         rpc_interface::get_block_filter, const std::string&,
         const std::string&) NOEXCEPT;
-    bool handle_get_block_hash(const code& ec,
+    virtual bool handle_get_block_hash(const code& ec,
         rpc_interface::get_block_hash, double) NOEXCEPT;
     bool handle_get_block_header(const code& ec,
         rpc_interface::get_block_header, const std::string&, bool) NOEXCEPT;

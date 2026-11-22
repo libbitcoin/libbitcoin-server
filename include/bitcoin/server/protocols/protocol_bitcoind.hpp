@@ -126,14 +126,27 @@ protected:
     void capture_totals(totals_handler&& handler) NOEXCEPT;
     network::diagnostics::collector to_collector(
         const network::diagnostics::rows_ptr& captured) NOEXCEPT;
-    system::json::value script_public_key(
+
+    /// The output script model.
+    virtual system::json::value script_public_key(
         const system::chain::script& script) const NOEXCEPT;
+
+    /// Add the output script context and input script form to a tx model.
+    virtual void inject_scripts(system::json::object& out,
+        const system::chain::transaction& tx) const NOEXCEPT;
+
+    /// Add the block context of a tx to its model.
+    virtual void inject_context(system::json::object& out,
+        const database::tx_link& link) const NOEXCEPT;
 
     /// Retains a connected channel, and does not reconnect upon stop.
     static network::net::channel_notifier to_once() NOEXCEPT;
 
     /// The rpc error for a dispatch parameter fault, success for other faults.
     virtual code to_parameter_error(const code& ec) const NOEXCEPT;
+
+    /// The rpc error for an undecodable hex parameter, given the default.
+    virtual code to_hex_error(const code& ec) const NOEXCEPT;
 
     /// Answer a dispatch parameter fault, stop the channel for other faults.
     void handle_dispatch_fault(const code& ec) NOEXCEPT;
