@@ -798,7 +798,7 @@ void protocol_bitcoind_blockchain::do_get_tx_out_set_info(set_hash type,
         to_btc(floored_subtract(issued, totals.value)));
 
     object_t amounts{};
-    if (const auto ec = block_info(amounts, query, settings, link, height))
+    if ((ec = block_info(amounts, query, settings, link, height)))
     {
         LOGF("Bitcoind::gettxoutsetinfo, " << ec.message());
         POST(fail, error::bitcoind::internal_error, gate);
