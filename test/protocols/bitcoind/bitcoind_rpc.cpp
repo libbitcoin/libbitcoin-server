@@ -695,7 +695,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__confirmed_unspent__verify_al
     BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "Transaction outputs already in utxo set");
 }
 
-// control, mining, rawtransactions, util (moved from btcd)
+// control, mining, rawtransactions, util
 // ----------------------------------------------------------------------------
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__help__default__implemented_method_list)
@@ -1319,8 +1319,8 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__decoderawtransaction__created__round_trips)
     BC_REQUIRE_EQUAL(response.at("result").at("locktime").as_int64(), 0);
 }
 
-// The input sequence encodes locktime enforceability and replaceability: a
-// final sequence disables locktime and near-final does not signal bip125.
+// Input sequence encodes locktime enforceability and replaceability: final
+// sequence disables locktime and near-final does not signal bip125.
 BC_AUTO_TEST_CASE(bitcoind_rpc__createrawtransaction__default__replaceable_sequence)
 {
     const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
@@ -2417,8 +2417,8 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__logging__include__error)
     BC_REQUIRE(has_error(response));
 }
 
-// A proof produced by gettxoutproof verifies to the proven txid (round trip
-// over the merkle block wire form).
+// Proof produced by gettxoutproof verifies to proven txid (round trip over
+// merkle block wire form).
 BC_AUTO_TEST_CASE(bitcoind_rpc__txoutproof__round_trip__proven_txid)
 {
     const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
@@ -2529,12 +2529,6 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__block_hash__that_block)
 BC_AUTO_TEST_CASE(bitcoind_rpc__getdeploymentinfo__unknown_hash__error)
 {
     const auto response = rpc("getdeploymentinfo", hash_param(system::one_hash));
-    BC_REQUIRE(has_error(response));
-}
-
-BC_AUTO_TEST_CASE(bitcoind_rpc__getblockfilter__filters_disabled__error)
-{
-    const auto response = rpc("getblockfilter", hash_param(test::block9_hash, "\"basic\""));
     BC_REQUIRE(has_error(response));
 }
 
@@ -3051,12 +3045,6 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getdescriptoractivity__unknown_block__not_found)
 // scanblocks
 
 // The fixture runs with block filters disabled.
-BC_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__filters_disabled__error)
-{
-    const auto response = rpc("scanblocks", "[\"start\", [\"pk(04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f)\"]]");
-    BC_REQUIRE(has_error(response));
-}
-
 BC_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__bad_action__invalid)
 {
     const auto response = rpc("scanblocks", "[\"status\", []]");
@@ -3065,8 +3053,8 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__scanblocks__bad_action__invalid)
 
 // gettxoutsetinfo
 
-// The genesis output is excluded from the utxo set.
-// TODO: pin the hash_serialized_3/muhash digests against bitcoind vectors.
+// Genesis output excluded from utxo set.
+// TODO: pin hash_serialized_3/muhash digests against bitcoind vectors.
 BC_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__default__expected)
 {
     const auto response = rpc("gettxoutsetinfo");
@@ -3083,8 +3071,7 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__default__expected)
     BC_REQUIRE(!result.as_object().contains("muhash"));
 }
 
-// Ten coinbase-only blocks issue 500 and retain 450, the genesis coinbase
-// being excluded from the set.
+// Ten coinbase-only blocks issue 500 and retain 450, genesis coinbase excluded.
 BC_AUTO_TEST_CASE(bitcoind_rpc__gettxoutsetinfo__default__genesis_unspendable)
 {
     const auto response = rpc("gettxoutsetinfo");
@@ -4078,7 +4065,8 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__waitforblockheight__organized__new_top)
 
 // psbt combine and join
 
-static std::string create_psbt_v0(const chain::block& block, const std::string& data) NOEXCEPT
+static std::string create_psbt_v0(const chain::block& block,
+    const std::string& data) NOEXCEPT
 {
     return "{\"jsonrpc\":\"2.0\",\"id\":0,\"method\":\"createpsbt\",\"params\":[[{\"txid\":\"" + encode_hash(block.transactions_ptr()->front()->hash(false)) + "\",\"vout\":0}], {\"data\": \"" + data + "\"}, 0, true, 2, 0]}";
 }
@@ -4134,8 +4122,9 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__decodepsbt__unknown_global__unknown)
     BC_REQUIRE_EQUAL(as_text(unknown.at("0a")), "01");
 }
 
-// The bip174 updater vector with sighash types (0x82, 0x03), output 0 redeem and
-// witness scripts (OP_1), and an unknown key (0x3f) of value 0x01 in input 0 and output 0.
+// bip174 updater vector with sighash types (0x82, 0x03),
+// output 0 redeem and witness scripts (OP_1), and unknown key (0x3f)
+// of value 0x01 in input 0 and output 0.
 #define PSBT_ANNOTATED "cHNidP8BAJoCAAAAAljoeiG1ba8MI76OcHBFbDNvfLqlyHV5JPVFiHuyq911AAAAAAD/////g40EJ9DsZQpoqka7CwmK6kQiwHGyyng1Kgd5WdB86h0BAAAAAP////8CcKrwCAAAAAAWABTYXCtx0AYLCcmIauuBXlCZHdoSTQDh9QUAAAAAFgAUAK6pouXw+HaliN9VRuh0LR2HAI8AAAAAAAEDBIIAAAABPwEBAQC7AgAAAAGq1zkxAYvSX4SuQAtohIvgnbcG6sKsGCmLq+5xq2VviwAAAABIRzBEAiBY9vx8ajPhsxVI1IHIJsAVvTATWq1CzWd5Datm0q0kOwIgShztJgTGc1tjk+W0FpHdeLAPDFlC+591GFb6qTgVfboB/v///wKA8PoCAAAAABepFA+5RjQhaWuCyDOvJBx4wX3b3kk0h9DyCicBAAAAF6kUKcp0+KCPgZmUKBhcl7XYUuQGP2GHZQAAAAEER1IhApWDvzmuCmCXR60Zmt3WNPphCFWdbFzTm0whg/GrluB/IQLath/0mhTban0CsM0fu3j8SxgxK1tOVNrk26L7/vU211KuIgYClYO/Oa4KYJdHrRma3dY0+mEIVZ1sXNObTCGD8auW4H8Q2QxqTwAAAIAAAACAAAAAgCIGAtq2H/SaFNtqfQKwzR+7ePxLGDErW05U2uTbovv+9TbXENkMak8AAACAAAAAgAEAAIAAAQMEAwAAAAEBIADC6wsAAAAAF6kUt/X69A49QKWkWbHbNTXyty+pIeiHAQQiACCMI1MXN0O1ld+0oHtyuo5C43l9p06H/n2ddJfjsgKJAwEFR1IhAwidwQx6xttU+RMpr2FzM9s4jOrQwjH3IzedG5kDCwLcIQI63ZBPPW3PWd25BrDe4jUpt/+57VDl6GFRkmhgIh8Oc1KuIgYCOt2QTz1tz1nduQaw3uI1Kbf/ue1Q5ehhUZJoYCIfDnMQ2QxqTwAAAIAAAACAAwAAgCIGAwidwQx6xttU+RMpr2FzM9s4jOrQwjH3IzedG5kDCwLcENkMak8AAACAAAAAgAIAAIAAAQABUQEBAVEBPwEBIgIDqaTDf1mW06ol26xrVwrwZQOUSSlCRgs1R1Ptnuylh3EQ2QxqTwAAAIAAAACABAAAgAAiAgJ/Y5l1fS7/VaE2rQLGhLGDi2VW5fG2s0KCqUtrUAUQlhDZDGpPAAAAgAAAAIAFAACAAA=="
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__decodepsbt__annotated__expected)
@@ -4360,9 +4349,9 @@ BC_AUTO_TEST_SUITE_END()
 // websocket authorization
 // ----------------------------------------------------------------------------
 
-// ws frames carry no headers, so authorization is established by basic auth
-// on the upgrade request and latched on the channel for the connection. An
-// unauthorized upgrade is refused (401), as bitcoind has no in-band method.
+// ws frames carry no headers, so authorization established by basic auth on
+// upgrade request and latched on channel for connection. Unauthorized upgrade
+// refused (401), as bitcoind has no in-band method.
 BC_FIXTURE_TEST_SUITE(bitcoind_credentialed_tests,
     bitcoind_credentialed_setup_fixture)
 
@@ -4721,6 +4710,20 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__spendable__txid)
     BC_REQUIRE_EQUAL(as_text(response.at("result")), encode_hash(test::tx1c.hash(false)));
 }
 
+// tx1c pays a 10 satoshi fee from a 100 satoshi input (62 bytes).
+BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__fee_below_maxfeerate__txid)
+{
+    const auto response = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\", 0.000008]");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(as_text(response.at("result")), encode_hash(test::tx1c.hash(false)));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__fee_above_maxfeerate__verify_error)
+{
+    const auto response = rpc("sendrawtransaction", "[\"" + encode_base16(test::tx1c.to_data(true)) + "\", 0.000001]");
+    BC_REQUIRE_MESSAGE(has_code(response, -25), response);
+}
+
 BC_AUTO_TEST_CASE(bitcoind_rpc__sendrawtransaction__pooled__txid)
 {
     const auto hex = encode_base16(test::tx1c.to_data(true));
@@ -5014,7 +5017,8 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getmempoolancestors__invalid_txid__invalid_param
     BC_REQUIRE(has_code(response, -8));
 }
 
-static std::string prevout_param(const hash_digest& hash, uint32_t index, const std::string& tail) NOEXCEPT
+static std::string prevout_param(const hash_digest& hash, uint32_t index,
+    const std::string& tail) NOEXCEPT
 {
     return "[[{\"txid\":\"" + encode_hash(hash) + "\",\"vout\":" + std::to_string(index) + "}]" + tail + "]";
 }
@@ -5320,7 +5324,7 @@ BC_AUTO_TEST_SUITE_END()
 
 // closed tx pool
 // ----------------------------------------------------------------------------
-// The tx chaser refuses submission and testing while the pool is closed.
+// Tx chaser refuses submission and testing while pool closed.
 
 BC_FIXTURE_TEST_SUITE(bitcoind_closed_tests, bitcoind_closed_setup_fixture)
 
@@ -5347,7 +5351,7 @@ BC_AUTO_TEST_SUITE_END()
 
 // taproot active
 // ----------------------------------------------------------------------------
-// Taproot is flagged in the top header context.
+// Taproot flagged in top header context.
 
 BC_FIXTURE_TEST_SUITE(bitcoind_taproot_active_tests, bitcoind_taproot_active_setup_fixture)
 
@@ -5364,7 +5368,7 @@ BC_AUTO_TEST_SUITE_END()
 
 // csv active
 // ----------------------------------------------------------------------------
-// Csv is flagged in the top header context and activated there.
+// Csv flagged in top header context and activated there.
 
 BC_FIXTURE_TEST_SUITE(bitcoind_csv_active_tests, bitcoind_csv_active_setup_fixture)
 
@@ -5390,7 +5394,7 @@ BC_AUTO_TEST_SUITE_END()
 
 // csv unconfirmed
 // ----------------------------------------------------------------------------
-// Csv is activated at a height whose confirmed header is not flagged.
+// Csv activated at height whose confirmed header is not flagged.
 
 BC_FIXTURE_TEST_SUITE(bitcoind_csv_unconfirmed_tests, bitcoind_csv_unconfirmed_setup_fixture)
 

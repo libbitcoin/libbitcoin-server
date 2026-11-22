@@ -49,7 +49,11 @@ bool setup_simultaneous_store(test::query_t& query) NOEXCEPT
 {
     const auto& header = test::block3.header();
     const auto timestamp = test::block2.header().timestamp();
-    const system::chain::header top{ header.version(), test::block2_hash, header.merkle_root(), timestamp, header.bits(), header.nonce() };
+    const system::chain::header top
+    {
+        header.version(), test::block2_hash, header.merkle_root(), timestamp,
+        header.bits(), header.nonce()
+    };
     return test::setup_three_block_store(query) &&
         query.set(top, database::context{ 0, 3, 0 }, {}, false) &&
         query.push_confirmed(query.to_header(top.hash()), false);
@@ -59,7 +63,11 @@ bool setup_simultaneous_store(test::query_t& query) NOEXCEPT
 bool setup_unrooted_store(test::query_t& query) NOEXCEPT
 {
     const auto& header = test::block3.header();
-    const system::chain::header top{ header.version(), system::null_hash, header.merkle_root(), header.timestamp(), header.bits(), header.nonce() };
+    const system::chain::header top
+    {
+        header.version(), system::null_hash, header.merkle_root(),
+        header.timestamp(), header.bits(), header.nonce()
+    };
     return test::setup_three_block_store(query) &&
         query.set(top, database::context{ 0, 3, 0 }, {}, false) &&
         query.push_confirmed(query.to_header(top.hash()), false);
@@ -236,8 +244,8 @@ bitcoind_setup_fixture::status
 bitcoind_setup_fixture::options_origin_status(std::string_view target,
     std::string_view origin)
 {
-    rpc_client::request request{ http::verb::options, target,
-        network::http::version_1_1 };
+    constexpr auto version = network::http::version_1_1;
+    rpc_client::request request{ http::verb::options, target, version };
     request.set(http::field::host, "localhost");
     request.set(http::field::origin, origin);
     request.keep_alive(true);

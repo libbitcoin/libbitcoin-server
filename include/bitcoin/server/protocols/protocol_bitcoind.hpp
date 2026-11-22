@@ -26,12 +26,11 @@
 namespace libbitcoin {
 namespace server {
 
-/// Common base for the bitcoind interface subgroup protocols, and the
-/// terminal default responder. Subgroup protocols carry their own interface
-/// dispatchers and are attached to the channel before this class, which is
-/// attached last. A subgroup claims each request it dispatches (via the
-/// channel latch), so default responses are sent here exactly once and only
-/// when no subgroup has claimed the request.
+/// Common base for bitcoind interface subgroup protocols, and terminal default
+/// responder. Subgroup protocols carry their own interface dispatchers and are
+/// attached to channel before this class, which is attached last. Subgroup
+/// claims each request it dispatches (via channel latch), so default responses
+/// are sent here exactly once and only when no subgroup has claimed request.
 class BCS_API protocol_bitcoind
   : public server::protocol_http,
     protected network::tracker<protocol_bitcoind>
@@ -40,8 +39,8 @@ public:
     // Replace base class channel_t (json-rpc websocket reader body).
     using channel_t = channel_bitcoind;
 
-    // Replace base class options_t with the service settings, so a derived
-    // service (btcd) reports its own configured section (see sessions.hpp).
+    // Replace base class options_t with service settings, so a derived service
+    // (btcd) reports its own configured section (see sessions.hpp).
     using options_t = settings::bitcoind_server;
 
     typedef std::shared_ptr<protocol_bitcoind> ptr;

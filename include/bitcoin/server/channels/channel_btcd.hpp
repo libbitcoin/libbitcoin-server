@@ -25,8 +25,8 @@
 namespace libbitcoin {
 namespace server {
 
-/// Channel for the btcd service, as bitcoind but authorized in-band, so
-/// the websocket upgrade is open (authenticate follows it).
+/// Channel for btcd service, as bitcoind but authorized in-band, so websocket
+/// upgrade is open (authenticate follows it).
 class BCS_API channel_btcd
   : public channel_bitcoind
 {

@@ -38,8 +38,8 @@ static hash_digest full_root(const hashes& txids) NOEXCEPT
     return sha256::merkle_root(hashes{ txids });
 }
 
-// A partial tree built for the given matches extracts to the real root, and
-// recovers exactly the matched txids and their positions.
+// Partial tree built for given matches extracts to real root, and recovers
+// exactly matched txids and their positions.
 static void verify_round_trip(size_t count,
     const std::vector<size_t>& matches) NOEXCEPT
 {
@@ -55,7 +55,8 @@ static void verify_round_trip(size_t count,
     hash_digest root{};
     hashes matched{};
     std::vector<size_t> positions{};
-    BC_REQUIRE(server::extract_partial_merkle(root, matched, positions, count, flags, branch));
+    BC_REQUIRE(server::extract_partial_merkle(root, matched, positions, count,
+        flags, branch));
 
     BC_REQUIRE_EQUAL(root, full_root(txids));
     BC_REQUIRE_EQUAL(positions.size(), matches.size());

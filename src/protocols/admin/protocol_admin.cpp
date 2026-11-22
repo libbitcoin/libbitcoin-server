@@ -128,8 +128,8 @@ void protocol_admin::dispatch_websocket(const http::request& request) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    // ws frames carry no headers, so ws authorization is enforced here, not
-    // by the channel (established by basic auth on the upgrade request).
+    // ws frames carry no headers, so ws authorization is enforced here, not by
+    // channel (established by basic auth on upgrade request).
     if (!authorized())
     {
         send_unauthorized(request);

@@ -28,8 +28,8 @@
 namespace libbitcoin {
 namespace server {
 
-/// Channel for the electrum service (universal json-rpc), carrying the
-/// negotiated protocol version and client name.
+/// Channel for electrum service (universal json-rpc), carrying negotiated
+/// protocol version and client name.
 class BCS_API channel_electrum
   : public channel_rpc,
     protected network::tracker<channel_electrum>
@@ -81,8 +81,8 @@ public:
         return restricted_;
     }
 
-    /// Retain the request in dispatch as a non-version opener, dispatched
-    /// again (under its own gate) when the channel resumes the reader.
+    /// Retain request in dispatch as non-version opener, dispatched again
+    /// (under its own gate) when channel resumes reader.
     inline void set_opener() NOEXCEPT
     {
         opener_ = current_;

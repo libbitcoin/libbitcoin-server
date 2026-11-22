@@ -44,14 +44,13 @@ size_t protocol::get_active_height(const hash_digest& hash) const NOEXCEPT
     const auto link = query.to_header(hash);
     chain::context ctx{};
 
-    // This uses candidate header vs. confirmed block so that stripping will
-    // show at heights below top checkpoint and milestone while still syncing.
-    // This can result in a weak branch milestone block implying a pruned
-    // height that doesn't confirm (ok), which can't happen for checkpoints.
-    // This can be mitigated by setting stripped on the object when it's a
-    // milestone or checked object and pruning is enabled. Pruning can be
-    // enabled after storage of non-stripped blocks, which does not strip them.
-    // This will return false is bip141 is not active by the milestone.
+    // Uses candidate header vs. confirmed block so stripping shows at heights
+    // below top checkpoint and milestone while still syncing. May result in a
+    // weak branch milestone block implying a pruned height that doesn't confirm
+    // (ok), which can't happen for checkpoints. Can be mitigated by setting
+    // stripped on object when it's a milestone or checked object and pruning is
+    // enabled. Pruning can be enabled after storage of non-stripped blocks,
+    // which does not strip them. False if bip141 is not active by milestone.
     return query.get_context(ctx, link) &&
         ctx.is_enabled(chain::bip141_rule) &&
         query.is_candidate_header(link) ? ctx.height : zero;

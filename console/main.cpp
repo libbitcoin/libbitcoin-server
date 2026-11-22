@@ -43,8 +43,8 @@ std::filesystem::path symbols_path{};
 
 int wmain(int argc, wchar_t* argv[])
 {
-    // Process-wide coverage (worker threads, noexcept terminations); the seh
-    // frame below covers only faults on this (main) thread.
+    // Process-wide coverage (worker threads, noexcept terminations); seh frame
+    // below covers only faults on this (main) thread.
     install_stack_trace();
 
 #if defined(HAVE_MSC)
@@ -103,8 +103,8 @@ int main(int argc, char* argv[])
 BC_USE_LIBBITCOIN_MAIN
 #endif
 
-/// Invoke this program with the raw arguments provided on the command line.
-/// All console input and output streams for the application originate here.
+/// Invoke program with raw arguments provided on command line.
+/// All console input and output streams for application originate here.
 int bc::system::main(int argc, char* argv[])
 {
     using namespace bc::system;

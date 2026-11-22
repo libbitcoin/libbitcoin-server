@@ -388,16 +388,16 @@ void executor::scan_collisions()
         query_.outs_buckets(), store_.outs.filter_k(), distributions, filters,
         [&](size_t index)
         {
-            return table::outs::key{ query_.get_outs_key(possible_narrow_cast<
-                outs_link::integer>(index)) };
+            const auto link = possible_narrow_cast<outs_link::integer>(index);
+            return table::outs::key{ query_.get_outs_key(link) };
         });
 
     scan_collisions<table::wtxid>("wtxid", query_.wtxid_records(),
         query_.wtxid_buckets(), store_.wtxid.filter_k(), distributions,
         filters, [&](size_t index)
         {
-            return table::wtxid::key{ query_.get_wtxid_key(
-                possible_narrow_cast<pool_link::integer>(index)) };
+            const auto link = possible_narrow_cast<pool_link::integer>(index);
+            return table::wtxid::key{ query_.get_wtxid_key(link) };
         });
 
     logger(BS_COLLISIONS_DISTRIBUTION);

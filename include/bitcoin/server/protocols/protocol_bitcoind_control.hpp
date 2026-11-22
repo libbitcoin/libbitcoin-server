@@ -62,8 +62,8 @@ protected:
     /// Answer help for a command that is not served.
     virtual void send_help_unknown(const std::string& command) NOEXCEPT;
 
-    /// Set the usage line of the command if defined by the methods, with
-    /// optional parameters parenthesized.
+    /// Set usage line of command if defined by methods,
+    /// with optional parameters parenthesized.
     template <typename Methods>
     static void find_usage(std::string& out, const std::string& command,
         interface::bitcoind::version version) NOEXCEPT
@@ -106,13 +106,16 @@ private:
 
         out = command;
         const auto& names = entry.parameter_names();
+        const auto append = [&](const auto& name, bool optional) NOEXCEPT
+        {
+            const std::string text{ primary_name(name) };
+            out += optional ? " ( " + text + " )" : " " + text;
+        };
+
         [&]<size_t... Index>(std::index_sequence<Index...>) NOEXCEPT
         {
-            ((out += is_defaulted<std::tuple_element_t<Index,
-                typename Method::args_native>> ?
-                    " ( " + std::string{ primary_name(names.at(Index)) } +
-                        " )" :
-                    " " + std::string{ primary_name(names.at(Index)) }), ...);
+            (append(names.at(Index), is_defaulted<std::tuple_element_t<Index,
+                typename Method::args_native>>), ...);
         }(std::make_index_sequence<Method::size>{});
     }
 

@@ -24,8 +24,8 @@
 namespace libbitcoin {
 namespace server {
 
-/// Update the psbt with witness utxos from the store and signing metadata
-/// from the expanded descriptors (utxoupdatepsbt).
+/// Update psbt with witness utxos from store and signing metadata
+/// from expanded descriptors (utxoupdatepsbt).
 BCS_API void update_psbt(system::wallet::psbt::transaction& doc,
     const node::query& query,
     const system::wallet::descriptor::signing::list& signings) NOEXCEPT;

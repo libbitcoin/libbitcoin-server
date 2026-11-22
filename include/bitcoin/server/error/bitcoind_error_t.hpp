@@ -88,14 +88,14 @@ enum error_t : int32_t
 // No current need for error_code equivalence mapping.
 DECLARE_ERROR_T_CODE_CATEGORY(error, BCS_API);
 
-/// Map a foreign category code to the bitcoind code space, where a store
-/// fault is internal and any other failure is reported as the given code.
-/// A code of this category passes through unchanged.
+/// Map foreign category code to bitcoind code space, where store fault is
+/// internal and any other failure is reported as given code. Code of this
+/// category passes through unchanged.
 BCS_API code translate(const code& ec, error_t failure) NOEXCEPT;
 
-/// Map a dispatch parameter fault to the bitcoind code space, where a mistyped
-/// or null value is a type error, an unknown name an invalid parameter, and a
-/// missing or extra value a misc error. Any other code is mapped to success.
+/// Map dispatch parameter fault to bitcoind code space, where mistyped or null
+/// value is a type error, unknown name an invalid parameter, and missing or
+/// extra value a misc error. Any other code is mapped to success.
 BCS_API code parameter_error(const code& ec) NOEXCEPT;
 
 /// The bitcoind (bip22) reject token for a validation code, message otherwise.

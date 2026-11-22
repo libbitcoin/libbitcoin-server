@@ -34,10 +34,10 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 // subscribe
 // ----------------------------------------------------------------------------
-// Post to an independent strand on the network threadpool. This protects the
-// subscriptions and ensures that the channel remains both cancellable and
-// responsive. The channel listener remains paused during this call, which
-// guards against call backlogging (DoS) and requires the monitor to allow
+// Post to independent strand on network threadpool. Protects
+// subscriptions and ensures channel remains both cancellable and
+// responsive. Channel listener remains paused during call, which
+// guards against call backlogging (DoS) and requires monitor to allow
 // socket cancellation and server stop to interrupt expensive query.
 
 void protocol_electrum::handle_blockchain_scripthash_subscribe(const code& ec,

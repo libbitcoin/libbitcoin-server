@@ -29,8 +29,8 @@ using namespace system::chain;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-// The endorsements ordered by public key position, verified against the
-// subscript (scripts do not associate endorsements with their keys).
+// Endorsements ordered by public key position, verified against subscript
+// (scripts do not associate endorsements with their keys).
 static operations merge_endorsements(const transaction& tx, uint32_t index,
     uint64_t value, const script& subscript, script_version version,
     const chunk_cptrs& endorsements) NOEXCEPT
@@ -108,8 +108,9 @@ code combine_input(input::cptr& out, const node::query& query,
 
         if (!sigs.empty())
         {
-            out = emplace_shared<input>(in.point(), script{ merge_endorsements(
-                base, index, value, pay, script_version::unversioned, sigs) },
+            const auto merged = merge_endorsements(base, index, value, pay,
+                script_version::unversioned, sigs);
+            out = emplace_shared<input>(in.point(), script{ merged },
                 witness{}, in.sequence());
             return error::success;
         }

@@ -118,8 +118,8 @@ struct electrum_ten_block_setup_fixture
     }
 };
 
-/// The sparrow service, which reuses this harness (same transports, same
-/// handshake, same electrum interface).
+/// Sparrow service, which reuses this harness
+/// (same transports, handshake and electrum interface).
 struct sparrow_ten_block_setup_fixture
   : electrum_setup_fixture
 {
@@ -144,8 +144,8 @@ struct electrum_three_block_confirmed_address_setup_fixture
     }
 };
 
-// Configured with a currency window -- the test store is historical, so the
-// tx pool is closed and the tx chaser refuses submission.
+// Configured with currency window -- test store is historical, so tx pool is
+// closed and tx chaser refuses submission.
 struct electrum_closed_setup_fixture
   : electrum_setup_fixture
 {
@@ -261,8 +261,10 @@ struct electrum_scoped_credential_setup_fixture
         {
             config.server.electrum.credentials =
             {
-                { ELECTRUM_TEST_USERNAME ":" ELECTRUM_TEST_PASSWORD ":"
-                    ELECTRUM_TEST_SCOPED_METHOD }
+                {
+                    ELECTRUM_TEST_USERNAME ":" ELECTRUM_TEST_PASSWORD ":"
+                    ELECTRUM_TEST_SCOPED_METHOD
+                }
             };
         })
     {
@@ -300,8 +302,9 @@ struct electrum_duplicate_setup_fixture
     inline electrum_duplicate_setup_fixture()
       : electrum_setup_fixture([](test::query_t& query)
         {
+            const database::context context{ 0, 10, 0 };
             return test::setup_ten_block_store(query) &&
-                query.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false) &&
+                query.set(test::mock_block10, context, {}, false, false) &&
                 query.set(*test::mock_block10.transactions_ptr()->at(1));
         })
     {
@@ -320,8 +323,10 @@ struct sparrow_scoped_credential_setup_fixture
         {
             config.server.sparrow.credentials =
             {
-                { ELECTRUM_TEST_USERNAME ":" ELECTRUM_TEST_PASSWORD ":"
-                    ELECTRUM_TEST_SCOPED_METHOD }
+                {
+                    ELECTRUM_TEST_USERNAME ":" ELECTRUM_TEST_PASSWORD ":"
+                    ELECTRUM_TEST_SCOPED_METHOD
+                }
             };
         }, service::sparrow)
     {

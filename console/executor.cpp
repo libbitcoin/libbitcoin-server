@@ -120,7 +120,7 @@ void executor::poll_for_stopping()
     poller_thread_.emplace(std::thread([]()
     {
         // Report start progress each second, until running or canceled, as
-        // the manager otherwise assumes a hang (never entered in console mode).
+        // manager otherwise assumes hang (never entered in console mode).
         for (size_t count{}; !canceled(); ++count)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -130,8 +130,8 @@ void executor::poll_for_stopping()
 
         stopping_.set_value(true);
 
-        // The node drain exceeds the manager's patience, so report progress
-        // until the service reports stopped (never entered in console mode).
+        // Node drain exceeds manager's patience, so report progress until
+        // service reports stopped (never entered in console mode).
         while (service_ && !exited_.load())
         {
             std::this_thread::sleep_for(std::chrono::seconds(1));

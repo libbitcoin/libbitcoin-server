@@ -28,8 +28,8 @@ using namespace system;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-// btcd reports neither median time, chain work, tx count nor target, and
-// scales difficulty to the network proof of work limit.
+// btcd reports neither median time, chain work, tx count nor target, and scales
+// difficulty to network proof of work limit.
 void protocol_btcd_blockchain::inject_block(json::object& out,
     const database::header_link& link,
     const chain::header& header) const NOEXCEPT

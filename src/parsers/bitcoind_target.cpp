@@ -83,7 +83,7 @@ static bool split_leaf(std::string& name, uint8_t& media,
     return to_media(media, parts.back());
 }
 
-// Parse a bitcoind REST path into a json-rpc request model.
+// Parse bitcoind REST path into json-rpc request model.
 // github.com/bitcoin/bitcoin/blob/master/doc/REST-interface.md
 // Supports: block, block/notxdetails, blockhashbyheight, headers, blockpart,
 // chaininfo (remaining endpoints return invalid_target until implemented).

@@ -84,8 +84,8 @@ void parser::derive_buckets() NOEXCEPT
             database.wtxid.expected, contested, target);
 }
 
-// A specified network governs, otherwise configuration, otherwise the network
-// of a configured genesis block.
+// Specified network governs, otherwise configuration,
+// otherwise network of a configured genesis block.
 void parser::select_network() NOEXCEPT
 {
     const chain::selection selected = configured.net;
@@ -164,8 +164,7 @@ void parser::select_paths() NOEXCEPT
 #endif
 }
 
-// The network of an existing store governs at its path, for commands that
-// use the store.
+// Network of existing store governs at its path, for commands that use store.
 void parser::read_envelope() NOEXCEPT
 {
     if (configured.make || configured.help || configured.hardware ||
@@ -388,9 +387,9 @@ options_metadata parser::load_environment() THROWS
     options_metadata description("environment");
     description.add_options()
     (
-        // For some reason po requires this to be a lower case name.
-        // The case must match the other declarations for it to compose.
-        // This composes with the cmdline options and inits to default path.
+        // For some reason po requires this to be a lower case name. Case must
+        // match other declarations for it to compose. Composes with cmdline
+        // options and inits to default path.
         config_variable,
         value<config::path>(&configured.file)->composing()
             /*->default_value(config_default_path())*/,
@@ -2610,6 +2609,11 @@ options_metadata parser::load_settings() THROWS
         "pool.estimate_cache_seconds",
         setting<uint16_t>(&configured.node.pool.estimate_cache_seconds),
         "Seconds that fee estimates share one projection of the pool, defaults to {} (0 disables)."
+    )
+    (
+        "pool.estimate_room",
+        setting<uint32_t>(&configured.node.pool.estimate_room),
+        "Virtual bytes of block room below a fee estimate's rate, defaults to {}."
     )
     (
         "pool.thread_priority",

@@ -32,11 +32,10 @@ class server_node;
 
 /// Declare a concrete instance of this type for client-server protocols built
 /// on tcp/ip. session_base processing performs all connection management and
-/// session tracking. This includes start/stop/disable/enable/black/whitelist.
-/// First protocol must declare options_t and channel_t. Each of the protocols
-/// are constructed and attached to a constructed instance of channel_t. The
-/// protocol construct and attachment can be overridden and/or augmented with
-/// other protocols.
+/// session tracking, including start/stop/disable/enable/black/whitelist. First
+/// protocol must declare options_t and channel_t. Each protocol is constructed
+/// and attached to a constructed instance of channel_t. Protocol construct and
+/// attachment can be overridden and/or augmented with other protocols.
 template <typename ...Protocols>
 class session_server
   : public server::session,
@@ -69,9 +68,9 @@ protected:
     using socket_ptr = network::socket::ptr;
     using channel_ptr = network::channel::ptr;
 
-    /// Inbound connection attempts are dropped unless confirmed is current,
-    /// for interfaces whose first protocol is delayed.
-    /// Used instead of suspension because that has independent start/stop.
+    /// Inbound connection attempts are dropped unless confirmed is current, for
+    /// interfaces whose first protocol is delayed. Used instead of suspension,
+    /// which has independent start/stop.
     inline bool enabled() const NOEXCEPT override
     {
         // Currently delay_inbound is the only reason to inherit node::session.
@@ -88,9 +87,9 @@ protected:
             return network::zmtp::role::undefined;
     }
 
-    /// Override to construct channel. This allows the implementation to pass
-    /// other values to protocol construction and/or select the desired channel
-    /// based on available factors (e.g. a distinct protocol version).
+    /// Override to construct channel. Allows implementation to pass other
+    /// values to protocol construction and/or select desired channel based on
+    /// available factors (e.g. a distinct protocol version).
     inline channel_ptr create_channel(
         const socket_ptr& socket) NOEXCEPT override
     {
@@ -112,10 +111,10 @@ protected:
         }
     }
 
-    /// Overridden to set channel protocols. This allows the implementation to
-    /// pass other values to protocol construction and/or select the desired
-    /// protocol based on available factors (e.g. a distinct protocol version).
-    /// Use std::dynamic_pointer_cast<channel_t>(channel) to obtain channel_t.
+    /// Overridden to set channel protocols. Allows implementation to pass other
+    /// values to protocol construction and/or select desired protocol based on
+    /// available factors (e.g. a distinct protocol version). Use
+    /// std::dynamic_pointer_cast<channel_t>(channel) to obtain channel_t.
     inline void attach_protocols(const channel_ptr& channel) NOEXCEPT override
     {
         using own = session_server<Protocols...>;

@@ -36,7 +36,8 @@ bool executor::check_store_path(bool create) const
     }
     else
     {
-        logger(std::format(BS_USING_CONFIG_FILE, system::from_path(configuration)));
+        const auto path = system::from_path(configuration);
+        logger(std::format(BS_USING_CONFIG_FILE, path));
     }
 
     using selection = system::config::selection;
@@ -52,12 +53,13 @@ bool executor::check_store_path(bool create) const
     }
 
     const auto& store = metadata_.configured.database.path;
+    const auto path = system::from_path(store);
     if (create)
     {
-        logger(std::format(BS_INITIALIZING_CHAIN, system::from_path(store)));
+        logger(std::format(BS_INITIALIZING_CHAIN, path));
         if (const auto ec = database::file::create_directory_ex(store))
         {
-            logger(std::format(BS_INITCHAIN_DIRECTORY_ERROR, system::from_path(store),
+            logger(std::format(BS_INITCHAIN_DIRECTORY_ERROR, path,
                 ec.message()));
             return false;
         }
@@ -66,7 +68,7 @@ bool executor::check_store_path(bool create) const
     {
         if (!database::file::is_directory(store))
         {
-            logger(std::format(BS_UNINITIALIZED_DATABASE, system::from_path(store)));
+            logger(std::format(BS_UNINITIALIZED_DATABASE, path));
             return false;
         }
     }

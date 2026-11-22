@@ -26,8 +26,8 @@
 namespace libbitcoin {
 namespace server {
 
-/// The bitcoind utility subgroup on the btcd endpoint, decoding scripts and
-/// validating addresses as btcd does.
+/// bitcoind utility subgroup on btcd endpoint, decoding scripts and validating
+/// addresses as btcd does.
 class BCS_API protocol_btcd_utility
   : public protocol_btcd_subgroup<protocol_bitcoind_utility>,
     protected network::tracker<protocol_btcd_utility>

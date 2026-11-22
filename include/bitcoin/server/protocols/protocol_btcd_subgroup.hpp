@@ -25,8 +25,8 @@
 namespace libbitcoin {
 namespace server {
 
-/// A bitcoind interface subgroup on the btcd endpoint, answering parameter
-/// faults, output scripts and transaction context as btcd does.
+/// bitcoind interface subgroup on btcd endpoint, answering parameter faults,
+/// output scripts and transaction context as btcd does.
 template <typename Subgroup>
 class protocol_btcd_subgroup
   : public Subgroup

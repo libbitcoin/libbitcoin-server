@@ -41,7 +41,7 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 // Start/finished (handshake).
 // ----------------------------------------------------------------------------
 
-// Session resumes the channel following return from start().
+// Session resumes channel following return from start().
 // Sends are not precluded, but no messages can be received while paused.
 void protocol_electrum_version::shake(result_handler&& handler) NOEXCEPT
 {
@@ -79,9 +79,9 @@ void protocol_electrum_version::finished(const code& ec,
 // Handler.
 // ----------------------------------------------------------------------------
 
-// A non-version opener is a pre-1.6 client. The handshake passes at the
-// minimum version, restricted until (unless) a server.version arrives.
-// The channel dispatches the opener again once the service is attached.
+// Non-version opener is a pre-1.6 client. Handshake passes at minimum version,
+// restricted until (unless) a server.version arrives. Channel dispatches opener
+// again once service is attached.
 void protocol_electrum_version::handle_unclaimed(
     const request_t&) NOEXCEPT
 {
@@ -182,10 +182,10 @@ bool protocol_electrum_version::set_version(const value_t& version) NOEXCEPT
 {
     // A non-version opener restricts negotiation to below 1.6.
     const auto minimum = options().protocol_minimum;
-    const auto maximum = channel_->restricted() ?
-        std::min(options().protocol_maximum,
-            electrum::version_to_number(electrum::restricted_maximum)) :
-        options().protocol_maximum;
+    const auto configured = options().protocol_maximum;
+    const auto cap = electrum::version_to_number(electrum::restricted_maximum);
+    const auto capped = std::min(configured, cap);
+    const auto maximum = channel_->restricted() ? capped : configured;
 
     // Below 1.4 a repeat must agree with the negotiated version.
     const auto floor = electrum::negotiate(version, minimum, maximum);

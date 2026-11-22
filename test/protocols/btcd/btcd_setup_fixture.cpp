@@ -36,8 +36,7 @@ btcd_setup_fixture::btcd_setup_fixture(const initializer& setup,
             auto& btcd = config.server.btcd;
             btcd.binds = { { BTCD_ENDPOINT } };
 
-            // 2: the ws connection, plus the plain one used by http_rpc or
-            // tcp_rpc.
+            // 2: ws connection, plus plain one used by http_rpc or tcp_rpc.
             btcd.connections = 2;
             btcd.inactivity_minutes = 1;
 
@@ -140,9 +139,9 @@ system::json::value btcd_setup_fixture::receive_notification(bool checked)
     return client_.read_frame(checked);
 }
 
-// Raw json on the plain socket, which the server detects and downgrades to a
-// newline-delimited json-rpc stream. Mutually exclusive with http_rpc, as the
-// detection is latched on the first read of the connection.
+// Raw json on plain socket, which server detects and downgrades to
+// newline-delimited json-rpc stream. Mutually exclusive with http_rpc, as
+// detection is latched on first read of connection.
 system::json::value btcd_setup_fixture::tcp_rpc(std::string_view method,
     std::string_view params)
 {

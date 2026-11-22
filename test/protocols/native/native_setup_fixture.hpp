@@ -156,9 +156,14 @@ struct native_misassociated_setup_fixture
     inline native_misassociated_setup_fixture()
       : native_setup_fixture([](test::query_t& query)
         {
-            const auto coinbase = test::block2.transactions_ptr()->front()->hash(false);
-            return test::setup_ten_block_store(query) &&
-                !query.set_code(query.to_header(test::block1_hash), database::tx_links{ query.to_tx(coinbase) }, false);
+            const auto& tx = *test::block2.transactions_ptr()->front();
+            const auto coinbase = tx.hash(false);
+            if (!test::setup_ten_block_store(query))
+                return false;
+
+            const auto header = query.to_header(test::block1_hash);
+            const database::tx_links links{ query.to_tx(coinbase) };
+            return !query.set_code(header, links, false);
         })
     {
     }
@@ -287,8 +292,7 @@ struct native_origins_hosts_setup_fixture
     }
 };
 
-// Configured with the chasers started, relay and no currency window, so that
-// the pool is open.
+// Configured with chasers started, relay and no currency window, so pool open.
 struct native_pooling_setup_fixture
   : native_setup_fixture
 {

@@ -217,7 +217,7 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
     }
 
     // Recommended to be at least one difficulty retarget period, e.g. 2016.
-    // The maximum number of headers the server will return in single request.
+    // Maximum number of headers server will return in single request.
     const auto maximum_headers = options().maximum_headers;
 
     // Returned headers are assured to be contiguous despite intervening reorg.
@@ -231,8 +231,8 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
         return;
     }
 
-    // The proof is over the last returned header, which is the last requested
-    // header only when the returned count is not reduced.
+    // Proof is over last returned header, which is last requested header only
+    // when returned count is not reduced.
     const auto proving = prove && !is_zero(links.size());
     const auto proof_height = proving ? starting + sub1(links.size()) : zero;
 
@@ -318,9 +318,9 @@ void protocol_electrum::blockchain_block_headers(size_t starting,
 
         if (proving)
         {
-            // A very slim chance of inconsistency given an intervening reorg
+            // Very slim chance of inconsistency given an intervening reorg
             // because of get_merkle_root_and_proof() and height-based calcs.
-            // This is acceptable as must be verified by caller in any case.
+            // Acceptable, as must be verified by caller in any case.
             hashes proof{};
             hash_digest root{};
             if (const auto code = query.get_merkle_root_and_proof(root, proof,

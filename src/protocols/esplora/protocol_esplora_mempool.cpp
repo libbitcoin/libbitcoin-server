@@ -40,7 +40,7 @@ constexpr std::array<size_t, 28> targets
     21, 22, 23, 24, 25, 144, 504, 1008
 };
 
-// The vsize of a fee histogram bin, and the count of recent txs (electrs).
+// The vsize of a fee histogram bin, and the count of recent txs.
 constexpr size_t histogram_bin = 50'000;
 constexpr size_t recent_count = 10;
 
@@ -203,7 +203,7 @@ void protocol_esplora::complete_get_mempool_recent(const code& ec,
     send_json(value{ std::move(recent) });
 }
 
-// A closed pool is not implemented with relay disabled, and is otherwise
+// Closed pool is not implemented with relay disabled, and is otherwise
 // unavailable until it opens.
 bool protocol_esplora::send_closed(const code& ec) NOEXCEPT
 {

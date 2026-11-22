@@ -509,8 +509,8 @@ bool protocol_bitcoind_wallet::handle_sign_message(const code& ec,
     return true;
 }
 
-bool protocol_bitcoind_wallet::handle_sign_raw_transaction_with_wallet(const code& ec,
-    rpc_interface::sign_raw_transaction_with_wallet) NOEXCEPT
+bool protocol_bitcoind_wallet::handle_sign_raw_transaction_with_wallet(
+    const code& ec, rpc_interface::sign_raw_transaction_with_wallet) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::bitcoind::method_not_found);

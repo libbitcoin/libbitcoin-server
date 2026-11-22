@@ -22,11 +22,10 @@
 #include "../../test.hpp"
 #include "../../mocks/blocks.hpp"
 
-/// The lifecycle common to the universal json-rpc service fixtures: a store,
-/// a node and a running server. A service supplies its own settings through
-/// the configurator, which is applied last so that it overrides the defaults
-/// set here, and before the store is constructed so that database settings
-/// take effect (the store snapshots them).
+/// Lifecycle common to universal json-rpc service fixtures: store, node and
+/// running server. Service supplies its own settings through configurator,
+/// applied last so it overrides defaults set here, and before store is
+/// constructed so database settings take effect (store snapshots them).
 struct rpc_setup_fixture
 {
     using initializer = std::function<bool(test::query_t&)>;
@@ -34,13 +33,13 @@ struct rpc_setup_fixture
 
     DELETE_COPY_MOVE(rpc_setup_fixture);
 
-    /// Synthesize a node chase event (e.g. a block organized after a direct
-    /// query_.set/push_confirmed) without a live p2p sync.
+    /// Synthesize node chase event (e.g. block organized after direct
+    /// query_.set/push_confirmed) without live p2p sync.
     void notify(node::event_value value);
 
 protected:
-    /// Creates and populates the store, then starts (optionally) and runs
-    /// the server. The derived fixture connects its client on return.
+    /// Creates and populates store, then starts (optionally) and runs server.
+    /// Derived fixture connects its client on return.
     rpc_setup_fixture(const initializer& setup, const configurator& configure,
         bool address_index=true, bool start=false);
     ~rpc_setup_fixture();

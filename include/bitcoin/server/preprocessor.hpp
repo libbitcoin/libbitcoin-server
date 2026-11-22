@@ -23,10 +23,9 @@
 
 #include <bitcoin/system.hpp>
 
-/// Now we use the generic helper definitions above to define BCS_API
-/// and BCS_INTERNAL. BCS_API is used for the public API symbols. It either DLL
-/// imports or DLL exports (or does nothing for static build) BCS_INTERNAL is
-/// used for non-api symbols.
+/// Generic helper definitions above define BCS_API and BCS_INTERNAL. BCS_API is
+/// for public API symbols, either DLL imports or DLL exports (or nothing for
+/// static build). BCS_INTERNAL is for non-api symbols.
 #if defined BCS_STATIC
     #define BCS_API
     #define BCS_INTERNAL

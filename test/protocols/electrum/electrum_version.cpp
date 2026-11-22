@@ -370,8 +370,8 @@ BC_AUTO_TEST_CASE(electrum__batch__result_and_error__both_delivered_in_order)
 
 BC_AUTO_TEST_CASE(electrum__batch__failed_negotiation__closed_error_batch)
 {
-    // Failed first negotiation stops the channel, which closes the open
-    // batch response (the second element is abandoned).
+    // Failed first negotiation stops channel,
+    // which closes open batch response (second element abandoned).
     const auto response = get(
         R"([{"jsonrpc":"2.0","id":3,"method":"server.version","params":["a","42"]},)"
         R"({"jsonrpc":"2.0","id":4,"method":"server.version","params":["b","1.4"]}])" "\n");

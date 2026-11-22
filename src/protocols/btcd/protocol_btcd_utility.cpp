@@ -118,8 +118,8 @@ bool protocol_btcd::handle_get_best_block(const code& ec,
     return true;
 }
 
-// Overrides the bitcoind method (btcd is attached first, so it claims the
-// request). Required, an unsubscribed method drops the request.
+// Overrides bitcoind method (btcd is attached first, so it claims request).
+// Required, an unsubscribed method drops request.
 bool protocol_btcd::handle_get_block_chain_info(const code& ec,
     btcd_interface::get_block_chain_info) NOEXCEPT
 {
@@ -392,10 +392,11 @@ bool protocol_btcd::handle_node(const code& ec, btcd_interface::node,
         const auto complete = emplace_shared<terminator::race>(
             BIND(handle_stopped, _1, gate()));
 
+        using endpoint = network::config::endpoint;
+        const auto channel_id = numeric ? identifier : zero;
+        const auto peer = numeric ? endpoint{} : endpoint{ target };
         BROADCAST(terminator, to_shared<terminator>(complete, reason,
-            numeric ? identifier : zero, numeric ?
-                network::config::endpoint{} :
-                network::config::endpoint{ target }));
+            channel_id, peer));
     }
     catch (const std::exception&)
     {

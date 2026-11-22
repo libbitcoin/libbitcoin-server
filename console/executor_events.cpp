@@ -86,10 +86,9 @@ const std::unordered_map<uint8_t, std::string> executor::fired_
 
 // Events.
 // ----------------------------------------------------------------------------
-// Eventing uses underling std::ostream. It is possible that these may throw
-// upon certain unexpected failures, such as a disconnected device. Presently
-// the writes are not wrapped in a try block (performance) but this can be
-// appplied centrally below if desired.
+// Eventing uses underlying std::ostream, which may throw upon unexpected
+// failures, such as a disconnected device. Writes are not wrapped in a try
+// block (performance), but this can be applied centrally below if desired.
 
 executor::event_sink executor::create_event_sink() const
 {

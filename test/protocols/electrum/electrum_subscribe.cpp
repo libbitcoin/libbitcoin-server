@@ -86,8 +86,8 @@ BC_AUTO_TEST_CASE(electrum__blockchain_address_subscribe__initialization__expect
 {
     BC_REQUIRE(handshake(electrum::version::v1_0));
 
-    // This validates the hash accumulator copy in get_scripthash_history() and incorporates
-    // confirmed, rooted and unrooted transactions, duplicates, and sort.
+    // Validates hash accumulator copy in get_scripthash_history() and
+    // incorporates confirmed, rooted and unrooted txs, duplicates, and sort.
     BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
     BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
@@ -327,8 +327,9 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__initialization__exp
 {
     BC_REQUIRE(handshake(electrum::version::v1_1));
 
-    // This validates the hash accumulator copy in get_scripthash_history() and incorporates
-    // confirmed, rooted and unrooted transactions, duplicates, and sort.
+    // Validates hash accumulator copy in get_scripthash_history() and
+    // incorporates confirmed, rooted and unrooted transactions, duplicates, and
+    // sort.
     BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
     BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
@@ -696,8 +697,9 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scriptpubkey_subscribe__initialization__e
 {
     BC_REQUIRE(handshake(electrum::version::v1_7));
 
-    // This validates the hash accumulator copy in get_scripthash_history() and incorporates
-    // confirmed, rooted and unrooted transactions, duplicates, and sort.
+    // Validates hash accumulator copy in get_scripthash_history() and
+    // incorporates confirmed, rooted and unrooted transactions, duplicates, and
+    // sort.
     BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
     BC_REQUIRE(query_.set(test::mock_block11, database::context{ 0, 11, 0 }, {}, false, false));
     BC_REQUIRE(query_.set(test::mock_block12, database::context{ 0, 12, 0 }, {}, false, false));
@@ -974,8 +976,8 @@ BC_AUTO_TEST_CASE(electrum__blockchain_scripthash_subscribe__reorganized_notify_
     REQUIRE_NO_THROW_TRUE(response1.at("result").is_string());
     BC_REQUIRE_EQUAL(response1.at("result").as_string(), expected_confirmed);
 
-    // Reorg resets the accumulator and clears the cursor; the following organized
-    // event re-folds the unchanged history and must reproduce the same status.
+    // Reorg resets accumulator and clears cursor; following organized event
+    // re-folds unchanged history and must reproduce same status.
     notify(node::chases::reorganized{ 0 });
     notify(node::chases::organized{ 0 });
 

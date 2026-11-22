@@ -28,7 +28,7 @@ namespace interface {
 
 /// Methods served in addition to electrum, as implemented by frigate and
 /// consumed by sparrow. Not electrum protocol methods, so not versioned by
-/// the electrum handshake.
+/// electrum handshake.
 struct sparrow_methods
 {
     static constexpr std::tuple methods

@@ -40,7 +40,7 @@ static const code internal{ server::error::btcd::internal_error };
 static const code block_not_found{ server::error::btcd::invalid_address_or_key };
 
 // mock_block10 chains onto block9 and pays found_address from its second
-// transaction only (its other outputs pay distinct key/script hashes), so a
+// transaction only (its other outputs pay distinct key/script hashes), so
 // filter watching found_address matches exactly one of its transactions.
 static const std::string found_address{ "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM" };
 static const std::string other_address{ "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn" };
@@ -69,8 +69,8 @@ BC_FIXTURE_TEST_SUITE(btcd_tests, btcd_ten_block_setup_fixture)
 
 BC_AUTO_TEST_CASE(btcd_rpc__authenticate__no_credential_configured__unauthorized)
 {
-    // Without a credential configured the connection is authorized from the
-    // start, and authenticate is invalid once authorization is established.
+    // Without credential configured connection is authorized from start, and
+    // authenticate is invalid once authorization is established.
     const auto result = rpc_error("authenticate", R"(["user","pass"])");
     BC_REQUIRE_EQUAL(result, unauthorized.value());
 }
@@ -331,8 +331,8 @@ BC_AUTO_TEST_CASE(btcd_rpc__getinfo__ten_block_store__nine)
 
 BC_AUTO_TEST_CASE(btcd_rpc__getinfo__http_post__dispatched)
 {
-    // getinfo is btcd-only, so this exercises the btcd post transport (real
-    // clients issue post-based capability checks before any ws traffic).
+    // getinfo is btcd-only, so this exercises btcd post transport (real clients
+    // issue post-based capability checks before any ws traffic).
     const auto response = http_rpc("getinfo");
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").as_object().contains("blocks"));
@@ -527,8 +527,8 @@ BC_AUTO_TEST_CASE(btcd_rpc__txacceptedverbose__transaction__delivered)
 
 // filters
 // ----------------------------------------------------------------------------
-// blocks 1-9 are p2pk coinbases with no inter-block spends, so they cannot
-// exercise address matching -- mock_block10 is added where a match is required.
+// blocks 1-9 are p2pk coinbases with no inter-block spends, so cannot exercise
+// address matching -- mock_block10 added where match required.
 
 BC_AUTO_TEST_CASE(btcd_rpc__loadtxfilter__valid_address__null_result)
 {
@@ -573,8 +573,8 @@ BC_AUTO_TEST_CASE(btcd_rpc__rescanblocks__null_hashes__empty_result)
 
 BC_AUTO_TEST_CASE(btcd_rpc__rescanblocks__unknown_hash__not_found)
 {
-    // 'blockhashes' is one positional arg that is itself an array, so the
-    // wire params need double-wrapping: [[...]], not [...].
+    // 'blockhashes' is one positional arg, itself an array, so wire params need
+    // double-wrapping: [[...]], not [...].
     const auto result = rpc_error("rescanblocks", std::format(R"([["{}"]])", encode_hash(null_hash)));
     BC_REQUIRE_EQUAL(result, block_not_found.value());
 }
@@ -680,7 +680,7 @@ BC_AUTO_TEST_CASE(btcd_rpc__blockdisconnected__reorganized__delivered)
 // transactions
 // ----------------------------------------------------------------------------
 // found_address is paid only by mock_block10's second transaction (see above),
-// so it carries exactly one history entry once that block is confirmed.
+// so carries exactly one history entry once block confirmed.
 
 BC_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__unused_address__no_tx_info)
 {
@@ -793,8 +793,8 @@ BC_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__vinextra__prevout_injected)
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
 
-    // The paying transaction spends the block1 and block2 coinbases (50 btc).
-    // The coinbases are p2pk, which has no address (btcd fabricates one).
+    // Paying transaction spends block1 and block2 coinbases (50 btc).
+    // Coinbases are p2pk, which has no address (btcd fabricates one).
     const auto& vin = response.at("result").as_array().front().at("vin").as_array();
     BC_REQUIRE_EQUAL(vin.size(), 2u);
     BC_REQUIRE_EQUAL(vin.front().at("prevOut").at("value").as_double(), 50.0);
@@ -1081,8 +1081,8 @@ BC_AUTO_TEST_CASE(btcd_rpc__help__unknown_command__invalid_parameter)
 
 // tcp (downgrade)
 // ----------------------------------------------------------------------------
-// btcd is served over the same universal json-rpc channel as bitcoind, so raw
-// json on a connection downgrades it from http to a newline-delimited stream.
+// btcd is served over same universal json-rpc channel as bitcoind, so raw json
+// on connection downgrades it from http to newline-delimited stream.
 
 BC_AUTO_TEST_CASE(btcd_rpc__getblockcount__downgraded__nine)
 {
@@ -1175,9 +1175,9 @@ BC_AUTO_TEST_CASE(btcd_rpc__getblockchaininfo__bip9_softforks_taproot__not_yet_a
     BC_REQUIRE(!result.at("bip9_softforks").as_object().contains("taproot"));
 }
 
-// The override serves the base fields, and answers exactly once -- the
-// blockchain subgroup also defines the method, so without the claim guard
-// both would respond and the follow-up would read the stray response.
+// Override serves base fields, and answers exactly once -- blockchain subgroup
+// also defines method, so without claim guard both would respond and follow-up
+// would read stray response.
 BC_AUTO_TEST_CASE(btcd_rpc__getblockchaininfo__override__serves_core_fields_once)
 {
     const auto response = rpc("getblockchaininfo");
@@ -1463,8 +1463,8 @@ BC_AUTO_TEST_CASE(btcd_rpc__blockdisconnected__dangling_link__not_delivered)
 
 BC_AUTO_TEST_SUITE_END()
 
-// Filter limit (btcd.maximum_filters): loadtxfilter watches are bounded per
-// channel (DoS guard).
+// Filter limit (btcd.maximum_filters):
+// loadtxfilter watches bounded per channel (DoS guard).
 // ----------------------------------------------------------------------------
 
 BC_FIXTURE_TEST_SUITE(btcd_limited_filter_tests, btcd_limited_filter_setup_fixture)
@@ -1514,7 +1514,7 @@ BC_AUTO_TEST_CASE(btcd_limited_filter__recvtx__spent_watch_over_limit__dropped)
 BC_AUTO_TEST_SUITE_END()
 
 // Address index requirement: address watching and rescan are index queries,
-// not_implemented when the index is disabled.
+// not_implemented when index disabled.
 // ----------------------------------------------------------------------------
 
 BC_FIXTURE_TEST_SUITE(btcd_no_index_tests, btcd_no_index_setup_fixture)
@@ -1556,9 +1556,9 @@ BC_AUTO_TEST_CASE(btcd_no_index__notifyreceived__address__not_implemented)
 
 BC_AUTO_TEST_SUITE_END()
 
-// Method-scoped credentials (channel_http::permitted()): a credential's
-// optional 'user:pass:method,...' suffix restricts which methods it may
-// call, enforced over ws by protocol_btcd::dispatch_websocket.
+// Method-scoped credentials (channel_http::permitted()): credential's optional
+// 'user:pass:method,...' suffix restricts which methods it may call, enforced
+// over ws by protocol_btcd::dispatch_websocket.
 // ----------------------------------------------------------------------------
 
 BC_FIXTURE_TEST_SUITE(btcd_scoped_credential_tests, btcd_scoped_credential_setup_fixture)
@@ -1609,10 +1609,9 @@ BC_AUTO_TEST_CASE(btcd_scoped_credential__negotiateversion__http_post_unlisted_m
 
 BC_AUTO_TEST_SUITE_END()
 
-// authenticate (protocol_btcd::handle_authenticate): exercises the
-// credential-configured branch, not covered by btcd_tests above (whose
-// fixture leaves btcd.credential unset, so every one of those connections
-// takes the no-op path).
+// authenticate (protocol_btcd::handle_authenticate): exercises
+// credential-configured branch, not covered by btcd_tests above (whose fixture
+// leaves btcd.credential unset, so all those connections take no-op path).
 // ----------------------------------------------------------------------------
 
 BC_FIXTURE_TEST_SUITE(btcd_auth_tests, btcd_credentialed_setup_fixture)
@@ -1643,8 +1642,8 @@ BC_AUTO_TEST_CASE(btcd_auth__authenticate__wrong_password__unauthorized)
 
 BC_AUTO_TEST_CASE(btcd_auth__session__not_authenticated__unauthorized)
 {
-    // 'session' as the first message, with a credential configured: any
-    // method but authenticate is invalid until authorization is established.
+    // 'session' as first message, with credential configured: any method but
+    // authenticate is invalid until authorization is established.
     BC_REQUIRE_EQUAL(rpc_error("session"), unauthorized.value());
 }
 
@@ -1669,7 +1668,7 @@ BC_AUTO_TEST_SUITE_END()
 
 // taproot active
 // ----------------------------------------------------------------------------
-// Taproot is flagged in the top header context.
+// Taproot flagged in top header context.
 
 BC_FIXTURE_TEST_SUITE(btcd_taproot_active_tests, btcd_taproot_active_setup_fixture)
 

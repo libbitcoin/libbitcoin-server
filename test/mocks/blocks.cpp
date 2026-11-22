@@ -119,8 +119,8 @@ bool setup_ten_block_store(query_t& query, uint32_t top_flags) NOEXCEPT
         query.push_confirmed(query.to_header(block9_hash), true);
 }
 
-// Blocks one through nine archived pruned and candidate, with bip141 active
-// at block9 for a block9 milestone.
+// Blocks one through nine archived pruned and candidate, bip141 active at
+// block9 for block9 milestone.
 bool setup_ten_block_pruned_store(query_t& query) NOEXCEPT
 {
     constexpr auto bip141 = system::chain::flags::bip141_rule;
@@ -936,9 +936,9 @@ const transaction tx2b
     }
 };
 
-// Broadcast validation requires a spendable prevout, so unlike the other
-// mocks these scripts must actually evaluate. The prevout leaves true on
-// the stack, so the spend requires no signature (anyone-can-spend).
+// Broadcast validation requires spendable prevout, so unlike
+// other mocks these scripts must evaluate. Prevout leaves true
+// on stack, so spend requires no signature (anyone-can-spend).
 const block block1c
 {
     header
@@ -979,8 +979,8 @@ const block block1c
     }
 };
 
-// Spends the block1c output, leaving a fee. Not segregated, as bip141 is
-// not active at the height of the mock stores.
+// Spends block1c output, leaving fee. Not segregated, as bip141 not active at
+// height of mock stores.
 const transaction tx1c
 {
     0x01,           // version

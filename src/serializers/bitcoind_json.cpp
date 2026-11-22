@@ -31,8 +31,10 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 system::json::value to_btc(uint64_t satoshis) NOEXCEPT
 {
-    return system::json::decimal{ sign_cast<int64_t>(satoshis),
-        btc_decimal_places };
+    return system::json::decimal
+    {
+        sign_cast<int64_t>(satoshis), btc_decimal_places
+    };
 }
 
 // Clamped ratio of validated blocks to chain height.
@@ -58,7 +60,7 @@ network::rpc::object_t chain_states_entry(
     const auto bits = header->bits();
     return object_t
     {
-        // bitcoind OB1 error ("blocks" wants height).
+        // bitcoind "blocks" is a height, not a count.
         { "blocks", to64(height) },
         { "bestblockhash", encode_hash(query.get_header_key(link)) },
         { "bits", encode_base16(to_big_endian(bits)) },
@@ -84,8 +86,8 @@ void inject_block_context(system::json::object& out,
     out["height"] = height;
 
     // bitcoind reports -1 confirmations for a block not on the active chain.
-    out["confirmations"] = confirmed ?
-        to_signed(add1(floored_subtract(top, height))) : -1;
+    const auto confirmations = to_signed(add1(floored_subtract(top, height)));
+    out["confirmations"] = confirmed ? confirmations : -1;
     out["mediantime"] = median_time(query, settings, link);
 
     // Cumulative work to this block, big-endian per bitcoind chainwork.
@@ -283,8 +285,8 @@ std::string chain_name(const system::settings& settings) NOEXCEPT
     }
 }
 
-// Shared by the bitcoind blockchain subgroup and the btcd endpoint, which
-// augments the result with bip9_softforks (required by lnd).
+// Shared by bitcoind blockchain subgroup and btcd endpoint, which augments
+// result with bip9_softforks (required by lnd).
 bool chain_info(network::rpc::object_t& out,
     const node::query& query, const system::settings& settings,
     bool pruned, bool current) NOEXCEPT
@@ -303,7 +305,7 @@ bool chain_info(network::rpc::object_t& out,
     const auto bits = header->bits();
     out = network::rpc::object_t
     {
-        // bitcoind OB1 error ("blocks" wants height).
+        // bitcoind "blocks" is a height, not a count.
         { "chain", chain_name(settings) },
         { "blocks", to64(blocks) },
         { "headers", to64(headers) },
@@ -459,8 +461,8 @@ bool raw_mempool(system::json::value& out, const node::query& query,
     return true;
 }
 
-// The pool is stored, so usage is the size of its tables, and the maximum is
-// the space available to the store (shared with all tables and the volume).
+// Pool is stored, so usage is size of its tables, maximum is space available to
+// store (shared with all tables and volume).
 bool mempool_info(system::json::object& out, const node::query& query,
     const database::fee_rates& rates, const std::filesystem::path& store,
     uint64_t minimum, uint64_t relay, uint64_t increment) NOEXCEPT

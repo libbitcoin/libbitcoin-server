@@ -167,8 +167,8 @@ static const chain::transaction simple_send
     0u
 };
 
-/// Silent payments enabled from genesis, with the simple send (unconfirmed)
-/// archived and indexed.
+/// Silent payments enabled from genesis,
+/// simple send (unconfirmed) archived and indexed.
 struct sparrow_silent_setup_fixture
   : electrum_setup_fixture
 {
@@ -223,18 +223,17 @@ BC_AUTO_TEST_CASE(sparrow__blockchain_silentpayments_subscribe__indexed__result_
 
 BC_AUTO_TEST_SUITE_END()
 
-/// The simple send indexed against the block five coinbase (tx link 5), so
-/// the row starts the scan of blocks at or above five, with every block
-/// mapped as the transaction chaser would map it (the node is current).
+/// The simple send indexed at tx link 5, with every block's scan start mapped.
 struct sparrow_silent_mapped_setup_fixture
   : electrum_setup_fixture
 {
     inline sparrow_silent_mapped_setup_fixture()
       : electrum_setup_fixture([](test::query_t& query)
         {
+            const auto genesis = test::genesis.hash();
             return test::setup_ten_block_store(query)
                 && query.set_silent(5, simple_send)
-                && query.set_scan_start(query.to_header(test::genesis.hash()), 0)
+                && query.set_scan_start(query.to_header(genesis), 0)
                 && query.set_scan_start(query.to_header(test::block1_hash), 0)
                 && query.set_scan_start(query.to_header(test::block2_hash), 0)
                 && query.set_scan_start(query.to_header(test::block3_hash), 0)

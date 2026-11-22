@@ -42,12 +42,12 @@ struct bitcoind_setup_fixture
         const configurator& configure={}, bool start=false);
     ~bitcoind_setup_fixture();
 
-    // JSON-RPC 2.0 over HTTP POST to "/". params is a raw json value (array or
-    // object). Returns the parsed json-rpc response object (with result/error).
+    // JSON-RPC 2.0 over HTTP POST to "/". params is raw json value (array or
+    // object). Returns parsed json-rpc response object (with result/error).
     system::json::value rpc(std::string_view method, std::string_view params="[]");
 
-    // JSON-RPC over HTTP POST to "/" with a raw body (e.g. a batch). Returns
-    // the parsed json response, or {"dropped":true} if the channel dropped.
+    // JSON-RPC over HTTP POST to "/" with raw body (e.g. batch). Returns parsed
+    // json response, or {"dropped":true} if channel dropped.
     system::json::value rpc_body(std::string_view body);
 
     // As rpc_body(), returning only the http status.
@@ -57,8 +57,8 @@ struct bitcoind_setup_fixture
     system::json::value rpc_typed(std::string_view body,
         std::string_view content_type);
 
-    // JSON-RPC 2.0 over raw tcp (no http), which downgrades the connection.
-    // Returns the parsed json-rpc response object, or {"dropped":true}.
+    // JSON-RPC 2.0 over raw tcp (no http), which downgrades connection. Returns
+    // parsed json-rpc response object, or {"dropped":true}.
     system::json::value tcp_rpc(std::string_view method,
         std::string_view params="[]");
 
@@ -142,8 +142,8 @@ struct bitcoind_utxo_disabled_setup_fixture
     }
 };
 
-// Configured with a credential -- for tests that verify authorization is
-// established by the upgrade request, as ws frames carry no headers.
+// Configured with credential -- for tests that verify authorization is
+// established by upgrade request, as ws frames carry no headers.
 struct bitcoind_credentialed_setup_fixture
   : bitcoind_setup_fixture
 {
@@ -162,8 +162,8 @@ struct bitcoind_credentialed_setup_fixture
     }
 };
 
-// Configured with a credential scoped to a single method -- for tests that
-// verify permitted() refuses at the transport (post 403, websocket stop).
+// Configured with credential scoped to single method -- for tests that verify
+// permitted() refuses at transport (post 403, websocket stop).
 struct bitcoind_scoped_credential_setup_fixture
   : bitcoind_setup_fixture
 {
@@ -175,16 +175,18 @@ struct bitcoind_scoped_credential_setup_fixture
         {
             config.server.bitcoind.credentials =
             {
-                { BITCOIND_TEST_USERNAME ":" BITCOIND_TEST_PASSWORD ":"
-                    BITCOIND_TEST_SCOPED_METHOD }
+                {
+                    BITCOIND_TEST_USERNAME ":" BITCOIND_TEST_PASSWORD ":"
+                    BITCOIND_TEST_SCOPED_METHOD
+                }
             };
         })
     {
     }
 };
 
-// Configured with no currency window -- for tests of state that requires the
-// confirmed top to be current (the test store is historical).
+// Configured with no currency window -- for tests of state requiring confirmed
+// top to be current (test store is historical).
 struct bitcoind_current_setup_fixture
   : bitcoind_setup_fixture
 {
@@ -216,8 +218,8 @@ struct bitcoind_no_address_setup_fixture
     }
 };
 
-// Configured with peer rate limits -- for the effective upload target, which
-// is the most that the configured connections can send in the timeframe.
+// Configured with peer rate limits -- for effective upload target, the most
+// configured connections can send in timeframe.
 struct bitcoind_limited_setup_fixture
   : bitcoind_setup_fixture
 {
@@ -236,7 +238,7 @@ struct bitcoind_limited_setup_fixture
     }
 };
 
-// Configured with an outbound socks proxy and tor gossip -- for the network
+// Configured with outbound socks proxy and tor gossip -- for network
 // reachability and proxy reporting of getnetworkinfo.
 struct bitcoind_proxied_setup_fixture
   : bitcoind_setup_fixture
@@ -306,15 +308,15 @@ struct bitcoind_dangling_setup_fixture
     }
 };
 
-// Configured with a populated address pool -- loaded from a hosts file.
-// The pool is loaded by the start sequence, which the base fixture bypasses.
+// Configured with populated address pool -- loaded from hosts file. Pool is
+// loaded by start sequence, which base fixture bypasses.
 struct bitcoind_hosts_setup_fixture
   : bitcoind_setup_fixture
 {
     inline bitcoind_hosts_setup_fixture()
       : bitcoind_setup_fixture([](test::query_t& query)
         {
-            // Write a hosts file (10 ipv4, 2 ipv6) for the pool to load.
+            // Write hosts file (10 ipv4, 2 ipv6) for pool to load.
             // Services must satisfy node.services_required (network|witness).
             system::ofstream file{ TEST_DIRECTORY + "/peers.cache" };
             file << "10.0.0.1:42/0/9\n";
@@ -340,8 +342,8 @@ struct bitcoind_hosts_setup_fixture
     }
 };
 
-// Configured with the chasers started and a currency window -- the test store
-// is historical, so the tx pool is closed and the tx chaser refuses submission.
+// Configured with chasers started and currency window -- test store is
+// historical, so tx pool is closed and tx chaser refuses submission.
 struct bitcoind_closed_setup_fixture
   : bitcoind_setup_fixture
 {
@@ -381,7 +383,8 @@ struct bitcoind_csv_unconfirmed_setup_fixture
         {
             const auto stored = test::setup_ten_block_store(query);
             const auto link = query.to_header(test::block9_hash);
-            return stored && query.set_activation(system::chain::flags::bip68_rule, link);
+            const auto rule = system::chain::flags::bip68_rule;
+            return stored && query.set_activation(rule, link);
         })
     {
     }
@@ -404,8 +407,8 @@ struct bitcoind_taproot_active_setup_fixture
     }
 };
 
-// Configured with the chasers started and no currency window -- for tests of
-// transaction submission, which the tx chaser refuses unless the top is current.
+// Configured with chasers started and no currency window -- for tests of
+// transaction submission, which tx chaser refuses unless top is current.
 struct bitcoind_submit_setup_fixture
   : bitcoind_setup_fixture
 {
@@ -453,8 +456,8 @@ struct bitcoind_unfiltered_setup_fixture
     }
 };
 
-// The ten block store with its blocks also candidate, and mock block 10 a
-// candidate above the confirmed top (block or header only).
+// Ten block store with its blocks also candidate, and mock block 10 candidate
+// above confirmed top (block or header only).
 bool setup_candidate_store(test::query_t& query, bool associated) NOEXCEPT;
 
 struct bitcoind_candidate_setup_fixture
@@ -570,8 +573,8 @@ struct zmq_bound_setup_fixture
     }
 };
 
-// Configured with a credential scoped to a single rest method -- for tests
-// that verify rest and rpc method names are permitted separately.
+// Configured with credential scoped to single rest method -- for tests that
+// verify rest and rpc method names are permitted separately.
 struct bitcoind_rest_credential_setup_fixture
   : bitcoind_setup_fixture
 {
@@ -583,8 +586,10 @@ struct bitcoind_rest_credential_setup_fixture
         {
             config.server.bitcoind.credentials =
             {
-                { BITCOIND_TEST_USERNAME ":" BITCOIND_TEST_PASSWORD ":"
-                    BITCOIND_TEST_REST_METHOD }
+                {
+                    BITCOIND_TEST_USERNAME ":" BITCOIND_TEST_PASSWORD ":"
+                    BITCOIND_TEST_REST_METHOD
+                }
             };
         })
     {

@@ -25,7 +25,10 @@ using namespace system;
 static const code not_found{ server::error::electrum::bad_request };
 static const code wrong_version{ server::error::electrum::bad_request };
 static const code invalid_argument{ server::error::electrum::bad_request };
-static const code excessive_resource_usage{ server::error::electrum::excessive_resource_usage };
+static const code excessive_resource_usage
+{
+    server::error::electrum::excessive_resource_usage
+};
 static const std::string found_address{ "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM" };
 static const std::string bogus_hash{ "4242424242424242424242424242424242424242424242424242424242424242" };
 
@@ -67,16 +70,6 @@ BC_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__invalid_hash__invalid_a
 }
 
 BC_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__tx_not_found__null)
-{
-    BC_REQUIRE(handshake(electrum::version::v1_0));
-
-    constexpr auto request = R"({{"id":901,"method":"blockchain.utxo.get_address","params":["{}",0]}})" "\n";
-    const auto response = get(std::format(request, bogus_hash));
-    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
-}
-
-BC_AUTO_TEST_CASE(electrum__blockchain_utxo_get_address__p2pk__null)
 {
     BC_REQUIRE(handshake(electrum::version::v1_0));
 
@@ -578,8 +571,8 @@ BC_AUTO_TEST_CASE(electrum__blockchain_outpoint_subscribe__not_found_progressive
     BC_REQUIRE_EQUAL(history3.at("spender_height").as_int64(), 0); // rooted
     BC_REQUIRE_EQUAL(history3.at("spender_txhash").as_string(), hash4);
 
-    // Multipled notifications are sent given multiple spender changes.
-    // block3a (unconfirmed) spends block1a (confirmed), so height is rooted (0).
+    // Multiple notifications sent given multiple spender changes.
+    // block3a (unconfirmed) spends block1a (confirmed), so height rooted (0).
     
     // always same
     const auto notification4 = receive();

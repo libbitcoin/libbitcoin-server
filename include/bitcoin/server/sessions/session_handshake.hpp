@@ -50,7 +50,7 @@ public:
 
 protected:
     /// Overridden to implement a connection handshake. Handshake protocol(s)
-    /// must invoke handler one time at completion. Use 
+    /// must invoke handler one time at completion. Use
     /// std::dynamic_pointer_cast<channel_t>(channel) to obtain channel_t.
     inline void attach_handshake(const base::channel_ptr& channel,
         network::result_handler&& handler) NOEXCEPT override

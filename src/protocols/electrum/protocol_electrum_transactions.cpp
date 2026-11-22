@@ -36,8 +36,8 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 // The specification requires that at least 25 transactions are accepted.
 constexpr size_t maximum_test_txs = 25;
 
-// Electrum sends a single value param (invalid json-rpc). This is enabled via
-// the lax json-rpc body value !strict option, mapping the singleton to array.
+// Electrum sends a single value param (invalid json-rpc), enabled via lax
+// json-rpc body value !strict option, mapping singleton to array.
 void protocol_electrum::handle_blockchain_transaction_broadcast(const code& ec,
     rpc_interface::blockchain_transaction_broadcast,
     const std::string& raw_tx) NOEXCEPT
@@ -477,8 +477,8 @@ void protocol_electrum::handle_submit_package(const code& ec, size_t index,
     POST(complete_submit_package, ec, index, txs, gate);
 }
 
-// The package is accepted as a whole, so a failure is reported against the one
-// tx that caused it, and the others are neither accepted nor in error.
+// Package is accepted as a whole, so failure is reported against the one tx
+// that caused it, and others are neither accepted nor in error.
 void protocol_electrum::complete_submit_package(const code& ec, size_t index,
     const chain::transactions_cptr& txs, const gate_t::ptr&) NOEXCEPT
 {

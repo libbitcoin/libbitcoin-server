@@ -23,8 +23,8 @@ using namespace interface;
 // setup
 // -----------------------------------------------------------------------------
 
-// Keyed by name, so that assertions are independent of interface order. A
-// misspelled name matches neither, failing both btcd_served and btcd_unserved.
+// Keyed by name, so assertions independent of interface order. Misspelled name
+// matches neither, failing both btcd_served and btcd_unserved.
 constexpr bool btcd_declared(const std::string_view& name, bool implemented) NOEXCEPT
 {
     auto result = false;
@@ -50,21 +50,18 @@ constexpr bool btcd_unserved(const std::string_view& name) NOEXCEPT
 // btcd_methods::implemented
 // -----------------------------------------------------------------------------
 
-// These are dispatchable but answer not_implemented (see protocol_btcd).
-// No mempool in v4, so unconfirmed-tx notification has no substitute.
 static_assert(btcd_served("notifynewtransactions"));
 static_assert(btcd_served("stopnotifynewtransactions"));
 
-// notifyreceived/notifyspent are served at confirmed-only fidelity (no
-// mempool in v4), reusing loadtxfilter's cursor-based matching -- see
-// protocol_btcd_filter.cpp.
+// notifyreceived/notifyspent are served at confirmed-only fidelity, reusing
+// loadtxfilter's cursor-based matching (see protocol_btcd_filter.cpp).
 static_assert(btcd_served("notifyreceived"));
 static_assert(btcd_served("stopnotifyreceived"));
 static_assert(btcd_served("notifyspent"));
 static_assert(btcd_served("stopnotifyspent"));
 
-// rescan is served for the empty addresses/outpoints form (btcwallet sync
-// bootstrap), so it is published despite its group.
+// rescan served for empty addresses/outpoints form (btcwallet sync bootstrap),
+// so published despite its group.
 static_assert(btcd_served("rescan"));
 
 // A name absent from the interface satisfies neither.

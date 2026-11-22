@@ -53,8 +53,7 @@ public:
     void start() NOEXCEPT override;
 
 protected:
-    /// Answer a submission the pool did not accept (a pooled duplicate is
-    /// accepted).
+    /// Answer a submission pool did not accept (pooled duplicate is accepted).
     virtual void send_rejected(const code& ec,
         const system::chain::transaction& tx) NOEXCEPT;
 

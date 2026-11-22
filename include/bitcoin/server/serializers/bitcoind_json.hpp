@@ -67,8 +67,8 @@ BCS_API system::json::value to_script_public_key(
     const system::chain::script& script, uint8_t p2kh, uint8_t p2sh,
     const std::string& witness, uint32_t flags) NOEXCEPT;
 
-/// Append the block's receive/spend activity on the watched scripts (hex
-/// encoded), requires populate_without_metadata (getdescriptoractivity).
+/// Append block's receive/spend activity on watched scripts (hex encoded),
+/// requires populate_without_metadata (getdescriptoractivity).
 BCS_API void inject_activity(network::rpc::array_t& out,
     const system::chain::block& block, size_t height,
     const std::string& blockhash,
@@ -82,8 +82,8 @@ BCS_API void inject_activity(network::rpc::array_t& out,
     const std::unordered_set<std::string>& watch, uint8_t p2kh,
     uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT;
 
-/// The submitpackage result of a submitted package, with the failing tx at
-/// index. False if the store is inconsistent, the caller sends the error.
+/// submitpackage result of a submitted package, with failing tx at index. False
+/// if store is inconsistent, caller sends error.
 BCS_API bool package_result(system::json::object& out,
     const node::query& query, const code& ec, size_t index,
     const system::chain::transaction_cptrs& txs) NOEXCEPT;
@@ -100,8 +100,7 @@ BCS_API bool mempool_txs(system::json::value& out, const node::query& query,
 BCS_API bool raw_mempool(system::json::value& out, const node::query& query,
     const database::tx_links& links, bool verbose, bool sequence) NOEXCEPT;
 
-/// The getmempoolinfo result of the fee rates, with usage and maximum as
-/// store sizes.
+/// getmempoolinfo result of fee rates, with usage and maximum as store sizes.
 BCS_API bool mempool_info(system::json::object& out,
     const node::query& query, const database::fee_rates& rates,
     const std::filesystem::path& store, uint64_t minimum, uint64_t relay,
@@ -110,8 +109,8 @@ BCS_API bool mempool_info(system::json::object& out,
 /// The bitcoind chain name of the genesis network.
 BCS_API std::string chain_name(const system::settings& settings) NOEXCEPT;
 
-/// The getblockchaininfo result, including bip9_softforks (required by lnd).
-/// False if the store is inconsistent, the caller sends the error.
+/// getblockchaininfo result, including bip9_softforks (required by lnd).
+/// False if store is inconsistent, caller sends error.
 BCS_API bool chain_info(network::rpc::object_t& out,
     const node::query& query, const system::settings& settings,
     bool pruned, bool current) NOEXCEPT;

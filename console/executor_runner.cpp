@@ -62,9 +62,9 @@ void executor::subscribe_connect()
         },
         [&](const code&, network::net::object_key)
         {
-            // By not handling it is possible stop could fire before complete.
-            // But the handler is not required for termination, so this is ok.
-            // The error code in the handler can be used to differentiate.
+            // By not handling, stop could fire before complete. But handler is
+            // not required for termination, so this is ok. Error code in
+            // handler can be used to differentiate.
         }
     );
 }
@@ -89,9 +89,9 @@ void executor::subscribe_close()
         },
         [&](const code&, network::net::object_key)
         {
-            // By not handling it is possible stop could fire before complete.
-            // But the handler is not required for termination, so this is ok.
-            // The error code in the handler can be used to differentiate.
+            // By not handling, stop could fire before complete. But handler is
+            // not required for termination, so this is ok. Error code in
+            // handler can be used to differentiate.
         }
     );
 }

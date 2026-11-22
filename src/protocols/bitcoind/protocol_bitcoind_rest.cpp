@@ -116,11 +116,11 @@ void protocol_bitcoind_rest::handle_receive_get(const code& ec,
         return;
     }
 
-    // The get is saved off during asynchronous handling and used by the
-    // senders to formulate response headers, isolating handlers from http.
+    // Get is saved off during asynchronous handling and used by senders to
+    // formulate response headers, isolating handlers from http.
     set_request(get);
 
-    // Parse the REST url into a json-rpc model and dispatch to a handler.
+    // Parse REST url into json-rpc model and dispatch to handler.
     // Malformed parameters are bad requests, unknown targets are not found.
     request_t model{};
     const auto target = get->target();
@@ -970,8 +970,7 @@ void protocol_bitcoind_rest::complete_mempool(const code& ec,
     send_json(std::move(out));
 }
 
-// The minimum is that sent to peers (feefilter), while the relay minimum is
-// the configured rate.
+// Minimum is that sent to peers (feefilter), relay minimum is configured rate.
 bool protocol_bitcoind_rest::handle_get_mempool_information(const code& ec,
     rest_interface::mempool_information) NOEXCEPT
 {

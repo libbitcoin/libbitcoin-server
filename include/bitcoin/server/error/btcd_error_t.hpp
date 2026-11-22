@@ -79,17 +79,17 @@ enum error_t : int32_t
 // No current need for error_code equivalence mapping.
 DECLARE_ERROR_T_CODE_CATEGORY(error, BCS_API);
 
-/// Map a foreign category code to the btcd code space, where a store fault
-/// is internal and any other failure is reported as the given code.
-/// A code of this category passes through unchanged.
+/// Map foreign category code to btcd code space, where store fault is internal
+/// and any other failure is reported as given code.
+/// Code of this category passes through unchanged.
 BCS_API code translate(const code& ec, error_t failure) NOEXCEPT;
 
-/// Map a dispatch parameter fault to invalid params, as btcd reports any.
-/// Any other code is mapped to success.
+/// Map dispatch parameter fault to invalid params, as btcd reports any. Any
+/// other code is mapped to success.
 BCS_API code parameter_error(const code& ec) NOEXCEPT;
 
-/// The btcd reject text and code for a validation code, the message and
-/// verify_rejected otherwise.
+/// btcd reject text and code for validation code,
+/// message and verify_rejected otherwise.
 BCS_API error_t reject(std::string& out, const code& ec) NOEXCEPT;
 
 } // namespace btcd

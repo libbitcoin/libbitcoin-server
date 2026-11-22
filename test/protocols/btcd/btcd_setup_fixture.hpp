@@ -41,8 +41,8 @@ struct btcd_setup_fixture
         bool address_index=true, const configurator& configure={});
     ~btcd_setup_fixture();
 
-    // JSON-RPC 1.0 over websocket. params is a raw json array.
-    // Returns the parsed json-rpc response object (result/error).
+    // JSON-RPC 1.0 over websocket. params is raw json array. Returns parsed
+    // json-rpc response object (result/error).
     system::json::value rpc(std::string_view method,
         std::string_view params = "[]");
 
@@ -53,8 +53,8 @@ struct btcd_setup_fixture
     // Negotiate exactly the interface version, as the channel opener.
     bool negotiate(server::interface::bitcoind::version version);
 
-    // Authorize the connection (btcd's in-band credential method), for tests
-    // that require it as a precondition -- mirrors electrum's handshake().
+    // Authorize connection (btcd's in-band credential method), for tests that
+    // require it as precondition -- mirrors electrum's handshake().
     bool authenticate(const std::string& username=BTCD_TEST_USERNAME,
         const std::string& password=BTCD_TEST_PASSWORD);
 
@@ -86,8 +86,8 @@ struct btcd_setup_fixture
         std::string_view params, const std::string& username,
         const std::string& password);
 
-    // Read one further (unprompted) server push, e.g. a blockconnected
-    // notification. Returns the parsed json-rpc notification object.
+    // Read one further (unprompted) server push, e.g. blockconnected
+    // notification. Returns parsed json-rpc notification object.
     system::json::value receive_notification(bool checked=true);
 
 private:
@@ -110,9 +110,9 @@ struct btcd_ten_block_setup_fixture
     }
 };
 
-// Configured with an unscoped credential -- for tests that exercise the
-// in-band 'authenticate' call itself (success, wrong-password rejection,
-// calling another method before authenticating).
+// Configured with unscoped credential -- for tests that exercise in-band
+// 'authenticate' call itself (success, wrong-password rejection, calling
+// another method before authenticating).
 struct btcd_credentialed_setup_fixture
   : btcd_setup_fixture
 {
@@ -131,9 +131,9 @@ struct btcd_credentialed_setup_fixture
     }
 };
 
-// Configured with a credential scoped to a single method -- for tests that
-// verify channel_http::permitted() enforces per-method credential scoping
-// over ws once authenticated.
+// Configured with credential scoped to single method -- for tests that
+// verify channel_http::permitted() enforces per-method credential
+// scoping over ws once authenticated.
 struct btcd_scoped_credential_setup_fixture
   : btcd_setup_fixture
 {
@@ -145,15 +145,17 @@ struct btcd_scoped_credential_setup_fixture
         {
             config.server.btcd.credentials =
             {
-                { BTCD_TEST_USERNAME ":" BTCD_TEST_PASSWORD ":"
-                    BTCD_TEST_SCOPED_METHOD }
+                {
+                    BTCD_TEST_USERNAME ":" BTCD_TEST_PASSWORD ":"
+                    BTCD_TEST_SCOPED_METHOD
+                }
             };
         })
     {
     }
 };
 
-// Configured with a single-watch filter limit -- for tests that verify
+// Configured with single-watch filter limit -- for tests that verify
 // loadtxfilter enforces maximum_filters.
 struct btcd_limited_filter_setup_fixture
   : btcd_setup_fixture
@@ -170,8 +172,8 @@ struct btcd_limited_filter_setup_fixture
     }
 };
 
-// Configured without the address index -- for tests that verify address
-// watching and rescan report not_implemented.
+// Configured without address index -- for tests that verify address watching
+// and rescan report not_implemented.
 struct btcd_no_index_setup_fixture
   : btcd_setup_fixture
 {

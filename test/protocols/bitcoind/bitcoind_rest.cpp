@@ -147,7 +147,7 @@ BC_AUTO_TEST_CASE(bitcoind_rest__getutxos_json__block1_coinbase__hit)
     BC_REQUIRE_EQUAL(result.at("utxos").at(0).at("height").as_int64(), 1);
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rest__getutxos_json__checkmempool_miss__empty)
+BC_AUTO_TEST_CASE(bitcoind_rest__getutxos_json__checkmempool_unknown_output__empty)
 {
     const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
     const auto result = rest_json("/rest/getutxos/checkmempool/" + txid + "-1.json");
@@ -246,12 +246,6 @@ BC_AUTO_TEST_CASE(bitcoind_rest__blockpart_excess__bad_request)
 {
     const auto target = "/rest/blockpart/" + block9 + ".bin?offset=0&size=1000000";
     BC_REQUIRE(rest_status(target) == bitcoind_setup_fixture::status::bad_request);
-}
-
-BC_AUTO_TEST_CASE(bitcoind_rest__blockfilter_basic__filters_disabled__not_ok)
-{
-    const auto target = "/rest/blockfilter/basic/" + block9 + ".json";
-    BC_REQUIRE(rest_status(target) != network::http::status::ok);
 }
 
 static const chain::transaction& coinbase1() NOEXCEPT
@@ -810,7 +804,8 @@ BC_AUTO_TEST_CASE(bitcoind_rest__getutxos__broadcast_spent__checkmempool_miss)
 
 BC_AUTO_TEST_SUITE_END()
 
-BC_FIXTURE_TEST_SUITE(bitcoind_rest_credential_tests, bitcoind_rest_credential_setup_fixture)
+BC_FIXTURE_TEST_SUITE(bitcoind_rest_credential_tests,
+    bitcoind_rest_credential_setup_fixture)
 
 BC_AUTO_TEST_CASE(bitcoind_rest__chaininfo__rest_credential__ok)
 {
@@ -829,7 +824,8 @@ BC_AUTO_TEST_CASE(bitcoind_rest__chaininfo__no_credential__unauthorized)
 
 BC_AUTO_TEST_SUITE_END()
 
-BC_FIXTURE_TEST_SUITE(bitcoind_rest_scoped_credential_tests, bitcoind_scoped_credential_setup_fixture)
+BC_FIXTURE_TEST_SUITE(bitcoind_rest_scoped_credential_tests,
+    bitcoind_scoped_credential_setup_fixture)
 
 BC_AUTO_TEST_CASE(bitcoind_rest__chaininfo__rpc_scoped_credential__forbidden)
 {

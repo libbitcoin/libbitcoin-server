@@ -239,8 +239,8 @@ bool executor::dispatch()
     if (config.help)
         return do_help();
 
-    // Order below matches help output (alphabetical), so that first option is
-    // executed in the case where multiple options are parsed.
+    // Order below matches help output (alphabetical), so first option is
+    // executed where multiple options are parsed.
 
     if (config.backup)
         return do_backup();

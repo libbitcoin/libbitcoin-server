@@ -109,8 +109,9 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
     if (!chain::script::is_pay_witness_pattern(script.ops()) &&
         !chain::script::is_pay_null_data_pattern(script.ops()))
     {
-        const chain::script wsh{ chain::script::to_pay_witness_pattern(0,
-            sha256_hash(script.to_data(false))) };
+        const auto program = sha256_hash(script.to_data(false));
+        const auto ops = chain::script::to_pay_witness_pattern(0, program);
+        const chain::script wsh{ ops };
 
         auto segwit = script_public_key(wsh);
         const payment_address wrapped{ wsh, p2sh_ };
@@ -142,12 +143,12 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
     const payment_address base58(address);
     if (base58 && ((base58.prefix() == p2kh_) || (base58.prefix() == p2sh_)))
     {
+        const auto output = base58.output_script(p2kh_, p2sh_);
         object_t result
         {
             { "isvalid", true },
             { "address", base58.encoded() },
-            { "scriptPubKey", encode_base16(base58.output_script(p2kh_,
-                p2sh_).to_data(false)) },
+            { "scriptPubKey", encode_base16(output.to_data(false)) },
             { "isscript", base58.prefix() == p2sh_ },
             { "iswitness", false }
         };
@@ -215,8 +216,8 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
         return true;
     }
 
-    // An invalid key (bitcoind -5) and an oversized script (-8) are not
-    // distinguished by the helper.
+    // Invalid key (bitcoind -5) and oversized script (-8)
+    // are not distinguished by helper.
     auto result = create_multisig(required, keys, address_type, p2sh_,
         witness_);
     if (result.empty())
@@ -257,7 +258,6 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
         return true;
     }
 
-    // bitcoind's derivation range limit.
     constexpr uint32_t maximum_range = 10'000;
     if (floored_subtract(end, begin) >= maximum_range)
     {
@@ -350,7 +350,7 @@ bool protocol_bitcoind_utility::handle_get_index_info(const code& ec,
         return false;
 
     // Indexes track the confirmed chain only; all txs are archived (lookup).
-    // synced: current chain and confirmation coalesced with the candidate top.
+    // synced: current chain and confirmation coalesced with candidate top.
     const auto& query = archive();
     const object_t status
     {
@@ -432,10 +432,10 @@ void protocol_bitcoind_utility::complete_estimate(const code& ec,
     // Estimate unavailability is reported in-band.
     if (unavailable)
     {
+        const std::string reason{ "Insufficient data or no feerate found" };
         send_result(object_t
         {
-            { "errors", array_t{ std::string{
-                "Insufficient data or no feerate found" } } },
+            { "errors", array_t{ reason } },
             { "blocks", to64(target) }
         });
         return;

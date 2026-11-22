@@ -706,10 +706,12 @@ struct tls_setup_fixture
     static void write_text(const std::filesystem::path& path, const std::string& text)
     {
         std::ofstream file(path, std::ios::binary);
-        file.write(text.data(), system::possible_narrow_sign_cast<std::streamsize>(text.size()));
+        file.write(text.data(),
+            system::possible_narrow_sign_cast<std::streamsize>(text.size()));
     }
 
-    static void write_identity(const std::filesystem::path& certificate_path, const std::filesystem::path& key_path)
+    static void write_identity(const std::filesystem::path& certificate_path,
+        const std::filesystem::path& key_path)
     {
         const auto key = system::base16_array("c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721");
         system::x509::subject subject{};

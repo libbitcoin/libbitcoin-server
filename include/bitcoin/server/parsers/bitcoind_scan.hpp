@@ -24,8 +24,8 @@
 namespace libbitcoin {
 namespace server {
 
-/// Expand a scan object, a descriptor string or { "desc", "range" } object,
-/// to its derived output scripts (false if malformed or underivable).
+/// Expand scan object, a descriptor string or { "desc", "range" } object, to
+/// its derived output scripts (false if malformed or underivable).
 BCS_API bool expand_scan_object(system::chain::scripts& out,
     const network::rpc::value_t& item,
     const system::wallet::context& context) NOEXCEPT;

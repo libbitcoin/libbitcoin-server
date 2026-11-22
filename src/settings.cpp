@@ -333,8 +333,8 @@ code settings::bitcoind_server::initialize_context() NOEXCEPT
     if (const auto ec = base::initialize_context())
         return ec;
 
-    // The range is bounded by the implemented versions, and the maximum
-    // floors to an implemented version within the range.
+    // Range bounded by implemented versions,
+    // maximum floors to implemented version within range.
     if (protocol_minimum < minimum_version ||
         protocol_maximum > maximum_version ||
         to_value(version_floor(protocol_maximum)) < protocol_minimum)

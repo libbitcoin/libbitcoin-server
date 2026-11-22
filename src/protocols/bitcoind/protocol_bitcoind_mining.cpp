@@ -231,7 +231,7 @@ void protocol_bitcoind_mining::do_mining_info(const code& ec,
     const auto span = to_floating(power2<uint64_t>(32u));
     const auto period = bitcoin.block_spacing_seconds;
 
-    // bitcoind OB1 error ("blocks" wants height).
+    // bitcoind "blocks" is a height, not a count.
     send_result(object_t
     {
         { "blocks", to64(height) },
@@ -247,8 +247,8 @@ void protocol_bitcoind_mining::do_mining_info(const code& ec,
     });
 }
 
-// bip22: null when accepted, otherwise duplicate, inconclusive or the reject
-// token, sent once the block is confirmable or not.
+// bip22: null when accepted, otherwise duplicate, inconclusive or reject token,
+// sent once block is confirmable or not.
 bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
     rpc_interface::submit_block, const std::string& hexdata,
     const std::string&) NOEXCEPT
@@ -400,8 +400,8 @@ void protocol_bitcoind_mining::submit_block(const block_cptr& block,
     handle_archive_block(stored, hash, height);
 }
 
-// A block archived meanwhile by another channel is awaited as submitted, and a
-// failure to store one is a fault, whether or not the channel has stopped.
+// Block archived meanwhile by another channel is awaited as submitted, and
+// failure to store one is a fault, whether or not channel has stopped.
 void protocol_bitcoind_mining::handle_archive_block(const code& ec,
     const hash_digest& hash, size_t height) NOEXCEPT
 {
@@ -566,8 +566,8 @@ void protocol_bitcoind_mining::do_submit_header(const code& ec,
         send_result(null_t{});
 }
 
-// bip22: the template mode only (not bip23 proposals), without long polling.
-// bip145: the client must declare the segwit rule.
+// bip22: template mode only (not bip23 proposals), without long polling.
+// bip145: client must declare segwit rule.
 bool protocol_bitcoind_mining::handle_get_block_template(const code& ec,
     rpc_interface::get_block_template,
     const object_t& template_request) NOEXCEPT
@@ -620,8 +620,8 @@ void protocol_bitcoind_mining::handle_template(const code& ec, size_t height,
     POST(do_template, ec, height, links, gate);
 }
 
-// The template is of the block above the confirmed top, so one built for
-// another height is requested again.
+// Template is of block above confirmed top,
+// so one built for another height is requested again.
 void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
     const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
 {
@@ -665,26 +665,30 @@ void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
     const auto ctx = pool.context();
     const auto bip141 = ctx.is_enabled(flags::bip141_rule);
 
-    // A tx depends on the txs of the template that it spends, by position
-    // from one (the coinbase is zero).
+    // Tx depends on template txs it spends, by position from one (coinbase 0).
     uint64_t fees{};
     array_t transactions{};
     hashes witnesses{ null_hash };
     std::unordered_map<hash_digest, size_t> positions{};
     for (const auto& tx_link: links)
     {
+        size_t light{};
+        size_t heavy{};
         system::pool::algorithm::totals_t totals{};
-        const auto tx = query.get_transaction(tx_link, true);
-        if (!tx || !query.get_pooled_totals(totals, tx_link))
+        const auto row = query.to_pool_row(tx_link);
+        const auto data = query.get_wire_tx(tx_link, bip141);
+        if (row.is_terminal() || data.empty() ||
+            !query.get_pooled_totals(totals, tx_link) ||
+            !query.get_tx_sizes(light, heavy, tx_link))
         {
             send_error(error::bitcoind::internal_error);
             return;
         }
 
         std::vector<size_t> parents{};
-        for (const auto& input: *tx->inputs_ptr())
+        for (const auto& point: query.to_points(tx_link))
         {
-            const auto it = positions.find(input->point().hash());
+            const auto it = positions.find(query.get_point_hash(point));
             if (it != positions.end() &&
                 std::ranges::find(parents, it->second) == parents.end())
                 parents.push_back(it->second);
@@ -694,23 +698,29 @@ void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
         for (const auto parent: parents)
             depends.emplace_back(to64(parent));
 
-        positions.emplace(tx->hash(false), add1(transactions.size()));
-        witnesses.push_back(tx->hash(true));
+        const auto txid = query.get_tx_key(tx_link);
+        const auto wtxid = query.get_wtxid_key(row);
+        const auto weight = ceilinged_add(
+            ceilinged_multiply(base_size_contribution, light),
+            ceilinged_multiply(total_size_contribution, heavy));
+
+        positions.emplace(txid, add1(transactions.size()));
+        witnesses.push_back(wtxid);
         fees = ceilinged_add(fees, totals.fee);
         transactions.emplace_back(object_t
         {
-            { "data", encode_base16(tx->to_data(bip141)) },
-            { "txid", encode_hash(tx->hash(false)) },
-            { "hash", encode_hash(tx->hash(true)) },
+            { "data", encode_base16(data) },
+            { "txid", encode_hash(txid) },
+            { "hash", encode_hash(wtxid) },
             { "depends", std::move(depends) },
             { "fee", totals.fee },
             { "sigops", totals.sigops },
-            { "weight", to64(tx->weight()) }
+            { "weight", to64(weight) }
         });
     }
 
-    // bitcoind names the bip9 bit zero rules csv, and marks as required (!)
-    // a rule that a client cannot ignore.
+    // bitcoind names bip9 bit zero rules csv, and marks as required (!) a rule
+    // a client cannot ignore.
     array_t rules{};
     if (ctx.is_enabled(flags::bip68_rule))
         rules.emplace_back(string_t{ "csv" });
@@ -756,8 +766,8 @@ void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
         { "height", to64(height) }
     };
 
-    // bip141: the commitment output script of the coinbase, over the witness
-    // hashes of the template with the reserved value of zero.
+    // bip141: commitment output script of coinbase, over witness hashes of
+    // template with reserved value of zero.
     if (bip141)
     {
         const auto root = merkle_root(std::move(witnesses));
@@ -776,8 +786,8 @@ void protocol_bitcoind_mining::finish_template(object_t&) const NOEXCEPT
 {
 }
 
-bool protocol_bitcoind_mining::handle_get_prioritised_transactions(const code& ec,
-    rpc_interface::get_prioritised_transactions) NOEXCEPT
+bool protocol_bitcoind_mining::handle_get_prioritised_transactions(
+    const code& ec, rpc_interface::get_prioritised_transactions) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_error(error::bitcoind::client_mempool_disabled);

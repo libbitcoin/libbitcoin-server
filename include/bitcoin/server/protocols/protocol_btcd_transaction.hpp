@@ -26,8 +26,8 @@
 namespace libbitcoin {
 namespace server {
 
-/// The bitcoind transaction subgroup on the btcd endpoint, answering
-/// submissions as btcd does.
+/// bitcoind transaction subgroup on btcd endpoint,
+/// answering submissions as btcd does.
 class BCS_API protocol_btcd_transaction
   : public protocol_btcd_subgroup<protocol_bitcoind_transaction>,
     protected network::tracker<protocol_btcd_transaction>

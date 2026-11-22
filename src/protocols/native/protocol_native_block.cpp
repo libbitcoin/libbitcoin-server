@@ -400,8 +400,8 @@ bool protocol_native::handle_get_block_txs(const code& ec,
         return false;
 
     const auto& query = archive();
-    if (const auto hashes = query.get_tx_keys(to_header(height, hash, candidate));
-        !hashes.empty())
+    const auto link = to_header(height, hash, candidate);
+    if (const auto hashes = query.get_tx_keys(link); !hashes.empty())
     {
         const auto size = hashes.size() * hash_size;
         switch (media)

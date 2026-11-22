@@ -94,16 +94,16 @@ public:
         virtual bool enabled() const NOEXCEPT;
     };
 
-    /// Electrum is served over tcp/s (json-rpc downgrade), http/s and ws/s,
-    /// so the http settings apply only to the http/ws transports.
+    /// Electrum is served over tcp/s (json-rpc downgrade), http/s and ws/s, so
+    /// http settings apply only to http/ws transports.
     struct BCS_API electrum_server
       : public network::settings::websocket_server
     {
         using base = network::settings::websocket_server;
         using base::base;
 
-        /// Maximum number of headers the server will return in single request.
-        /// Recommended to be a multiple of the difficulty retarget period.
+        /// Maximum number of headers server will return in single request.
+        /// Recommended to be a multiple of difficulty retarget period.
         uint32_t maximum_headers{ 10 * 2016 };
 
         /// Maximum number of address history entries upon one subscription.
@@ -168,7 +168,7 @@ public:
     };
 
     /// html (http/s) document server settings (has directory/default).
-    /// This is for web servers that expose a local file system directory.
+    /// For web servers that expose a local file system directory.
     struct BCS_API html_server
       : public network::settings::websocket_server
     {
@@ -197,7 +197,7 @@ public:
         virtual const page_tags& tags() const NOEXCEPT;
 
         /// Embeded single page with html, css, js, favicon resource.
-        /// This is a reference to the caller's resource (retained instance).
+        /// Reference to caller's resource (retained instance).
         const embedded_pages& pages;
 
         /// Set false to disable http->websocket http upgrade processing.
@@ -316,7 +316,7 @@ public:
     /// RESTful block explorer (http/s, stateless html/websocket)
     server::settings::native_server native;
 
-    /// bitcoind compat interface (http/s, stateless json-rpc-v2)
+    /// bitcoind compat interface (http/s, stateless json-rpc v1/v2)
     bitcoind_server bitcoind{ "bitcoind" };
 
     /// btcd compat interface (http/s + websocket, json-rpc-v2 [no positional])

@@ -26,8 +26,8 @@
 namespace libbitcoin {
 namespace server {
 
-/// The bitcoind blockchain subgroup on the btcd endpoint, answering blocks,
-/// outputs and the mempool as btcd does.
+/// bitcoind blockchain subgroup on btcd endpoint, answering blocks, outputs and
+/// mempool as btcd does.
 class BCS_API protocol_btcd_blockchain
   : public protocol_btcd_subgroup<protocol_bitcoind_blockchain>,
     protected network::tracker<protocol_btcd_blockchain>

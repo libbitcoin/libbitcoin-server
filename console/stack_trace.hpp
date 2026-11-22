@@ -26,18 +26,18 @@
 
 #include <windows.h>
 
-/// Emit a stack trace for the given exception to handle_stack_trace. Safe on
-/// a crashed thread (no allocation, no throw); first concurrent caller wins.
+/// Emit stack trace for given exception to handle_stack_trace. Safe on crashed
+/// thread (no allocation, no throw); first concurrent caller wins.
 DWORD dump_stack_trace(unsigned code, EXCEPTION_POINTERS* exception) NOEXCEPT;
 
-/// Install process-wide crash coverage: an unhandled exception filter (all
-/// threads, where the wmain seh frame covers only its own) and a terminate
-/// handler (throws escaping NOEXCEPT bypass seh entirely).
+/// Install process-wide crash coverage: unhandled exception filter (all
+/// threads, where wmain seh frame covers only its own) and terminate handler
+/// (throws escaping NOEXCEPT bypass seh entirely).
 void install_stack_trace() NOEXCEPT;
 
 #elif defined(HAVE_APPLE)
 
-/// Install fault signal handlers, as apple ReportCrash does not fire for the
+/// Install fault signal handlers, as apple ReportCrash does not fire for
 /// process and its cores are unwritable at this map size.
 void install_stack_trace() NOEXCEPT;
 

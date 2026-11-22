@@ -33,7 +33,7 @@ BCS_API uint32_t median_time(const node::query& query,
 using fee_histogram = std::vector<std::pair<double, size_t>>;
 
 /// Histogram of descending fee rates, each bin exceeding the bin vsize
-/// before a lower rate begins a new bin (electrs).
+/// before a lower rate begins a new bin.
 BCS_API fee_histogram to_fee_histogram(database::fee_rates rates,
     size_t bin) NOEXCEPT;
 

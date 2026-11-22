@@ -109,9 +109,10 @@ protected:
     bool handle_get_block_header(const code& ec, interface::block_header,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool candidate) NOEXCEPT;
-    bool handle_get_block_header_context(const code& ec, interface::block_header_context,
-        uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
-        std::optional<uint32_t> height, bool candidate) NOEXCEPT;
+    bool handle_get_block_header_context(const code& ec,
+        interface::block_header_context, uint8_t version, uint8_t media,
+        std::optional<system::hash_cptr> hash, std::optional<uint32_t> height,
+        bool candidate) NOEXCEPT;
     bool handle_get_block_details(const code& ec, interface::block_details,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool candidate) NOEXCEPT;

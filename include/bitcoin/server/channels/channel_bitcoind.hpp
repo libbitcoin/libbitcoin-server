@@ -64,8 +64,8 @@ public:
         version_ = version;
     }
 
-    /// Retain the request in dispatch as a non-handshake opener, dispatched
-    /// again (under its own gate) when the channel resumes the reader.
+    /// Retain request in dispatch as non-handshake opener, dispatched again
+    /// (under its own gate) when channel resumes reader.
     inline void set_opener() NOEXCEPT
     {
         BC_ASSERT(stranded());

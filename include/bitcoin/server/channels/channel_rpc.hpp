@@ -26,11 +26,10 @@ namespace libbitcoin {
 namespace server {
 
 /// Universal json-rpc channel, served over tcp/s (by downgrade), http/s and
-/// ws/s (by upgrade). Preselecting the json-rpc body is what implies the
-/// downgrade detection, so a service channel derives this to speak json-rpc
-/// on any of the three, adding only its own channel state. The channel
-/// carries the json-rpc request context (the protocol carries the dispatcher
-/// and the response senders).
+/// ws/s (by upgrade). Preselecting json-rpc body implies downgrade detection,
+/// so a service channel derives this to speak json-rpc on any of the three,
+/// adding only its own channel state. Channel carries json-rpc request context
+/// (protocol carries dispatcher and response senders).
 class BCS_API channel_rpc
   : public channel_http
 {
@@ -96,8 +95,8 @@ protected:
         return to_body<network::rpc::request>();
     }
 
-    /// Overridden to cache the json-rpc request context (version and
-    /// identity) for the response, the dispatch itself is by verb.
+    /// Overridden to cache json-rpc request context (version and identity) for
+    /// response, dispatch itself is by verb.
     inline void dispatch(
         const network::http::request_ptr& request) NOEXCEPT override
     {

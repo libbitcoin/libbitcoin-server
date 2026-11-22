@@ -39,7 +39,8 @@ static std::string block1_tx() NOEXCEPT
 static const std::string scripthash = encode_base16(null_hash);
 static std::string funded_scripthash() NOEXCEPT
 {
-    return encode_base16(sha256_hash(coinbase1().outputs_ptr()->front()->script().to_data(false)));
+    const auto& output = *coinbase1().outputs_ptr()->front();
+    return encode_base16(sha256_hash(output.script().to_data(false)));
 }
 
 // key resolution
@@ -196,7 +197,8 @@ BC_FIXTURE_TEST_SUITE(esplora_unconfirmed_address_tests, esplora_unconfirmed_set
 
 static std::string pick_scripthash() NOEXCEPT
 {
-    return encode_base16(sha256_hash(test::tx4.outputs_ptr()->front()->script().to_data(false)));
+    const auto& output = *test::tx4.outputs_ptr()->front();
+    return encode_base16(sha256_hash(output.script().to_data(false)));
 }
 
 BC_AUTO_TEST_CASE(esplora__address__unconfirmed__mempool_stats)
@@ -264,12 +266,15 @@ BC_FIXTURE_TEST_SUITE(esplora_broadcast_address_tests, esplora_broadcast_setup_f
 
 static std::string funder_scripthash() NOEXCEPT
 {
-    return encode_base16(sha256_hash(test::block1c.transactions_ptr()->front()->outputs_ptr()->front()->script().to_data(false)));
+    const auto& tx = *test::block1c.transactions_ptr()->front();
+    const auto& output = *tx.outputs_ptr()->front();
+    return encode_base16(sha256_hash(output.script().to_data(false)));
 }
 
 static std::string payee_scripthash() NOEXCEPT
 {
-    return encode_base16(sha256_hash(test::tx1c.outputs_ptr()->front()->script().to_data(false)));
+    const auto& output = *test::tx1c.outputs_ptr()->front();
+    return encode_base16(sha256_hash(output.script().to_data(false)));
 }
 
 static std::string tx1c() NOEXCEPT
