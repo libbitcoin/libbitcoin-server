@@ -235,7 +235,7 @@ bool protocol_bitcoind_transaction::handle_decode_raw_transaction(const code& ec
     }
 
     auto model = value_from(bitcoind(tx, flags_));
-    inject_tx_scripts(model.as_object(), tx, p2kh_, p2sh_, witness_);
+    inject_scripts(model.as_object(), tx);
     send_result(std::move(model));
     return true;
 }
@@ -304,8 +304,8 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
 
     auto model = value_from(bitcoind(*tx, flags_));
     auto& object = model.as_object();
-    inject_tx_context(object, query, link);
-    inject_tx_scripts(object, *tx, p2kh_, p2sh_, witness_);
+    inject_context(object, link);
+    inject_scripts(object, *tx);
     if (level == verbosity::json_verbose && !tx->is_coinbase() &&
         query.populate_with_metadata(*tx))
     {

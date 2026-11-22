@@ -268,6 +268,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_bitcoind_wallet.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_subgroup.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_transaction.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_electrum_version.hpp" />

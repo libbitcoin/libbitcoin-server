@@ -418,6 +418,18 @@ system::json::value protocol_bitcoind::script_public_key(
     return to_script_public_key(script, p2kh_, p2sh_, witness_, flags_);
 }
 
+void protocol_bitcoind::inject_scripts(system::json::object& out,
+    const chain::transaction& tx) const NOEXCEPT
+{
+    inject_tx_scripts(out, tx, p2kh_, p2sh_, witness_);
+}
+
+void protocol_bitcoind::inject_context(system::json::object& out,
+    const database::tx_link& link) const NOEXCEPT
+{
+    inject_tx_context(out, archive(), link);
+}
+
 // Diagnostic row capture.
 // ----------------------------------------------------------------------------
 

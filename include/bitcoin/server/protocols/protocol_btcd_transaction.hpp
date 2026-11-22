@@ -21,6 +21,7 @@
 
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_transaction.hpp>
+#include <bitcoin/server/protocols/protocol_btcd_subgroup.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -28,16 +29,17 @@ namespace server {
 /// The bitcoind transaction subgroup on the btcd endpoint, answering
 /// submissions as btcd does.
 class BCS_API protocol_btcd_transaction
-  : public protocol_bitcoind_transaction,
+  : public protocol_btcd_subgroup<protocol_bitcoind_transaction>,
     protected network::tracker<protocol_btcd_transaction>
 {
 public:
     typedef std::shared_ptr<protocol_btcd_transaction> ptr;
+    using base = protocol_btcd_subgroup<protocol_bitcoind_transaction>;
 
     inline protocol_btcd_transaction(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : protocol_bitcoind_transaction(session, channel, options),
+      : base(session, channel, options),
         network::tracker<protocol_btcd_transaction>(session->log)
     {
     }

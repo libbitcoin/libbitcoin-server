@@ -557,6 +557,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_subgroup.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_btcd_transaction.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>

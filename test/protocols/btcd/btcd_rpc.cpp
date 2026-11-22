@@ -971,6 +971,31 @@ BC_AUTO_TEST_CASE(btcd_rpc__sendrawtransaction__confirmed_unspent__already_in_ch
     BC_REQUIRE_EQUAL(response.at("error").at("message").as_string(), "TX rejected: transaction already exists in blockchain");
 }
 
+BC_AUTO_TEST_CASE(btcd_rpc__getblockhash__missing_parameter__invalid_params)
+{
+    BC_REQUIRE_EQUAL(rpc_error("getblockhash"), invalid_params.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__getblockhash__mistyped_parameter__invalid_params)
+{
+    BC_REQUIRE_EQUAL(rpc_error("getblockhash", R"(["one"])"), invalid_params.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__getrawtransaction__verbose__btcd_fields)
+{
+    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto response = rpc("getrawtransaction", std::format(R"(["{}",1])", txid));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& tx = response.at("result").as_object();
+    BC_REQUIRE(!tx.contains("in_active_chain"));
+    BC_REQUIRE_EQUAL(tx.at("confirmations").as_int64(), 9);
+
+    const auto& script = tx.at("vout").as_array().front().at("scriptPubKey").as_object();
+    BC_REQUIRE_EQUAL(script.at("reqSigs").as_int64(), 1);
+    BC_REQUIRE(!script.contains("desc"));
+}
+
 // tcp (downgrade)
 // ----------------------------------------------------------------------------
 // btcd is served over the same universal json-rpc channel as bitcoind, so raw

@@ -217,7 +217,7 @@ bool protocol_bitcoind_blockchain::handle_get_block(const code& ec,
             [&](const auto& tx) NOEXCEPT
         {
             auto& object = entry->as_object();
-            inject_tx_scripts(object, *tx, p2kh_, p2sh_, witness_);
+            inject_scripts(object, *tx);
             if (populated && !tx->is_coinbase())
             {
                 if (level == block_verbosity::prevouts)
