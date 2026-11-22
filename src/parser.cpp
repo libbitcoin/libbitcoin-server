@@ -2612,6 +2612,11 @@ options_metadata parser::load_settings() THROWS
         "Seconds that fee estimates share one projection of the pool, defaults to {} (0 disables)."
     )
     (
+        "pool.estimate_room",
+        setting<uint32_t>(&configured.node.pool.estimate_room),
+        "Virtual bytes of block room below a fee estimate's rate, defaults to {}."
+    )
+    (
         "pool.thread_priority",
         setting<bool>(&configured.node.pool.thread_priority),
         "Set the transaction pool thread to high processing priority, defaults to {}."
