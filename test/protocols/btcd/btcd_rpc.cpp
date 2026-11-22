@@ -160,12 +160,26 @@ BC_AUTO_TEST_CASE(btcd_rpc__help__default__method_list)
     BC_REQUIRE_NE(as_text(response.at("result")).find("getcurrentnet"), std::string::npos);
 }
 
-BC_AUTO_TEST_CASE(btcd_rpc__session__default__returns_id)
+BC_AUTO_TEST_CASE(btcd_rpc__session__default__returns_sessionid)
 {
     const auto response = rpc("session");
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
-    BC_REQUIRE(response.at("result").as_object().contains("id"));
+    BC_REQUIRE(response.at("result").as_object().contains("sessionid"));
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__session__http_post__method_not_found)
+{
+    const auto response = http_rpc("session");
+    REQUIRE_NO_THROW_TRUE(response.at("error").is_object());
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), method_not_found.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__notifyblocks__http_post__method_not_found)
+{
+    const auto response = http_rpc("notifyblocks");
+    REQUIRE_NO_THROW_TRUE(response.at("error").is_object());
+    BC_REQUIRE_EQUAL(response.at("error").at("code").as_int64(), method_not_found.value());
 }
 
 // stop is refused by the inherited bitcoind interface.
@@ -225,6 +239,13 @@ BC_AUTO_TEST_CASE(btcd_rpc__getcfilter__filters_disabled__block_not_found)
     BC_REQUIRE_EQUAL(result, block_not_found.value());
 }
 
+BC_AUTO_TEST_CASE(btcd_rpc__getcfilter__unknown_block__empty)
+{
+    const auto response = rpc("getcfilter", std::format(R"(["{}",0])", encode_hash(system::one_hash)));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE(as_text(response.at("result")).empty());
+}
+
 BC_AUTO_TEST_CASE(btcd_rpc__getcfilter__malformed_hash__deserialization)
 {
     BC_REQUIRE_EQUAL(rpc_error("getcfilter", R"(["not-a-hash",0])"), deserialization.value());
@@ -249,11 +270,11 @@ BC_AUTO_TEST_CASE(btcd_rpc__getcurrentnet__mainnet__magic)
     BC_REQUIRE_EQUAL(response.at("result").as_int64(), 3652501241);
 }
 
-BC_AUTO_TEST_CASE(btcd_rpc__getdifficulty__ten_block_store__number)
+BC_AUTO_TEST_CASE(btcd_rpc__getdifficulty__ten_block_store__one)
 {
     const auto response = rpc("getdifficulty");
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_double());
+    BC_REQUIRE_EQUAL(response.at("result").as_double(), 1.0);
 }
 
 BC_AUTO_TEST_CASE(btcd_rpc__getheaders__block5_locator__headers_after_fork)
@@ -302,6 +323,7 @@ BC_AUTO_TEST_CASE(btcd_rpc__getinfo__ten_block_store__nine)
     const auto& result = response.at("result").as_object();
     BC_REQUIRE_EQUAL(result.at("blocks").as_int64(), 9);
     BC_REQUIRE_EQUAL(result.at("testnet").as_bool(), false);
+    BC_REQUIRE_EQUAL(result.at("difficulty").as_double(), 1.0);
     BC_REQUIRE(result.at("proxy").as_string().empty());
 }
 
@@ -487,6 +509,11 @@ BC_AUTO_TEST_CASE(btcd_rpc__txacceptedverbose__transaction__delivered)
     const auto& params = accepted.at("params").as_array();
     BC_REQUIRE_EQUAL(params.size(), 1u);
     BC_REQUIRE_EQUAL(as_text(params[0].at("txid")), encode_hash(tx.hash(false)));
+
+    const auto& script = params[0].at("vout").as_array().front().at("scriptPubKey").as_object();
+    BC_REQUIRE_EQUAL(script.at("reqSigs").as_int64(), 1);
+    BC_REQUIRE(!script.contains("desc"));
+    BC_REQUIRE(!params[0].as_object().contains("in_active_chain"));
 }
 
 // filters
@@ -700,6 +727,28 @@ BC_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__paid_address__verbose_transac
     BC_REQUIRE_EQUAL(entry.at("vin").as_array().size(), 2u);
     BC_REQUIRE_EQUAL(entry.at("vout").as_array().size(), 2u);
     BC_REQUIRE(entry.as_object().contains("hex"));
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__paid_address__btcd_fields)
+{
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+
+    const auto response = rpc("searchrawtransactions", std::format(R"(["{}"])", found_address));
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_array());
+
+    const auto& entry = response.at("result").as_array().front().as_object();
+    BC_REQUIRE(as_text(entry.at("hash")).empty());
+    BC_REQUIRE(as_text(entry.at("size")).empty());
+    BC_REQUIRE(as_text(entry.at("vsize")).empty());
+    BC_REQUIRE(as_text(entry.at("weight")).empty());
+    BC_REQUIRE(!entry.contains("in_active_chain"));
+
+    const auto& script = entry.at("vout").as_array().front().at("scriptPubKey").as_object();
+    BC_REQUIRE_EQUAL(script.at("reqSigs").as_int64(), 1);
+    BC_REQUIRE_EQUAL(as_text(script.at("addresses").as_array().front()), found_address);
+    BC_REQUIRE(!script.contains("desc"));
 }
 
 BC_AUTO_TEST_CASE(btcd_rpc__searchrawtransactions__not_verbose__serialized_transaction)
@@ -1535,6 +1584,16 @@ BC_AUTO_TEST_CASE(btcd_rpc__getinfo__dangling__internal_error)
 BC_AUTO_TEST_CASE(btcd_rpc__rescan__dangling__internal_error)
 {
     BC_REQUIRE_EQUAL(rpc_error("rescan", std::format(R"(["{}",[],[],""])", encode_hash(test::block1_hash))), internal.value());
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(btcd_pruned_tests, btcd_pruned_setup_fixture)
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescanblocks__pruned__invalid_address_or_key)
+{
+    const auto result = rpc_error("rescanblocks", std::format(R"([["{}"]])", system::encode_hash(test::block1.hash())));
+    BC_REQUIRE_EQUAL(result, code{ server::error::btcd::invalid_address_or_key }.value());
 }
 
 BC_AUTO_TEST_SUITE_END()

@@ -227,7 +227,7 @@ void protocol_bitcoind_mining::do_mining_info(const code& ec,
         { "target", encode_hash(from_uintx(chain::compact::expand(header.bits()))) }
     };
 
-    const auto minimum = to_floating(node_settings().pool.minimum_fee_rate_());
+    const auto minimum = node_settings().pool.minimum_fee_rate_();
     const auto span = to_floating(power2<uint64_t>(32u));
     const auto period = bitcoin.block_spacing_seconds;
 
@@ -240,7 +240,7 @@ void protocol_bitcoind_mining::do_mining_info(const code& ec,
         { "target", encode_hash(from_uintx(chain::compact::expand(top->bits()))) },
         { "networkhashps", top->difficulty() * span / period },
         { "pooledtx", to64(links.size()) },
-        { "blockmintxfee", minimum / satoshi_per_bitcoin },
+        { "blockmintxfee", to_btc(minimum) },
         { "chain", chain_name(bitcoin) },
         { "next", std::move(next_block) },
         { "warnings", array_t{} }

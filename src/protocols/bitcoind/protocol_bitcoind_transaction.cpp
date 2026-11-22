@@ -199,7 +199,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     auto& query = archive();
     const auto link = query.to_tx(hash);
     size_t size{};
-    if (is_pruned_tx(link) || !query.get_tx_size(size, link, witness))
+    if (query.is_pruned(link) || !query.get_tx_size(size, link, witness))
     {
         send_error(error::bitcoind::invalid_address_or_key, txid);
         return true;
@@ -250,7 +250,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
         query.populate_with_metadata(*tx))
     {
         inject_tx_prevouts(object, query, *tx, p2kh_, p2sh_, witness_, flags_);
-        object["fee"] = tx->fee() / to_floating(chain::satoshi_per_bitcoin);
+        object["fee"] = to_btc(tx->fee());
     }
 
     send_result(std::move(model));
@@ -499,8 +499,7 @@ bool protocol_bitcoind_transaction::handle_analyze_psbt(const code& ec,
     object_t result{ { "inputs", std::move(ins) } };
 
     if (const auto fee = doc.fee(); fee.has_value())
-        result.emplace("fee", fee.value() /
-            to_floating(chain::satoshi_per_bitcoin));
+        result.emplace("fee", to_btc(fee.value()));
 
     if (doc.is_final())
     {
@@ -509,9 +508,13 @@ bool protocol_bitcoind_transaction::handle_analyze_psbt(const code& ec,
             chain::light_weight_factor);
         result.emplace("estimated_vsize", to64(vsize));
 
-        if (const auto fee = doc.fee(); fee.has_value() && !is_zero(vsize))
-            result.emplace("estimated_feerate", (fee.value() * 1000u) /
-                to_floating(chain::satoshi_per_bitcoin) / vsize);
+        const auto fee = doc.fee();
+        if (fee.has_value() && !is_zero(vsize))
+        {
+            const auto bytes = possible_wide_cast<uint64_t>(vsize);
+            const auto rate = fee.value() * 1'000u / bytes;
+            result.emplace("estimated_feerate", to_btc(rate));
+        }
 
         result.emplace("next", std::string{ "extractor" });
     }
@@ -752,8 +755,7 @@ bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
     result.emplace("outputs", std::move(outs));
 
     if (const auto fee = doc.fee(); fee.has_value())
-        result.emplace("fee", fee.value() /
-            to_floating(chain::satoshi_per_bitcoin));
+        result.emplace("fee", to_btc(fee.value()));
 
     send_result(std::move(result));
     return true;

@@ -328,4 +328,16 @@ struct sparrow_scoped_credential_setup_fixture
     }
 };
 
+struct electrum_pruned_setup_fixture
+  : electrum_setup_fixture
+{
+    inline electrum_pruned_setup_fixture()
+      : electrum_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_pruned_store(query);
+        }, true, test::configure_pruned)
+    {
+    }
+};
+
 #endif

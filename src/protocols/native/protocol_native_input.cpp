@@ -36,7 +36,7 @@ bool protocol_native::handle_get_inputs(const code& ec, interface::inputs,
 
     const auto& query = archive();
     const auto tx = query.to_tx(*hash);
-    if (tx.is_terminal())
+    if (tx.is_terminal() || query.is_pruned(tx))
     {
         send_not_found();
         return true;
@@ -80,7 +80,14 @@ bool protocol_native::handle_get_input(const code& ec, interface::input,
         return false;
 
     const auto& query = archive();
-    if (const auto input = query.get_input(query.to_tx(*hash), index, witness))
+    const auto link = query.to_tx(*hash);
+    if (query.is_pruned(link))
+    {
+        send_not_found();
+        return true;
+    }
+
+    if (const auto input = query.get_input(link, index, witness))
     {
         // Wire serialization of input does not include witness.
         const auto size = input->serialized_size(false);
@@ -111,8 +118,14 @@ bool protocol_native::handle_get_input_script(const code& ec,
         return false;
 
     const auto& query = archive();
-    if (const auto script = query.get_input_script(query.to_point(
-        query.to_tx(*hash), index)))
+    const auto link = query.to_tx(*hash);
+    if (query.is_pruned(link))
+    {
+        send_not_found();
+        return true;
+    }
+
+    if (const auto script = query.get_input_script(query.to_point(link, index)))
     {
         const auto size = script->serialized_size(false);
         switch (media)
@@ -141,8 +154,15 @@ bool protocol_native::handle_get_input_witness(const code& ec,
         return false;
 
     const auto& query = archive();
-    if (const auto witness = query.get_witness(query.to_point(
-        query.to_tx(*hash), index)); !is_null(witness) && witness->is_valid())
+    const auto link = query.to_tx(*hash);
+    if (query.is_pruned(link))
+    {
+        send_not_found();
+        return true;
+    }
+
+    if (const auto witness = query.get_witness(query.to_point(link, index));
+        !is_null(witness) && witness->is_valid())
     {
         const auto size = witness->serialized_size(false);
         switch (media)

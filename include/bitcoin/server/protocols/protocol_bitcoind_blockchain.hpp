@@ -193,11 +193,11 @@ private:
         bool include_mempool, const gate_t::ptr& gate) NOEXCEPT;
 
     void handle_mempool_info(const code& ec, const database::fee_rates& rates,
-        double minimum, double relay, double increment,
+        uint64_t minimum, uint64_t relay, uint64_t increment,
         const gate_t::ptr& gate) NOEXCEPT;
     void complete_mempool_info(const code& ec,
-        const database::fee_rates& rates, double minimum, double relay,
-        double increment, const gate_t::ptr& gate) NOEXCEPT;
+        const database::fee_rates& rates, uint64_t minimum, uint64_t relay,
+        uint64_t increment, const gate_t::ptr& gate) NOEXCEPT;
     database::tx_link to_mempool_tx(
         const system::hash_digest& hash) const NOEXCEPT;
     bool get_mempool_relatives(const std::string& txid, bool verbose,

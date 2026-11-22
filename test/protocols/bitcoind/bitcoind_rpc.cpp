@@ -5427,6 +5427,18 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__pruned_verbose__misc_error)
     BC_REQUIRE(has_code(rpc("getblock", hash_param(test::block9_hash, "2")), -1));
 }
 
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__pruned__misc_error)
+{
+    BC_REQUIRE(has_code(rpc("getblockstats", hash_param(test::block9_hash)), -1));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getdescriptoractivity__pruned__misc_error)
+{
+    const auto hash = encode_hash(test::block1.hash());
+    const auto script = encode_base16(test::block1.transactions_ptr()->front()->outputs_ptr()->front()->script().to_data(false));
+    BC_REQUIRE(has_code(rpc("getdescriptoractivity", "[[\"" + hash + "\"], [\"raw(" + script + ")\"]]"), -1));
+}
+
 BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__pruned_genesis_hex__hex)
 {
     BC_REQUIRE(rpc("getblock", hash_param(test::block0_hash, "0")).at("result").is_string());

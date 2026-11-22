@@ -21,9 +21,8 @@ import { MinerShareCard } from '@/components/miner-share';
 import { BlockMinerValue } from '@/components/miner-value';
 import { blockByHashPath, blockByHeightPath, blocksPath } from '@/lib/utils/routes';
 
-const DASHBOARD_BLOCK_SAMPLE_SIZE = 24;
+const DASHBOARD_BLOCK_SAMPLE_SIZE = 144;
 const LATEST_BLOCK_TABLE_LIMIT = 8;
-const MINER_SHARE_BLOCKS = 1_008;
 
 export function DashboardPage() {
   usePageTitle();
@@ -143,7 +142,7 @@ export function DashboardPage() {
               : '—'
           }
         />
-        <MinerShareCard count={MINER_SHARE_BLOCKS} />
+        <MinerShareCard count={DASHBOARD_BLOCK_SAMPLE_SIZE} />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(20rem,1fr)]">

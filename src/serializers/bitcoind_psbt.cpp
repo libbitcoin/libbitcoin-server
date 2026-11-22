@@ -105,11 +105,10 @@ object_t decode_psbt_input(const wallet::psbt::input& in, uint8_t p2kh,
     if (in.witness_utxo)
     {
         const auto& script = in.witness_utxo->script();
-        constexpr auto satoshis = to_floating(satoshi_per_bitcoin);
         const auto key = to_script_public_key(script, p2kh, p2sh, witness, flags);
         entry.emplace("witness_utxo", object_t
         {
-            { "amount", in.witness_utxo->value() / satoshis },
+            { "amount", to_btc(in.witness_utxo->value()) },
             { "scriptPubKey", key }
         });
     }
@@ -190,8 +189,7 @@ object_t decode_psbt_output(const wallet::psbt::output& out, uint8_t p2kh,
         entry.emplace("bip32_derivs", to_derivations(out.derivations));
 
     if (out.amount.has_value())
-        entry.emplace("amount", out.amount.value() /
-            to_floating(satoshi_per_bitcoin));
+        entry.emplace("amount", to_btc(out.amount.value()));
 
     if (out.script)
         entry.emplace("script", to_script_public_key(*out.script, p2kh, p2sh,

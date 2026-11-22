@@ -29,6 +29,12 @@ using namespace system;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
+system::json::value to_btc(uint64_t satoshis) NOEXCEPT
+{
+    return system::json::decimal{ sign_cast<int64_t>(satoshis),
+        btc_decimal_places };
+}
+
 // Clamped ratio of validated blocks to chain height.
 double progress(size_t blocks, size_t headers) NOEXCEPT
 {
@@ -137,8 +143,7 @@ void inject_tx_prevouts(system::json::object& out,
             {
                 { "generated", in->metadata.coinbase },
                 { "height", height },
-                { "value", put.value() /
-                    to_floating(chain::satoshi_per_bitcoin) },
+                { "value", to_btc(put.value()) },
                 { "scriptPubKey", std::move(script) }
             };
 
@@ -218,8 +223,7 @@ void inject_activity(network::rpc::array_t& out, const chain::transaction& tx,
             object_t entry
             {
                 { "type", std::string{ "receive" } },
-                { "amount", put->value() /
-                    to_floating(chain::satoshi_per_bitcoin) },
+                { "amount", to_btc(put->value()) },
                 { "txid", txid },
                 { "vout", index },
                 { "output_spk", std::move(output) }
@@ -248,8 +252,7 @@ void inject_activity(network::rpc::array_t& out, const chain::transaction& tx,
             object_t entry
             {
                 { "type", std::string{ "spend" } },
-                { "amount", prevout.value() /
-                    to_floating(chain::satoshi_per_bitcoin) },
+                { "amount", to_btc(prevout.value()) },
                 { "spend_txid", txid },
                 { "spend_vin", spend },
                 { "prevout_txid", encode_hash(in->point().hash()) },
@@ -369,11 +372,6 @@ bool mempool_entry(system::json::object& out, const node::query& query,
         return txids;
     };
 
-    const auto to_btc = [](uint64_t satoshis) NOEXCEPT
-    {
-        return to_floating(satoshis) / chain::satoshi_per_bitcoin;
-    };
-
     const system::json::object fees
     {
         { "base", to_btc(rate.fee) },
@@ -458,7 +456,7 @@ bool raw_mempool(system::json::value& out, const node::query& query,
 // the space available to the store (shared with all tables and the volume).
 bool mempool_info(system::json::object& out, const node::query& query,
     const database::fee_rates& rates, const std::filesystem::path& store,
-    double minimum, double relay, double increment) NOEXCEPT
+    uint64_t minimum, uint64_t relay, uint64_t increment) NOEXCEPT
 {
     uint64_t space{};
     if (!database::file::space(space, store))
@@ -474,19 +472,17 @@ bool mempool_info(system::json::object& out, const node::query& query,
 
     const auto indexes = ceilinged_add(query.spends_size(), query.wtxid_size());
     const auto usage = ceilinged_add(query.pool_size(), indexes);
-    const auto total_fee = to_floating(fee) / chain::satoshi_per_bitcoin;
-
     out = system::json::object
     {
         { "loaded", true },
         { "size", rates.size() },
         { "bytes", bytes },
         { "usage", usage },
-        { "total_fee", total_fee },
+        { "total_fee", to_btc(fee) },
         { "maxmempool", space },
-        { "mempoolminfee", minimum },
-        { "minrelaytxfee", relay },
-        { "incrementalrelayfee", increment },
+        { "mempoolminfee", to_btc(minimum) },
+        { "minrelaytxfee", to_btc(relay) },
+        { "incrementalrelayfee", to_btc(increment) },
         { "unbroadcastcount", 0 },
         { "fullrbf", false }
     };
@@ -498,11 +494,6 @@ bool package_result(system::json::object& out, const node::query& query,
     const code& ec, size_t index,
     const chain::transaction_cptrs& txs) NOEXCEPT
 {
-    const auto to_btc = [](uint64_t satoshis) NOEXCEPT
-    {
-        return to_floating(satoshis) / chain::satoshi_per_bitcoin;
-    };
-
     const auto failed = ec && ec != node::error::duplicate_transaction;
     system::json::object results{};
     for (size_t position{}; position < txs.size(); ++position)
@@ -522,15 +513,15 @@ bool package_result(system::json::object& out, const node::query& query,
         if (!query.get_tx_fees(rate, query.to_tx(tx.hash(false))))
             return false;
 
-        const auto base = to_btc(rate.fee);
-        const auto feerate = base * 1'000.0 / rate.bytes;
+        const auto bytes = possible_wide_cast<uint64_t>(rate.bytes);
+        const auto feerate = rate.fee * 1'000u / bytes;
         result["vsize_adjusted"] = rate.bytes;
         result["vsize"] = rate.bytes;
         result["vsize_bip141"] = tx.virtual_size();
         result["fees"] = system::json::object
         {
-            { "base", base },
-            { "effective-feerate", feerate },
+            { "base", to_btc(rate.fee) },
+            { "effective-feerate", to_btc(feerate) },
             { "effective-includes", system::json::array{ wtxid } }
         };
 

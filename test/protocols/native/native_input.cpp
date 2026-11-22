@@ -170,3 +170,31 @@ BC_AUTO_TEST_CASE(native__input_witness__index_above_count__not_found)
 }
 
 BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(native_input_pruned_tests, native_pruned_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__inputs__pruned__not_found)
+{
+    const auto hash = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    BC_REQUIRE_EQUAL(get_status("/v1/input/" + hash + "?format=data"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__input__pruned__not_found)
+{
+    const auto hash = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    BC_REQUIRE_EQUAL(get_status("/v1/input/" + hash + "/0?format=data"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__input_script__pruned__not_found)
+{
+    const auto hash = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    BC_REQUIRE_EQUAL(get_status("/v1/input/" + hash + "/0/script?format=data"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__input_witness__pruned__not_found)
+{
+    const auto hash = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    BC_REQUIRE_EQUAL(get_status("/v1/input/" + hash + "/0/witness?format=data"), http::status::not_found);
+}
+
+BC_AUTO_TEST_SUITE_END()

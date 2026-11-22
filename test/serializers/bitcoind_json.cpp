@@ -26,6 +26,21 @@ static std::string as_text(const system::json::value& value) NOEXCEPT
     return { value.as_string().c_str() };
 }
 
+// to_btc
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_SUITE(bitcoind_to_btc_tests)
+
+BC_AUTO_TEST_CASE(bitcoind_json__to_btc__amounts__eight_places)
+{
+    BC_REQUIRE_EQUAL(system::json::serialize(to_btc(0)), "0.00000000");
+    BC_REQUIRE_EQUAL(system::json::serialize(to_btc(100)), "0.00000100");
+    BC_REQUIRE_EQUAL(system::json::serialize(to_btc(150'000'000)), "1.50000000");
+    BC_REQUIRE_EQUAL(system::json::serialize(to_btc(2'100'000'000'000'000)), "21000000.00000000");
+}
+
+BC_AUTO_TEST_SUITE_END()
+
 // bitcoind(header)
 // ----------------------------------------------------------------------------
 // The serializer moved to system, this guards the fields consumed by rpc.
@@ -292,13 +307,14 @@ BC_AUTO_TEST_CASE(bitcoind_json__inject_activity__watched_output__receive_and_sp
     const auto script = test::mock_tx13.outputs_ptr()->front()->script().to_data(false);
     const std::unordered_set<std::string> watch{ encode_base16(script) };
 
+    const json_t amount{ system::json::decimal{ 9, 8 } };
     array_t out{};
     inject_activity(out, *block, 10, blockhash, watch, 0x00, 0x05, "bc", 0);
     BC_REQUIRE_EQUAL(out.size(), 2u);
 
     const auto& receive = std::get<object_t>(out.at(0).value());
     BC_REQUIRE_EQUAL(std::get<string_t>(receive.at("type").value()), "receive");
-    BC_REQUIRE_EQUAL(std::get<number_t>(receive.at("amount").value()), 9 / 100'000'000.0);
+    BC_REQUIRE(std::get<json_t>(receive.at("amount").value()) == amount);
     BC_REQUIRE_EQUAL(std::get<string_t>(receive.at("blockhash").value()), blockhash);
     BC_REQUIRE_EQUAL(std::get<uint64_t>(receive.at("height").value()), 10u);
     BC_REQUIRE_EQUAL(std::get<string_t>(receive.at("txid").value()), encode_hash(test::mock_tx13.hash(false)));
@@ -306,7 +322,7 @@ BC_AUTO_TEST_CASE(bitcoind_json__inject_activity__watched_output__receive_and_sp
 
     const auto& spend = std::get<object_t>(out.at(1).value());
     BC_REQUIRE_EQUAL(std::get<string_t>(spend.at("type").value()), "spend");
-    BC_REQUIRE_EQUAL(std::get<number_t>(spend.at("amount").value()), 9 / 100'000'000.0);
+    BC_REQUIRE(std::get<json_t>(spend.at("amount").value()) == amount);
     BC_REQUIRE_EQUAL(std::get<string_t>(spend.at("blockhash").value()), blockhash);
     BC_REQUIRE_EQUAL(std::get<uint64_t>(spend.at("height").value()), 10u);
     BC_REQUIRE_EQUAL(std::get<string_t>(spend.at("spend_txid").value()), encode_hash(txs.back()->hash(false)));

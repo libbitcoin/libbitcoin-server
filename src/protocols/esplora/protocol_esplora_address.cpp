@@ -295,10 +295,12 @@ void protocol_esplora::complete_get_address_txs(const code& ec,
     }
 
     const auto& query = archive();
+    auto pruned = false;
     const auto append = [&](array& out, const history& item) NOEXCEPT
     {
         object tx{};
-        if (!to_tx(tx, query.to_tx(item.tx.hash())))
+        const auto link = query.to_tx(item.tx.hash());
+        if ((pruned = query.is_pruned(link)) || !to_tx(tx, link))
             return false;
 
         out.emplace_back(std::move(tx));
@@ -312,7 +314,11 @@ void protocol_esplora::complete_get_address_txs(const code& ec,
     {
         if (!append(out, *item))
         {
-            send_internal_server_error(database::error::integrity);
+            if (pruned)
+                send_not_found();
+            else
+                send_internal_server_error(database::error::integrity);
+
             return;
         }
     }
@@ -324,7 +330,11 @@ void protocol_esplora::complete_get_address_txs(const code& ec,
     {
         if (!append(out, *item))
         {
-            send_internal_server_error(database::error::integrity);
+            if (pruned)
+                send_not_found();
+            else
+                send_internal_server_error(database::error::integrity);
+
             return;
         }
     }

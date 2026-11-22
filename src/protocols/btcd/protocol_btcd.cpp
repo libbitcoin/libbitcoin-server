@@ -121,6 +121,28 @@ static bool is_unanswered(const request_t& message) NOEXCEPT
         std::holds_alternative<null_t>(message.id.value());
 }
 
+static bool is_websocket_only(const std::string& method) NOEXCEPT
+{
+    static constexpr std::array methods
+    {
+        interface::btcd::authenticate::name,
+        interface::btcd::session::name,
+        interface::btcd::notify_blocks::name,
+        interface::btcd::stop_notify_blocks::name,
+        interface::btcd::notify_new_transactions::name,
+        interface::btcd::stop_notify_new_transactions::name,
+        interface::btcd::load_tx_filter::name,
+        interface::btcd::rescan_blocks::name,
+        interface::btcd::notify_received::name,
+        interface::btcd::stop_notify_received::name,
+        interface::btcd::notify_spent::name,
+        interface::btcd::stop_notify_spent::name,
+        interface::btcd::rescan::name
+    };
+
+    return std::ranges::find(methods, method) != methods.end();
+}
+
 void protocol_btcd::handle_receive_post(const code& ec,
     const post::cptr& post) NOEXCEPT
 {
@@ -153,9 +175,8 @@ void protocol_btcd::handle_receive_post(const code& ec,
         return;
     }
 
-    // authenticate is websocket-only: excluded from the post surface,
-    // silently deferring to the terminal miss (method not found).
-    if (message.method == btcd_interface::authenticate::name)
+    // Websocket-only methods silently defer to the terminal miss.
+    if (is_websocket_only(message.method))
         return;
 
     // Silently defer methods not defined by the btcd interface.
@@ -187,11 +208,17 @@ void protocol_btcd::dispatch_websocket(
     // In-band authorization: until authorized, every method (of any attached
     // interface) is unauthorized except authenticate, which is thereafter.
     // Claimed here so the connection stays open for the authentication flow.
+    // A repeated authenticate ends the connection once the error is sent.
     if (authenticate == authorized())
     {
         set_claimed();
         set_rpc_request(message);
-        send_error(network::error::unauthorized);
+        const code unauthorized{ network::error::unauthorized };
+        if (authenticate)
+            send_error(unauthorized, unauthorized);
+        else
+            send_error(unauthorized);
+
         return;
     }
 
@@ -263,7 +290,7 @@ bool protocol_btcd::handle_session(const code& ec,
         return false;
 
     object_t result{};
-    result.emplace("id", identifier());
+    result.emplace("sessionid", identifier());
     send_result(std::move(result));
     return true;
 }

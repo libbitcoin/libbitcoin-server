@@ -213,4 +213,16 @@ struct btcd_dangling_setup_fixture
     }
 };
 
+struct btcd_pruned_setup_fixture
+  : btcd_setup_fixture
+{
+    inline btcd_pruned_setup_fixture()
+      : btcd_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_pruned_store(query);
+        }, true, test::configure_pruned)
+    {
+    }
+};
+
 #endif

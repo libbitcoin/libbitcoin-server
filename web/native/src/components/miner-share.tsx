@@ -82,9 +82,6 @@ export function MinerShareCard({ count }: { count: number }) {
             )}
           </svg>
           <ul className="min-w-0 flex-1 text-xs leading-tight">
-            <li className="text-textMuted text-right">
-              {`Last ${formatNumber(total, { maximumFractionDigits: 0 })} blocks`}
-            </li>
             {shares.map((share) => (
               <li key={share.name} className="flex items-center gap-1.5">
                 <span

@@ -357,7 +357,8 @@ BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get__version_1_2_verbose__exp
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
-    auto expected = value_from(bitcoind(coinbase));
+    // Parsed as the response is, so that amounts are doubles.
+    auto expected = json::parse(json::serialize(value_from(bitcoind(coinbase))));
     BC_REQUIRE(expected.is_object());
 
     // The test store is ten confirmed blocks, so top height of nine.
@@ -897,6 +898,28 @@ BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get_merkle__unassociated__dae
     constexpr auto request = R"({{"id":4000,"method":"blockchain.transaction.get_merkle","params":["{}",3]}})" "\n";
     const auto result = get_error(std::format(request, hash));
     BC_REQUIRE_EQUAL(result, daemon_error.value());
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(electrum_transactions_pruned_tests, electrum_pruned_setup_fixture)
+
+BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get__pruned__daemon_error)
+{
+    BC_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto txid = system::encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto response = get(R"({"id":77,"method":"blockchain.transaction.get","params":[")" + txid + R"(",false]})" "\n");
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), code{ server::error::electrum::daemon_error }.value());
+}
+
+BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get__pruned_verbose__daemon_error)
+{
+    BC_REQUIRE(handshake(electrum::version::v1_0));
+
+    const auto txid = system::encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto response = get(R"({"id":78,"method":"blockchain.transaction.get","params":[")" + txid + R"(",true]})" "\n");
+    BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), code{ server::error::electrum::daemon_error }.value());
 }
 
 BC_AUTO_TEST_SUITE_END()

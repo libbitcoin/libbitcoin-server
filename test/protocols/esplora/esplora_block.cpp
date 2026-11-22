@@ -393,6 +393,17 @@ BC_AUTO_TEST_CASE(esplora__block_raw__pruned_genesis__ok)
     BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(test::genesis.hash()) + "/raw"), http::status::ok);
 }
 
+BC_AUTO_TEST_CASE(esplora__block_txs__pruned__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(test::block1.hash()) + "/txs"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(esplora__scripthash_txs__pruned__not_found)
+{
+    const auto script = test::block1.transactions_ptr()->front()->outputs_ptr()->front()->script().to_data(false);
+    BC_REQUIRE_EQUAL(get_status("/scripthash/" + encode_base16(sha256_hash(script)) + "/txs"), http::status::not_found);
+}
+
 BC_AUTO_TEST_CASE(esplora__block__pruned__ok)
 {
     BC_REQUIRE_EQUAL(get_status("/block/" + encode_hash(test::block1.hash())), http::status::ok);

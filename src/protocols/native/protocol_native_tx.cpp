@@ -42,7 +42,14 @@ bool protocol_native::handle_get_tx(const code& ec, interface::tx, uint8_t,
         return false;
 
     const auto& query = archive();
-    if (const auto tx = query.get_transaction(query.to_tx(*hash), witness))
+    const auto link = query.to_tx(*hash);
+    if (query.is_pruned(link))
+    {
+        send_not_found();
+        return true;
+    }
+
+    if (const auto tx = query.get_transaction(link, witness))
     {
         const auto size = tx->serialized_size(witness);
         switch (media)

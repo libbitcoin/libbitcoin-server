@@ -189,7 +189,7 @@ bool protocol_bitcoind_rest::handle_get_block(const code& ec,
     const auto link = query.to_header(*hash);
     const auto turbo = database_settings().turbo;
     size_t size{};
-    if (is_pruned_block(link) || !query.get_block_size(size, link, witness))
+    if (query.is_pruned(link) || !query.get_block_size(size, link, witness))
     {
         send_not_found();
         return true;
@@ -251,7 +251,9 @@ bool protocol_bitcoind_rest::handle_get_tx(const code& ec,
     constexpr auto witness = true;
     const auto& query = archive();
     const auto link = query.to_tx(*hash);
-    const auto tx = query.get_transaction(link, witness);
+    const auto tx = query.is_pruned(link) ? nullptr :
+        query.get_transaction(link, witness);
+
     if (!tx)
     {
         send_not_found();
@@ -327,7 +329,10 @@ bool protocol_bitcoind_rest::handle_get_block_txs(const code& ec,
 
     constexpr auto witness = true;
     const auto& query = archive();
-    const auto block = query.get_block(query.to_header(*hash), witness);
+    const auto link = query.to_header(*hash);
+    const auto block = query.is_pruned(link) ? nullptr :
+        query.get_block(link, witness);
+
     if (!block)
     {
         send_not_found();
@@ -467,7 +472,10 @@ bool protocol_bitcoind_rest::handle_get_block_part(const code& ec,
 
     constexpr auto witness = true;
     const auto& query = archive();
-    const auto block = query.get_block(query.to_header(*hash), witness);
+    const auto link = query.to_header(*hash);
+    const auto block = query.is_pruned(link) ? nullptr :
+        query.get_block(link, witness);
+
     if (!block)
     {
         send_not_found();
@@ -584,8 +592,7 @@ bool protocol_bitcoind_rest::handle_get_block_spent_tx_outputs(const code& ec,
                 for (const auto& output: outs)
                     prevouts.emplace_back(object
                     {
-                        { "value", output->value() /
-                            to_floating(chain::satoshi_per_bitcoin) },
+                        { "value", to_btc(output->value()) },
                         { "scriptPubKey", script_public_key(output->script()) }
                     });
 
@@ -895,8 +902,7 @@ bool protocol_bitcoind_rest::handle_get_utxos(const code& ec,
                 models.emplace_back(object
                 {
                     { "height", unspent.height },
-                    { "value", unspent.out->value() /
-                        to_floating(chain::satoshi_per_bitcoin) },
+                    { "value", to_btc(unspent.out->value()) },
                     { "scriptPubKey", script_public_key(unspent.out->script()) }
                 });
 
@@ -972,28 +978,23 @@ bool protocol_bitcoind_rest::handle_get_mempool_information(const code& ec,
     if (stopped(ec))
         return false;
 
-    const auto& settings = node_settings().pool;
-    const auto minimum = to_floating(minimum_fee_rate()) /
-        chain::satoshi_per_bitcoin;
-    const auto relay = to_floating(settings.minimum_fee_rate_()) /
-        chain::satoshi_per_bitcoin;
-
-    get_confirmable_fees(BIND(handle_mempool_information, _1, _2, minimum,
-        relay, settings.minimum_fee_rate, gate()));
+    const auto relay = node_settings().pool.minimum_fee_rate_();
+    get_confirmable_fees(BIND(handle_mempool_information, _1, _2,
+        minimum_fee_rate(), relay, relay, gate()));
     return true;
 }
 
 void protocol_bitcoind_rest::handle_mempool_information(const code& ec,
-    const database::fee_rates& rates, double minimum, double relay,
-    double increment, const gate_t::ptr& gate) NOEXCEPT
+    const database::fee_rates& rates, uint64_t minimum, uint64_t relay,
+    uint64_t increment, const gate_t::ptr& gate) NOEXCEPT
 {
     POST(complete_mempool_information, ec, rates, minimum, relay, increment,
         gate);
 }
 
 void protocol_bitcoind_rest::complete_mempool_information(const code& ec,
-    const database::fee_rates& rates, double minimum, double relay,
-    double increment, const gate_t::ptr&) NOEXCEPT
+    const database::fee_rates& rates, uint64_t minimum, uint64_t relay,
+    uint64_t increment, const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
