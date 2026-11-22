@@ -2601,6 +2601,11 @@ options_metadata parser::load_settings() THROWS
         setting<uint32_t>(&configured.node.pool.maximum_chunk_depth),
         "Maximum ancestor depth of a block template chunk, defaults to {}."
     )
+    (
+        "pool.thread_priority",
+        setting<bool>(&configured.node.pool.thread_priority),
+        "Set the transaction pool thread to high processing priority, defaults to {}."
+    )
 
     /* [database] */
     (
