@@ -332,6 +332,13 @@ BC_AUTO_TEST_CASE(esplora__tip_height__no_credential__unauthorized)
     BC_REQUIRE_EQUAL(get_status("/blocks/tip/height"), http::status::unauthorized);
 }
 
+BC_AUTO_TEST_CASE(esplora__tip_height__no_credential__basic_challenge)
+{
+    const auto response = get_response("/blocks/tip/height", http::field::user_agent, "libbitcoin");
+    BC_REQUIRE(response.result() == http::status::unauthorized);
+    BC_REQUIRE_EQUAL(response[http::field::www_authenticate], R"(Basic realm="libbitcoin")");
+}
+
 BC_AUTO_TEST_SUITE_END()
 
 BC_FIXTURE_TEST_SUITE(esplora_v2_10_tests, esplora_v2_10_setup_fixture)
