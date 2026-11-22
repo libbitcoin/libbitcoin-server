@@ -945,7 +945,7 @@ void protocol_btcd::do_transaction(node::transaction_t link_value) NOEXCEPT
         return;
     }
 
-    const auto model = btcd::search_transaction(query, link, *tx, {}, false,
+    const auto model = btcd::verbose_transaction(query, link, *tx, {}, false,
         p2kh_, p2sh_, witness_, flags_);
 
     POST_BTCD(notify_transaction, true, emplace_shared<array_t>(array_t

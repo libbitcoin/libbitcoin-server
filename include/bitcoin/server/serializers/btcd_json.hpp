@@ -26,8 +26,14 @@ namespace libbitcoin {
 namespace server {
 namespace btcd {
 
-/// The verbose searchrawtransactions element: the bitcoind transaction model
-/// with btcd's prevOut extension and address filtering.
+/// The btcd verbose transaction, with btcd's prevOut extension and address
+/// filtering.
+BCS_API system::json::object verbose_transaction(const node::query& query,
+    const database::tx_link& link, const system::chain::transaction& tx,
+    const std::set<std::string>& filter, bool prevouts, uint8_t p2kh,
+    uint8_t p2sh, const std::string& witness, uint32_t flags) NOEXCEPT;
+
+/// The verbose searchrawtransactions element, with empty hash and sizes.
 BCS_API system::json::object search_transaction(const node::query& query,
     const database::tx_link& link, const system::chain::transaction& tx,
     const std::set<std::string>& filter, bool prevouts, uint8_t p2kh,

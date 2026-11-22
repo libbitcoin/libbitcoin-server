@@ -41,6 +41,27 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
 BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 
+// Relative to the network proof of work limit, rounded to eight places.
+static double difficulty(uint32_t bits, uint32_t limit) NOEXCEPT
+{
+    constexpr auto scale = 100'000'000.0;
+    constexpr auto mantissa = 0x007fffff_u32;
+    const auto exponents = to_floating(shift_right(limit, 24)) -
+        to_floating(shift_right(bits, 24));
+
+    const auto ratio = to_floating(bit_and(limit, mantissa)) /
+        to_floating(bit_and(bits, mantissa)) * std::pow(256.0, exponents);
+
+    return std::round(ratio * scale) / scale;
+}
+
+static bool is_testnet(const system::settings& settings) NOEXCEPT
+{
+    const auto network = settings.genesis_network;
+    return network == chain::selection::testnet3
+        || network == chain::selection::testnet4;
+}
+
 // Handlers (getters).
 // ----------------------------------------------------------------------------
 
@@ -153,11 +174,18 @@ bool protocol_btcd::handle_get_cfilter(const code& ec,
     }
 
     uint8_t type{};
-    data_chunk filter{};
     const auto& query = archive();
     if (!to_integer(type, filtertype) || !is_zero(type) ||
-        !query.filter_enabled() ||
-        !query.get_filter_body(filter, query.to_header(key)))
+        !query.filter_enabled())
+    {
+        send_error(error::btcd::invalid_address_or_key);
+        return true;
+    }
+
+    // btcd answers an unknown block with an empty filter.
+    data_chunk filter{};
+    const auto link = query.to_header(key);
+    if (!link.is_terminal() && !query.get_filter_body(filter, link))
     {
         send_error(error::btcd::invalid_address_or_key);
         return true;
@@ -221,7 +249,8 @@ bool protocol_btcd::handle_get_difficulty(const code& ec,
         return true;
     }
 
-    send_result(header->difficulty());
+    const auto limit = system_settings().proof_of_work_limit;
+    send_result(difficulty(header->bits(), limit));
     return true;
 }
 
@@ -290,6 +319,8 @@ bool protocol_btcd::handle_get_info(const code& ec,
     const auto proxy = outbound.proxied() ? outbound.socks.to_string() :
         std::string{};
 
+    const auto& settings = system_settings();
+    const auto limit = settings.proof_of_work_limit;
     send_result(object_t
     {
         { "version", version },
@@ -298,8 +329,8 @@ bool protocol_btcd::handle_get_info(const code& ec,
         { "timeoffset", 0 },
         { "connections", to64(channel_count()) },
         { "proxy", proxy },
-        { "difficulty", header->difficulty() },
-        { "testnet", chain_name(system_settings()) != "main" },
+        { "difficulty", difficulty(header->bits(), limit) },
+        { "testnet", is_testnet(settings) },
         { "relayfee", node_settings().pool.minimum_fee_rate },
         { "errors", std::string{} }
     });
