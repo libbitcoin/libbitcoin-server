@@ -2602,6 +2602,11 @@ options_metadata parser::load_settings() THROWS
         "Maximum ancestor depth of a block template chunk, defaults to {}."
     )
     (
+        "pool.estimate_cache_seconds",
+        setting<uint16_t>(&configured.node.pool.estimate_cache_seconds),
+        "Seconds that fee estimates share one projection of the pool, defaults to {} (0 disables)."
+    )
+    (
         "pool.thread_priority",
         setting<bool>(&configured.node.pool.thread_priority),
         "Set the transaction pool thread to high processing priority, defaults to {}."
