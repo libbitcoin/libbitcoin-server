@@ -60,7 +60,11 @@ protected:
 
     /// The testmempoolaccept result of the tx, given the package code.
     virtual network::rpc::object_t test_result(const code& ec,
-        const system::chain::transaction& tx) NOEXCEPT;
+        const system::chain::transaction& tx, double maxfeerate) NOEXCEPT;
+
+    /// The fee exceeds the rate (btc/kvB) for the virtual size, zero disables.
+    static bool is_excessive(uint64_t fee, size_t vsize,
+        double maxfeerate) NOEXCEPT;
 
     /// Absent and confirmed-spent inputs are missing coins.
     static bool is_missing(const code& ec) NOEXCEPT;
@@ -114,10 +118,10 @@ protected:
         const network::rpc::array_t& descriptors) NOEXCEPT;
 
     void handle_test_package(const code& ec, size_t index,
-        const system::chain::transactions_cptr& txs,
+        const system::chain::transactions_cptr& txs, double maxfeerate,
         const gate_t::ptr& gate) NOEXCEPT;
     void complete_test_package(const code& ec,
-        const system::chain::transactions_cptr& txs,
+        const system::chain::transactions_cptr& txs, double maxfeerate,
         const gate_t::ptr& gate) NOEXCEPT;
 
     void handle_submit_tx(const code& ec, size_t link,

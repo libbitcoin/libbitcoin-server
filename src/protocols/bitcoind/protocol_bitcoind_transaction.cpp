@@ -107,18 +107,30 @@ static bool get_fee(uint64_t& fee, const chain::transaction& tx,
 }
 
 // Compared in satoshis per virtual kilobyte, zero disables.
+static bool excessive(uint64_t fee, size_t vsize, double maxfeerate) NOEXCEPT
+{
+    if (is_zero(maxfeerate))
+        return false;
+
+    const auto rate = to_rounded_integer<uint64_t>(maxfeerate *
+        chain::satoshi_per_bitcoin);
+    const auto size = possible_wide_cast<uint64_t>(vsize);
+    return ceilinged_multiply(fee, 1'000_u64) > ceilinged_multiply(rate, size);
+}
+
 static bool exceeds_fee_rate(const chain::transaction& tx,
     const chain::transaction_cptrs& package, double maxfeerate,
     const node::query& query) NOEXCEPT
 {
     uint64_t fee{};
-    if (is_zero(maxfeerate) || !get_fee(fee, tx, package, query))
-        return false;
+    return get_fee(fee, tx, package, query) &&
+        excessive(fee, tx.virtual_size(), maxfeerate);
+}
 
-    const auto rate = to_rounded_integer<uint64_t>(maxfeerate *
-        chain::satoshi_per_bitcoin);
-    const auto size = possible_wide_cast<uint64_t>(tx.virtual_size());
-    return ceilinged_multiply(fee, 1'000_u64) > ceilinged_multiply(rate, size);
+bool protocol_bitcoind_transaction::is_excessive(uint64_t fee, size_t vsize,
+    double maxfeerate) NOEXCEPT
+{
+    return excessive(fee, vsize, maxfeerate);
 }
 
 static bool exceeds_burn(const chain::transaction& tx,
@@ -459,19 +471,22 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
 
     constexpr auto test = true;
     const auto package = to_shared<chain::transaction_cptrs>(std::move(txs));
-    submit(package, test, BIND(handle_test_package, _1, _2, package, gate()));
+    submit(package, test, BIND(handle_test_package, _1, _2, package,
+        maxfeerate, gate()));
     return true;
 }
 
 void protocol_bitcoind_transaction::handle_test_package(const code& ec, size_t,
-    const chain::transactions_cptr& txs, const gate_t::ptr& gate) NOEXCEPT
+    const chain::transactions_cptr& txs, double maxfeerate,
+    const gate_t::ptr& gate) NOEXCEPT
 {
-    POST(complete_test_package, ec, txs, gate);
+    POST(complete_test_package, ec, txs, maxfeerate, gate);
 }
 
 // The package is accepted as a whole, so its code applies to each of its txs.
 void protocol_bitcoind_transaction::complete_test_package(const code& ec,
-    const chain::transactions_cptr& txs, const gate_t::ptr&) NOEXCEPT
+    const chain::transactions_cptr& txs, double maxfeerate,
+    const gate_t::ptr&) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -481,26 +496,36 @@ void protocol_bitcoind_transaction::complete_test_package(const code& ec,
     array_t results{};
     results.reserve(txs->size());
     for (const auto& tx: *txs)
-        results.emplace_back(test_result(ec, *tx));
+        results.emplace_back(test_result(ec, *tx, maxfeerate));
 
     send_result(std::move(results));
 }
 
 object_t protocol_bitcoind_transaction::test_result(const code& ec,
-    const chain::transaction& tx) NOEXCEPT
+    const chain::transaction& tx, double maxfeerate) NOEXCEPT
 {
     object_t result
     {
         { "txid", encode_hash(tx.hash(false)) },
-        { "wtxid", encode_hash(tx.hash(true)) },
-        { "allowed", !ec }
+        { "wtxid", encode_hash(tx.hash(true)) }
     };
 
     // An accepted tx is populated, so its fee is known.
+    uint64_t fee{};
+    if (!ec)
+        fee = tx.fee();
+
+    const auto vsize = tx.virtual_size();
+    if (!ec && is_excessive(fee, vsize, maxfeerate))
+    {
+        result.emplace("allowed", false);
+        result.emplace("reject-reason", std::string{ "max-fee-exceeded" });
+        return result;
+    }
+
+    result.emplace("allowed", !ec);
     if (!ec)
     {
-        const auto fee = tx.fee();
-        const auto vsize = tx.virtual_size();
         const auto rate = fee * 1'000u / possible_wide_cast<uint64_t>(vsize);
         result.emplace("vsize", to64(vsize));
         result.emplace("fees", object_t

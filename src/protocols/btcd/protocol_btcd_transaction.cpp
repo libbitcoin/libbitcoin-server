@@ -44,7 +44,7 @@ void protocol_btcd_transaction::send_rejected(const code& ec,
 }
 
 object_t protocol_btcd_transaction::test_result(const code& ec,
-    const chain::transaction& tx) NOEXCEPT
+    const chain::transaction& tx, double maxfeerate) NOEXCEPT
 {
     object_t result
     {
@@ -53,12 +53,24 @@ object_t protocol_btcd_transaction::test_result(const code& ec,
         { "package-error", std::string{} }
     };
 
-    // An accepted tx is populated, so its fee is known.
+    // An accepted tx is populated, so its fee is known. btcd defaults a zero
+    // maximum rate.
+    constexpr auto default_rate = 0.1;
+    const auto maximum = is_zero(maxfeerate) ? default_rate : maxfeerate;
+    uint64_t fee{};
+    if (!ec)
+        fee = tx.fee();
+
+    const auto vsize = tx.virtual_size();
+    if (!ec && is_excessive(fee, vsize, maximum))
+    {
+        result.emplace("reject-reason", std::string{ "max-fee-exceeded" });
+        return result;
+    }
+
     if (!ec)
     {
         constexpr auto coin = to_floating(chain::satoshi_per_bitcoin);
-        const auto fee = tx.fee();
-        const auto vsize = tx.virtual_size();
         const auto rate = fee * 1'000u / possible_wide_cast<uint64_t>(vsize);
         result.emplace("allowed", true);
         result.emplace("vsize", to64(vsize));

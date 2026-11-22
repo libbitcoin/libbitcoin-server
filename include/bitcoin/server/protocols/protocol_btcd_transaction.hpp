@@ -46,7 +46,8 @@ protected:
     void send_rejected(const code& ec,
         const system::chain::transaction& tx) NOEXCEPT override;
     network::rpc::object_t test_result(const code& ec,
-        const system::chain::transaction& tx) NOEXCEPT override;
+        const system::chain::transaction& tx,
+        double maxfeerate) NOEXCEPT override;
 
 private:
     bool is_orphan(const code& ec,
