@@ -9,6 +9,7 @@ export default defineConfig({
   plugins: [tailwindcss(), react(), tsconfigPaths(), licenses()],
   build: {
     assetsDir: "", // all files in dist root
+    chunkSizeWarningLimit: 1024, // single bundle per page
     rollupOptions: {
       onwarn,
       output: {

@@ -13,6 +13,7 @@ export default defineConfig({
   },
   build: {
     assetsDir: "",
+    chunkSizeWarningLimit: 1024,
     rollupOptions: {
       onwarn,
       output: {
