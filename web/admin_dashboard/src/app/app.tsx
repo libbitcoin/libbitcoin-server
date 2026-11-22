@@ -4,6 +4,7 @@ import { EventView } from '@/components/event-view';
 import { LogView } from '@/components/log-view';
 import { Overview } from '@/components/overview';
 import { SyncStatusNotifier } from '@/components/sync-status-notifier';
+import { TemplateView } from '@/components/template-view';
 import {
   loadBrowserNotificationsEnabled,
   saveBrowserNotificationsEnabled,
@@ -16,10 +17,11 @@ import { useAdminTelemetry, useNativeTelemetry } from '@/lib/use-telemetry';
 import { useCurrentTime } from '@/lib/use-current-time';
 import { coinOf } from '@/lib/wallet-prefixes';
 
-type DashboardView = 'overview' | 'logs' | 'events';
+type DashboardView = 'overview' | 'templates' | 'logs' | 'events';
 
 const navigation: Array<{ id: DashboardView; label: string }> = [
   { id: 'overview', label: 'Overview' },
+  { id: 'templates', label: 'Templates' },
   { id: 'logs', label: 'Logs' },
   { id: 'events', label: 'Events' },
 ];
@@ -146,6 +148,7 @@ export function App() {
             sync={sync}
           />
         )}
+        {view === 'templates' && <TemplateView />}
         {view === 'logs' && (
           <LogView
             metrics={metrics}
