@@ -53,6 +53,18 @@ constexpr auto decode_failed =
 constexpr auto inputs_missing = "Inputs missing or spent";
 constexpr auto outputs_known = "Transaction outputs already in utxo set";
 
+double protocol_bitcoind_transaction::created_version(
+    double requested) const NOEXCEPT
+{
+    return requested;
+}
+
+void protocol_bitcoind_transaction::inject_decoded(system::json::object& out,
+    const chain::transaction& tx) const NOEXCEPT
+{
+    inject_scripts(out, tx);
+}
+
 bool protocol_bitcoind_transaction::is_missing(const code& ec) NOEXCEPT
 {
     return (ec == system::error::missing_previous_output) ||
@@ -196,7 +208,7 @@ bool protocol_bitcoind_transaction::handle_create_raw_transaction(
 
     chain::transaction tx{};
     if (const auto fault = parse_transaction(tx, inputs, outputs, locktime,
-        replaceable, version, p2kh_, p2sh_, witness_,
+        replaceable, created_version(version), p2kh_, p2sh_, witness_,
         system_settings().max_money()))
     {
         send_error(fault);
@@ -235,7 +247,7 @@ bool protocol_bitcoind_transaction::handle_decode_raw_transaction(const code& ec
     }
 
     auto model = value_from(bitcoind(tx, flags_));
-    inject_scripts(model.as_object(), tx);
+    inject_decoded(model.as_object(), tx);
     send_result(std::move(model));
     return true;
 }

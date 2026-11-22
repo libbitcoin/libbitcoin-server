@@ -383,6 +383,7 @@ BC_AUTO_TEST_CASE(btcd_rpc__createrawtransaction__one_input_one_output__decodes)
 
     const chain::transaction tx{ data, false };
     BC_REQUIRE(tx.is_valid());
+    BC_REQUIRE_EQUAL(tx.version(), 1u);
     BC_REQUIRE_EQUAL(tx.inputs_ptr()->size(), 1u);
     BC_REQUIRE_EQUAL(tx.outputs_ptr()->size(), 1u);
 }
@@ -395,6 +396,8 @@ BC_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__block1_coinbase__expected_txid
     BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
     BC_REQUIRE_EQUAL(as_text(response.at("result").at("txid")), encode_hash(coinbase.hash(false)));
+    BC_REQUIRE(!response.at("result").as_object().contains("hash"));
+    BC_REQUIRE(!response.at("result").as_object().contains("size"));
 }
 
 BC_AUTO_TEST_CASE(btcd_rpc__decoderawtransaction__malformed_hex__deserialization)

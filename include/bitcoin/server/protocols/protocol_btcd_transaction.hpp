@@ -45,6 +45,9 @@ public:
     }
 
 protected:
+    double created_version(double requested) const NOEXCEPT override;
+    void inject_decoded(system::json::object& out,
+        const system::chain::transaction& tx) const NOEXCEPT override;
     void send_rejected(const code& ec,
         const system::chain::transaction& tx) NOEXCEPT override;
     network::rpc::object_t test_result(const code& ec,
