@@ -4,6 +4,7 @@ import { BlockchainClientProvider, TurboProvider, createBlockchainClient } from 
 import { BlockchainEventCacheUpdater } from '@/lib/hooks/useBlockchainData';
 import { ScriptExplainerPreferenceProvider } from './script-explainer-preference';
 import { SavedInvestigationsProvider } from './saved-investigations';
+import { AddressQueriesDisabledError } from '@/lib/api/errors';
 
 function readLocalStorage(key: string): string | null {
   const window_ = (globalThis as unknown as { window?: Window }).window;
@@ -32,7 +33,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
           queries: {
             staleTime: 30_000,
             refetchOnWindowFocus: false,
-            retry: 1,
+            retry: (failures, error) =>
+              failures < 1 && !(error instanceof AddressQueriesDisabledError),
           },
         },
       })

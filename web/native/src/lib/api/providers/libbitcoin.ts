@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AddressQueriesDisabledError } from '@/lib/api/errors';
 import {
   AddressActivityItem,
   AddressSummary,
@@ -1422,7 +1423,7 @@ export function createLibbitcoinClient({
 
       const config = configuration ?? (await ensureConfiguration());
       if (!isAddressEnabled(config)) {
-        throw new Error('Address endpoints are disabled by server configuration');
+        throw new AddressQueriesDisabledError();
       }
       const turbo = turboAddress && isTurboEnabled(config);
 
@@ -1450,7 +1451,7 @@ export function createLibbitcoinClient({
 
       const config = configuration ?? (await ensureConfiguration());
       if (!isAddressEnabled(config)) {
-        throw new Error('Address endpoints are disabled by server configuration');
+        throw new AddressQueriesDisabledError();
       }
       const turbo = turboAddress && isTurboEnabled(config);
       const utxos = await getConfirmedUtxosCached(scriptInfo.hash, turbo);
@@ -1468,7 +1469,7 @@ export function createLibbitcoinClient({
       const scriptInfo = scriptHashFromAddress(address, networkParams);
       if (!scriptInfo) return [];
       const config = configuration ?? (await ensureConfiguration());
-      if (!isAddressEnabled(config)) return [];
+      if (!isAddressEnabled(config)) throw new AddressQueriesDisabledError();
       const turbo = turboAddress && isTurboEnabled(config);
       return buildAddressActivityPage(scriptInfo.hash, turbo, cursor);
     },

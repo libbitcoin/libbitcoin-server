@@ -20,6 +20,7 @@ import {
   satsToBtc,
 } from '@/lib/utils/format';
 import { useBlockchainClient, type AddressActivityItem } from '@/lib/api/client';
+import { AddressQueriesDisabledError } from '@/lib/api/errors';
 import { copyTextToClipboard } from '@/lib/utils/clipboard';
 import { AddressQRCode } from '@/components/qr-code';
 import { HashText } from '@/components/hash-text';
@@ -98,6 +99,9 @@ export function AddressPage() {
     isFetching: utxosFetching,
     refetch: refetchUtxos,
   } = useAddressUtxos(queryAddressKey);
+  const addressDisabled = [summaryError, utxosError, initialTransactionsError].some(
+    (error) => error instanceof AddressQueriesDisabledError
+  );
   const [utxoPagination, setUtxoPagination] = useState({ key: '', limit: UTXO_PAGE_SIZE });
   const totalUtxoValue = useMemo(
     () => utxos?.reduce((total, utxo) => total + utxo.valueSats, 0) ?? 0,
@@ -176,7 +180,14 @@ export function AddressPage() {
 
   return (
     <div className="space-y-8">
-      {summaryIsError ? (
+      {addressDisabled ? (
+        <div className="border-accent/30 bg-surface/80 text-textPrimary rounded-xl border px-4 py-3 text-sm">
+          <p className="text-accent font-semibold">Address queries are disabled</p>
+          <p className="text-textMuted mt-1">
+            This server is configured without an address index.
+          </p>
+        </div>
+      ) : summaryIsError ? (
         <div className="border-accentSecondary/40 bg-accentSecondary/10 text-textPrimary rounded-xl border px-4 py-3 text-sm">
           <p className="text-accent font-semibold">Could not load address</p>
           <p className="text-textMuted mt-1 break-words">
@@ -213,260 +224,266 @@ export function AddressPage() {
       </header>
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto]">
-        <div className="border-accent/30 bg-surface/80 grid gap-4 rounded-xl border p-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
-          <InfoItem label="Balance" value={balanceBtc} />
-          <InfoItem label="Total received" value={receivedBtc} />
-          <InfoItem label="Total sent" value={sentBtc} />
-          <InfoItem
-            label="Transaction count"
-            value={summaryLoading ? '—' : formatNumber(data?.txCount, { maximumFractionDigits: 0 })}
-          />
-          <InfoItem
-            label="UTXO count"
-            value={formatNumber(data?.utxoCount ?? undefined, {
-              maximumFractionDigits: 0,
-            })}
-          />
-          <InfoItem label="Address type" value={data?.addressType ?? '—'} />
-        </div>
+        {!addressDisabled && (
+          <div className="border-accent/30 bg-surface/80 grid gap-4 rounded-xl border p-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            <InfoItem label="Balance" value={balanceBtc} />
+            <InfoItem label="Total received" value={receivedBtc} />
+            <InfoItem label="Total sent" value={sentBtc} />
+            <InfoItem
+              label="Transaction count"
+              value={summaryLoading ? '—' : formatNumber(data?.txCount, { maximumFractionDigits: 0 })}
+            />
+            <InfoItem
+              label="UTXO count"
+              value={formatNumber(data?.utxoCount ?? undefined, {
+                maximumFractionDigits: 0,
+              })}
+            />
+            <InfoItem label="Address type" value={data?.addressType ?? '—'} />
+          </div>
+        )}
         <div className="place-self-start">
           <AddressQRCode value={addressValue} />
         </div>
       </section>
 
-      <section aria-labelledby="address-utxos-heading">
-        <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 id="address-utxos-heading" className="text-accent text-lg font-semibold">
-              Unspent Outputs
-            </h2>
-          </div>
-          <p className="text-textMuted text-sm" aria-live="polite">
-            {utxosLoading
-              ? 'Loading outputs…'
-              : utxosIsError
-                ? 'Outputs unavailable'
-                : `${formatNumber(utxos?.length ?? 0, {
-                    maximumFractionDigits: 0,
-                  })} outputs · ${formatSats(totalUtxoValue)}`}
-          </p>
-        </header>
-        <div className="border-accent/30 overflow-hidden overflow-x-auto rounded-xl border">
-          <table className="divide-accentSecondary/30 min-w-full divide-y text-sm">
-            <caption className="sr-only">
-              Unspent transaction outputs for {addressValue || 'this address'}
-            </caption>
-            <thead className="bg-accentSecondary/20 text-textMuted text-xs uppercase">
-              <tr>
-                <th scope="col" className="px-4 py-3 text-left">
-                  Outpoint
-                </th>
-                <th scope="col" className="px-4 py-3 text-right">
-                  Value
-                </th>
-                <th scope="col" className="px-4 py-3 text-left">
-                  Status
-                </th>
-                <th scope="col" className="px-4 py-3 text-left">
-                  Block
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {utxosLoading && (
+      {!addressDisabled && (
+        <section aria-labelledby="address-utxos-heading">
+          <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 id="address-utxos-heading" className="text-accent text-lg font-semibold">
+                Unspent Outputs
+              </h2>
+            </div>
+            <p className="text-textMuted text-sm" aria-live="polite">
+              {utxosLoading
+                ? 'Loading outputs…'
+                : utxosIsError
+                  ? 'Outputs unavailable'
+                  : `${formatNumber(utxos?.length ?? 0, {
+                      maximumFractionDigits: 0,
+                    })} outputs · ${formatSats(totalUtxoValue)}`}
+            </p>
+          </header>
+          <div className="border-accent/30 overflow-hidden overflow-x-auto rounded-xl border">
+            <table className="divide-accentSecondary/30 min-w-full divide-y text-sm">
+              <caption className="sr-only">
+                Unspent transaction outputs for {addressValue || 'this address'}
+              </caption>
+              <thead className="bg-accentSecondary/20 text-textMuted text-xs uppercase">
                 <tr>
-                  <td colSpan={4} className="text-textMuted px-4 py-6 text-center">
-                    Loading unspent outputs…
-                  </td>
+                  <th scope="col" className="px-4 py-3 text-left">
+                    Outpoint
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right">
+                    Value
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left">
+                    Status
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left">
+                    Block
+                  </th>
                 </tr>
-              )}
-              {utxosIsError && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center">
-                    <div role="alert">
-                      <p className="text-accentSecondary">Could not load unspent outputs.</p>
-                      <p className="text-textMuted mt-1 text-xs break-words">
-                        {utxosError instanceof Error ? utxosError.message : 'Unknown error'}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void refetchUtxos();
-                        }}
-                        disabled={utxosFetching}
-                        className="border-accent text-accent hover:border-accentSecondary hover:text-accentSecondary mt-3 rounded-md border px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {utxosFetching ? 'Retrying…' : 'Retry'}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )}
-              {!utxosLoading && !utxosIsError && visibleUtxos.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="text-textMuted px-4 py-6 text-center">
-                    No unspent outputs are currently reported for this address.
-                  </td>
-                </tr>
-              )}
-              {!utxosIsError &&
-                visibleUtxos.map((utxo) => (
-                  <tr
-                    key={`${utxo.txid}:${String(utxo.outputIndex)}`}
-                    className="hover:bg-accentSecondary/10"
-                  >
-                    <td className="px-4 py-3">
-                      <Link
-                        to={transactionOutputPath(utxo.txid, utxo.outputIndex)}
-                        className="text-accent hover:text-accentSecondary font-mono"
-                        title={`${utxo.txid}:${String(utxo.outputIndex)}`}
-                        aria-label={`${utxo.txid}:${String(utxo.outputIndex)}`}
-                      >
-                        <HashText value={utxo.txid} truncate={12} />:
-                        {formatNumber(utxo.outputIndex, { maximumFractionDigits: 0 })}
-                      </Link>
-                    </td>
-                    <td className="text-textPrimary px-4 py-3 text-right whitespace-nowrap">
-                      {formatSats(utxo.valueSats)}
-                    </td>
-                    <td
-                      className={`px-4 py-3 ${
-                        utxo.status === 'confirmed' ? 'text-textPrimary' : 'text-accentSecondary'
-                      }`}
-                    >
-                      {utxo.status === 'confirmed' ? 'Confirmed' : 'Unconfirmed'}
-                    </td>
-                    <td className="text-textMuted px-4 py-3 whitespace-nowrap">
-                      {utxo.blockHeight === undefined ? (
-                        utxo.status === 'unconfirmed' ? (
-                          'Unconfirmed'
-                        ) : (
-                          '—'
-                        )
-                      ) : (
-                        <Link
-                          to={blockByHeightPath(utxo.blockHeight)}
-                          className="text-accent hover:text-accentSecondary"
-                        >
-                          {formatNumber(utxo.blockHeight, { maximumFractionDigits: 0 })}
-                        </Link>
-                      )}
-                      {utxo.timestamp ? (
-                        <span className="mt-1 block text-xs">
-                          {formatRelativeTime(utxo.timestamp, now)} ·{' '}
-                          {formatTimestamp(utxo.timestamp)}
-                        </span>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-        {(utxos?.length ?? 0) > visibleUtxos.length && (
-          <div className="mt-4 flex justify-center">
-            <button
-              type="button"
-              onClick={() => {
-                setUtxoPagination({
-                  key: utxoPaginationKey,
-                  limit: visibleUtxoLimit + UTXO_PAGE_SIZE,
-                });
-              }}
-              className="border-accent text-accent hover:border-accentSecondary hover:text-accentSecondary rounded-md border px-4 py-2 text-sm font-medium"
-            >
-              Load more outputs
-            </button>
-          </div>
-        )}
-      </section>
-
-      <section>
-        <header className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="text-accent text-lg font-semibold">Recent Transactions</h2>
-          <p className="text-textMuted text-sm">Showing {activity.length} entries</p>
-        </header>
-        <div className="border-accent/30 overflow-hidden overflow-x-auto rounded-xl border">
-          <table className="divide-accentSecondary/30 min-w-full divide-y text-sm">
-            <thead className="bg-accentSecondary/20 text-textMuted text-xs uppercase">
-              <tr>
-                <th className="px-4 py-3 text-left">TxID</th>
-                <th className="px-4 py-3 text-right">Value change</th>
-                <th className="px-4 py-3 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {initialTransactionsLoading && activity.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="text-textMuted px-4 py-6 text-center">
-                    Loading transactions…
-                  </td>
-                </tr>
-              )}
-              {initialTransactionsError && activity.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="text-accentSecondary px-4 py-6 text-center">
-                    Could not load transactions.
-                  </td>
-                </tr>
-              )}
-              {!initialTransactionsLoading &&
-                !initialTransactionsError &&
-                activity.length === 0 && (
+              </thead>
+              <tbody>
+                {utxosLoading && (
                   <tr>
-                    <td colSpan={3} className="text-textMuted px-4 py-6 text-center">
-                      No transactions recorded.
+                    <td colSpan={4} className="text-textMuted px-4 py-6 text-center">
+                      Loading unspent outputs…
                     </td>
                   </tr>
                 )}
-              {activity.map((item) => (
-                <tr key={item.id} className="hover:bg-accentSecondary/10">
-                  <td className="px-4 py-3">
-                    <Link
-                      to={transactionPath(item.txid)}
-                      className="text-accent hover:text-accentSecondary font-mono"
+                {utxosIsError && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-6 text-center">
+                      <div role="alert">
+                        <p className="text-accentSecondary">Could not load unspent outputs.</p>
+                        <p className="text-textMuted mt-1 text-xs break-words">
+                          {utxosError instanceof Error ? utxosError.message : 'Unknown error'}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void refetchUtxos();
+                          }}
+                          disabled={utxosFetching}
+                          className="border-accent text-accent hover:border-accentSecondary hover:text-accentSecondary mt-3 rounded-md border px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {utxosFetching ? 'Retrying…' : 'Retry'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                {!utxosLoading && !utxosIsError && visibleUtxos.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="text-textMuted px-4 py-6 text-center">
+                      No unspent outputs are currently reported for this address.
+                    </td>
+                  </tr>
+                )}
+                {!utxosIsError &&
+                  visibleUtxos.map((utxo) => (
+                    <tr
+                      key={`${utxo.txid}:${String(utxo.outputIndex)}`}
+                      className="hover:bg-accentSecondary/10"
                     >
-                      <HashText value={item.txid} truncate={12} />
-                    </Link>
-                  </td>
-                  <td
-                    className={`px-4 py-3 text-right ${
-                      item.valueChange >= 0 ? 'text-textPrimary' : 'text-accentSecondary'
-                    }`}
-                  >
-                    {item.valueChange >= 0 ? '+' : '-'}
-                    {formatSats(Math.abs(item.valueChange))}
-                  </td>
-                  <td className="text-textMuted px-4 py-3">{ledgerStatusLabel(item)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {hasMore && (
-          <div className="mt-4 flex flex-col items-center gap-3">
-            {loadMoreError && (
-              <p role="alert" className="text-accentSecondary text-center text-sm break-words">
-                Could not load more transactions. {loadMoreError}
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                void loadMore();
-              }}
-              disabled={isFetchingMore}
-              className="border-accent text-accent hover:border-accentSecondary hover:text-accentSecondary rounded-md border px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isFetchingMore
-                ? 'Loading more…'
-                : loadMoreError
-                  ? 'Retry loading transactions'
-                  : 'Load more transactions'}
-            </button>
+                      <td className="px-4 py-3">
+                        <Link
+                          to={transactionOutputPath(utxo.txid, utxo.outputIndex)}
+                          className="text-accent hover:text-accentSecondary font-mono"
+                          title={`${utxo.txid}:${String(utxo.outputIndex)}`}
+                          aria-label={`${utxo.txid}:${String(utxo.outputIndex)}`}
+                        >
+                          <HashText value={utxo.txid} truncate={12} />:
+                          {formatNumber(utxo.outputIndex, { maximumFractionDigits: 0 })}
+                        </Link>
+                      </td>
+                      <td className="text-textPrimary px-4 py-3 text-right whitespace-nowrap">
+                        {formatSats(utxo.valueSats)}
+                      </td>
+                      <td
+                        className={`px-4 py-3 ${
+                          utxo.status === 'confirmed' ? 'text-textPrimary' : 'text-accentSecondary'
+                        }`}
+                      >
+                        {utxo.status === 'confirmed' ? 'Confirmed' : 'Unconfirmed'}
+                      </td>
+                      <td className="text-textMuted px-4 py-3 whitespace-nowrap">
+                        {utxo.blockHeight === undefined ? (
+                          utxo.status === 'unconfirmed' ? (
+                            'Unconfirmed'
+                          ) : (
+                            '—'
+                          )
+                        ) : (
+                          <Link
+                            to={blockByHeightPath(utxo.blockHeight)}
+                            className="text-accent hover:text-accentSecondary"
+                          >
+                            {formatNumber(utxo.blockHeight, { maximumFractionDigits: 0 })}
+                          </Link>
+                        )}
+                        {utxo.timestamp ? (
+                          <span className="mt-1 block text-xs">
+                            {formatRelativeTime(utxo.timestamp, now)} ·{' '}
+                            {formatTimestamp(utxo.timestamp)}
+                          </span>
+                        ) : null}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
           </div>
-        )}
-      </section>
+          {(utxos?.length ?? 0) > visibleUtxos.length && (
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setUtxoPagination({
+                    key: utxoPaginationKey,
+                    limit: visibleUtxoLimit + UTXO_PAGE_SIZE,
+                  });
+                }}
+                className="border-accent text-accent hover:border-accentSecondary hover:text-accentSecondary rounded-md border px-4 py-2 text-sm font-medium"
+              >
+                Load more outputs
+              </button>
+            </div>
+          )}
+        </section>
+      )}
+
+      {!addressDisabled && (
+        <section>
+          <header className="mb-4 flex items-center justify-between gap-4">
+            <h2 className="text-accent text-lg font-semibold">Recent Transactions</h2>
+            <p className="text-textMuted text-sm">Showing {activity.length} entries</p>
+          </header>
+          <div className="border-accent/30 overflow-hidden overflow-x-auto rounded-xl border">
+            <table className="divide-accentSecondary/30 min-w-full divide-y text-sm">
+              <thead className="bg-accentSecondary/20 text-textMuted text-xs uppercase">
+                <tr>
+                  <th className="px-4 py-3 text-left">TxID</th>
+                  <th className="px-4 py-3 text-right">Value change</th>
+                  <th className="px-4 py-3 text-left">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {initialTransactionsLoading && activity.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="text-textMuted px-4 py-6 text-center">
+                      Loading transactions…
+                    </td>
+                  </tr>
+                )}
+                {initialTransactionsError && activity.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="text-accentSecondary px-4 py-6 text-center">
+                      Could not load transactions.
+                    </td>
+                  </tr>
+                )}
+                {!initialTransactionsLoading &&
+                  !initialTransactionsError &&
+                  activity.length === 0 && (
+                    <tr>
+                      <td colSpan={3} className="text-textMuted px-4 py-6 text-center">
+                        No transactions recorded.
+                      </td>
+                    </tr>
+                  )}
+                {activity.map((item) => (
+                  <tr key={item.id} className="hover:bg-accentSecondary/10">
+                    <td className="px-4 py-3">
+                      <Link
+                        to={transactionPath(item.txid)}
+                        className="text-accent hover:text-accentSecondary font-mono"
+                      >
+                        <HashText value={item.txid} truncate={12} />
+                      </Link>
+                    </td>
+                    <td
+                      className={`px-4 py-3 text-right ${
+                        item.valueChange >= 0 ? 'text-textPrimary' : 'text-accentSecondary'
+                      }`}
+                    >
+                      {item.valueChange >= 0 ? '+' : '-'}
+                      {formatSats(Math.abs(item.valueChange))}
+                    </td>
+                    <td className="text-textMuted px-4 py-3">{ledgerStatusLabel(item)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {hasMore && (
+            <div className="mt-4 flex flex-col items-center gap-3">
+              {loadMoreError && (
+                <p role="alert" className="text-accentSecondary text-center text-sm break-words">
+                  Could not load more transactions. {loadMoreError}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  void loadMore();
+                }}
+                disabled={isFetchingMore}
+                className="border-accent text-accent hover:border-accentSecondary hover:text-accentSecondary rounded-md border px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isFetchingMore
+                  ? 'Loading more…'
+                  : loadMoreError
+                    ? 'Retry loading transactions'
+                    : 'Load more transactions'}
+              </button>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }
