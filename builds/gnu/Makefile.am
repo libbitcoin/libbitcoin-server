@@ -208,7 +208,8 @@ include_bitcoin_server_impl_protocolsdir = \
     ${includedir}/bitcoin/server/impl/protocols
 
 include_bitcoin_server_impl_protocols_HEADERS = \
-    ${srcdir}/../../include/bitcoin/server/impl/protocols/protocol_native.ipp
+    ${srcdir}/../../include/bitcoin/server/impl/protocols/protocol_native.ipp \
+    ${srcdir}/../../include/bitcoin/server/impl/protocols/protocol_submit.ipp
 
 include_bitcoin_server_interfacesdir = \
     ${includedir}/bitcoin/server/interfaces
@@ -290,6 +291,7 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_sparrow.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_stratum_v1.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_stratum_v2.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_submit.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_zmq.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocols.hpp
 

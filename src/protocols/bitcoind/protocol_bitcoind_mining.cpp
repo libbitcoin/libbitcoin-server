@@ -59,16 +59,7 @@ void protocol_bitcoind_mining::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_block_template, _1, _2, _3);
     SUBSCRIBE_BITCOIND(handle_get_prioritised_transactions, _1, _2);
     SUBSCRIBE_BITCOIND(handle_prioritise_transaction, _1, _2);
-    subscribe_chase(BIND(handle_chase, _1, _2));
-    protocol_bitcoind_dispatch<rpc_interface>::start();
-}
-
-void protocol_bitcoind_mining::stopping(const code& ec) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    unsubscribe_chase();
-    submitted_gate_.reset();
-    protocol_bitcoind_dispatch<rpc_interface>::stopping(ec);
+    submit_t::start();
 }
 
 // Mining methods.
@@ -247,8 +238,6 @@ void protocol_bitcoind_mining::do_mining_info(const code& ec,
     });
 }
 
-// bip22: null when accepted, otherwise duplicate, inconclusive or reject token,
-// sent once block is confirmable or not.
 bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
     rpc_interface::submit_block, const std::string& hexdata,
     const std::string&) NOEXCEPT
@@ -273,246 +262,59 @@ bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
         return true;
     }
 
-    const auto link = archive().to_header(header->hash());
-    if (!link.is_terminal())
-    {
-        submit_block(block, link, gate());
-        return true;
-    }
-
-    organize_submitted(header,
-        BIND(handle_organize_block, _1, _2, block, gate()));
+    submit_block(header, block, gate());
     return true;
 }
 
-void protocol_bitcoind_mining::handle_organize_block(const code& ec, size_t,
-    const block_cptr& block, const gate_t::ptr& gate) NOEXCEPT
-{
-    if (stopped())
-        return;
-
-    POST(do_organize_block, ec, block, gate);
-}
-
-// The header of a weak branch is cached, not archived, so its block is not.
-void protocol_bitcoind_mining::do_organize_block(const code& ec,
-    const block_cptr& block, const gate_t::ptr& gate) NOEXCEPT
+// bip22: null when accepted, otherwise duplicate, inconclusive or reject token.
+void protocol_bitcoind_mining::handle_submitted(submission outcome,
+    const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    using namespace system::error;
 
-    if (stopped())
-        return;
-
-    // An unknown header is unconfirmable only by its parent.
-    if (ec == database::error::block_unconfirmable)
+    switch (outcome)
     {
-        send_result(string_t{ "bad-prevblk" });
-        return;
-    }
-
-    if (ec && (ec != node::error::duplicate_header))
-    {
-        if (block_error_category::contains(ec) ||
-            (ec == node::error::orphan_header) ||
-            (ec == database::error::block_unconfirmable))
+        case submission::accepted:
+        {
+            send_result(null_t{});
+            break;
+        }
+        case submission::duplicate:
+        {
+            send_result(string_t{ "duplicate" });
+            break;
+        }
+        case submission::duplicate_inconclusive:
+        {
+            send_result(string_t{ "duplicate-inconclusive" });
+            break;
+        }
+        case submission::duplicate_invalid:
+        {
+            send_result(string_t{ "duplicate-invalid" });
+            break;
+        }
+        case submission::inconclusive:
+        {
+            send_result(string_t{ "inconclusive" });
+            break;
+        }
+        case submission::bad_parent:
+        {
+            send_result(string_t{ "bad-prevblk" });
+            break;
+        }
+        case submission::rejected:
+        {
             send_result(string_t{ error::bitcoind::reject(ec) });
-        else
+            break;
+        }
+        case submission::failed:
+        {
             send_error(error::bitcoind::internal_error);
-
-        return;
-    }
-
-    const auto link = archive().to_header(block->hash());
-    if (link.is_terminal())
-    {
-        send_result(string_t{ "inconclusive" });
-        return;
-    }
-
-    submit_block(block, link, gate);
-}
-
-// A body that does not match its header is rejected, and leaves no state.
-void protocol_bitcoind_mining::submit_block(const block_cptr& block,
-    const database::header_link& link, const gate_t::ptr& gate) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    using namespace database;
-
-    const auto& query = archive();
-    const auto state = query.get_block_state(link);
-    if (is_associated(state))
-    {
-        const auto confirmed = query.is_confirmed_block(link);
-        const auto valid = is_validated(state) || confirmed;
-        const auto duplicate = valid ? "duplicate" : "duplicate-inconclusive";
-        const auto invalid = is_unconfirmable(state);
-        send_result(string_t{ invalid ? "duplicate-invalid" : duplicate });
-        return;
-    }
-
-    if (is_unconfirmable(state))
-    {
-        send_result(string_t{ "duplicate-invalid" });
-        return;
-    }
-
-    chain::context ctx{};
-    if (!query.get_context(ctx, link))
-    {
-        send_error(error::bitcoind::internal_error);
-        return;
-    }
-
-    if (const auto failed = block->check_guard())
-    {
-        send_result(string_t{ error::bitcoind::reject(failed) });
-        return;
-    }
-
-    if (const auto failed = block->check_guard(ctx))
-    {
-        send_result(string_t{ error::bitcoind::reject(failed) });
-        return;
-    }
-
-    if (!query.is_candidate_header(link))
-    {
-        send_result(string_t{ "inconclusive" });
-        return;
-    }
-
-    submitted_ = link;
-    submitted_gate_ = gate;
-
-    // A bypassed block of a pruned node does not store its witness.
-    code stored{};
-    const auto height = ctx.height;
-    const auto bypass = is_bypass(state);
-    const auto prune = bypass && node_settings().limited_blocks;
-    const auto strong = is_any(state, checkpointed);
-    const auto hash = block->hash();
-    if (!archive_block(stored, block, link, strong, bypass, height, prune,
-        BIND(handle_archive_block, _1, hash, height)))
-        return;
-
-    handle_archive_block(stored, hash, height);
-}
-
-// Block archived meanwhile by another channel is awaited as submitted, and
-// failure to store one is a fault, whether or not channel has stopped.
-void protocol_bitcoind_mining::handle_archive_block(const code& ec,
-    const hash_digest& hash, size_t height) NOEXCEPT
-{
-    if (!ec)
-    {
-        notify(ec, node::chases::checked{ height });
-        fire(node::events::block_archived, height);
-    }
-    else if ((ec != node::error::duplicate_block) &&
-        (ec != network::error::service_stopped))
-    {
-        LOGF("Failure storing block [" << encode_hash(hash) << ":" << height
-            << "] " << ec.message());
-        fault(ec);
-    }
-
-    if (stopped())
-        return;
-
-    POST(do_archive_block, ec);
-}
-
-void protocol_bitcoind_mining::do_archive_block(const code& ec) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-
-    if (stopped() || !ec || (ec == node::error::duplicate_block))
-        return;
-
-    submitted_ = {};
-    send_error(error::bitcoind::internal_error);
-    submitted_gate_.reset();
-}
-
-bool protocol_bitcoind_mining::handle_chase(const code& ec,
-    node::event_value value) NOEXCEPT
-{
-    // Do not pass ec to stopped, it is not a call status.
-    if (stopped())
-        return false;
-
-    switch (node::to_chase(value))
-    {
-        case node::chase::regressed:
-        case node::chase::disorganized:
-        case node::chase::unvalid:
-        case node::chase::confirmable:
-        case node::chase::unconfirmable:
-        {
-            POST(do_submitted, ec, value);
-            break;
-        }
-        default:
-        {
             break;
         }
     }
-
-    return true;
-}
-
-// A submitted block leaving the candidate chain unconfirmed is inconclusive.
-void protocol_bitcoind_mining::do_submitted(const code& ec,
-    node::event_value value) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    using namespace node;
-
-    if (stopped() || submitted_.is_terminal())
-        return;
-
-    switch (to_chase(value))
-    {
-        case chase::confirmable:
-        {
-            if (to_payload<chase::confirmable>(value).link == submitted_)
-                send_submitted(null_t{});
-
-            break;
-        }
-        case chase::unvalid:
-        {
-            if (to_payload<chase::unvalid>(value).link == submitted_)
-                send_submitted(string_t{ error::bitcoind::reject(ec) });
-
-            break;
-        }
-        case chase::unconfirmable:
-        {
-            if (to_payload<chase::unconfirmable>(value).link == submitted_)
-                send_submitted(string_t{ error::bitcoind::reject(ec) });
-
-            break;
-        }
-        default:
-        {
-            if (!archive().is_candidate_header(submitted_))
-                send_submitted(string_t{ "inconclusive" });
-
-            break;
-        }
-    }
-}
-
-void protocol_bitcoind_mining::send_submitted(
-    network::rpc::value_option&& result) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    submitted_ = {};
-    send_result(std::move(result));
-    submitted_gate_.reset();
 }
 
 // The response defers to organize completion (see dispatch).
@@ -607,23 +409,23 @@ bool protocol_bitcoind_mining::handle_get_block_template(const code& ec,
         return true;
     }
 
-    get_template(BIND(handle_template, _1, _2, _3, gate()));
+    get_template(BIND(handle_template, _1, _2, gate()));
     return true;
 }
 
-void protocol_bitcoind_mining::handle_template(const code& ec, size_t height,
-    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
+void protocol_bitcoind_mining::handle_template(const code& ec,
+    const node::block_template::cptr& held, const gate_t::ptr& gate) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST(do_template, ec, height, links, gate);
+    POST(do_template, ec, held, gate);
 }
 
 // Template is of block above confirmed top,
-// so one built for another height is requested again.
-void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
-    const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT
+// so one held for another height is requested again.
+void protocol_bitcoind_mining::do_template(const code& ec,
+    const node::block_template::cptr& held, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(stranded());
     using namespace chain;
@@ -655,9 +457,10 @@ void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
         return;
     }
 
+    const auto height = held->height;
     if (add1(top) != height)
     {
-        get_template(BIND(handle_template, _1, _2, _3, gate));
+        get_template(BIND(handle_template, _1, _2, gate));
         return;
     }
 
@@ -666,11 +469,9 @@ void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
     const auto bip141 = ctx.is_enabled(flags::bip141_rule);
 
     // Tx depends on template txs it spends, by position from one (coinbase 0).
-    uint64_t fees{};
     array_t transactions{};
-    hashes witnesses{ null_hash };
     std::unordered_map<hash_digest, size_t> positions{};
-    for (const auto& tx_link: links)
+    for (const auto& tx_link: held->links)
     {
         size_t light{};
         size_t heavy{};
@@ -705,8 +506,6 @@ void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
             ceilinged_multiply(total_size_contribution, heavy));
 
         positions.emplace(txid, add1(transactions.size()));
-        witnesses.push_back(wtxid);
-        fees = ceilinged_add(fees, totals.fee);
         transactions.emplace_back(object_t
         {
             { "data", encode_base16(data) },
@@ -747,8 +546,8 @@ void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
         { "previousblockhash", encode_hash(key) },
         { "transactions", std::move(transactions) },
         { "coinbaseaux", object_t{} },
-        { "coinbasevalue", ceilinged_add(subsidy, fees) },
-        { "longpollid", encode_hash(key) + std::to_string(links.size()) },
+        { "coinbasevalue", ceilinged_add(subsidy, held->fees) },
+        { "longpollid", encode_hash(key) + std::to_string(held->sequence) },
         { "target", encode_hash(from_uintx(chain::compact::expand(bits))) },
         { "mintime", minimum },
         { "mutable", array_t
@@ -770,12 +569,10 @@ void protocol_bitcoind_mining::do_template(const code& ec, size_t height,
     // template with reserved value of zero.
     if (bip141)
     {
-        const auto root = merkle_root(std::move(witnesses));
-        const auto commitment = sha256::double_hash(root, null_hash);
         const data_chunk prefix{ 0x6a, 0x24, 0xaa, 0x21, 0xa9, 0xed };
         result.emplace("weightlimit", to64(max_block_weight));
         result.emplace("default_witness_commitment",
-            encode_base16(splice(prefix, commitment)));
+            encode_base16(splice(prefix, held->commitment)));
     }
 
     finish_template(result);

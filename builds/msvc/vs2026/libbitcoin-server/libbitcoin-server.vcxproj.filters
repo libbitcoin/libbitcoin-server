@@ -620,6 +620,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_submit.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_zmq.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
@@ -703,6 +706,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_native.ipp">
+      <Filter>include\bitcoin\server\impl\protocols</Filter>
+    </None>
+    <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_submit.ipp">
       <Filter>include\bitcoin\server\impl\protocols</Filter>
     </None>
     <None Include="..\..\..\..\include\bitcoin\server\version.hpp.in">

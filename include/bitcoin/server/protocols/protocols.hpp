@@ -49,6 +49,7 @@
 #include <bitcoin/server/protocols/protocol_http.hpp>
 #include <bitcoin/server/protocols/protocol_rpc.hpp>
 #include <bitcoin/server/protocols/protocol_sparrow.hpp>
+#include <bitcoin/server/protocols/protocol_submit.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
 #include <bitcoin/server/protocols/protocol_zmq.hpp>
@@ -125,7 +126,8 @@ server::protocol → node::protocol
         │   ╞══ protocol_bitcoind_dispatch<bitcoind_handshake>
         │   │   └── protocol_bitcoind_version (handshake, attached first)
         │   ╞══ protocol_bitcoind_dispatch<bitcoind_mining>
-        │   │   └── protocol_bitcoind_mining
+        │   │   └── protocol_submit<Base> (block submission)
+        │   │       └── protocol_bitcoind_mining
         │   ╞══ protocol_bitcoind_dispatch<bitcoind_network>
         │   │   └── protocol_bitcoind_network
         │   ╞══ protocol_bitcoind_dispatch<bitcoind_notifications>

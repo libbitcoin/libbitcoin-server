@@ -289,6 +289,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_sparrow.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v1.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_submit.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_zmq.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocols.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_block_stats.hpp" />
@@ -316,6 +317,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_native.ipp" />
+    <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_submit.ipp" />
     <None Include="..\..\..\..\include\bitcoin\server\version.hpp.in" />
     <None Include="packages.config" />
   </ItemGroup>

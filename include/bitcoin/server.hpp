@@ -105,6 +105,7 @@
 #include <bitcoin/server/protocols/protocol_sparrow.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
+#include <bitcoin/server/protocols/protocol_submit.hpp>
 #include <bitcoin/server/protocols/protocol_zmq.hpp>
 #include <bitcoin/server/protocols/protocols.hpp>
 #include <bitcoin/server/serializers/bitcoind_block_stats.hpp>
