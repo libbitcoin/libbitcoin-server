@@ -23,6 +23,8 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 
+#define BC_ELECTRUM_SERVER_NAME "Libbitcoin " LIBBITCOIN_SERVER_VERSION
+
 namespace libbitcoin {
 namespace log {
 
@@ -125,7 +127,7 @@ public:
         system::config::version protocol_maximum{ 1, 7, 0, 0 };
 
         /// Arbitrary name returned by server.version and server.features.
-        std::string server_name{ BC_USER_AGENT };
+        std::string server_name{ BC_ELECTRUM_SERVER_NAME };
 
         /// Arbitrary string returned by server.donation_address.
         std::string donation_address{};

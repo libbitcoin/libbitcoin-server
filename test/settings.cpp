@@ -362,7 +362,7 @@ BC_AUTO_TEST_CASE(server__electrum_server__defaults__expected)
     BC_REQUIRE_EQUAL(server.maximum_subscriptions, 1'000'000u);
     BC_REQUIRE_EQUAL(server.protocol_minimum, version(1, 0, 0, 0));
     BC_REQUIRE_EQUAL(server.protocol_maximum, version(1, 7, 0, 0));
-    BC_REQUIRE_EQUAL(server.server_name, BC_USER_AGENT);
+    BC_REQUIRE_EQUAL(server.server_name, BC_ELECTRUM_SERVER_NAME);
     BC_REQUIRE(server.donation_address.empty());
     BC_REQUIRE(server.banner_message.empty());
     BC_REQUIRE(server.self_binds.empty());
