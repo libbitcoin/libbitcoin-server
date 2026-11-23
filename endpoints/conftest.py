@@ -201,6 +201,54 @@ def pytest_addoption(parser):
         help="Port for Stratum v2 (default: 3336)"
     )
 
+    # Robustness options (test_robustness_*.py)
+    parser.addoption(
+        "--robust-services",
+        action="store",
+        default="native,electrum,btcd",
+        help="Services the robustness suites attack and check after every "
+             "test, any of native,esplora,admin,electrum,sparrow,bitcoind,"
+             "btcd (default: native,electrum,btcd)"
+    )
+    parser.addoption(
+        "--bitcoind-username",
+        action="store",
+        default=None,
+        help="Username for bitcoind basic auth (default: none configured)"
+    )
+    parser.addoption(
+        "--bitcoind-password",
+        action="store",
+        default=None,
+        help="Password for bitcoind basic auth (default: none configured)"
+    )
+    parser.addoption(
+        "--robust-connections",
+        action="store",
+        default="32",
+        help="The [service] connections limit configured on the server "
+             "(default: 32)"
+    )
+    parser.addoption(
+        "--bs-pid",
+        action="store",
+        default=None,
+        help="Server process id, when it runs on this host: enables the "
+             "alive and pegged-thread checks after every robustness test"
+    )
+    parser.addoption(
+        "--run-shutdown",
+        action="store_true",
+        default=False,
+        help="Run test_longrun's shutdown test: stops the server process"
+    )
+    parser.addoption(
+        "--no-spin-check",
+        action="store_true",
+        default=False,
+        help="Skip the pegged-thread check (use while the node is syncing)"
+    )
+
     # General options
     parser.addoption(
         "--timeout",
@@ -421,6 +469,52 @@ def sparrow_config(request):
         "timeout": float(request.config.getoption("--timeout")),
         "protocol": [proto_min.strip(), proto_max.strip()],
     }
+
+
+@pytest.fixture(scope="session")
+def robust_env(request):
+    """Targets and server-side probes for the robustness suites."""
+    from robustness import Environment, Process, Service
+
+    option = request.config.getoption
+    proto = option("--electrum-protocol")
+    proto_min, _, proto_max = proto.partition(":")
+    known = {
+        "native": Service("native", option("--native-host"),
+                          int(option("--native-port"))),
+        "electrum": Service("electrum", option("--electrum-host"),
+                            int(option("--electrum-port")),
+                            protocol=[proto_min.strip(),
+                                      (proto_max or proto_min).strip()]),
+        "btcd": Service("btcd", option("--btcd-host"),
+                        int(option("--btcd-port")),
+                        option("--btcd-username"),
+                        option("--btcd-password")),
+        "esplora": Service("esplora", option("--esplora-host"),
+                           int(option("--esplora-port"))),
+        "admin": Service("admin", option("--admin-host"),
+                         int(option("--admin-port"))),
+        "sparrow": Service("sparrow", option("--sparrow-host"),
+                           int(option("--sparrow-port")),
+                           protocol=[proto_min.strip(),
+                                     (proto_max or proto_min).strip()]),
+        "bitcoind": Service("bitcoind", option("--bitcoind-rpc-host"),
+                            int(option("--bitcoind-rpc-port")),
+                            option("--bitcoind-username"),
+                            option("--bitcoind-password")),
+    }
+    names = [n.strip() for n in option("--robust-services").split(",")
+             if n.strip()]
+    services = [known[name] for name in names]
+    pid = option("--bs-pid")
+    return Environment(
+        services=services,
+        local=all(s.host in ("localhost", "127.0.0.1", "::1")
+                  for s in services),
+        process=Process(int(pid)) if pid else None,
+        spin_check=not option("--no-spin-check"),
+        connections=int(option("--robust-connections")),
+    )
 
 
 @pytest.fixture(scope="session")
