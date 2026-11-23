@@ -267,13 +267,13 @@ def test_authenticate_wrong_password_rejected(btcd_config):
 
 
 def test_session_returns_id(conn):
-    """session returns an object containing an 'id' field (the channel
+    """session returns an object containing a 'sessionid' field (the channel
     identifier), usable by clients to detect a reconnect to a fresh server.
     """
     response = conn.send_rpc("session")
     result = response.get("result")
     assert isinstance(result, dict)
-    assert "id" in result
+    assert "sessionid" in result
 
 
 def test_getcurrentnet_returns_network_magic(conn):

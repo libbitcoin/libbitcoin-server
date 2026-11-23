@@ -81,16 +81,11 @@ def test_configuration(native_config):
     assert len(data) > 0 if isinstance(data, (dict, list)) else bool(data)
 
 
+@pytest.mark.requires_height(ReferenceData.KNOWN_HEIGHT)
 def test_top(native_config):
     """Test /v1/top endpoint - chain top information."""
     data = get_json(native_config["base_url"], "top")
-    if isinstance(data, int):
-        assert data >= 100_000, "Chain height should be at least 100k"
-    else:
-        assert isinstance(data, dict)
-        height = data.get("height")
-        assert isinstance(height, int)
-        assert height >= 100_000, "Chain height should be at least 100k"
+    assert data["confirmed"]["height"] >= ReferenceData.KNOWN_HEIGHT
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -208,11 +203,7 @@ def test_block_tx_output_script_hash(native_config):
 # BLOCK FILTER ENDPOINTS (BIP 158)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@pytest.mark.parametrize("filter_type", [
-    ReferenceData.FILTER_TYPE_BLOOM,
-    # ReferenceData.FILTER_TYPE_BASIC,  # Uncomment if supported
-    # ReferenceData.FILTER_TYPE_COMPACT,  # Uncomment if supported
-])
+@pytest.mark.parametrize("filter_type", [ReferenceData.FILTER_TYPE_NEUTRINO])
 def test_block_filter_by_hash(native_config, filter_type):
     """Test /v1/block/hash/{blockhash}/filter/{type}"""
     try:
@@ -229,7 +220,7 @@ def test_block_filter_by_hash(native_config, filter_type):
         raise
 
 
-@pytest.mark.parametrize("filter_type", [ReferenceData.FILTER_TYPE_BLOOM])
+@pytest.mark.parametrize("filter_type", [ReferenceData.FILTER_TYPE_NEUTRINO])
 def test_block_filter_hash_by_hash(native_config, filter_type):
     """Test /v1/block/hash/{blockhash}/filter/{type}/hash"""
     try:
@@ -247,7 +238,7 @@ def test_block_filter_hash_by_hash(native_config, filter_type):
         raise
 
 
-@pytest.mark.parametrize("filter_type", [ReferenceData.FILTER_TYPE_BLOOM])
+@pytest.mark.parametrize("filter_type", [ReferenceData.FILTER_TYPE_NEUTRINO])
 def test_block_filter_header_by_hash(native_config, filter_type):
     """Test /v1/block/hash/{blockhash}/filter/{type}/header"""
     try:
@@ -353,6 +344,7 @@ def test_input_script(native_config):
         raise
 
 
+@pytest.mark.requires_height(ReferenceData.SEGWIT_HEIGHT)
 def test_input_witness(native_config):
     """Test /v1/input/{txhash}/{index}/witness - uses first SegWit block (481824)"""
     try:
@@ -416,6 +408,7 @@ def test_output_script(native_config):
         raise
 
 
+@pytest.mark.requires_current
 def test_output_spender(native_config):
     """Test /v1/output/{txhash}/{index}/spender - uses first Bitcoin tx (block 170, output 0 spent by Hal Finney)"""
     try:
@@ -431,6 +424,7 @@ def test_output_spender(native_config):
         raise
 
 
+@pytest.mark.requires_current
 def test_output_spenders(native_config):
     """Test /v1/output/{txhash}/{index}/spenders - uses first Bitcoin tx (block 170, output 0 spent by Hal Finney)"""
     try:

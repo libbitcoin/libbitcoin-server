@@ -209,6 +209,16 @@ def pytest_configure(config):
         "slow: waits on a real external event (e.g. a live block); "
         "skipped by default, use --run-slow to include"
     )
+    config.addinivalue_line(
+        "markers",
+        "requires_height(height): skipped unless the node has confirmed the "
+        "height (the reference data is mainnet)"
+    )
+    config.addinivalue_line(
+        "markers",
+        "requires_current: skipped unless the node is current (the pool and "
+        "address activity of the reference data are recent)"
+    )
 
 
 def pytest_collection_modifyitems(config, items):
@@ -218,6 +228,46 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if "slow" in item.keywords:
             item.add_marker(skip_slow)
+
+
+@pytest.fixture(autouse=True)
+def _requires_height(request):
+    marker = request.node.get_closest_marker("requires_height")
+    if marker is None:
+        return
+
+    import requests
+    host = request.config.getoption("--native-host")
+    port = request.config.getoption("--native-port")
+    try:
+        top = requests.get(f"http://{host}:{port}/v1/top?format=json",
+            timeout=10).json()["confirmed"]["height"]
+    except Exception:
+        return
+
+    height = marker.args[0]
+    if top < height:
+        pytest.skip(f"needs confirmed height {height}, node has {top}")
+
+
+@pytest.fixture(autouse=True)
+def _requires_current(request):
+    if request.node.get_closest_marker("requires_current") is None:
+        return
+
+    import requests
+    host = request.config.getoption("--bitcoind-rpc-host")
+    port = request.config.getoption("--bitcoind-rpc-port")
+    payload = {"jsonrpc": "1.0", "id": 1, "method": "getblockchaininfo",
+        "params": []}
+    try:
+        info = requests.post(f"http://{host}:{port}/", json=payload,
+            timeout=10).json()["result"]
+    except Exception:
+        return
+
+    if info.get("initialblockdownload"):
+        pytest.skip("needs a current node")
 
 
 def pytest_report_header(config):
