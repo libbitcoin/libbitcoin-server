@@ -45,6 +45,25 @@ jobs:
 
       matrix:
         include:
+          - image: ubuntu-24.04
+            config: "release"
+            link: "static"
+            cc: "gcc-14"
+            cxx: "g++-14"
+            flags: ""
+            coverage: ""
+            options: "--enable-isystem --build-web"
+
+          - image: ubuntu-24.04
+            config: "release"
+            link: "static"
+            cc: "gcc-14"
+            cxx: "g++-14"
+            flags: ""
+            coverage: ""
+            package: "python3-pytest python3-requests python3-websocket"
+            options: "--enable-isystem --build-smoke"
+
           - image: macos-latest
             config: "debug"
             link: "dynamic"
