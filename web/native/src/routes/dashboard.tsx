@@ -78,7 +78,7 @@ export function DashboardPage() {
 
       <header className="space-y-2">
         <p className="text-accentSecondary text-sm tracking-wide uppercase">Dashboard</p>
-        <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex min-h-10 flex-wrap items-end justify-between gap-4">
           <div className="space-y-2">
             <h1 tabIndex={-1} className="text-accent text-3xl font-semibold">
               Overview
