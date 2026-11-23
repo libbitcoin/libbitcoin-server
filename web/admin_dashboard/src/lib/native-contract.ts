@@ -153,7 +153,7 @@ async function fetchJson(url: string, signal?: AbortSignal): Promise<unknown> {
     signal,
   });
   if (!response.ok) {
-    throw new Error(`Native API request failed with status ${String(response.status)}`);
+    throw new Error(`HTTP ${String(response.status)}`);
   }
   return (await response.json()) as unknown;
 }
