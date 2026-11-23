@@ -20,6 +20,7 @@
 #define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_STRATUM_V1_HPP
 
 #include <algorithm>
+#include <array>
 #include <map>
 #include <unordered_set>
 #include <bitcoin/server/channels/channel_rpc.hpp>
@@ -68,6 +69,32 @@ public:
         difficulty_(options.minimum_difficulty),
         window_(network::steady_clock::now())
     {
+    }
+
+    /// Authorization.
+    /// -----------------------------------------------------------------------
+
+    /// A raw tcp channel has no http headers, so it carries its credential in
+    /// mining.authorize and passes the http gate.
+    inline bool authorized() const NOEXCEPT override
+    {
+        return downgraded() || channel_rpc::authorized();
+    }
+
+    /// Before its credential a raw tcp channel is permitted only the methods
+    /// that precede mining.authorize.
+    inline bool permitted(const std::string& method) const NOEXCEPT override
+    {
+        if (downgraded() && !credentialed())
+            return std::ranges::find(handshake, method) != handshake.end();
+
+        return channel_rpc::permitted(method);
+    }
+
+    /// The credential is satisfied (not required, by header or in-band).
+    inline bool credentialed() const NOEXCEPT
+    {
+        return channel_rpc::authorized();
     }
 
     /// Properties (require strand).
@@ -214,6 +241,16 @@ protected:
     }
 
 private:
+    static constexpr std::array<std::string_view, 6> handshake
+    {
+        "mining.subscribe",
+        "mining.authorize",
+        "mining.configure",
+        "mining.suggest_difficulty",
+        "mining.suggest_target",
+        "mining.extranonce.subscribe"
+    };
+
     // Extranonce of the channel identifier, little endian, zero padded.
     static inline system::data_chunk to_extranonce(uint64_t identifier,
         uint8_t size) NOEXCEPT

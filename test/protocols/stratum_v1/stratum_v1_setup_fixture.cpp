@@ -108,6 +108,12 @@ network::code stratum_v1_setup_fixture::ws_upgrade()
     return client_.upgrade();
 }
 
+network::code stratum_v1_setup_fixture::ws_upgrade(
+    const std::string& username, const std::string& password)
+{
+    return client_.upgrade(username, password);
+}
+
 system::json::value stratum_v1_setup_fixture::ws_get(
     const std::string& request)
 {
@@ -140,13 +146,13 @@ system::json::value stratum_v1_setup_fixture::subscribe()
 }
 
 system::json::value stratum_v1_setup_fixture::authorize(
-    const std::string& worker)
+    const std::string& worker, const std::string& password)
 {
     worker_ = worker;
     constexpr auto request =
-        R"({{"id":2,"method":"mining.authorize","params":["{}","x"]}})";
+        R"({{"id":2,"method":"mining.authorize","params":["{}","{}"]}})";
 
-    return get(std::format(request, worker));
+    return get(std::format(request, worker, password));
 }
 
 system::json::value stratum_v1_setup_fixture::start_job()

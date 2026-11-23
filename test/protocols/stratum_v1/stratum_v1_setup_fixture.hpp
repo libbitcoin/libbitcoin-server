@@ -62,12 +62,15 @@ struct stratum_v1_setup_fixture
 
     // json-rpc over the upgraded websocket connection.
     network::code ws_upgrade();
+    network::code ws_upgrade(const std::string& username,
+        const std::string& password);
     system::json::value ws_get(const std::string& request);
     system::json::value ws_receive();
 
     // Subscribe, retaining extranonce1, and authorize the worker.
     system::json::value subscribe();
-    system::json::value authorize(const std::string& worker);
+    system::json::value authorize(const std::string& worker,
+        const std::string& password="x");
 
     // Subscribe and authorize, returning the first job (after difficulty).
     system::json::value start_job();
@@ -174,6 +177,22 @@ struct stratum_v1_decay_setup_fixture
         }, [](configuration& config)
         {
             config.server.stratum_v1.share_interval_seconds = 1;
+        })
+    {
+    }
+};
+
+/// As ten block, with a credential of the address of 0x01.
+struct stratum_v1_credential_setup_fixture
+  : stratum_v1_setup_fixture
+{
+    inline stratum_v1_credential_setup_fixture()
+      : stratum_v1_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.server.stratum_v1.credentials = { { address(0x01) + ":pass" } };
         })
     {
     }

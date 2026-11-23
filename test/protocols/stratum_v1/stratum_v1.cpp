@@ -454,6 +454,54 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_notify__no_shares__difficulty_decayed)
 
 BC_AUTO_TEST_SUITE_END()
 
+BC_FIXTURE_TEST_SUITE(stratum_v1_credential_tests, stratum_v1_credential_setup_fixture)
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_subscribe__tcp_credential_unsatisfied__subscriptions)
+{
+    BC_REQUIRE(subscribe().at("error").is_null());
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__tcp_wrong_password__unauthorized_worker)
+{
+    BC_REQUIRE_EQUAL(authorize(address(0x01) + ".rig", "wrong").at("error").as_array().at(0).as_int64(), unauthorized_worker.value());
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__tcp_other_account__unauthorized_worker)
+{
+    BC_REQUIRE_EQUAL(authorize(address(0x02) + ".rig", "pass").at("error").as_array().at(0).as_int64(), unauthorized_worker.value());
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__tcp_credential__job_notified)
+{
+    subscribe();
+    BC_REQUIRE(authorize(address(0x01) + ".rig", "pass").at("result").as_bool());
+    BC_REQUIRE(receive().at("method").as_string() == "mining.set_difficulty");
+    BC_REQUIRE(receive().at("method").as_string() == "mining.notify");
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__tcp_credential_unsatisfied__unauthorized_dropped)
+{
+    subscribe();
+    BC_REQUIRE_EQUAL(get_error(R"({"id":3,"method":"mining.submit","params":["w","00000000","00000000","00000000","00000000"]})"), code{ network::error::unauthorized }.value());
+    BC_REQUIRE(receive().as_object().contains("dropped"));
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__websocket_upgrade__without_credential__refused)
+{
+    BC_REQUIRE(ws_upgrade());
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__websocket_credential__job_notified)
+{
+    BC_REQUIRE(!ws_upgrade(address(0x01), "pass"));
+    BC_REQUIRE(ws_get(R"({"id":1,"method":"mining.subscribe","params":[]})").at("error").is_null());
+    BC_REQUIRE(ws_get(std::format(R"({{"id":2,"method":"mining.authorize","params":["{}","x"]}})", address(0x01))).at("result").as_bool());
+    BC_REQUIRE(ws_receive().at("method").as_string() == "mining.set_difficulty");
+    BC_REQUIRE(ws_receive().at("method").as_string() == "mining.notify");
+}
+
+BC_AUTO_TEST_SUITE_END()
+
 BC_FIXTURE_TEST_SUITE(stratum_v1_broadcast_tests, stratum_v1_broadcast_setup_fixture)
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_notify__pooled_transaction__branch_of_one)

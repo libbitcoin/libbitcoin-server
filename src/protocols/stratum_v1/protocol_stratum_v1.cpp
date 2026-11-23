@@ -135,19 +135,32 @@ void protocol_stratum_v1::handle_mining_subscribe(const code& ec,
     start_jobs();
 }
 
-// The configured address governs, otherwise the worker name up to any dot.
+// The worker name up to any dot is the credential name, and is the payout
+// address unless one is configured. An unsatisfied credential is satisfied
+// in-band, as a raw tcp channel carries no http headers.
 void protocol_stratum_v1::handle_mining_authorize(const code& ec,
     rpc_interface::mining_authorize, const std::string& username,
-    const std::string&) NOEXCEPT
+    const std::string& password) NOEXCEPT
 {
     using namespace error::stratum_v1;
+    using namespace network::config;
     if (stopped(ec))
         return;
 
+    const auto account = username.substr(zero, username.find('.'));
+    if (!channel_->credentialed())
+    {
+        channel_->set_authorized(credential::to_digest(account, password));
+        if (!channel_->credentialed())
+        {
+            send_code(unauthorized_worker);
+            return;
+        }
+    }
+
     chain::script payout{};
     const auto& address = options_.payout_address;
-    const auto name = address.empty() ?
-        username.substr(zero, username.find('.')) : address;
+    const auto name = address.empty() ? account : address;
 
     if (output_script(payout, name, p2kh_, p2sh_, witness_) ||
         (channel_->has_payout() && payout != channel_->payout()))
