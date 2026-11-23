@@ -51,7 +51,9 @@ public:
         p2kh_(session->server_settings().wallet.p2kh_prefix),
         p2sh_(session->server_settings().wallet.p2sh_prefix),
         witness_(session->server_settings().wallet.witness_prefix),
-        channel_(std::dynamic_pointer_cast<channel_t>(channel))
+        channel_(std::dynamic_pointer_cast<channel_t>(channel)),
+        decay_timer_(system::emplace_shared<network::deadline>(session->log,
+            channel->strand()))
     {
     }
 
@@ -120,6 +122,8 @@ private:
     void send_job(const job::ptr& job, bool clean) NOEXCEPT;
     void refresh() NOEXCEPT;
     void retarget() NOEXCEPT;
+    void start_decay() NOEXCEPT;
+    void handle_decay(const code& ec) NOEXCEPT;
     void suggest(double difficulty) NOEXCEPT;
 
     /// Blocks.
@@ -132,6 +136,7 @@ private:
     const uint8_t p2sh_;
     const std::string witness_;
     const channel_t::ptr channel_;
+    const network::deadline::ptr decay_timer_;
     std::atomic_bool active_{};
 
     // These are protected by strand.

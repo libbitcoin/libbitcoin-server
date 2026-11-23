@@ -36,6 +36,9 @@ constexpr auto relaxed = std::memory_order_relaxed;
 // Shares counted (or the share interval multiplied) before a retarget.
 constexpr size_t retarget_shares = 16;
 
+// Share intervals without a share before the difficulty decays.
+constexpr size_t decay_intervals = 4;
+
 // Retarget bounds on the ratio of target to observed share interval.
 constexpr double minimum_ratio = 0.25;
 constexpr double maximum_ratio = 4.0;
@@ -73,6 +76,7 @@ void protocol_stratum_v1::stopping(const code& ec) NOEXCEPT
     if (active_.exchange(false))
         demand_template(false);
 
+    decay_timer_->stop();
     submit_t::stopping(ec);
 }
 
@@ -340,13 +344,18 @@ void protocol_stratum_v1::handle_mining_suggest_target(const code& ec,
     suggest(to_share_difficulty(to_uintx(hash)));
 }
 
+// Unserved methods answer the stratum code, with the reason as message.
 void protocol_stratum_v1::handle_mining_get_transactions(const code& ec,
     rpc_interface::mining_get_transactions, const std::string&) NOEXCEPT
 {
     if (stopped(ec))
         return;
 
-    send_code(error::not_implemented);
+    send_error(
+    {
+        .code = error::stratum_v1::unknown,
+        .message = code{ error::not_implemented }.message()
+    });
 }
 
 void protocol_stratum_v1::handle_mining_multi_version(const code& ec,
@@ -355,7 +364,11 @@ void protocol_stratum_v1::handle_mining_multi_version(const code& ec,
     if (stopped(ec))
         return;
 
-    send_code(error::not_implemented);
+    send_error(
+    {
+        .code = error::stratum_v1::unknown,
+        .message = code{ error::not_implemented }.message()
+    });
 }
 
 // The extranonce of a channel does not change.
@@ -381,6 +394,7 @@ void protocol_stratum_v1::start_jobs() NOEXCEPT
 
     demand_template(true);
     get_template(BIND(handle_template, _1, _2));
+    start_decay();
 }
 
 void protocol_stratum_v1::handle_template(const code& ec,
@@ -527,6 +541,46 @@ void protocol_stratum_v1::retarget() NOEXCEPT
 
     channel_->set_difficulty(difficulty);
     refresh();
+}
+
+// Without shares the difficulty cannot retarget, so it decays by the timer.
+void protocol_stratum_v1::start_decay() NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    const auto interval = options_.share_interval_seconds;
+    if (stopped() || is_zero(interval))
+        return;
+
+    const auto span = network::seconds(interval * decay_intervals);
+    decay_timer_->start(BIND(handle_decay, _1), span);
+}
+
+void protocol_stratum_v1::handle_decay(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (stopped() || ec == network::error::operation_canceled)
+        return;
+
+    if (ec)
+    {
+        stop(ec);
+        return;
+    }
+
+    if (is_zero(channel_->shares()))
+    {
+        const auto difficulty = std::max(options_.minimum_difficulty,
+            channel_->difficulty() * minimum_ratio);
+
+        if (difficulty != channel_->difficulty())
+        {
+            channel_->set_difficulty(difficulty);
+            channel_->reset_window();
+            refresh();
+        }
+    }
+
+    start_decay();
 }
 
 // A suggested difficulty is floored at the configured minimum.

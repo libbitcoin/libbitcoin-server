@@ -255,6 +255,19 @@ BC_AUTO_TEST_CASE(server__bitcoind_server__initialize_context_enable_utxo__no_ti
     BC_REQUIRE_EQUAL(instance.expiration_minutes, 0u);
 }
 
+BC_AUTO_TEST_CASE(server__stratum_v1_server__initialize_context_defaults__success)
+{
+    server::settings::stratum_v1_server instance{ "stratum_v1" };
+    BC_REQUIRE(!instance.initialize_context());
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v1_server__initialize_context_small_extranonce1__invalid_configuration)
+{
+    server::settings::stratum_v1_server instance{ "stratum_v1" };
+    instance.extranonce1_size = 3;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
 BC_AUTO_TEST_CASE(server__btcd_server__initialize_context_enable_utxo__no_timeouts)
 {
     server::settings::btcd_server instance{ "btcd" };

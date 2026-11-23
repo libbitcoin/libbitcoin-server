@@ -163,6 +163,22 @@ struct stratum_v1_vardiff_setup_fixture
     }
 };
 
+/// As ten block, with a one second share interval, so difficulty decays.
+struct stratum_v1_decay_setup_fixture
+  : stratum_v1_setup_fixture
+{
+    inline stratum_v1_decay_setup_fixture()
+      : stratum_v1_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.server.stratum_v1.share_interval_seconds = 1;
+        })
+    {
+    }
+};
+
 /// Store with a pooled transaction, so the template has a branch and fees.
 struct stratum_v1_broadcast_setup_fixture
   : stratum_v1_setup_fixture

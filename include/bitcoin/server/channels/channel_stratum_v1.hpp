@@ -187,6 +187,12 @@ public:
         return ++shares_;
     }
 
+    /// Shares accepted within the retarget window.
+    inline size_t shares() const NOEXCEPT
+    {
+        return shares_;
+    }
+
     /// Seconds since the retarget window opened.
     inline double elapsed() const NOEXCEPT
     {

@@ -210,14 +210,18 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_extranonce_subscribe__true)
     BC_REQUIRE(get(R"({"id":6,"method":"mining.extranonce.subscribe","params":[]})").at("result").as_bool());
 }
 
-BC_AUTO_TEST_CASE(stratum_v1__mining_get_transactions__not_implemented)
+BC_AUTO_TEST_CASE(stratum_v1__mining_get_transactions__unknown_not_implemented)
 {
-    BC_REQUIRE_EQUAL(get_error(R"({"id":7,"method":"mining.get_transactions","params":["00000000"]})"), not_implemented.value());
+    const auto response = get(R"({"id":7,"method":"mining.get_transactions","params":["00000000"]})");
+    BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
+    BC_REQUIRE(response.at("error").as_array().at(1).as_string() == not_implemented.message());
 }
 
-BC_AUTO_TEST_CASE(stratum_v1__mining_multi_version__not_implemented)
+BC_AUTO_TEST_CASE(stratum_v1__mining_multi_version__unknown_not_implemented)
 {
-    BC_REQUIRE_EQUAL(get_error(R"({"id":8,"method":"mining.multi_version","params":[4]})"), not_implemented.value());
+    const auto response = get(R"({"id":8,"method":"mining.multi_version","params":[4]})");
+    BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
+    BC_REQUIRE(response.at("error").as_array().at(1).as_string() == not_implemented.message());
 }
 
 // unclaimed and malformed
@@ -425,6 +429,25 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__fast_shares__difficulty_raised)
     const auto reissued = receive();
     BC_REQUIRE(difficulty.at("method").as_string() == "mining.set_difficulty");
     BC_REQUIRE_EQUAL(difficulty.at("params").as_array().at(0).as_double(), stratum_v1_minimum_difficulty * 4.0);
+    BC_REQUIRE(reissued.at("method").as_string() == "mining.notify");
+    BC_REQUIRE(!reissued.at("params").as_array().at(8).as_bool());
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(stratum_v1_decay_tests, stratum_v1_decay_setup_fixture)
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_notify__no_shares__difficulty_decayed)
+{
+    BC_REQUIRE(get(R"({"id":5,"method":"mining.suggest_difficulty","params":[2.0]})").at("result").as_bool());
+    subscribe();
+    authorize(address(0x01));
+    BC_REQUIRE_EQUAL(receive().at("params").as_array().at(0).as_double(), 2.0);
+    BC_REQUIRE(receive().at("method").as_string() == "mining.notify");
+    const auto difficulty = receive();
+    const auto reissued = receive();
+    BC_REQUIRE(difficulty.at("method").as_string() == "mining.set_difficulty");
+    BC_REQUIRE_EQUAL(difficulty.at("params").as_array().at(0).as_double(), 0.5);
     BC_REQUIRE(reissued.at("method").as_string() == "mining.notify");
     BC_REQUIRE(!reissued.at("params").as_array().at(8).as_bool());
 }
