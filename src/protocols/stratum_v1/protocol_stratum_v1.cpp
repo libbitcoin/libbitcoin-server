@@ -210,13 +210,14 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
     {
         uint32_t bits{};
         const auto mask = channel_->mask();
-        if (!decode_word(bits, version_bits) || !is_zero(bits & ~mask))
+        if (!decode_word(bits, version_bits) ||
+            !is_zero(bit_and(bits, bit_not(mask))))
         {
             send_code(unknown, error::invalid_argument);
             return;
         }
 
-        version = (version & ~mask) | bits;
+        version = bit_or(bit_and(version, bit_not(mask)), bits);
     }
 
     const auto extranonce = splice(channel_->extranonce1(), roll);
