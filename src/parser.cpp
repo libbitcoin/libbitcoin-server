@@ -1049,6 +1049,16 @@ options_metadata parser::load_settings() THROWS
         "The maximum allowable channel clock skew, defaults to {}."
     )
     (
+        "peer.maximum_requests",
+        setting<uint32_t>(&configured.network.maximum_requests),
+        "Maximum unanswered tx requests of a peer before it is dropped, defaults to {}."
+    )
+    (
+        "peer.request_timeout_seconds",
+        setting<uint32_t>(&configured.network.request_timeout_seconds),
+        "Seconds a peer has to answer its oldest tx request, defaults to {} (0 disables)."
+    )
+    (
         "peer.user_agent",
         setting<std::string>(&configured.network.user_agent),
         "The node user agent string, defaults to {}."
@@ -2616,14 +2626,14 @@ options_metadata parser::load_settings() THROWS
         "Virtual bytes of block room below a fee estimate's rate, defaults to {}."
     )
     (
-        "pool.maximum_requests",
-        setting<uint32_t>(&configured.node.pool.maximum_requests),
-        "Maximum unanswered tx requests of a peer before it is dropped, defaults to {}."
+        "pool.template_interval_seconds",
+        setting<uint16_t>(&configured.node.pool.template_interval_seconds),
+        "Seconds between replacements of a demanded block template, defaults to {} (0 disables)."
     )
     (
-        "pool.request_timeout_seconds",
-        setting<uint16_t>(&configured.node.pool.request_timeout_seconds),
-        "Seconds a peer has to answer its oldest tx request, defaults to {} (0 disables)."
+        "pool.template_fee_increase",
+        setting<uint64_t>(&configured.node.pool.template_fee_increase),
+        "Satoshis of fee increase a block template must exceed to be replaced, defaults to {}."
     )
     (
         "pool.thread_priority",
