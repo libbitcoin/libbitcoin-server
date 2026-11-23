@@ -100,6 +100,15 @@ class ReferenceData:
 
     # First Bitcoin transaction (Block 170)
     FIRST_TX_BLOCK_HEIGHT = 170
+    FIRST_TX_BLOCK_HASH = "00000000d1145790a8694403d4063f323d499e655c83426834d4ce2f8dd4a2ee"
+    FIRST_TX_BLOCK_DETAILS = [
+        {"segregated": False, "nominal": 134, "maximal": 134, "weight": 536, "virtual": 134,
+         "value": 0, "spend": 5000000000, "fee": 0, "cluster": 0},
+        {"segregated": False, "nominal": 275, "maximal": 275, "weight": 1100, "virtual": 275,
+         "value": 5000000000, "spend": 5000000000, "fee": 0, "cluster": 1},
+    ]
+    TX_DETAILS_KEYS = {"segregated", "nominal", "maximal", "weight", "virtual",
+        "value", "spend", "fee", "cluster"}
     FIRST_TX_HASH = "f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16"
 
     # First SegWit block (height 481824, activation 24 Aug 2017)

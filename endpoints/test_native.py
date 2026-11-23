@@ -173,6 +173,26 @@ def test_block_txs_by_height(native_config):
     assert isinstance(data[0], str)
 
 
+@pytest.mark.requires_height(ReferenceData.FIRST_TX_BLOCK_HEIGHT)
+def test_block_txs_details_by_height(native_config):
+    """Test /v1/block/confirmed/{height}/txs/details - coinbase and an outside spend"""
+    data = get_json(native_config["base_url"], f"block/confirmed/{ReferenceData.FIRST_TX_BLOCK_HEIGHT}/txs/details")
+    assert data == ReferenceData.FIRST_TX_BLOCK_DETAILS
+
+
+@pytest.mark.requires_height(ReferenceData.FIRST_TX_BLOCK_HEIGHT)
+def test_block_txs_details_by_hash(native_config):
+    """Test /v1/block/hash/{blockhash}/txs/details"""
+    data = get_json(native_config["base_url"], f"block/hash/{ReferenceData.FIRST_TX_BLOCK_HASH}/txs/details")
+    assert data == ReferenceData.FIRST_TX_BLOCK_DETAILS
+
+
+def test_block_txs_details_text_not_acceptable(native_config):
+    """Test /v1/block/confirmed/{height}/txs/details is json only"""
+    url = f"{native_config['base_url']}/block/confirmed/0/txs/details?format=text"
+    assert requests.get(url, timeout=TestConfig.DEFAULT_HTTP_TIMEOUT).status_code == 406
+
+
 def test_block_tx_by_position_hash(native_config):
     """Test /v1/block/hash/{blockhash}/tx/{position}"""
     data = get_json(native_config["base_url"], f"block/hash/{ReferenceData.KNOWN_BLOCK_HASH}/tx/0")
@@ -537,3 +557,48 @@ def test_unsupported_format(native_config):
     url = f"{native_config['base_url']}/top?format=xml"
     resp = requests.get(url, timeout=5)
     assert resp.status_code in (400, 406, 415), "Should reject unsupported format"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TEMPLATE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def confirmed_top(native_config) -> int:
+    """The confirmed top height."""
+    return get_json(native_config["base_url"], "top")["confirmed"]["height"]
+
+
+def template_status(native_config, height: int) -> int:
+    """The status of the template at height."""
+    url = f"{native_config['base_url']}/template/{height}?format=json"
+    return requests.get(url, timeout=TestConfig.DEFAULT_HTTP_TIMEOUT).status_code
+
+
+def template_key_sets(native_config, height: int) -> set:
+    """The distinct key sets of the elements of the template at height."""
+    url = f"{native_config['base_url']}/template/{height}?format=json"
+    response = requests.get(url, timeout=TestConfig.DEFAULT_HTTP_TIMEOUT)
+    response.raise_for_status()
+    return {frozenset(element) for element in response.json()}
+
+
+def test_template_at_top_not_found(native_config):
+    """Test /v1/template/{height} has no template at the confirmed top"""
+    assert template_status(native_config, confirmed_top(native_config)) == 404
+
+
+def test_template_beyond_next_not_found(native_config):
+    """Test /v1/template/{height} has no template beyond the next block"""
+    assert template_status(native_config, confirmed_top(native_config) + 1000) == 404
+
+
+def test_template_text_not_acceptable(native_config):
+    """Test /v1/template/{height} is json only"""
+    url = f"{native_config['base_url']}/template/{confirmed_top(native_config) + 1}?format=text"
+    assert requests.get(url, timeout=TestConfig.DEFAULT_HTTP_TIMEOUT).status_code == 406
+
+
+@pytest.mark.requires_pool
+def test_template_next_elements(native_config):
+    """Test /v1/template/{height} of the next block has tx details elements"""
+    assert template_key_sets(native_config, confirmed_top(native_config) + 1) <= {frozenset(ReferenceData.TX_DETAILS_KEYS)}
