@@ -76,9 +76,9 @@ void protocol_native::handle_get_configuration(const code& ec,
         },
         { "wallet", json::object
             {
-                { "p2kh", uint8_t{ wallet.p2kh_prefix } },
-                { "p2sh", uint8_t{ wallet.p2sh_prefix } },
-                { "wif", uint8_t{ wallet.wif_prefix } },
+                { "p2kh", wallet.p2kh_prefix },
+                { "p2sh", wallet.p2sh_prefix },
+                { "wif", wallet.wif_prefix },
                 { "witness", wallet.witness_prefix },
                 { "silent", wallet.silent_prefix },
                 { "hd_private", wallet.hd_private_prefix },

@@ -247,10 +247,10 @@ public:
         std::string coinbase_tag{};
 
         /// Bytes of coinbase extranonce assigned to each channel.
-        system::config::byte extranonce1_size{ 4 };
+        uint8_t extranonce1_size{ 4 };
 
         /// Bytes of coinbase extranonce rolled by the miner.
-        system::config::byte extranonce2_size{ 4 };
+        uint8_t extranonce2_size{ 4 };
 
         /// Share difficulty assigned to a channel, and its floor.
         double minimum_difficulty{ 1.0 };
@@ -329,9 +329,9 @@ public:
         wallet_settings() NOEXCEPT;
         wallet_settings(system::chain::selection context) NOEXCEPT;
 
-        system::config::byte p2kh_prefix;
-        system::config::byte p2sh_prefix;
-        system::config::byte wif_prefix;
+        uint8_t p2kh_prefix;
+        uint8_t p2sh_prefix;
+        uint8_t wif_prefix;
         std::string witness_prefix;
         std::string silent_prefix;
         uint32_t hd_private_prefix;

@@ -110,8 +110,8 @@ void parser::derive_coinbase() NOEXCEPT
         }
     }
 
-    const size_t extranonce = add(uint8_t{ stratum.extranonce1_size },
-        uint8_t{ stratum.extranonce2_size });
+    const auto extranonce = add<size_t>(stratum.extranonce1_size,
+        stratum.extranonce2_size);
 
     const auto script = coinbase_script_size(stratum.coinbase_tag.size(),
         extranonce);
@@ -1365,17 +1365,17 @@ options_metadata parser::load_settings() THROWS
     /* [wallet] */
     (
         "wallet.p2kh_prefix",
-        setting<config::byte>(&configured.server.wallet.p2kh_prefix),
+        setting<uint8_t>(&configured.server.wallet.p2kh_prefix),
         "The pay-to-public-key-hash address prefix, defaults to {} (use '111' for testnet)."
     )
     (
         "wallet.p2sh_prefix",
-        setting<config::byte>(&configured.server.wallet.p2sh_prefix),
+        setting<uint8_t>(&configured.server.wallet.p2sh_prefix),
         "The pay-to-script-hash address prefix, defaults to {} (use '196' for testnet)."
     )
     (
         "wallet.wif_prefix",
-        setting<config::byte>(&configured.server.wallet.wif_prefix),
+        setting<uint8_t>(&configured.server.wallet.wif_prefix),
         "The wallet import format prefix, defaults to {} (use '239' for testnet)."
     )
     (
@@ -2471,12 +2471,12 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "stratum_v1.extranonce1_size",
-        setting<config::byte>(&configured.server.stratum_v1.extranonce1_size),
+        setting<uint8_t>(&configured.server.stratum_v1.extranonce1_size),
         "The bytes of coinbase extranonce assigned to each channel, defaults to {}."
     )
     (
         "stratum_v1.extranonce2_size",
-        setting<config::byte>(&configured.server.stratum_v1.extranonce2_size),
+        setting<uint8_t>(&configured.server.stratum_v1.extranonce2_size),
         "The bytes of coinbase extranonce rolled by the miner, defaults to {}."
     )
     (

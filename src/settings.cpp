@@ -358,11 +358,9 @@ code settings::stratum_v1_server::initialize_context() NOEXCEPT
     if (const auto ec = base::initialize_context())
         return ec;
 
-    const size_t extranonce = add(uint8_t{ extranonce1_size },
-        uint8_t{ extranonce2_size });
+    const auto extranonce = add<size_t>(extranonce1_size, extranonce2_size);
     const auto script = coinbase_script_size(coinbase_tag.size(), extranonce);
-    if (uint8_t{ extranonce1_size } < sizeof(uint32_t) ||
-        is_zero(uint8_t{ extranonce2_size }) ||
+    if (extranonce1_size < sizeof(uint32_t) || is_zero(extranonce2_size) ||
         coinbase_tag.size() > max_direct_push ||
         extranonce > max_direct_push || script > max_coinbase_size ||
         minimum_difficulty <= 0.0)

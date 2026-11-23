@@ -394,8 +394,8 @@ BC_AUTO_TEST_CASE(server__stratum_v1_server__defaults__expected)
     // stratum_v1_server
     BC_REQUIRE(server.payout_address.empty());
     BC_REQUIRE(server.coinbase_tag.empty());
-    BC_REQUIRE_EQUAL(uint8_t{ server.extranonce1_size }, 4u);
-    BC_REQUIRE_EQUAL(uint8_t{ server.extranonce2_size }, 4u);
+    BC_REQUIRE_EQUAL(server.extranonce1_size, 4u);
+    BC_REQUIRE_EQUAL(server.extranonce2_size, 4u);
     BC_REQUIRE_EQUAL(server.minimum_difficulty, 1.0);
     BC_REQUIRE_EQUAL(server.share_interval_seconds, 10u);
 

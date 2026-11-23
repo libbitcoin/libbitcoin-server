@@ -129,7 +129,7 @@ void protocol_stratum_v1::handle_mining_subscribe(const code& ec,
             array_t{ string_t{ "mining.notify" }, id }
         },
         string_t{ encode_base16(channel_->extranonce1()) },
-        uint8_t{ options_.extranonce2_size }
+        options_.extranonce2_size
     });
 
     start_jobs();
@@ -199,7 +199,7 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
 
     data_chunk roll{};
     uint32_t timestamp{}, solution{};
-    const uint8_t size = options_.extranonce2_size;
+    const auto size = options_.extranonce2_size;
     if (!decode_base16(roll, extranonce2) || roll.size() != size ||
         !decode_word(timestamp, ntime) ||
         !decode_word(solution, nonce))
@@ -436,11 +436,8 @@ void protocol_stratum_v1::do_template(const code& ec,
         bitcoin.forks.bip42);
 
     const auto value = ceilinged_add(subsidy, held->fees);
-    const auto extranonce = add<size_t>
-    (
-        uint8_t{ options_.extranonce1_size },
-        uint8_t{ options_.extranonce2_size }
-    );
+    const auto extranonce = add<size_t>(options_.extranonce1_size,
+        options_.extranonce2_size);
 
     const auto clean = !current || current->previous != held->previous;
     send_job(emplace_shared<job>(job
