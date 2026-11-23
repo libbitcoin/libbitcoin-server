@@ -325,7 +325,7 @@ def suite(folder, name, tests, offset=0):
     """Run endpoint tests against the node, True if all pass."""
     # Joined values, else pytest takes the log path as a test path (and root).
     result = subprocess.run([sys.executable, "-m", "pytest", "-q",
-        "-m", "not slow", tests,
+        "-p", "no:cacheprovider", "-m", "not slow", tests,
         "--native-port={}".format(NATIVE + offset),
         "--admin-port={}".format(ADMIN + offset),
         "--esplora-port={}".format(ESPLORA + offset),
