@@ -45,6 +45,8 @@ public:
     /// A job issued to the miner, of a held template.
     struct job
     {
+        typedef std::shared_ptr<job> ptr;
+
         node::block_template::cptr held{};
         system::data_chunk prefix{};
         system::data_chunk suffix{};
@@ -150,7 +152,7 @@ public:
     /// -----------------------------------------------------------------------
 
     /// Retain the job, all others dropped if clean, returning its identifier.
-    inline uint32_t issue(job&& job, bool clean) NOEXCEPT
+    inline uint32_t issue(const job::ptr& job, bool clean) NOEXCEPT
     {
         if (clean)
             jobs_.clear();
@@ -159,20 +161,21 @@ public:
             jobs_.erase(jobs_.begin());
 
         const auto id = next_++;
-        jobs_.emplace(id, std::move(job));
+        jobs_.emplace(id, job);
         return id;
     }
 
-    inline job* find(uint32_t id) NOEXCEPT
+    /// The job of the identifier, empty if not retained.
+    inline job::ptr find(uint32_t id) const NOEXCEPT
     {
         const auto it = jobs_.find(id);
-        return it == jobs_.end() ? nullptr : &it->second;
+        return it == jobs_.end() ? job::ptr{} : it->second;
     }
 
-    /// The most recently issued job, null if none.
-    inline const job* current() const NOEXCEPT
+    /// The most recently issued job, empty if none.
+    inline job::ptr current() const NOEXCEPT
     {
-        return jobs_.empty() ? nullptr : &jobs_.rbegin()->second;
+        return jobs_.empty() ? job::ptr{} : jobs_.rbegin()->second;
     }
 
     /// Shares (require strand).
@@ -223,7 +226,7 @@ private:
     const system::data_chunk extranonce1_;
     std::unordered_set<std::string> workers_{};
     system::chain::script payout_{};
-    std::map<uint32_t, job> jobs_{};
+    std::map<uint32_t, job::ptr> jobs_{};
     network::steady_clock::time_point window_;
     double difficulty_;
     double notified_{};

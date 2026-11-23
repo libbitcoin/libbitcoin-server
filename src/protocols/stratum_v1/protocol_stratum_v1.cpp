@@ -181,8 +181,10 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
     }
 
     uint32_t id{};
-    const auto job = decode_word(id, job_id) ? channel_->find(id) : nullptr;
-    if (is_null(job))
+    const auto job = decode_word(id, job_id) ? channel_->find(id) :
+        channel_t::job::ptr{};
+
+    if (!job)
     {
         send_code(job_not_found);
         return;
@@ -370,9 +372,6 @@ void protocol_stratum_v1::handle_template(const code& ec,
     POST(do_template, ec, held);
 }
 
-// Template is of block above confirmed top,
-// so one held for another height is requested again.
-// A template already issued is not issued again.
 void protocol_stratum_v1::do_template(const code& ec,
     const node::block_template::cptr& held) NOEXCEPT
 {
@@ -382,30 +381,19 @@ void protocol_stratum_v1::do_template(const code& ec,
         return;
 
     const auto current = channel_->current();
-    if (!is_null(current) && current->held == held)
+    if (current && current->held == held)
         return;
 
-    size_t top{};
-    const auto& query = archive();
-    const auto& bitcoin = system_settings();
-    const auto link = query.to_top_confirmed();
-    const auto key = query.get_header_key(link);
-    const auto state = query.get_confirmed_chain_state(bitcoin, key);
-    if (!state || !query.get_height(top, link))
-    {
-        LOGF("Stratum chain state not found at top.");
-        return;
-    }
-
-    const auto height = held->height;
-    if (add1(top) != height)
+    if (held->previous != archive().get_top_confirmed_hash())
     {
         get_template(BIND(handle_template, _1, _2));
         return;
     }
 
-    const chain_state pool{ *state, bitcoin };
-    const auto minimum = add1(pool.context().median_time_past);
+    const auto& bitcoin = system_settings();
+    const auto& ctx = held->context;
+    const auto height = ctx.height;
+    const auto minimum = add1(ctx.median_time_past);
     const auto timestamp = std::max(network::unix_time(), minimum);
     const auto subsidy = block::subsidy(height,
         bitcoin.subsidy_interval_blocks, bitcoin.initial_subsidy(),
@@ -415,30 +403,30 @@ void protocol_stratum_v1::do_template(const code& ec,
     const auto extranonce = add(uint8_t{ options_.extranonce1_size },
         uint8_t{ options_.extranonce2_size });
 
-    const auto clean = is_null(current) || current->previous != key;
-    send_job(
+    const auto clean = !current || current->previous != held->previous;
+    send_job(emplace_shared<job>(job
     {
         held,
         coinbase_prefix(height, options_.coinbase_tag, extranonce),
         coinbase_suffix(height, value, channel_->payout(), held->commitment),
-        key,
+        held->previous,
         chain_state::signal_version(bitcoin),
-        pool.work_required(),
+        ctx.work_required,
         timestamp,
         channel_->difficulty(),
         {}
-    }, clean);
+    }), clean);
 }
 
 // The difficulty of a job is notified before the job, as it applies to jobs
 // that follow it.
-void protocol_stratum_v1::send_job(job&& job, bool clean) NOEXCEPT
+void protocol_stratum_v1::send_job(const job::ptr& job, bool clean) NOEXCEPT
 {
     BC_ASSERT(stranded());
     if (!is_duplex())
         return;
 
-    const auto difficulty = job.difficulty;
+    const auto difficulty = job->difficulty;
     if (difficulty != channel_->notified())
     {
         channel_->set_notified(difficulty);
@@ -448,23 +436,22 @@ void protocol_stratum_v1::send_job(job&& job, bool clean) NOEXCEPT
         });
     }
 
-    const auto id = channel_->issue(std::move(job), clean);
-    const auto& issued = *channel_->find(id);
+    const auto id = channel_->issue(job, clean);
 
     array_t branch{};
-    for (const auto& hash: issued.held->branch)
+    for (const auto& hash: job->held->branch)
         branch.emplace_back(encode_base16(hash));
 
     send_notification(version::v1, "mining.notify", array_t
     {
         encode_word(id),
-        to_stratum_hash(issued.previous),
-        encode_base16(issued.prefix),
-        encode_base16(issued.suffix),
+        to_stratum_hash(job->previous),
+        encode_base16(job->prefix),
+        encode_base16(job->suffix),
         std::move(branch),
-        encode_word(issued.version),
-        encode_word(issued.bits),
-        encode_word(issued.timestamp),
+        encode_word(job->version),
+        encode_word(job->bits),
+        encode_word(job->timestamp),
         clean
     });
 }
@@ -474,13 +461,13 @@ void protocol_stratum_v1::refresh() NOEXCEPT
 {
     BC_ASSERT(stranded());
     const auto current = channel_->current();
-    if (is_null(current))
+    if (!current)
         return;
 
-    auto copy = *current;
-    copy.shares.clear();
-    copy.difficulty = channel_->difficulty();
-    send_job(std::move(copy), false);
+    const auto copy = emplace_shared<job>(*current);
+    copy->shares.clear();
+    copy->difficulty = channel_->difficulty();
+    send_job(copy, false);
 }
 
 // The difficulty moves toward the configured share interval (vardiff).
@@ -569,7 +556,7 @@ void protocol_stratum_v1::submit_mined(const chain::header& header,
     }
 
     LOGN("Stratum block mined [" << encode_hash(header.hash()) << ":"
-        << job.held->height << "]");
+        << job.held->context.height << "]");
 
     submit_block(emplace_shared<const chain::header>(header), block, {});
 }

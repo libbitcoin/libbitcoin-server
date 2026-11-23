@@ -117,7 +117,7 @@ private:
         const node::block_template::cptr& held) NOEXCEPT;
     void do_template(const code& ec,
         const node::block_template::cptr& held) NOEXCEPT;
-    void send_job(job&& job, bool clean) NOEXCEPT;
+    void send_job(const job::ptr& job, bool clean) NOEXCEPT;
     void refresh() NOEXCEPT;
     void retarget() NOEXCEPT;
     void suggest(double difficulty) NOEXCEPT;

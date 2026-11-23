@@ -417,8 +417,7 @@ void protocol_bitcoind_mining::handle_template(const code& ec,
     POST(do_template, ec, held, gate);
 }
 
-// Template is of block above confirmed top,
-// so one held for another height is requested again.
+// A template not over the confirmed top is requested again.
 void protocol_bitcoind_mining::do_template(const code& ec,
     const node::block_template::cptr& held, const gate_t::ptr& gate) NOEXCEPT
 {
@@ -440,27 +439,16 @@ void protocol_bitcoind_mining::do_template(const code& ec,
         return;
     }
 
-    size_t top{};
     const auto& query = archive();
-    const auto& bitcoin = system_settings();
-    const auto link = query.to_top_confirmed();
-    const auto key = query.get_header_key(link);
-    const auto state = query.get_confirmed_chain_state(bitcoin, key);
-    if (!state || !query.get_height(top, link))
-    {
-        send_error(error::bitcoind::internal_error);
-        return;
-    }
-
-    const auto height = held->height;
-    if (add1(top) != height)
+    if (held->previous != query.get_top_confirmed_hash())
     {
         get_template(BIND(handle_template, _1, _2, gate));
         return;
     }
 
-    const chain_state pool{ *state, bitcoin };
-    const auto ctx = pool.context();
+    const auto& bitcoin = system_settings();
+    const auto& ctx = held->context;
+    const auto height = ctx.height;
     const auto bip141 = ctx.is_enabled(flags::bip141_rule);
 
     // Tx depends on template txs it spends, by position from one (coinbase 0).
@@ -525,11 +513,14 @@ void protocol_bitcoind_mining::do_template(const code& ec,
     if (ctx.is_enabled(flags::bip341_rule))
         rules.emplace_back(string_t{ "taproot" });
 
-    const auto bits = pool.work_required();
+    const auto bits = ctx.work_required;
     const auto minimum = add1(ctx.median_time_past);
     const auto subsidy = block::subsidy(height,
         bitcoin.subsidy_interval_blocks, bitcoin.initial_subsidy(),
         bitcoin.forks.bip42);
+
+    const auto previous = encode_hash(held->previous);
+    const auto longpoll = previous + std::to_string(held->sequence);
 
     object_t result
     {
@@ -538,11 +529,11 @@ void protocol_bitcoind_mining::do_template(const code& ec,
         { "rules", std::move(rules) },
         { "vbavailable", object_t{} },
         { "vbrequired", to64(zero) },
-        { "previousblockhash", encode_hash(key) },
+        { "previousblockhash", previous },
         { "transactions", std::move(transactions) },
         { "coinbaseaux", object_t{} },
         { "coinbasevalue", ceilinged_add(subsidy, held->fees) },
-        { "longpollid", encode_hash(key) + std::to_string(held->sequence) },
+        { "longpollid", longpoll },
         { "target", encode_hash(from_uintx(chain::compact::expand(bits))) },
         { "mintime", minimum },
         { "mutable", array_t
