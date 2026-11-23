@@ -201,6 +201,7 @@
     <ClCompile Include="..\..\..\..\src\utilities\coinbase.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\electrum_version.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\merkle.cpp" />
+    <ClCompile Include="..\..\..\..\src\utilities\stratum_v1.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp" />
@@ -317,6 +318,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\coinbase.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\electrum_version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\merkle.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\stratum_v1.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\utilities.hpp" />
   </ItemGroup>
   <ItemGroup>

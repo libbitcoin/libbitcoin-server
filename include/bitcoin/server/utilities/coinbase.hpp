@@ -38,6 +38,24 @@ BCS_API size_t coinbase_script_size(size_t tag, size_t extranonce) NOEXCEPT;
 /// script of the given size and committing to witnesses.
 BCS_API size_t coinbase_weight(size_t script, size_t payout) NOEXCEPT;
 
+/// Coinbase serialized without witness, through the extranonce push opcode.
+BCS_API system::data_chunk coinbase_prefix(size_t height,
+    const std::string& tag, size_t extranonce) NOEXCEPT;
+
+/// Coinbase serialized without witness, following the extranonce.
+BCS_API system::data_chunk coinbase_suffix(uint64_t value,
+    const system::chain::script& payout,
+    const system::hash_digest& commitment) NOEXCEPT;
+
+/// Coinbase of prefix, extranonce and suffix, with witness (null reserved).
+BCS_API system::data_chunk coinbase_witnessed(const system::data_chunk& prefix,
+    const system::data_chunk& extranonce,
+    const system::data_chunk& suffix) NOEXCEPT;
+
+/// Merkle root of a block, from its coinbase txid and the coinbase branch.
+BCS_API system::hash_digest coinbase_root(const system::hash_digest& txid,
+    const system::hashes& branch) NOEXCEPT;
+
 } // namespace server
 } // namespace libbitcoin
 

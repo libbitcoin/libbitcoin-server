@@ -48,7 +48,8 @@ public:
         {
             .jsonrpc = version_,
             .id = identity_,
-            .error = std::move(error)
+            .error = std::move(error),
+            .form = form()
         };
     }
 
@@ -89,6 +90,12 @@ public:
     }
 
 protected:
+    /// The form of a response error, an object unless overridden.
+    virtual network::rpc::error_form form() const NOEXCEPT
+    {
+        return network::rpc::error_form::object;
+    }
+
     /// Overridden to set the preselected reader body type.
     inline value_type default_body() const NOEXCEPT override
     {

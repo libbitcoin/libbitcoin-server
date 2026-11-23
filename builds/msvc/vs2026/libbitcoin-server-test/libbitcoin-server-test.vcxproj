@@ -159,6 +159,7 @@
       <ObjectFileName>$(IntDir)test_utilities_electrum_version.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\utilities\merkle.cpp" />
+    <ClCompile Include="..\..\..\..\test\utilities\stratum_v1.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\test\mocks\blocks.hpp" />

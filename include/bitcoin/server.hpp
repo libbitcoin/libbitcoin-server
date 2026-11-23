@@ -129,6 +129,7 @@
 #include <bitcoin/server/utilities/coinbase.hpp>
 #include <bitcoin/server/utilities/electrum_version.hpp>
 #include <bitcoin/server/utilities/merkle.hpp>
+#include <bitcoin/server/utilities/stratum_v1.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
 
 #endif

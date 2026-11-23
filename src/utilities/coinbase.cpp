@@ -41,6 +41,10 @@ constexpr size_t fixed_size = sizeof(uint32_t) + one + point::serialized_size()
 // Marker and flag, witness count, reserved value size and value.
 constexpr size_t witness_size = two + one + one + hash_size;
 
+constexpr uint32_t coinbase_version = 2;
+constexpr uint8_t witness_marker = 0x00;
+constexpr uint8_t witness_flag = 0x01;
+
 size_t coinbase_script_size(size_t tag, size_t extranonce) NOEXCEPT
 {
     const auto tagged = is_zero(tag) ? zero : add1(tag);
@@ -52,6 +56,92 @@ size_t coinbase_weight(size_t script, size_t payout) NOEXCEPT
     const auto base = fixed_size + script + payout;
     const auto total = base + witness_size;
     return base_size_contribution * base + total_size_contribution * total;
+}
+
+// The height is a minimal push (bip34), so the script size varies with it.
+data_chunk coinbase_prefix(size_t height, const std::string& tag,
+    size_t extranonce) NOEXCEPT
+{
+    using namespace machine::number;
+    const operation push{ chunk::from_integer(to_signed(height)), true };
+    const auto tagged = !tag.empty();
+    const auto tagging = tagged ? add1(tag.size()) : zero;
+    const auto script = push.serialized_size() + tagging + add1(extranonce);
+
+    data_chunk out{};
+    write::bytes::data sink{ out };
+    sink.write_4_bytes_little_endian(coinbase_version);
+    sink.write_variable(one);
+    sink.write_bytes(null_hash);
+    sink.write_4_bytes_little_endian(point::null_index);
+    sink.write_variable(script);
+    push.to_data(sink);
+    if (tagged)
+    {
+        sink.write_byte(narrow_cast<uint8_t>(tag.size()));
+        sink.write_bytes(to_chunk(tag));
+    }
+
+    sink.write_byte(narrow_cast<uint8_t>(extranonce));
+    sink.flush();
+    return out;
+}
+
+data_chunk coinbase_suffix(uint64_t value, const script& payout,
+    const hash_digest& commitment) NOEXCEPT
+{
+    data_chunk out{};
+    write::bytes::data sink{ out };
+    sink.write_4_bytes_little_endian(max_uint32);
+    sink.write_variable(two);
+    sink.write_8_bytes_little_endian(value);
+    payout.to_data(sink, true);
+    sink.write_8_bytes_little_endian(zero);
+    sink.write_variable(commitment_script);
+    sink.write_byte(static_cast<uint8_t>(opcode::op_return));
+    sink.write_byte(static_cast<uint8_t>(opcode::push_size_36));
+    sink.write_4_bytes_big_endian(witness_head);
+    sink.write_bytes(commitment);
+    sink.write_4_bytes_little_endian(zero);
+    sink.flush();
+    return out;
+}
+
+// The version leads the prefix and the locktime ends the suffix.
+data_chunk coinbase_witnessed(const data_chunk& prefix,
+    const data_chunk& extranonce, const data_chunk& suffix) NOEXCEPT
+{
+    constexpr auto field = sizeof(uint32_t);
+    BC_ASSERT(prefix.size() >= field && suffix.size() >= field);
+    const auto version = std::next(prefix.begin(), field);
+    const auto locktime = std::prev(suffix.end(), field);
+
+    data_chunk out{};
+    out.reserve(prefix.size() + extranonce.size() + suffix.size() +
+        witness_size);
+
+    out.insert(out.end(), prefix.begin(), version);
+    out.push_back(witness_marker);
+    out.push_back(witness_flag);
+    out.insert(out.end(), version, prefix.end());
+    out.insert(out.end(), extranonce.begin(), extranonce.end());
+    out.insert(out.end(), suffix.begin(), locktime);
+    out.push_back(one);
+    out.push_back(narrow_cast<uint8_t>(hash_size));
+    out.insert(out.end(), null_hash.begin(), null_hash.end());
+    out.insert(out.end(), locktime, suffix.end());
+    return out;
+}
+
+// The coinbase is the leftmost leaf, so each branch hash is its right.
+hash_digest coinbase_root(const hash_digest& txid,
+    const hashes& branch) NOEXCEPT
+{
+    auto root = txid;
+    for (const auto& hash: branch)
+        root = sha256::double_hash(root, hash);
+
+    return root;
 }
 
 } // namespace server

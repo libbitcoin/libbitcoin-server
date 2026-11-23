@@ -68,7 +68,6 @@ and html are not independent subclasses (operate within http).
 network::protocol
 ├── [server:protocol_stratum_v2]
 ├── protocol_rpc<Channel>
-│   ├── [server::protocol_stratum_v1]
 │   └── [server::protocol_zmq]
 ├── protocol_http
 │   └── [server::protocol_http]
@@ -104,7 +103,6 @@ node::protocol
 
 server::protocol → node::protocol
 ├── protocol_stratum_v2                → network::protocol
-├── protocol_stratum_v1                → network::protocol_rpc<channel_stratum_v1>
 ├── protocol_zmq                       → network::protocol_rpc<channel_zmq>
 └── protocol_http                      → network::protocol_http
     ├── protocol_esplora
@@ -114,9 +112,12 @@ server::protocol → node::protocol
     ├── protocol_rpc<Interface> (universal json-rpc, dispatch by interface)
     │   ╞══ protocol_rpc<electrum_handshake>
     │   │   └── protocol_electrum_version (handshake, attached first)
-    │   ╘══ protocol_rpc<electrum>
-    │       └── protocol_electrum (terminal responder, attached last)
-    │           └── protocol_sparrow (+ dispatcher<sparrow>)
+    │   ╞══ protocol_rpc<electrum>
+    │   │   └── protocol_electrum (terminal responder, attached last)
+    │   │       └── protocol_sparrow (+ dispatcher<sparrow>)
+    │   ╘══ protocol_rpc<stratum_v1>
+    │       └── protocol_submit<Base>
+    │           └── protocol_stratum_v1
     └── protocol_bitcoind (common base and terminal default responder)
         ├── protocol_bitcoind_dispatch<Interface>
         │   ╞══ protocol_bitcoind_dispatch<bitcoind_blockchain>

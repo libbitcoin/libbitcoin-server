@@ -141,7 +141,8 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/utilities/chain.cpp \
     ${srcdir}/../../src/utilities/coinbase.cpp \
     ${srcdir}/../../src/utilities/electrum_version.cpp \
-    ${srcdir}/../../src/utilities/merkle.cpp
+    ${srcdir}/../../src/utilities/merkle.cpp \
+    ${srcdir}/../../src/utilities/stratum_v1.cpp
 
 nodist_src_libbitcoin_server_la_SOURCES = \
     src/version.cpp
@@ -332,6 +333,7 @@ include_bitcoin_server_utilities_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/utilities/coinbase.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/electrum_version.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/merkle.hpp \
+    ${srcdir}/../../include/bitcoin/server/utilities/stratum_v1.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/utilities.hpp
 
 # Tests.
@@ -414,7 +416,8 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/utilities/bitcoind_descriptor.cpp \
     ${srcdir}/../../test/utilities/coinbase.cpp \
     ${srcdir}/../../test/utilities/electrum_version.cpp \
-    ${srcdir}/../../test/utilities/merkle.cpp
+    ${srcdir}/../../test/utilities/merkle.cpp \
+    ${srcdir}/../../test/utilities/stratum_v1.cpp
 
 TESTS = test_runner.sh
 
