@@ -31,6 +31,7 @@ namespace {
 const auto block0 = encode_hash(test::block0_hash);
 const auto block5 = encode_hash(test::block5_hash);
 const auto block9 = encode_hash(test::block9_hash);
+const auto block10 = encode_hash(test::pruned_block10.hash());
 const auto header9 = encode_base16(test::header9_data);
 
 std::string block_hash_hex(const data_chunk& wire) NOEXCEPT
@@ -843,28 +844,39 @@ BC_FIXTURE_TEST_SUITE(bitcoind_rest_pruned_tests, bitcoind_pruned_setup_fixture)
 
 BC_AUTO_TEST_CASE(bitcoind_rest__block_bin__pruned__not_found)
 {
-    BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block9 + ".bin"), status::not_found);
+    BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block10 + ".bin"), status::not_found);
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rest__block_hex__pruned__not_found)
 {
-    BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block5 + ".hex"), status::not_found);
+    BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block10 + ".hex"), status::not_found);
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rest__block_json__pruned__not_found)
 {
-    BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block9 + ".json"), status::not_found);
+    BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block10 + ".json"), status::not_found);
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rest__tx_json__pruned__not_found)
 {
-    const auto txid = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto txid = encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false));
     BC_REQUIRE_EQUAL(rest_status("/rest/tx/" + txid + ".json"), status::not_found);
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rest__block_bin__pruned_genesis__ok)
 {
     BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block0 + ".bin"), status::ok);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rest__block_bin__pruned_coinbase_only__ok)
+{
+    BC_REQUIRE_EQUAL(rest_status("/rest/block/" + block9 + ".bin"), status::ok);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rest__tx_json__pruned_coinbase__ok)
+{
+    const auto txid = encode_hash(test::pruned_block10.transactions_ptr()->front()->hash(false));
+    BC_REQUIRE_EQUAL(rest_status("/rest/tx/" + txid + ".json"), status::ok);
 }
 
 BC_AUTO_TEST_SUITE_END()

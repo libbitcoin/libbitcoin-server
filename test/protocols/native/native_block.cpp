@@ -1370,34 +1370,35 @@ BC_FIXTURE_TEST_SUITE(native_pruned_tests, native_pruned_setup_fixture)
 
 BC_AUTO_TEST_CASE(native__block__pruned_data__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1?format=data"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block__pruned_text__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/9?format=text"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10?format=text"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block__pruned_json__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/5?format=json"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10?format=json"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block_txs_details__pruned__expected)
 {
-    const auto response = get_json("/v1/block/confirmed/1/txs/details?format=json");
+    const auto response = get_json("/v1/block/confirmed/10/txs/details?format=json");
     BC_REQUIRE(response.is_array());
-    BC_REQUIRE_EQUAL(response.as_array().front().as_object().at("nominal").as_int64(), 134);
+    BC_REQUIRE_EQUAL(response.as_array().size(), 2u);
+    BC_REQUIRE_EQUAL(response.as_array().at(1).as_object().at("nominal").as_int64(), 85);
 }
 
 BC_AUTO_TEST_CASE(native__block_tx__pruned_data__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/tx/0?format=data"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10/tx/1?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block_tx_input_script__pruned_data__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/tx/0/input/0/script?format=data"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10/tx/1/input/0/script?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__block__pruned_genesis_data__ok)
@@ -1408,6 +1409,16 @@ BC_AUTO_TEST_CASE(native__block__pruned_genesis_data__ok)
 BC_AUTO_TEST_CASE(native__block__pruned_header_data__ok)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/header?format=data"), http::status::ok);
+}
+
+BC_AUTO_TEST_CASE(native__block__pruned_coinbase_only_data__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1?format=data"), http::status::ok);
+}
+
+BC_AUTO_TEST_CASE(native__block_tx__pruned_coinbase_data__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10/tx/0?format=data"), http::status::ok);
 }
 
 BC_AUTO_TEST_SUITE_END()

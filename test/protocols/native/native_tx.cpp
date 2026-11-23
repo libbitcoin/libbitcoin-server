@@ -29,6 +29,11 @@ static const chain::transaction& coinbase1() NOEXCEPT
     return *test::block1.transactions_ptr()->front();
 }
 
+static std::string spend10_hash() NOEXCEPT
+{
+    return encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false));
+}
+
 BC_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
 
 // tx
@@ -436,17 +441,22 @@ BC_FIXTURE_TEST_SUITE(native_tx_pruned_tests, native_pruned_setup_fixture)
 
 BC_AUTO_TEST_CASE(native__tx__pruned_data__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/tx/" + coinbase1_hash + "?format=data"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/tx/" + spend10_hash() + "?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__tx__pruned_json__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/tx/" + coinbase1_hash + "?format=json"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/tx/" + spend10_hash() + "?format=json"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__tx__pruned_header__ok)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/tx/" + coinbase1_hash + "/header?format=data"), http::status::ok);
+    BC_REQUIRE_EQUAL(get_status("/v1/tx/" + spend10_hash() + "/header?format=data"), http::status::ok);
+}
+
+BC_AUTO_TEST_CASE(native__tx__pruned_coinbase_data__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/tx/" + coinbase1_hash + "?format=data"), http::status::ok);
 }
 
 BC_AUTO_TEST_SUITE_END()

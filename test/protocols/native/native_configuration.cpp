@@ -270,7 +270,7 @@ BC_AUTO_TEST_CASE(native__configuration__limited_blocks_reached_milestone__prune
 {
     const auto response = get_json("/v1/configuration?format=json");
     BC_REQUIRE(response.is_object());
-    BC_REQUIRE_EQUAL(response.as_object().at("store").as_object().at("pruned").as_int64(), 9);
+    BC_REQUIRE_EQUAL(response.as_object().at("store").as_object().at("pruned").as_int64(), 10);
 }
 
 BC_AUTO_TEST_SUITE_END()

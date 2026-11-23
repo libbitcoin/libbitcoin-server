@@ -36,9 +36,28 @@ void protocol_native::handle_get_inputs(const code& ec, interface::inputs,
 
     const auto& query = archive();
     const auto tx = query.to_tx(*hash);
-    if (tx.is_terminal() || query.is_pruned(tx))
+    if (tx.is_terminal())
     {
         send_not_found();
+        return;
+    }
+
+    if (query.is_pruned(tx))
+    {
+        if (media != json)
+        {
+            send_not_found();
+            return;
+        }
+
+        system::json::array out{};
+        if (!to_pruned_inputs(out, tx))
+        {
+            send_internal_server_error(database::error::integrity);
+            return;
+        }
+
+        send_json(std::move(out));
         return;
     }
 
@@ -82,7 +101,16 @@ void protocol_native::handle_get_input(const code& ec, interface::input,
     const auto link = query.to_tx(*hash);
     if (query.is_pruned(link))
     {
-        send_not_found();
+        const auto point = query.to_point(link, index);
+        system::json::value out{};
+        if (media != json || point.is_terminal() ||
+            !to_pruned_input(out, point))
+        {
+            send_not_found();
+            return;
+        }
+
+        send_json(std::move(out));
         return;
     }
 

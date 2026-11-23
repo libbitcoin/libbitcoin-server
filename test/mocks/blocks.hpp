@@ -85,6 +85,7 @@ extern const system::chain::block block7;
 extern const system::chain::block block8;
 extern const system::chain::block block9;
 extern const system::chain::block mock_block10;
+extern const system::chain::block pruned_block10;
 extern const system::chain::block mock_block11;
 extern const system::chain::block mock_block12;
 

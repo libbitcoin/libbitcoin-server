@@ -430,6 +430,39 @@ bool protocol_native::to_tx_details(system::json::array& out,
     return true;
 }
 
+bool protocol_native::to_pruned_input(system::json::value& out,
+    const database::ins_link& link) const NOEXCEPT
+{
+    const auto& query = archive();
+    uint32_t sequence{};
+    if (!query.get_input_sequence(sequence, link))
+        return false;
+
+    out = system::json::object
+    {
+        { "point", value_from(query.get_point(link)) },
+        { "sequence", sequence }
+    };
+
+    return true;
+}
+
+bool protocol_native::to_pruned_inputs(system::json::array& out,
+    const database::tx_link& link) const NOEXCEPT
+{
+    const auto points = archive().to_points(link);
+    if (points.empty())
+        return false;
+
+    out.clear();
+    out.reserve(points.size());
+    for (const auto& point: points)
+        if (!to_pruned_input(out.emplace_back(), point))
+            return false;
+
+    return true;
+}
+
 chain::header::cptr protocol_native::get_top(bool candidate,
     size_t& height) const NOEXCEPT
 {

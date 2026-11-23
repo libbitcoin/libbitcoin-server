@@ -119,8 +119,8 @@ bool setup_ten_block_store(query_t& query, uint32_t top_flags) NOEXCEPT
         query.push_confirmed(query.to_header(block9_hash), true);
 }
 
-// Blocks one through nine archived pruned and candidate, bip141 active at
-// block9 for block9 milestone.
+// Blocks one through ten archived pruned and candidate, bip141 active at
+// block9, for a block10 milestone.
 bool setup_ten_block_pruned_store(query_t& query) NOEXCEPT
 {
     constexpr auto bip141 = system::chain::flags::bip141_rule;
@@ -153,6 +153,9 @@ bool setup_ten_block_pruned_store(query_t& query) NOEXCEPT
         query.set(block9.header(), database::context{ bip141, 9, 1231470988 },
             proof * 10u, false) &&
         query.set(block9, false, false, true) &&
+        query.set(pruned_block10.header(), database::context{ bip141, 10, 1231471000 },
+            proof * 11u, false) &&
+        query.set(pruned_block10, false, false, true) &&
         query.push_confirmed(query.to_header(block1_hash), true) &&
         query.push_confirmed(query.to_header(block2_hash), true) &&
         query.push_confirmed(query.to_header(block3_hash), true) &&
@@ -162,6 +165,7 @@ bool setup_ten_block_pruned_store(query_t& query) NOEXCEPT
         query.push_confirmed(query.to_header(block7_hash), true) &&
         query.push_confirmed(query.to_header(block8_hash), true) &&
         query.push_confirmed(query.to_header(block9_hash), true) &&
+        query.push_confirmed(query.to_header(pruned_block10.hash()), true) &&
         query.push_candidate(query.to_header(block1_hash)) &&
         query.push_candidate(query.to_header(block2_hash)) &&
         query.push_candidate(query.to_header(block3_hash)) &&
@@ -170,15 +174,16 @@ bool setup_ten_block_pruned_store(query_t& query) NOEXCEPT
         query.push_candidate(query.to_header(block6_hash)) &&
         query.push_candidate(query.to_header(block7_hash)) &&
         query.push_candidate(query.to_header(block8_hash)) &&
-        query.push_candidate(query.to_header(block9_hash));
+        query.push_candidate(query.to_header(block9_hash)) &&
+        query.push_candidate(query.to_header(pruned_block10.hash()));
 }
 
-// Limited blocks with a block9 milestone, so blocks one through nine prune.
+// Limited blocks with a block10 milestone, so blocks one through ten prune.
 void configure_pruned(server::configuration& config) NOEXCEPT
 {
     config.node.limited_blocks = true;
     config.database.envelope.provide_filters = false;
-    config.bitcoin.milestone = { block9_hash, 9 };
+    config.bitcoin.milestone = { pruned_block10.hash(), 10 };
 }
 
 bool setup_three_block_store(query_t& query) NOEXCEPT
@@ -367,6 +372,68 @@ const block mock_block10
         }
     }
 };
+const block pruned_block10
+{
+    header
+    {
+        0x00000001,
+        block9_hash,
+        hash_digest{ 0x10, 0xcc },
+        1231471000,
+        0x1d00ffff,
+        0x00000000
+    },
+    transactions
+    {
+        transaction
+        {
+            0x01,
+            inputs
+            {
+                input
+                {
+                    point{},
+                    script{},
+                    witness{},
+                    0xffffffff
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0x11,
+                    script::to_pay_key_hash_pattern({ 0x0a })
+                }
+            },
+            0x00
+        },
+        transaction
+        {
+            0x01,
+            inputs
+            {
+                input
+                {
+                    point{ block1.transactions_ptr()->front()->hash(false), 0x00 },
+                    script{},
+                    witness{},
+                    0xfffffffe
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0x12,
+                    script::to_pay_key_hash_pattern({ 0x0b })
+                }
+            },
+            0x00
+        }
+    }
+};
+
 const block mock_block11
 {
     header
