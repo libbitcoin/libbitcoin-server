@@ -342,6 +342,7 @@ struct native_broadcast_setup_fixture
                 deployment::always_active;
             config.network.enable_relay = true;
             config.node.currency_window_minutes = 0;
+            config.node.pool.minimum_fee_rate = 0.0;
         }, test::web_pages, true)
     {
     }

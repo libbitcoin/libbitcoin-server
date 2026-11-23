@@ -89,6 +89,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
             native.path = "unused";
             native.inactivity_minutes = 1;
             config_.node.delay_inbound = false;
+            config_.node.pool.minimum_fee_rate = 99.0;
             config_.database.path = TEST_DIRECTORY;
             if (configure)
                 configure(config_);
@@ -109,10 +110,8 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
         test::clear(test::directory);
         auto& database_settings = config_.database;
         auto& network_settings = config_.network;
-        auto& node_settings = config_.node;
 
         database_settings.interval_depth = 2;
-        node_settings.pool.minimum_fee_rate = 99.0;
         network_settings.inbound.connections = 0;
         network_settings.outbound.connections = 0;
 
