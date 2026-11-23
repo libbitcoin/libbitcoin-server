@@ -72,6 +72,9 @@ struct stratum_v1_setup_fixture
     // Subscribe and authorize, returning the first job (after difficulty).
     system::json::value start_job();
 
+    // Submit a tx to the pool.
+    using rpc_setup_fixture::submit;
+
     // Submit a share of the job (notify params), as the authorized worker.
     system::json::value submit(const system::json::value& job,
         const std::string& extranonce2, const std::string& nonce,

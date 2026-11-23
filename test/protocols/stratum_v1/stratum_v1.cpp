@@ -392,6 +392,7 @@ BC_FIXTURE_TEST_SUITE(stratum_v1_broadcast_tests, stratum_v1_broadcast_setup_fix
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_notify__pooled_transaction__branch_of_one)
 {
+    BC_REQUIRE(!submit(test::tx1c));
     const auto job = start_job();
     BC_REQUIRE_EQUAL(job.at("params").as_array().at(4).as_array().size(), 1u);
 }
