@@ -22,6 +22,7 @@ import {
   PoolFees,
   RecentMiners,
   TemplateTransaction,
+  TransactionInput,
   TransactionSummary,
   TransactionOutputSpend,
   useBlockchainClient,
@@ -285,6 +286,15 @@ export function useTransaction(txid: string, options?: { enabled?: boolean }) {
     queryFn: (client) => client.getTransaction(txid),
     enabled: options?.enabled ?? Boolean(txid.trim()),
     blockRefresh: 'while-unconfirmed',
+  });
+}
+
+export function useTransactionPrunedInputs(txid: string, options?: { enabled?: boolean }) {
+  return useBlockchainQuery<TransactionInput[]>({
+    queryKey: ['transaction', txid, 'inputs', 'pruned'],
+    queryFn: (client) => client.getPrunedInputs(txid),
+    enabled: (options?.enabled ?? true) && Boolean(txid.trim()),
+    staleTime: Infinity,
   });
 }
 

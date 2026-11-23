@@ -7,6 +7,7 @@ import {
   useTransaction,
   useTransactionHeader,
   useTransactionInputScriptHex,
+  useTransactionPrunedInputs,
   useTransactionOutputScriptHex,
   useTransactionOutputSpends,
 } from '@/lib/hooks/useBlockchainData';
@@ -72,6 +73,12 @@ export function TransactionPage() {
   } = useTransaction(identifier);
   const tx = detailTx ?? headerTx;
   const pruned = detailIsError && errorStatus(detailError) === 404;
+  const {
+    data: prunedInputs,
+    isLoading: prunedInputsLoading,
+    isError: prunedInputsIsError,
+  } = useTransactionPrunedInputs(identifier, { enabled: pruned });
+  const inputs = detailTx?.inputs ?? prunedInputs;
   const outputIndices = useMemo(
     () => tx?.outputs.map((output) => output.index) ?? [],
     [tx?.outputs]
@@ -275,13 +282,16 @@ export function TransactionPage() {
             {!detailTx && detailLoading && (
               <p className="text-textMuted px-4 py-4 text-sm">Loading inputs…</p>
             )}
-            {pruned && (
+            {pruned && prunedInputsLoading && (
+              <p className="text-textMuted px-4 py-4 text-sm">Loading inputs…</p>
+            )}
+            {pruned && prunedInputsIsError && (
               <p className="text-textMuted px-4 py-4 text-sm">Inputs are pruned at this height.</p>
             )}
             {detailTx && detailTx.inputs.length === 0 && (
               <p className="text-textMuted px-4 py-4 text-sm">No inputs (coinbase transaction)</p>
             )}
-            {detailTx?.inputs.map((input) => {
+            {inputs?.map((input) => {
               const key = inputKey(input);
               return (
                 <TransactionInputRow
@@ -374,7 +384,7 @@ function TransactionInputRow({
   const key = inputKey(input);
   const { params: networkParams } = useNetwork();
   const { enabled: scriptExplainerEnabled } = useScriptExplainerPreference();
-  const shouldFetchHex = isExpanded && input.script?.hex === undefined;
+  const shouldFetchHex = isExpanded && !input.pruned && input.script?.hex === undefined;
   const {
     data: scriptHex,
     isError: scriptHexIsError,
@@ -451,7 +461,9 @@ function TransactionInputRow({
         </button>
         {isExpanded && (
           <div className="border-accent/20 bg-surface/60 mt-3 space-y-3 rounded-lg border p-3 text-xs">
-            {scriptExplainerEnabled ? (
+            {input.pruned ? (
+              <p className="text-textMuted">Script and witness are pruned at this height.</p>
+            ) : scriptExplainerEnabled ? (
               <ScriptExplainer
                 hex={resolvedScriptHex}
                 kind="input"

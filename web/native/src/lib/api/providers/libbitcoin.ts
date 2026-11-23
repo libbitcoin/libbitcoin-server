@@ -18,17 +18,20 @@ import {
   PoolFees,
   RecentMiners,
   TemplateTransaction,
+  TransactionInput,
   TransactionSummary,
   TransactionOutputSpend,
 } from '../client';
 import {
   BlockHeaderResponse,
+  PrunedInputResponse,
   TxOutputResponse,
   TxPoint,
   TxResponse,
   scriptHashFromAddress,
   toBlockSummary,
   mapOutput,
+  mapPrunedInput,
   mapTransaction,
   outputAddresses,
 } from './libbitcoin-mapper';
@@ -1343,15 +1346,40 @@ export function createLibbitcoinClient({
       const count = extractHeaderContextState(context)?.count;
       if (typeof count === 'number' && startIndex >= count) return [];
 
-      // The txs of a pruned block are not provided whole.
+      const toRow = (tx: TxResponse, detail: TxDetailsResponse | null) => {
+        const mapped = mapTransaction(
+          tx,
+          [], // No prevouts
+          networkParams,
+          {
+            blockHeight: header.height,
+            blockHash: header.hash,
+            tipHeight: tip,
+            timestamp: header.timestamp,
+          },
+          typeof detail?.fee === 'number' ? detail.fee : undefined
+        );
+        return applyTxDetails(mapped, detail);
+      };
+
+      // The txs of a pruned block are not provided whole, other than its coinbase.
       const { pruned } = await ensureConfiguration();
       if (pruned !== undefined && header.height <= pruned) {
         const block = { height: header.height, hash: header.hash, tip };
         const { hashes, details } = await fetchPrunedBlock(header.hash);
         const end = Math.min(startIndex + TRANSACTION_PAGE_SIZE, hashes.length);
-        return hashes
+        const rows = hashes
           .slice(startIndex, end)
           .map((hash, idx) => toPrunedSummary(hash, details[startIndex + idx], block));
+        if (startIndex > 0 || rows.length === 0) return rows;
+
+        const [coinbase] = await fetchBlockTransactionPositions(baseUrl, path, [0], true);
+        if (coinbase === undefined) return rows;
+        const detail = await tryFetchJson<TxDetailsResponse>(
+          baseUrl,
+          `/v1/tx/${coinbase.hash}/details?format=json`
+        );
+        return [toRow(coinbase, detail), ...rows.slice(1)];
       }
 
       const endExclusive =
@@ -1375,22 +1403,7 @@ export function createLibbitcoinClient({
         tryFetchJson<TxDetailsResponse>(baseUrl, `/v1/tx/${tx.hash}/details?format=json`)
       );
 
-      return rawTxs.map((tx, idx) => {
-        const detail = details[idx];
-        const mapped = mapTransaction(
-          tx,
-          [], // No prevouts
-          networkParams,
-          {
-            blockHeight: header.height,
-            blockHash: header.hash,
-            tipHeight: tip,
-            timestamp: header.timestamp,
-          },
-          typeof detail?.fee === 'number' ? detail.fee : undefined
-        );
-        return applyTxDetails(mapped, detail);
-      });
+      return rawTxs.map((tx, idx) => toRow(tx, details[idx]));
     },
 
     async getBlockTransactionDetails(block: BlockReference): Promise<TemplateTransaction[]> {
@@ -1484,6 +1497,21 @@ export function createLibbitcoinClient({
         typeof details?.fee === 'number' ? details.fee : undefined
       );
       return applyTxDetails(mapped, details);
+    },
+
+    async getPrunedInputs(txid: string): Promise<TransactionInput[]> {
+      const networkParams = await resolveNetworkParams();
+      const inputs = await fetchJson<PrunedInputResponse[]>(
+        baseUrl,
+        `/v1/input/${txid}?format=json`
+      );
+      const resolvePrevout = createPrevoutResolver(baseUrl);
+      const prevouts = await mapWithConcurrency(inputs, REQUEST_CONCURRENCY, (input) =>
+        resolvePrevout(input.point.hash, input.point.index)
+      );
+      return inputs.map((input, index) =>
+        mapPrunedInput(input, prevouts[index], networkParams, index)
+      );
     },
 
     // Of the parts of a tx, which are provided when the tx itself is pruned:

@@ -93,6 +93,8 @@ export interface TransactionInput {
   script?: ScriptData;
   witness?: string[];
   sequence?: number;
+  /** The script and witness are not provided. */
+  pruned?: boolean;
 }
 
 export interface TransactionOutput {
@@ -240,6 +242,7 @@ export interface BlockchainClient {
   getRecentMiners(count: number, signal?: AbortSignal): Promise<RecentMiners>;
   getTransactionHeader(txid: string): Promise<TransactionSummary>;
   getTransaction(txid: string): Promise<TransactionSummary>;
+  getPrunedInputs(txid: string): Promise<TransactionInput[]>;
   getTransactionInputScriptHex(txid: string, inputIndex: number): Promise<string>;
   getTransactionOutputScriptHex(txid: string, outputIndex: number): Promise<string>;
   /** Spend status for known outputs; failed lookups must never be reported as unspent. */
