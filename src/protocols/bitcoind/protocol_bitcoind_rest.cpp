@@ -62,6 +62,7 @@ void protocol_bitcoind_rest::start() NOEXCEPT
     if (started())
         return;
 
+    allow("GET");
     SUBSCRIBE_BITCOIND(handle_get_block, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_block_hash, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_block_txs, _1, _2, _3, _4);

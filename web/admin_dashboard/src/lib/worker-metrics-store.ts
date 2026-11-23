@@ -22,6 +22,7 @@ const INITIAL_STATUS: ConnectionStatus = {
   connectedAt: null,
   lastMessageAt: null,
   error: null,
+  refused: null,
 };
 
 export class WorkerMetricsStore {

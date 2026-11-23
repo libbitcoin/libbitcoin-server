@@ -7,6 +7,7 @@ export interface ConnectionStatus {
   connectedAt: number | null;
   lastMessageAt: number | null;
   error: string | null;
+  refused: string | null;
 }
 
 type StatusListener = () => void;
@@ -40,6 +41,7 @@ const INITIAL_STATUS: ConnectionStatus = {
   connectedAt: null,
   lastMessageAt: null,
   error: null,
+  refused: null,
 };
 
 export class ReconnectingWebSocket {
@@ -214,6 +216,12 @@ export class ReconnectingWebSocket {
       }
       const channels = [...this.#channels];
       if (channels.some((channel) => channel.onMessage(text))) return;
+      // A websocket not found response has no body.
+      if (text === '') return;
+      if (isStatusResponse(text)) {
+        this.#setStatus({ ...this.#status, refused: text });
+        return;
+      }
       for (const channel of channels) channel.onUnclaimed?.(text);
     });
 
@@ -302,6 +310,14 @@ function messageText(value: unknown): string | null {
   if (typeof value === 'string') return value;
   if (value instanceof ArrayBuffer) return new TextDecoder().decode(value);
   return null;
+}
+
+// Server error responses are the http reason phrase, with optional [details].
+const STATUS_RESPONSE =
+  /^(?:Bad Request|Unauthorized|Forbidden|Not Found|Method Not Allowed|Not Acceptable|Payload Too Large|Too Many Requests|Internal Server Error|Not Implemented|Service Unavailable)(?: \[[\s\S]*\])?$/u;
+
+export function isStatusResponse(text: string): boolean {
+  return STATUS_RESPONSE.test(text);
 }
 
 function errorMessage(error: unknown): string {

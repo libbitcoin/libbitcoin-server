@@ -266,6 +266,16 @@ bitcoind_setup_fixture::rest_status(std::string_view target,
 }
 
 bitcoind_setup_fixture::status
+bitcoind_setup_fixture::rest_hosts_status(std::string_view target,
+    std::string_view host, std::string_view other)
+{
+    auto request = rpc_client::create_get(target);
+    request.set(http::field::host, host);
+    request.insert(http::field::host, other);
+    return status_of(client_.stream(), request);
+}
+
+bitcoind_setup_fixture::status
 bitcoind_setup_fixture::options_status(std::string_view target)
 {
     return client_.options_status(target);

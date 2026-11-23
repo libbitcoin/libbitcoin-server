@@ -56,6 +56,10 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
+    /// The http verbs allowed for the target of the request.
+    std::string allowed(
+        const network::http::request& request) const NOEXCEPT override;
+
     /// The esplora service settings.
     inline const options_t& options() const NOEXCEPT
     {

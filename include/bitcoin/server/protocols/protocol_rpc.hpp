@@ -50,6 +50,8 @@ public:
 
         // Publish served method names (e.g. for help).
         register_methods(names);
+        allow("OPTIONS");
+        allow("POST");
         network::protocol_http::start();
     }
 

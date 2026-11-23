@@ -569,6 +569,11 @@ BC_AUTO_TEST_CASE(bitcoind_rest__disallowed_host__bad_request)
     BC_REQUIRE_EQUAL(rest_status("/rest/chaininfo.json"), status::bad_request);
 }
 
+BC_AUTO_TEST_CASE(bitcoind_rest__repeated_host__bad_request)
+{
+    BC_REQUIRE_EQUAL(rest_hosts_status("/rest/chaininfo.json", "example.com", "localhost"), status::bad_request);
+}
+
 BC_AUTO_TEST_CASE(bitcoind_rest__options_disallowed_host__bad_request)
 {
     BC_REQUIRE_EQUAL(options_status("/"), status::bad_request);

@@ -99,6 +99,11 @@ export const NATIVE_FEES_PATH = '/v1/fees?format=json';
 export const POOL_POLL_INTERVAL_MS = 5_000;
 export const POOL_STALE_AFTER_MS = 15_000;
 
+// The server answers pool queries only when transaction relay is enabled.
+export function isRelaying(configuration: NativeConfiguration | null): boolean {
+  return configuration?.network?.relay === true;
+}
+
 export interface NativeSnapshot {
   configuration: NativeConfiguration;
   tops: NativeTops;
@@ -148,7 +153,7 @@ async function fetchJson(url: string, signal?: AbortSignal): Promise<unknown> {
     signal,
   });
   if (!response.ok) {
-    throw new Error(`Native API request failed with status ${String(response.status)}`);
+    throw new Error(`HTTP ${String(response.status)}`);
   }
   return (await response.json()) as unknown;
 }

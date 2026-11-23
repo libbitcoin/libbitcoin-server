@@ -36,6 +36,8 @@ public:
     using options_t = server::settings::html_server;
     using channel_t = channel_html;
 
+    void start() NOEXCEPT override;
+
 protected:
     inline protocol_html(const auto& session,
         const network::channel::ptr& channel,

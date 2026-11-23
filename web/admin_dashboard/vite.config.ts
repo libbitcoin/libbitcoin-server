@@ -3,15 +3,19 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { licenses, worker_licenses } from "../licenses.mjs";
+import { onwarn } from "../warnings.mjs";
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), tsconfigPaths(), licenses()],
   worker: {
     plugins: () => [worker_licenses()],
+    rollupOptions: { onwarn },
   },
   build: {
     assetsDir: "",
+    chunkSizeWarningLimit: 1024,
     rollupOptions: {
+      onwarn,
       output: {
         entryFileNames: "script.js",
         chunkFileNames: "[name].js",

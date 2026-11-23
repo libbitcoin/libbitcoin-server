@@ -82,28 +82,36 @@ bool protocol_zmq::handle_subscribe(const code& ec,
     if (stopped(ec))
         return false;
 
+    std::string text{ prefix->begin(), prefix->end() };
     if (cancel)
     {
-        if (!is_zero(subscriptions_))
-            --subscriptions_;
+        if (is_zero(prefixes_.erase(text)))
+            return true;
     }
-    else if (++subscriptions_ > options_.maximum_subscriptions)
+    else if (prefixes_.contains(text))
+    {
+        return true;
+    }
+    else if (prefixes_.size() >= options_.maximum_subscriptions)
     {
         // As there is no way to indicate failure the channel must be dropped.
         network::protocol::stop(server::error::subscription_limit);
         return false;
     }
+    else
+    {
+        prefixes_.insert(std::move(text));
+    }
 
-    const std::string text{ prefix->begin(), prefix->end() };
-    set_subscription(subscribed_hash_block_, topic::hash_block, text, cancel);
-    set_subscription(subscribed_hash_tx_, topic::hash_tx, text, cancel);
-    set_subscription(subscribed_sequence_, topic::sequence, text, cancel);
+    set_subscription(subscribed_hash_block_, topic::hash_block);
+    set_subscription(subscribed_hash_tx_, topic::hash_tx);
+    set_subscription(subscribed_sequence_, topic::sequence);
 
-    if (set_subscription(subscribed_raw_block_, topic::raw_block, text, cancel))
+    if (set_subscription(subscribed_raw_block_, topic::raw_block))
         demand_wire_block(!cancel);
 
     // Block txs are published from the block broadcast.
-    if (set_subscription(subscribed_raw_tx_, topic::raw_tx, text, cancel))
+    if (set_subscription(subscribed_raw_tx_, topic::raw_tx))
     {
         demand_wire_tx(!cancel);
         demand_wire_block(!cancel);
@@ -329,13 +337,16 @@ bool protocol_zmq::sequences() const NOEXCEPT
     return subscribed_sequence_.load(relaxed);
 }
 
-// static
 bool protocol_zmq::set_subscription(std::atomic_bool& subscribed,
-    const std::string_view& topic, const std::string& prefix,
-    bool cancel) NOEXCEPT
+    const std::string_view& topic) const NOEXCEPT
 {
-    return topic.starts_with(prefix) &&
-        subscribed.exchange(!cancel, relaxed) == cancel;
+    const auto match = [&](const std::string& prefix) NOEXCEPT
+    {
+        return topic.starts_with(prefix);
+    };
+
+    const auto matched = std::ranges::any_of(prefixes_, match);
+    return subscribed.exchange(matched, relaxed) != matched;
 }
 
 // static
