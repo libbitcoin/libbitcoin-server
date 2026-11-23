@@ -39,6 +39,20 @@ def pytest_addoption(parser):
         help="Port for esplora REST API (default: 3000)"
     )
 
+    # Admin web options
+    parser.addoption(
+        "--admin-host",
+        action="store",
+        default="localhost",
+        help="Host for admin web pages (default: localhost)"
+    )
+    parser.addoption(
+        "--admin-port",
+        action="store",
+        default="8080",
+        help="Port for admin web pages (default: 8080)"
+    )
+
     # bitcoind RPC options
     parser.addoption(
         "--bitcoind-rpc-host",
@@ -195,6 +209,12 @@ def pytest_addoption(parser):
         help="Default timeout for requests in seconds (default: 30)"
     )
     parser.addoption(
+        "--log",
+        action="store",
+        default=None,
+        help="Node log (e.g. run.stdout), checked for faults since startup"
+    )
+    parser.addoption(
         "--run-slow",
         action="store_true",
         default=False,
@@ -285,6 +305,32 @@ def native_config(request):
         "port": int(request.config.getoption("--native-port")),
         "base_url": f"http://{request.config.getoption('--native-host')}:{request.config.getoption('--native-port')}/v1"
     }
+
+
+@pytest.fixture(scope="session")
+def admin_config(request):
+    """Configuration for admin web page tests."""
+    host = request.config.getoption("--admin-host")
+    port = int(request.config.getoption("--admin-port"))
+    return {
+        "host": host,
+        "port": port,
+        "base_url": f"http://{host}:{port}"
+    }
+
+
+@pytest.fixture(scope="session")
+def node_log(request):
+    """The node log since its last startup, skipping without --log."""
+    path = request.config.getoption("--log")
+    if path is None:
+        pytest.skip("needs --log")
+
+    with open(path, errors="replace") as file:
+        text = file.read()
+
+    start = text.rfind("== startup ==")
+    return text[start:] if start >= 0 else text
 
 
 @pytest.fixture(scope="session")
