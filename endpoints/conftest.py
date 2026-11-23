@@ -183,8 +183,14 @@ def pytest_addoption(parser):
     parser.addoption(
         "--stratum-v1-port",
         action="store",
-        default="3333",
-        help="Port for Stratum v1 (default: 3333)"
+        default="8880",
+        help="Port for Stratum v1 (default: 8880)"
+    )
+    parser.addoption(
+        "--stratum-v1-worker",
+        action="store",
+        default="worker",
+        help="Stratum v1 worker, an address unless the server configures payout_address (default: worker)"
     )
 
     # Stratum v2 options
@@ -563,6 +569,7 @@ def stratum_v1_config(request):
     return {
         "host": request.config.getoption("--stratum-v1-host"),
         "port": int(request.config.getoption("--stratum-v1-port")),
+        "worker": request.config.getoption("--stratum-v1-worker"),
         "timeout": float(request.config.getoption("--timeout"))
     }
 

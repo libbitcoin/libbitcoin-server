@@ -409,6 +409,8 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/protocols/native/native_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/native/native_tx.cpp \
     ${srcdir}/../../test/protocols/sparrow/sparrow.cpp \
+    ${srcdir}/../../test/protocols/stratum_v1/stratum_v1.cpp \
+    ${srcdir}/../../test/protocols/stratum_v1/stratum_v1_setup_fixture.cpp \
     ${srcdir}/../../test/protocols/zmq/zmq.cpp \
     ${srcdir}/../../test/protocols/zmq/zmq_setup_fixture.cpp \
     ${srcdir}/../../test/serializers/bitcoind_block_stats.cpp \

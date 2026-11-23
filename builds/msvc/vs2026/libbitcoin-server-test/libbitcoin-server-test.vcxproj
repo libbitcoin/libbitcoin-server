@@ -147,6 +147,10 @@
     <ClCompile Include="..\..\..\..\test\protocols\native\native_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\native\native_tx.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\sparrow\sparrow.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\stratum_v1\stratum_v1.cpp">
+      <ObjectFileName>$(IntDir)test_protocols_stratum_v1_stratum_v1.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\protocols\stratum_v1\stratum_v1_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\zmq\zmq.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\zmq\zmq_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\serializers\bitcoind_block_stats.cpp" />
@@ -159,7 +163,9 @@
       <ObjectFileName>$(IntDir)test_utilities_electrum_version.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\utilities\merkle.cpp" />
-    <ClCompile Include="..\..\..\..\test\utilities\stratum_v1.cpp" />
+    <ClCompile Include="..\..\..\..\test\utilities\stratum_v1.cpp">
+      <ObjectFileName>$(IntDir)test_utilities_stratum_v1.obj</ObjectFileName>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\test\mocks\blocks.hpp" />
@@ -171,6 +177,7 @@
     <ClInclude Include="..\..\..\..\test\protocols\fixture\rpc_client.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\fixture\rpc_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\native\native_setup_fixture.hpp" />
+    <ClInclude Include="..\..\..\..\test\protocols\stratum_v1\stratum_v1_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\zmq\zmq_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\test.hpp" />
   </ItemGroup>

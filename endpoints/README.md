@@ -54,6 +54,11 @@ connections = 10
 bind = 0.0.0.0:50001
 bind = [::]:50001
 connections = 10
+
+[stratum_v1]
+bind = 0.0.0.0:8880
+bind = [::]:8880
+connections = 10
 ```
 
 ### 3. Synced Blockchain
@@ -94,6 +99,9 @@ pytest test_btcd_rpc.py
 
 # Test only Electrum protocol
 pytest test_electrum.py
+
+# Test only Stratum v1 (worker is an address unless payout_address is set)
+pytest test_stratum_v1.py --stratum-v1-worker=<address>
 ```
 
 ### Run with Verbose Output

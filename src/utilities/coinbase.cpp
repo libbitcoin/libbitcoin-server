@@ -87,12 +87,15 @@ data_chunk coinbase_prefix(size_t height, const std::string& tag,
     return out;
 }
 
-data_chunk coinbase_suffix(uint64_t value, const script& payout,
-    const hash_digest& commitment) NOEXCEPT
+// The sequence is not final and the locktime is the prior height (bip54).
+data_chunk coinbase_suffix(size_t height, uint64_t value,
+    const script& payout, const hash_digest& commitment) NOEXCEPT
 {
+    const auto locktime = possible_narrow_cast<uint32_t>(sub1(height));
+
     data_chunk out{};
     write::bytes::data sink{ out };
-    sink.write_4_bytes_little_endian(max_uint32);
+    sink.write_4_bytes_little_endian(sub1(max_uint32));
     sink.write_variable(two);
     sink.write_8_bytes_little_endian(value);
     payout.to_data(sink, true);
@@ -102,7 +105,7 @@ data_chunk coinbase_suffix(uint64_t value, const script& payout,
     sink.write_byte(static_cast<uint8_t>(opcode::push_size_36));
     sink.write_4_bytes_big_endian(witness_head);
     sink.write_bytes(commitment);
-    sink.write_4_bytes_little_endian(zero);
+    sink.write_4_bytes_little_endian(locktime);
     sink.flush();
     return out;
 }

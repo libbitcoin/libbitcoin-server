@@ -371,12 +371,17 @@ void protocol_stratum_v1::handle_template(const code& ec,
 
 // Template is of block above confirmed top,
 // so one held for another height is requested again.
+// A template already issued is not issued again.
 void protocol_stratum_v1::do_template(const code& ec,
     const node::block_template::cptr& held) NOEXCEPT
 {
     BC_ASSERT(stranded());
     using namespace chain;
     if (stopped() || ec)
+        return;
+
+    const auto current = channel_->current();
+    if (!is_null(current) && current->held == held)
         return;
 
     size_t top{};
@@ -409,13 +414,12 @@ void protocol_stratum_v1::do_template(const code& ec,
     const auto extranonce = add(uint8_t{ options_.extranonce1_size },
         uint8_t{ options_.extranonce2_size });
 
-    const auto current = channel_->current();
     const auto clean = is_null(current) || current->previous != key;
     send_job(
     {
         held,
         coinbase_prefix(height, options_.coinbase_tag, extranonce),
-        coinbase_suffix(value, channel_->payout(), held->commitment),
+        coinbase_suffix(height, value, channel_->payout(), held->commitment),
         key,
         chain_state::signal_version(bitcoin),
         pool.work_required(),
