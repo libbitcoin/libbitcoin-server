@@ -267,7 +267,7 @@ void protocol_native::complete_get_template(const code& ec,
     }
 
     // A template held for another height is of a chain that has since moved.
-    if (held->height != height)
+    if (held->context.height != height)
     {
         if (add1(archive().get_top_confirmed()) == height)
             get_template(BIND(handle_template, _1, _2, height, gate));
