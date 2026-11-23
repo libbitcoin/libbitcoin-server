@@ -351,6 +351,9 @@
     <ClCompile Include="..\..\..\..\src\utilities\chain.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utilities\coinbase.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\utilities\electrum_version.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
@@ -690,6 +693,9 @@
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\chain.hpp">
+      <Filter>include\bitcoin\server\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\coinbase.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\electrum_version.hpp">

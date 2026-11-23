@@ -84,6 +84,47 @@ void parser::derive_buckets() NOEXCEPT
             database.wtxid.expected, contested, target);
 }
 
+// Stratum jobs reserve the weight and sigops of their own coinbase, an
+// unconfigured or invalid payout address reserving for the largest address
+// output. A configured reservation governs (e.g. for an external miner).
+void parser::derive_coinbase() NOEXCEPT
+{
+    const auto& stratum = configured.server.stratum_v1;
+    if (!stratum.enabled())
+        return;
+
+    // A p2kh output carries the only legacy sigop of an address.
+    auto payout = max_address_script;
+    auto sigops = chain::heavy_sigops_factor;
+    const auto& wallet = configured.server.wallet;
+    if (!stratum.payout_address.empty())
+    {
+        chain::script script{};
+        const auto ec = output_script(script, stratum.payout_address,
+            wallet.p2kh_prefix, wallet.p2sh_prefix, wallet.witness_prefix);
+
+        if (!ec)
+        {
+            payout = script.serialized_size(false);
+            sigops = chain::output{ zero, script }.signature_operations(true);
+        }
+    }
+
+    const size_t extranonce = add(uint8_t{ stratum.extranonce1_size },
+        uint8_t{ stratum.extranonce2_size });
+
+    const auto script = coinbase_script_size(stratum.coinbase_tag.size(),
+        extranonce);
+
+    auto& pool = configured.node.pool;
+    if (!is_configured("pool.coinbase_weight"))
+        pool.coinbase_weight = possible_narrow_cast<uint32_t>(
+            coinbase_weight(script, payout));
+
+    if (!is_configured("pool.coinbase_sigops"))
+        pool.coinbase_sigops = possible_narrow_cast<uint32_t>(sigops);
+}
+
 // Specified network governs, otherwise configuration,
 // otherwise network of a configured genesis block.
 void parser::select_network() NOEXCEPT
@@ -184,6 +225,7 @@ void parser::read_envelope() NOEXCEPT
 
         reset_network(stored.network);
         derive_buckets();
+        derive_coinbase();
 
         // A specified network is retained as configured, for override reporting.
         if (specified)
@@ -2331,7 +2373,6 @@ options_metadata parser::load_settings() THROWS
         setting<bool>(&configured.server.esplora.compression),
         "Compress response bodies as accepted by the request (gzip, deflate), defaults to {}."
     )
-#if defined(DISABLED)
     /* [stratum_v1] */
     (
         "stratum_v1.bind",
@@ -2344,6 +2385,11 @@ options_metadata parser::load_settings() THROWS
         "IP address to secure bind, multiple allowed, defaults to {} (disabled)."
     )
     (
+        "stratum_v1.cert_auth",
+        setting<config::path>(&configured.server.stratum_v1.cert_auth),
+        "The trusted client certificate directory (*.PEM), enables client authentication."
+    )
+    (
         "stratum_v1.cert_path",
         setting<config::path>(&configured.server.stratum_v1.cert_path),
         "The path to the server certificate file (.PEM), defaults to {}."
@@ -2352,6 +2398,21 @@ options_metadata parser::load_settings() THROWS
         "stratum_v1.key_path",
         setting<config::path>(&configured.server.stratum_v1.key_path),
         "The path to the server private key file (.PEM), defaults to {}."
+    )
+    (
+        "stratum_v1.key_pass",
+        secret<std::string>(&configured.server.stratum_v1.key_pass),
+        "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "stratum_v1.credential",
+        secret<network::config::credentials>(&configured.server.stratum_v1.credentials),
+        "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
+    )
+    (
+        "stratum_v1.compression",
+        setting<bool>(&configured.server.stratum_v1.compression),
+        "Compress http response bodies as accepted by the request (gzip, deflate), defaults to {}."
     )
     (
         "stratum_v1.connections",
@@ -2398,7 +2459,38 @@ options_metadata parser::load_settings() THROWS
         setting<uint32_t>(&configured.server.stratum_v1.maximum_request),
         "The maximum allowed request size, defaults to {}."
     )
+    (
+        "stratum_v1.payout_address",
+        setting<std::string>(&configured.server.stratum_v1.payout_address),
+        "The address paid by the coinbase, defaults to {} (the worker name)."
+    )
+    (
+        "stratum_v1.coinbase_tag",
+        setting<std::string>(&configured.server.stratum_v1.coinbase_tag),
+        "The text carried by the coinbase input script, defaults to {}."
+    )
+    (
+        "stratum_v1.extranonce1_size",
+        setting<config::byte>(&configured.server.stratum_v1.extranonce1_size),
+        "The bytes of coinbase extranonce assigned to each channel, defaults to {}."
+    )
+    (
+        "stratum_v1.extranonce2_size",
+        setting<config::byte>(&configured.server.stratum_v1.extranonce2_size),
+        "The bytes of coinbase extranonce rolled by the miner, defaults to {}."
+    )
+    (
+        "stratum_v1.minimum_difficulty",
+        setting<double>(&configured.server.stratum_v1.minimum_difficulty),
+        "The share difficulty assigned to a channel, and its floor, defaults to {}."
+    )
+    (
+        "stratum_v1.share_interval_seconds",
+        setting<uint32_t>(&configured.server.stratum_v1.share_interval_seconds),
+        "The target seconds between shares of a channel, defaults to {} (0 fixes difficulty)."
+    )
 
+#if defined(DISABLED)
     /* [stratum_v2] */
     (
         "stratum_v2.bind",
@@ -2603,12 +2695,12 @@ options_metadata parser::load_settings() THROWS
     (
         "pool.coinbase_weight",
         setting<uint32_t>(&configured.node.pool.coinbase_weight),
-        "Declared weight of the miner's coinbase transaction, defaults to {}."
+        "Declared weight of the miner's coinbase transaction, defaults to {} (derived when stratum_v1 is enabled)."
     )
     (
         "pool.coinbase_sigops",
         setting<uint32_t>(&configured.node.pool.coinbase_sigops),
-        "Declared sigops of the miner's coinbase transaction, defaults to {}."
+        "Declared sigops of the miner's coinbase transaction, defaults to {} (derived when stratum_v1 is enabled)."
     )
     (
         "pool.maximum_chunk_depth",
@@ -3181,6 +3273,7 @@ BC_POP_WARNING()
         select_root();
         select_paths();
         derive_buckets();
+        derive_coinbase();
 
         // Clear the config file path if it wasn't used.
         if (!file)

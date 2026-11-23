@@ -151,6 +151,36 @@ public:
         using base::base;
     };
 
+    /// Stratum v1 is served over tcp/s (json-rpc downgrade), http/s and ws/s,
+    /// so http settings apply only to http/ws transports.
+    struct BCS_API stratum_v1_server
+      : public network::settings::websocket_server
+    {
+        using base = network::settings::websocket_server;
+        using base::base;
+
+        /// Validate the coinbase layout.
+        code initialize_context() NOEXCEPT override;
+
+        /// Address paid by the coinbase, otherwise the worker name.
+        std::string payout_address{};
+
+        /// Text carried by the coinbase input script.
+        std::string coinbase_tag{};
+
+        /// Bytes of coinbase extranonce assigned to each channel.
+        system::config::byte extranonce1_size{ 4 };
+
+        /// Bytes of coinbase extranonce rolled by the miner.
+        system::config::byte extranonce2_size{ 4 };
+
+        /// Share difficulty assigned to a channel, and its floor.
+        double minimum_difficulty{ 1.0 };
+
+        /// Target seconds between shares of a channel, zero fixes difficulty.
+        uint32_t share_interval_seconds{ 10 };
+    };
+
     struct BCS_API esplora_server
       : public network::settings::websocket_server
     {
@@ -332,7 +362,7 @@ public:
     esplora_server esplora{ "esplora" };
 
     /// stratum v1 compat interface (tcp/s, json-rpc-v1, auth handshake)
-    network::settings::tls_server stratum_v1{ "stratum_v1" };
+    stratum_v1_server stratum_v1{ "stratum_v1" };
 
     /// stratum vs is not TLS, but normalized for session_server usage.
     /// stratum v2 compat interface (tcp[/s], binary, auth/privacy handshake)

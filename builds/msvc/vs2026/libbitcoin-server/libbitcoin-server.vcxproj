@@ -198,6 +198,7 @@
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_descriptor.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_update.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\chain.cpp" />
+    <ClCompile Include="..\..\..\..\src\utilities\coinbase.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\electrum_version.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\merkle.cpp" />
   </ItemGroup>
@@ -313,6 +314,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_descriptor.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_update.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\chain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\coinbase.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\electrum_version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\merkle.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\utilities.hpp" />

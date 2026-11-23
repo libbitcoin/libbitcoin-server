@@ -139,6 +139,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/utilities/bitcoind_descriptor.cpp \
     ${srcdir}/../../src/utilities/bitcoind_update.cpp \
     ${srcdir}/../../src/utilities/chain.cpp \
+    ${srcdir}/../../src/utilities/coinbase.cpp \
     ${srcdir}/../../src/utilities/electrum_version.cpp \
     ${srcdir}/../../src/utilities/merkle.cpp
 
@@ -328,6 +329,7 @@ include_bitcoin_server_utilities_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_descriptor.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_update.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/chain.hpp \
+    ${srcdir}/../../include/bitcoin/server/utilities/coinbase.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/electrum_version.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/merkle.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/utilities.hpp
@@ -410,6 +412,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/serializers/bitcoind_block_stats.cpp \
     ${srcdir}/../../test/serializers/bitcoind_json.cpp \
     ${srcdir}/../../test/utilities/bitcoind_descriptor.cpp \
+    ${srcdir}/../../test/utilities/coinbase.cpp \
     ${srcdir}/../../test/utilities/electrum_version.cpp \
     ${srcdir}/../../test/utilities/merkle.cpp
 

@@ -20,6 +20,7 @@
 
 #include <filesystem>
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/utilities/utilities.hpp>
 
 using namespace bc::system;
 using namespace bc::network;
@@ -345,6 +346,26 @@ code settings::bitcoind_server::initialize_context() NOEXCEPT
         inactivity_minutes = 0;
         expiration_minutes = 0;
     }
+
+    return network::error::success;
+}
+
+// Tag and extranonce are each a single push within the coinbase script.
+code settings::stratum_v1_server::initialize_context() NOEXCEPT
+{
+    using namespace system::chain;
+    if (const auto ec = base::initialize_context())
+        return ec;
+
+    const size_t extranonce = add(uint8_t{ extranonce1_size },
+        uint8_t{ extranonce2_size });
+    const auto script = coinbase_script_size(coinbase_tag.size(), extranonce);
+    if (is_zero(uint8_t{ extranonce1_size }) ||
+        is_zero(uint8_t{ extranonce2_size }) ||
+        coinbase_tag.size() > max_direct_push ||
+        extranonce > max_direct_push || script > max_coinbase_size ||
+        minimum_difficulty <= 0.0)
+        return network::error::invalid_configuration;
 
     return network::error::success;
 }

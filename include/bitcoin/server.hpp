@@ -126,6 +126,7 @@
 #include <bitcoin/server/utilities/bitcoind_descriptor.hpp>
 #include <bitcoin/server/utilities/bitcoind_update.hpp>
 #include <bitcoin/server/utilities/chain.hpp>
+#include <bitcoin/server/utilities/coinbase.hpp>
 #include <bitcoin/server/utilities/electrum_version.hpp>
 #include <bitcoin/server/utilities/merkle.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
