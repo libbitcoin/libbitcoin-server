@@ -281,10 +281,9 @@ void protocol_btcd::handle_get_info(const code& ec,
         return;
     }
 
-    constexpr auto version =
-        1'000'000 * to_value(btcd::version::major) +
-        10'000 * to_value(btcd::version::minor) +
-        100 * to_value(btcd::version::patch);
+    namespace bitcoind = server::interface::bitcoind;
+    const auto version = bitcoind::to_btcd_value(
+        bitcoind::btcd_presented(interface_version()).btcd);
 
     const auto& outbound = network_settings().outbound;
     const auto proxy = outbound.proxied() ? outbound.socks.to_string() :
@@ -420,14 +419,17 @@ void protocol_btcd::handle_version(const code& ec,
     if (stopped(ec))
         return;
 
+    namespace bitcoind = server::interface::bitcoind;
+    const auto& api = bitcoind::btcd_presented(interface_version()).api;
+
     send_result(object_t
     {
         { "btcdjsonrpcapi", object_t
             {
-                { "versionstring", std::string{ "1.3.0" } },
-                { "major", 1 },
-                { "minor", 3 },
-                { "patch", 0 },
+                { "versionstring", bitcoind::to_string(api) },
+                { "major", api.major },
+                { "minor", api.minor },
+                { "patch", api.patch },
                 { "prerelease", std::string{} },
                 { "buildmetadata", std::string{} }
             } }

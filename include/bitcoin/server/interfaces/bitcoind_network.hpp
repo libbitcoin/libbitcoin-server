@@ -191,6 +191,55 @@ namespace bitcoind
     {
         return "/Satoshi:" + to_string(value) + "/";
     }
+
+    /// A three part release number (major.minor.patch).
+    struct release
+    {
+        uint32_t major;
+        uint32_t minor;
+        uint32_t patch;
+    };
+
+    /// The btcd release and its json-rpc api presented from a version.
+    struct btcd_presentation
+    {
+        version since;
+        release btcd;
+        release api;
+    };
+
+    /// The btcd presentations, ascending by version.
+    inline constexpr std::array btcd_presentations
+    {
+        btcd_presentation{ version::v30_0, { 0, 26, 2 }, { 1, 3, 0 } }
+    };
+
+    /// The btcd presentation of a version.
+    constexpr const btcd_presentation& btcd_presented(version value) NOEXCEPT
+    {
+        auto presented = btcd_presentations.begin();
+        for (auto it = presented; it != btcd_presentations.end(); ++it)
+            if (it->since <= value)
+                presented = it;
+
+        return *presented;
+    }
+
+    /// The dotted form of a release (major.minor.patch).
+    inline std::string to_string(const release& value) NOEXCEPT
+    {
+        return std::to_string(value.major) + "." +
+            std::to_string(value.minor) + "." +
+            std::to_string(value.patch);
+    }
+
+    /// The btcd encoding of a release (1'000'000 major, 10'000 minor, 100
+    /// patch).
+    constexpr uint32_t to_btcd_value(const release& value) NOEXCEPT
+    {
+        return 1'000'000 * value.major + 10'000 * value.minor +
+            100 * value.patch;
+    }
 } // namespace bitcoind
 
 } // namespace interface
