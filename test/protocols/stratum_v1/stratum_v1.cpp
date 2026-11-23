@@ -317,10 +317,10 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__unknown_job__job_not_found)
     BC_REQUIRE_EQUAL(get_error(std::format(R"({{"id":3,"method":"mining.submit","params":["{}","00000009","00000000","00000000","00000000"]}})", worker())), job_not_found.value());
 }
 
-BC_AUTO_TEST_CASE(stratum_v1__mining_submit__job_not_word__job_not_found)
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__job_not_word__unknown)
 {
     start_job();
-    BC_REQUIRE_EQUAL(get_error(std::format(R"({{"id":3,"method":"mining.submit","params":["{}","job","00000000","00000000","00000000"]}})", worker())), job_not_found.value());
+    BC_REQUIRE_EQUAL(get_error(std::format(R"({{"id":3,"method":"mining.submit","params":["{}","job","00000000","00000000","00000000"]}})", worker())), unknown.value());
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__extranonce2_size__unknown)

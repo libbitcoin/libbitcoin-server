@@ -133,6 +133,10 @@ private:
     const std::string witness_;
     const channel_t::ptr channel_;
     std::atomic_bool active_{};
+
+    // These are protected by strand.
+    system::hash_digest mined_{};
+    size_t height_{};
 };
 
 } // namespace server

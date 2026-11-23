@@ -117,16 +117,15 @@ void protocol_stratum_v1::handle_mining_subscribe(const code& ec,
 
     channel_->set_subscribed();
     const auto id = encode_base16(to_big_endian(channel_->identifier()));
-    const auto extranonce2 = uint8_t{ options_.extranonce2_size };
     send_result(array_t
     {
         array_t
         {
-            array_t{ string_t{ "mining.set_difficulty" }, string_t{ id } },
-            array_t{ string_t{ "mining.notify" }, string_t{ id } }
+            array_t{ string_t{ "mining.set_difficulty" }, id },
+            array_t{ string_t{ "mining.notify" }, id }
         },
         string_t{ encode_base16(channel_->extranonce1()) },
-        extranonce2
+        uint8_t{ options_.extranonce2_size }
     });
 
     start_jobs();
@@ -181,9 +180,13 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
     }
 
     uint32_t id{};
-    const auto job = decode_word(id, job_id) ? channel_->find(id) :
-        channel_t::job::ptr{};
+    if (!decode_word(id, job_id))
+    {
+        send_code(unknown);
+        return;
+    }
 
+    const auto job = channel_->find(id);
     if (!job)
     {
         send_code(job_not_found);
@@ -191,11 +194,11 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
     }
 
     data_chunk roll{};
-    uint32_t timestamp{};
-    uint32_t solution{};
-    const auto size = uint8_t{ options_.extranonce2_size };
+    uint32_t timestamp{}, solution{};
+    const uint8_t size = options_.extranonce2_size;
     if (!decode_base16(roll, extranonce2) || roll.size() != size ||
-        !decode_word(timestamp, ntime) || !decode_word(solution, nonce))
+        !decode_word(timestamp, ntime) ||
+        !decode_word(solution, nonce))
     {
         send_code(unknown);
         return;
@@ -217,16 +220,12 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
     }
 
     const auto extranonce = splice(channel_->extranonce1(), roll);
-    const auto coinbase = splice(splice(job->prefix, extranonce),
-        job->suffix);
-    const auto root = coinbase_root(bitcoin_hash(coinbase),
-        job->held->branch);
-
+    const auto coinbase = splice(splice(job->prefix, extranonce), job->suffix);
     const chain::header header
     {
         version,
         job->previous,
-        root,
+        coinbase_root(bitcoin_hash(coinbase), job->held->branch),
         timestamp,
         job->bits,
         solution
@@ -246,6 +245,7 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
         return;
     }
 
+    // A share is valid work, whatever the outcome of a block it mines.
     send_result(true);
     if (value <= chain::compact::expand(job->bits))
         submit_mined(header, *job, extranonce);
@@ -390,18 +390,23 @@ void protocol_stratum_v1::do_template(const code& ec,
         return;
     }
 
-    const auto& bitcoin = system_settings();
     const auto& ctx = held->context;
     const auto height = ctx.height;
     const auto minimum = add1(ctx.median_time_past);
     const auto timestamp = std::max(network::unix_time(), minimum);
+
+    const auto& bitcoin = system_settings();
     const auto subsidy = block::subsidy(height,
-        bitcoin.subsidy_interval_blocks, bitcoin.initial_subsidy(),
+        bitcoin.subsidy_interval_blocks,
+        bitcoin.initial_subsidy(),
         bitcoin.forks.bip42);
 
     const auto value = ceilinged_add(subsidy, held->fees);
-    const auto extranonce = add(uint8_t{ options_.extranonce1_size },
-        uint8_t{ options_.extranonce2_size });
+    const auto extranonce = add<size_t>
+    (
+        uint8_t{ options_.extranonce1_size },
+        uint8_t{ options_.extranonce2_size }
+    );
 
     const auto clean = !current || current->previous != held->previous;
     send_job(emplace_shared<job>(job
@@ -520,25 +525,29 @@ void protocol_stratum_v1::suggest(double difficulty) NOEXCEPT
 // Blocks.
 // ----------------------------------------------------------------------------
 
-// The share was answered, so the block is not gated on its outcome.
+// The share was answered, so the block is not gated on its outcome, and each
+// outcome is reported to handle_submitted.
 void protocol_stratum_v1::submit_mined(const chain::header& header,
     const job& job, const data_chunk& extranonce) NOEXCEPT
 {
     BC_ASSERT(stranded());
     const auto& query = archive();
     const auto& links = job.held->links;
+    mined_ = header.hash();
+    height_ = job.held->context.height;
 
     data_chunk data{};
     write::bytes::data sink{ data };
     header.to_data(sink);
     sink.write_variable(add1(links.size()));
     sink.write_bytes(coinbase_witnessed(job.prefix, extranonce, job.suffix));
+
     for (const auto& link: links)
     {
         const auto tx = query.get_wire_tx(link, true);
         if (tx.empty())
         {
-            LOGF("Stratum block tx not found (" << link << ").");
+            handle_submitted(submission::failed, database::error::integrity);
             return;
         }
 
@@ -546,45 +555,43 @@ void protocol_stratum_v1::submit_mined(const chain::header& header,
     }
 
     sink.flush();
-    const auto block = emplace_shared<const chain::view::block>(
-        std::move(data), true);
-
+    const auto block = to_shared<chain::view::block>(std::move(data), true);
     if (!block->is_valid())
     {
-        LOGF("Stratum block not deserializable.");
+        handle_submitted(submission::failed, database::error::integrity);
         return;
     }
 
-    LOGN("Stratum block mined [" << encode_hash(header.hash()) << ":"
-        << job.held->context.height << "]");
-
-    submit_block(emplace_shared<const chain::header>(header), block, {});
+    submit_block(to_shared<chain::header>(header), block, {});
 }
 
 void protocol_stratum_v1::handle_submitted(submission outcome,
     const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
+    const auto block = "[" + encode_hash(mined_) + ":" +
+        std::to_string(height_) + "]";
+
     switch (outcome)
     {
         case submission::accepted:
         {
-            LOGN("Stratum block accepted.");
+            LOGN("Stratum block accepted " << block);
             break;
         }
         case submission::rejected:
         {
-            LOGN("Stratum block rejected, " << ec.message());
+            LOGN("Stratum block rejected " << block << ", " << ec.message());
             break;
         }
         case submission::failed:
         {
-            LOGF("Stratum block submission failed, " << ec.message());
+            LOGF("Stratum block failed " << block << ", " << ec.message());
             break;
         }
         default:
         {
-            LOGN("Stratum block inconclusive.");
+            LOGN("Stratum block inconclusive " << block);
             break;
         }
     }
