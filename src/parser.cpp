@@ -2695,12 +2695,12 @@ options_metadata parser::load_settings() THROWS
     (
         "pool.coinbase_weight",
         setting<uint32_t>(&configured.node.pool.coinbase_weight),
-        "Declared weight of the miner's coinbase transaction, defaults to {} (derived when stratum_v1 is enabled)."
+        "Declared weight of the miner's coinbase transaction, defaults to {}."
     )
     (
         "pool.coinbase_sigops",
         setting<uint32_t>(&configured.node.pool.coinbase_sigops),
-        "Declared sigops of the miner's coinbase transaction, defaults to {} (derived when stratum_v1 is enabled)."
+        "Declared sigops of the miner's coinbase transaction, defaults to {}."
     )
     (
         "pool.maximum_chunk_depth",

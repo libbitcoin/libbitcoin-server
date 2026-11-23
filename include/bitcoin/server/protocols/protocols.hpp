@@ -126,7 +126,7 @@ server::protocol → node::protocol
         │   ╞══ protocol_bitcoind_dispatch<bitcoind_handshake>
         │   │   └── protocol_bitcoind_version (handshake, attached first)
         │   ╞══ protocol_bitcoind_dispatch<bitcoind_mining>
-        │   │   └── protocol_submit<Base> (block submission)
+        │   │   └── protocol_submit<Base>
         │   │       └── protocol_bitcoind_mining
         │   ╞══ protocol_bitcoind_dispatch<bitcoind_network>
         │   │   └── protocol_bitcoind_network

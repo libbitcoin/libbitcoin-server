@@ -19,7 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_SUBMIT_IPP
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_SUBMIT_IPP
 
-#include <functional>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
@@ -44,9 +43,11 @@ void CLASS::start() NOEXCEPT
     if (this->started())
         return;
 
-    this->subscribe_chase(this->template bind<CLASS>(&CLASS::handle_chase,
-        _1, _2));
-    Base::start();
+    this->subscribe_chase(
+        this->template bind<CLASS>(&CLASS::handle_chase,
+            _1, _2));
+
+    base::start();
 }
 
 TEMPLATE
@@ -55,7 +56,7 @@ void CLASS::stopping(const code& ec) NOEXCEPT
     BC_ASSERT(this->stranded());
     this->unsubscribe_chase();
     submitted_gate_.reset();
-    Base::stopping(ec);
+    base::stopping(ec);
 }
 
 // Submit.
@@ -76,8 +77,8 @@ void CLASS::submit_block(const header_cptr& header, const block_cptr& block,
     }
 
     this->organize_submitted(header,
-        this->template bind<CLASS>(&CLASS::handle_organize_block, _1, _2,
-            block, gate));
+        this->template bind<CLASS>(&CLASS::handle_organize_block,
+            _1, _2, block, gate));
 }
 
 TEMPLATE
@@ -197,10 +198,17 @@ void CLASS::accept_block(const block_cptr& block,
     const auto prune = bypass && this->node_settings().limited_blocks;
     const auto strong = is_any(state, checkpointed);
     const auto hash = block->hash();
-    if (!this->archive_block(stored, block, link, strong, bypass, height,
-        prune, this->template bind<CLASS>(&CLASS::handle_archive_block, _1,
-            hash, height)))
-        return;
+    if (!this->archive_block
+    (
+        stored,
+        block,
+        link,
+        strong,
+        bypass,
+        height,
+        prune,
+        this->template bind<CLASS>(&CLASS::handle_archive_block, _1, hash, height)
+    )) return;
 
     handle_archive_block(stored, hash, height);
 }

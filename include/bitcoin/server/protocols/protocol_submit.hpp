@@ -67,15 +67,16 @@ public:
     void stopping(const code& ec) NOEXCEPT override;
 
 protected:
-    using Base::log;
+    using base = Base;
+    using base::log;
     using gate_t = network::channel::gate_t;
     using header_cptr = system::chain::header::cptr;
     using block_cptr = system::chain::view::block::cptr;
 
     inline protocol_submit(const auto& session,
         const network::channel::ptr& channel,
-        const typename Base::options_t& options) NOEXCEPT
-      : Base(session, channel, options)
+        const typename base::options_t& options) NOEXCEPT
+      : base(session, channel, options)
     {
     }
 

@@ -32,19 +32,18 @@ extern template class network::rpc::dispatcher<
 
 namespace server {
 
+// The dispatch metaprogramming is isolated to the subgroup translation unit.
 extern template class protocol_bitcoind_dispatch<
     interface::bitcoind_mining>;
 
 class BCS_API protocol_bitcoind_mining
-  : public protocol_submit<
-        protocol_bitcoind_dispatch<interface::bitcoind_mining>>,
+  : public protocol_submit<protocol_bitcoind_dispatch<interface::bitcoind_mining>>,
     protected network::tracker<protocol_bitcoind_mining>
 {
 public:
     typedef std::shared_ptr<protocol_bitcoind_mining> ptr;
     using rpc_interface = interface::bitcoind_mining;
-    using submit_t = protocol_submit<
-        protocol_bitcoind_dispatch<rpc_interface>>;
+    using submit_t = protocol_submit<protocol_bitcoind_dispatch<rpc_interface>>;
 
     inline protocol_bitcoind_mining(const auto& session,
         const network::channel::ptr& channel,

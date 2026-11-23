@@ -46,8 +46,7 @@ void protocol_stratum_v1::start() NOEXCEPT
 
     SUBSCRIBE_CHANNEL(void, handle_mining_subscribe, _1, _2, _3, _4);
     SUBSCRIBE_CHANNEL(void, handle_mining_authorize, _1, _2, _3, _4);
-    SUBSCRIBE_CHANNEL(void, handle_mining_submit, _1, _2, _3, _4, _5, _6, _7,
-        _8);
+    SUBSCRIBE_CHANNEL(void, handle_mining_submit, _1, _2, _3, _4, _5, _6, _7, _8);
     SUBSCRIBE_CHANNEL(void, handle_mining_configure, _1, _2, _3, _4);
     SUBSCRIBE_CHANNEL(void, handle_mining_suggest_difficulty, _1, _2, _3);
     SUBSCRIBE_CHANNEL(void, handle_mining_suggest_target, _1, _2, _3);
