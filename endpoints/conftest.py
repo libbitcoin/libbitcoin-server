@@ -380,15 +380,16 @@ def bitcoind_rpc_config(request):
 
 
 @pytest.fixture(scope="session")
-def bitcoind_rest_config(request):
-    """Configuration for bitcoind REST tests."""
+def bitcoind_rest_config(request, bitcoind_rpc_config):
+    """Configuration for bitcoind REST tests (credentials as for RPC)."""
     host = request.config.getoption("--bitcoind-rest-host")
     port = int(request.config.getoption("--bitcoind-rest-port"))
 
     return {
         "host": host,
         "port": port,
-        "base_url": f"http://{host}:{port}/rest"
+        "base_url": f"http://{host}:{port}/rest",
+        "auth": bitcoind_rpc_config["auth"]
     }
 
 

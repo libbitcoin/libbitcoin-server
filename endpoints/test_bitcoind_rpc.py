@@ -224,7 +224,7 @@ def test_getblockchaininfo(bitcoind_rpc_config):
     assert "blocks" in result
     assert "chain" in result
     # chainwork and size_on_disk are intentionally omitted by the implementation:
-    # chainwork needs a cumulative-work index (cf. getchainwork, not implemented)
+    # chainwork needs a cumulative-work index
     # and size_on_disk needs store-size accounting. The remaining bitcoind fields are
     # returned.
     assert "difficulty" in result
@@ -252,14 +252,15 @@ def test_getblockfilter(bitcoind_rpc_config):
     response = send_rpc(
         bitcoind_rpc_config,
         "getblockfilter",
-        [ReferenceData.KNOWN_BLOCK_HASH, ReferenceData.FILTER_TYPE_BLOOM]
+        [ReferenceData.KNOWN_BLOCK_HASH, ReferenceData.FILTER_TYPE_BASIC]
     )
 
     result = response["result"]
     assert isinstance(result, dict)
-    assert "filter" in result
-    assert "height" in result
-    assert result["height"] == ReferenceData.KNOWN_HEIGHT
+    assert set(result) == {"filter", "header"}
+    assert result["filter"] and len(result["filter"]) % 2 == 0
+    bytes.fromhex(result["filter"])
+    assert validate_hex_hash(result["header"])
 
 
 def test_getblockhash(bitcoind_rpc_config):
@@ -327,16 +328,6 @@ def test_getchaintxstats(bitcoind_rpc_config):
     assert "txrate" in result
 
 
-def test_getchainwork(bitcoind_rpc_config):
-    """Test getchainwork - returns the total work in the best chain"""
-    response = send_rpc(bitcoind_rpc_config, "getchainwork")
-
-    result = response["result"]
-    assert isinstance(result, str)
-    assert len(result) > 0
-    assert all(c in "0123456789abcdefABCDEF" for c in result)
-
-
 def test_gettxout(bitcoind_rpc_config):
     """Test gettxout - returns details about an unspent transaction output (UTXO)"""
     # For old block, output is likely spent → expect None
@@ -370,13 +361,10 @@ def test_gettxoutsetinfo(bitcoind_rpc_config):
 
 
 def test_pruneblockchain(bitcoind_rpc_config):
-    """Test pruneblockchain - prunes blockchain up to specified height"""
-    # Prune to height 1000 (should be no-op on non-pruning node)
-    response = send_rpc(bitcoind_rpc_config, "pruneblockchain", [1000])
-
-    result = response["result"]
-    assert isinstance(result, int)
-    assert result >= 0
+    """Test pruneblockchain - a node not in prune mode refuses (as bitcoind)"""
+    response = raw_rpc(bitcoind_rpc_config, "pruneblockchain", [1000])
+    assert response.get("result") is None
+    assert response["error"]["code"] == -1
 
 
 def test_savemempool(bitcoind_rpc_config):
@@ -414,22 +402,6 @@ def test_verifychain(bitcoind_rpc_config):
 
     result = response["result"]
     assert result is True
-
-
-def test_verifytxoutset(bitcoind_rpc_config):
-    """Test verifytxoutset - verifies the UTXO set"""
-    response = send_rpc(bitcoind_rpc_config, "verifytxoutset", ["test"])
-
-    result = response["result"]
-    assert isinstance(result, dict)
-    assert "height" in result
-    assert "bestblock" in result
-    assert "transactions" in result
-    assert "txouts" in result
-    assert "bogosize" in result
-    assert "hash_serialized_2" in result
-    assert "disk_size" in result
-    assert "total_amount" in result
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

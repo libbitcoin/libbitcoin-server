@@ -304,6 +304,13 @@ def test_broadcast_package_empty(esplora_config):
     assert response.status_code == 400
 
 
+def test_broadcast_package_invalid_encoding(esplora_config):
+    """A package element that is not transaction hex is rejected."""
+    response = post(esplora_config["base_url"], "txs/package", '["xxxx"]')
+    assert response.status_code == 400
+    assert response.text
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # ADDRESSES
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -405,22 +412,41 @@ def test_scripthash_utxo_unfunded(esplora_config):
 def test_mempool(esplora_config):
     """GET /mempool returns backlog statistics."""
     mempool = get_json(esplora_config["base_url"], "mempool")
-    assert mempool["count"] == 0
-    assert mempool["vsize"] == 0
-    assert mempool["total_fee"] == 0
-    assert mempool["fee_histogram"] == []
+    assert mempool["count"] >= 0
+    assert mempool["vsize"] >= 0
+    assert mempool["total_fee"] >= 0
+    assert isinstance(mempool["fee_histogram"], list)
+    for rate, vsize in mempool["fee_histogram"]:
+        assert rate >= 0
+        assert vsize > 0
+
+    if mempool["count"] == 0:
+        assert mempool["vsize"] == 0
+        assert mempool["total_fee"] == 0
+        assert mempool["fee_histogram"] == []
 
 
 @pytest.mark.requires_current
 def test_mempool_txids(esplora_config):
-    """There is no transaction pool, so the txid list is empty."""
-    assert get_json(esplora_config["base_url"], "mempool/txids") == []
+    """GET /mempool/txids returns the txids of the pool."""
+    txids = get_json(esplora_config["base_url"], "mempool/txids")
+    assert isinstance(txids, list)
+    assert all(validate_hex_hash(txid) for txid in txids)
+    assert len(set(txids)) == len(txids)
 
 
 @pytest.mark.requires_current
 def test_mempool_recent(esplora_config):
-    """There is no transaction pool, so the recent list is empty."""
-    assert get_json(esplora_config["base_url"], "mempool/recent") == []
+    """GET /mempool/recent returns at most ten recent pool txs."""
+    recent = get_json(esplora_config["base_url"], "mempool/recent")
+    assert isinstance(recent, list)
+    assert len(recent) <= 10
+    for tx in recent:
+        assert set(tx) == {"txid", "fee", "vsize", "value"}
+        assert validate_hex_hash(tx["txid"])
+        assert tx["fee"] >= 0
+        assert tx["vsize"] > 0
+        assert tx["value"] >= 0
 
 
 def test_fee_estimates(esplora_config):

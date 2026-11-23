@@ -247,12 +247,12 @@ pytest test_native.py -k "not address"
 Tests JSON-RPC 2.0 interface compatible with the bitcoind RPC interface.
 
 **Coverage:**
-- ✅ Blockchain methods (17 methods)
+- ✅ Blockchain methods (15 methods)
   - getbestblockhash, getblock, getblockchaininfo, getblockcount
   - getblockfilter, getblockhash, getblockheader, getblockstats
-  - getchaintxstats, getchainwork, gettxout, gettxoutsetinfo
+  - getchaintxstats, gettxout, gettxoutsetinfo
   - pruneblockchain, savemempool, scantxoutset
-  - verifychain, verifytxoutset
+  - verifychain
 - ✅ Error handling
 - ⏭️ Control methods (commented out — 6 methods)
 - ⏭️ Mining methods (commented out — 4 methods)
