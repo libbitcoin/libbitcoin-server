@@ -55,7 +55,7 @@ void protocol_stratum_v1::start() NOEXCEPT
     if (started())
         return;
 
-    SUBSCRIBE_RPC(handle_mining_subscribe, _1, _2, _3, _4);
+    SUBSCRIBE_RPC(handle_mining_subscribe, _1, _2, _3, _4, _5, _6);
     SUBSCRIBE_RPC(handle_mining_authorize, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_mining_submit, _1, _2, _3, _4, _5, _6, _7, _8);
     SUBSCRIBE_RPC(handle_mining_configure, _1, _2, _3, _4);
@@ -107,9 +107,10 @@ bool protocol_stratum_v1::handle_chase(const code& ec,
 // Handlers.
 // ----------------------------------------------------------------------------
 
+// Miners may send the connected host and port, which are not used.
 void protocol_stratum_v1::handle_mining_subscribe(const code& ec,
     rpc_interface::mining_subscribe, const std::string&,
-    const std::string&) NOEXCEPT
+    const std::string&, const std::string&, const value_t&) NOEXCEPT
 {
     if (stopped(ec))
         return;

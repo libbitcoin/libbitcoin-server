@@ -74,7 +74,8 @@ protected:
     /// Handlers.
     void handle_mining_subscribe(const code& ec,
         rpc_interface::mining_subscribe, const std::string& user_agent,
-        const std::string& session_id) NOEXCEPT;
+        const std::string& session_id, const std::string& host,
+        const network::rpc::value_t& port) NOEXCEPT;
     void handle_mining_authorize(const code& ec,
         rpc_interface::mining_authorize, const std::string& username,
         const std::string& password) NOEXCEPT;

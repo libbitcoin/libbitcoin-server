@@ -60,6 +60,20 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_subscribe__http__subscriptions)
     BC_REQUIRE_EQUAL(response.at("result").as_array().size(), 3u);
 }
 
+BC_AUTO_TEST_CASE(stratum_v1__mining_subscribe__null_session_host_and_port__subscriptions)
+{
+    const auto response = get(R"({"id":1,"method":"mining.subscribe","params":["bosminer-plus-am1-s9.0.9.0",null,"127.0.0.1:3333",null]})");
+    BC_REQUIRE(response.at("error").is_null());
+    BC_REQUIRE_EQUAL(response.at("result").as_array().size(), 3u);
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_subscribe__numeric_port__subscriptions)
+{
+    const auto response = get(R"({"id":1,"method":"mining.subscribe","params":["test","","127.0.0.1",3333]})");
+    BC_REQUIRE(response.at("error").is_null());
+    BC_REQUIRE_EQUAL(response.at("result").as_array().size(), 3u);
+}
+
 BC_AUTO_TEST_CASE(stratum_v1__mining_subscribe__websocket__jobs_notified)
 {
     BC_REQUIRE(!ws_upgrade());
@@ -78,6 +92,13 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_subscribe__websocket__jobs_notified)
 BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__address_worker__true)
 {
     const auto response = authorize(address(0x01) + ".rig");
+    BC_REQUIRE(response.at("result").as_bool());
+    BC_REQUIRE(response.at("error").is_null());
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__null_password__true)
+{
+    const auto response = get(std::format(R"({{"id":2,"method":"mining.authorize","params":["{}",null]}})", address(0x01)));
     BC_REQUIRE(response.at("result").as_bool());
     BC_REQUIRE(response.at("error").is_null());
 }
