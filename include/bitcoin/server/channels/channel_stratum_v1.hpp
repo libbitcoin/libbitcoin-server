@@ -19,10 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_STRATUM_V1_HPP
 #define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_STRATUM_V1_HPP
 
-#include <algorithm>
-#include <array>
-#include <map>
-#include <unordered_set>
 #include <bitcoin/server/channels/channel_rpc.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>

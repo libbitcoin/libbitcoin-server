@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/utilities/stratum_v1.hpp>
 
-#include <cmath>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {

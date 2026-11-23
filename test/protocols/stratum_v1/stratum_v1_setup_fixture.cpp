@@ -20,9 +20,6 @@
 #include "../../mocks/blocks.hpp"
 #include "stratum_v1_setup_fixture.hpp"
 
-#include <chrono>
-#include <thread>
-
 using namespace system;
 
 // Bounds on waiting for a confirmation and on notifications skipped.

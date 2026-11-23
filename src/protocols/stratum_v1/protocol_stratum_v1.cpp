@@ -18,7 +18,6 @@
  */
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 
-#include <algorithm>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
@@ -135,9 +134,9 @@ void protocol_stratum_v1::handle_mining_subscribe(const code& ec,
     start_jobs();
 }
 
-// The worker name up to any dot is the credential name, and is the payout
-// address unless one is configured. An unsatisfied credential is satisfied
-// in-band, as a raw tcp channel carries no http headers.
+// The worker name up to any dot is the account, the payout address unless one
+// is configured. Raw tcp carries no http headers, so a configured credential
+// is satisfied here by the account and password, as by basic authorization.
 void protocol_stratum_v1::handle_mining_authorize(const code& ec,
     rpc_interface::mining_authorize, const std::string& username,
     const std::string& password) NOEXCEPT
