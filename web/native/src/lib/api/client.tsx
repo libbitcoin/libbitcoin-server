@@ -3,6 +3,33 @@ import type { ReactNode } from 'react';
 import type { Miner } from '@/lib/utils/miner';
 import { createLibbitcoinClient } from './providers/libbitcoin';
 
+/** A block by hash, confirmed height or candidate height. */
+export interface BlockReference {
+  chain: 'hash' | 'confirmed' | 'candidate';
+  id: string;
+}
+
+/** Totals of the pool and its rates (sat/vB) by virtual size. */
+export interface PoolFees {
+  count: number;
+  virtual: number;
+  fee: number;
+  histogram: Array<[number, number]>;
+}
+
+/** Details of a template tx, with its cluster within the template. */
+export interface TemplateTransaction {
+  segregated: boolean;
+  nominal: number;
+  maximal: number;
+  weight: number;
+  virtual: number;
+  value: number;
+  spend: number;
+  fee: number;
+  cluster: number;
+}
+
 export interface RecentMiners {
   top: number;
   /** Newest first; null where the coinbase matches no known pool. */
@@ -37,6 +64,8 @@ export interface BlockchainClientConfiguration {
   network?: string;
   forks: string[];
   wallet: NetworkParams;
+  /** Height at and below which tx inputs (scripts and witnesses) are pruned. */
+  pruned?: number;
 }
 
 export interface BlockStats {
@@ -95,8 +124,8 @@ export interface TransactionSummary {
   size?: number;
   weight?: number;
   sigops?: number;
-  version: number;
-  locktime: number;
+  version?: number;
+  locktime?: number;
   totalInput?: number | null;
   totalOutput: number;
   inputs: TransactionInput[];
@@ -195,6 +224,17 @@ export interface BlockchainClient {
   getBlockValidation(hash: string): Promise<BlockValidation>;
   getBlockStats(hashOrHeight: string): Promise<BlockStats>;
   getBlockTransactions(hashOrHeight: string, startIndex?: number): Promise<TransactionSummary[]>;
+  /** Txs of the block in block order, with their clusters within the block. */
+  getBlockTransactionDetails(block: BlockReference): Promise<TemplateTransaction[]>;
+  /** Hash of the candidate block at height. */
+  getCandidateBlockHash(height: number): Promise<string>;
+  /** Hash of the tx at position in the block. */
+  getBlockTransactionHash(block: BlockReference, position: number): Promise<string>;
+  getFees(): Promise<PoolFees>;
+  /** Txs of the template of the block at height, in block order (less the coinbase). */
+  getTemplate(height: number): Promise<TemplateTransaction[]>;
+  /** Hashes of the txs of the template of the block at height, in block order. */
+  getTemplateTransactionHashes(height: number): Promise<string[]>;
   /** Pool identified from the block's coinbase, null when unrecognized. */
   getBlockMiner(hashOrHeight: string): Promise<Miner | null>;
   getRecentMiners(count: number, signal?: AbortSignal): Promise<RecentMiners>;

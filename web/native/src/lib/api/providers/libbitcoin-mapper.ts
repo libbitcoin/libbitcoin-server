@@ -245,7 +245,7 @@ function mapInput(
   };
 }
 
-function mapOutput(
+export function mapOutput(
   output: TxOutputResponse,
   index: number,
   params: NetworkParams

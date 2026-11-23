@@ -14,7 +14,10 @@ import {
   BlockchainEventStatus,
   BlockchainEventStatusHandler,
   BlockchainEventTransport,
+  BlockReference,
+  PoolFees,
   RecentMiners,
+  TemplateTransaction,
   TransactionSummary,
   TransactionOutputSpend,
 } from '../client';
@@ -25,6 +28,7 @@ import {
   TxResponse,
   scriptHashFromAddress,
   toBlockSummary,
+  mapOutput,
   mapTransaction,
   outputAddresses,
 } from './libbitcoin-mapper';
@@ -146,12 +150,36 @@ class LibbitcoinApiError extends Error {
   }
 }
 
+const feesSchema = z.object({
+  count: z.number(),
+  virtual: z.number(),
+  fee: z.number(),
+  histogram: z.array(z.tuple([z.number(), z.number()])),
+});
+
+const templateSchema = z.array(
+  z.object({
+    segregated: z.boolean(),
+    nominal: z.number(),
+    maximal: z.number(),
+    weight: z.number(),
+    virtual: z.number(),
+    value: z.number(),
+    spend: z.number(),
+    fee: z.number(),
+    cluster: z.number(),
+  })
+);
+
+const hashesSchema = z.array(z.string());
+
 const configurationSchema = z.object({
   store: z.object({
     address: z.boolean(),
     filter: z.boolean(),
     turbo: z.boolean(),
     silent: z.number().int().nonnegative().nullable(),
+    pruned: z.number().int().nonnegative().nullable().optional(),
   }),
   node: z.object({ network: z.string().trim().min(1) }).catchall(z.unknown()),
   network: z.record(z.string(), z.unknown()),
@@ -189,6 +217,7 @@ function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
     network: node.network,
     forks: enabledForks,
     wallet: { p2pkh: wallet.p2kh, p2sh: wallet.p2sh, hrp: wallet.witness },
+    ...(typeof store.pruned === 'number' ? { pruned: store.pruned } : {}),
   };
 }
 
@@ -472,6 +501,41 @@ function createPrevoutResolver(baseUrl: string, turbo?: boolean) {
 
 async function fetchBlockTx(baseUrl: string, path: string, index: number, turbo?: boolean) {
   return fetchJson<TxResponse>(baseUrl, `${path}/tx/${String(index)}?format=json`, turbo);
+}
+
+function feeRate(details: TxDetailsResponse): number | null {
+  if (typeof details.fee !== 'number' || details.virtual === 0) return null;
+  return details.fee / details.virtual;
+}
+
+interface PrunedBlockTransactions {
+  hashes: string[];
+  details: TemplateTransaction[];
+}
+
+// A pruned tx is not provided whole, so its row is of its block's txs and their
+// details, all but its input scripts and witnesses being provided.
+function toPrunedSummary(
+  hash: string,
+  detail: TemplateTransaction,
+  block: { height: number; hash: string; tip: number }
+): TransactionSummary {
+  return {
+    txid: hash,
+    hash,
+    status: 'confirmed',
+    confirmations: block.tip - block.height + 1,
+    blockHeight: block.height,
+    blockHash: block.hash,
+    feeSats: detail.fee,
+    feeRate: detail.virtual === 0 ? null : detail.fee / detail.virtual,
+    size: detail.maximal,
+    weight: detail.weight,
+    totalInput: detail.value,
+    totalOutput: detail.spend,
+    inputs: [],
+    outputs: [],
+  };
 }
 
 async function fetchBlockTransactionPositions(
@@ -1141,6 +1205,30 @@ export function createLibbitcoinClient({
     }, EVENT_STREAM_STOP_DELAY_MS);
   }
 
+
+  // The txs and details of the last pruned block listed, for its pages.
+  const prunedBlocks = new Map<string, Promise<PrunedBlockTransactions>>();
+  function fetchPrunedBlock(hash: string): Promise<PrunedBlockTransactions> {
+    const cached = prunedBlocks.get(hash);
+    if (cached) return cached;
+
+    const path = `/v1/block/hash/${hash}`;
+    const promise = Promise.all([
+      fetchJson<unknown>(baseUrl, `${path}/txs?format=json`),
+      fetchJson<unknown>(baseUrl, `${path}/txs/details?format=json`),
+    ]).then(([hashes, details]) => ({
+      hashes: hashesSchema.parse(hashes),
+      details: templateSchema.parse(details),
+    }));
+
+    prunedBlocks.clear();
+    prunedBlocks.set(hash, promise);
+    promise.catch(() => {
+      prunedBlocks.delete(hash);
+    });
+
+    return promise;
+  }
   return {
     metadata: {
       label: 'Server',
@@ -1255,6 +1343,17 @@ export function createLibbitcoinClient({
       const count = extractHeaderContextState(context)?.count;
       if (typeof count === 'number' && startIndex >= count) return [];
 
+      // The txs of a pruned block are not provided whole.
+      const { pruned } = await ensureConfiguration();
+      if (pruned !== undefined && header.height <= pruned) {
+        const block = { height: header.height, hash: header.hash, tip };
+        const { hashes, details } = await fetchPrunedBlock(header.hash);
+        const end = Math.min(startIndex + TRANSACTION_PAGE_SIZE, hashes.length);
+        return hashes
+          .slice(startIndex, end)
+          .map((hash, idx) => toPrunedSummary(hash, details[startIndex + idx], block));
+      }
+
       const endExclusive =
         typeof count === 'number'
           ? Math.min(startIndex + TRANSACTION_PAGE_SIZE, count)
@@ -1292,6 +1391,41 @@ export function createLibbitcoinClient({
         );
         return applyTxDetails(mapped, detail);
       });
+    },
+
+    async getBlockTransactionDetails(block: BlockReference): Promise<TemplateTransaction[]> {
+      const id = encodeURIComponent(block.id);
+      const path = `/v1/block/${block.chain}/${id}/txs/details?format=json`;
+      return templateSchema.parse(await fetchJson<unknown>(baseUrl, path));
+    },
+
+    async getCandidateBlockHash(height: number): Promise<string> {
+      const path = `/v1/block/candidate/${String(height)}/header?format=json`;
+      const header = await fetchJson<BlockHeaderResponse>(baseUrl, path);
+      return header.hash;
+    },
+
+    async getBlockTransactionHash(block: BlockReference, position: number): Promise<string> {
+      const id = encodeURIComponent(block.id);
+      const path = `/v1/block/${block.chain}/${id}/txs?format=json`;
+      const hashes = hashesSchema.parse(await fetchJson<unknown>(baseUrl, path));
+      const hash = hashes.at(position);
+      if (hash === undefined) throw new LibbitcoinApiError('Transaction position not found', 404);
+      return hash;
+    },
+
+    async getFees(): Promise<PoolFees> {
+      return feesSchema.parse(await fetchJson<unknown>(baseUrl, '/v1/fees?format=json'));
+    },
+
+    async getTemplate(height: number): Promise<TemplateTransaction[]> {
+      const path = `/v1/template/${String(height)}/txs/details?format=json`;
+      return templateSchema.parse(await fetchJson<unknown>(baseUrl, path));
+    },
+
+    async getTemplateTransactionHashes(height: number): Promise<string[]> {
+      const path = `/v1/template/${String(height)}/txs?format=json`;
+      return hashesSchema.parse(await fetchJson<unknown>(baseUrl, path));
     },
 
     async getBlockMiner(hashOrHeight: string): Promise<Miner | null> {
@@ -1352,31 +1486,41 @@ export function createLibbitcoinClient({
       return applyTxDetails(mapped, details);
     },
 
+    // Of the parts of a tx, which are provided when the tx itself is pruned:
+    // its block, details and outputs. Its inputs are of the whole tx.
     async getTransactionHeader(txid: string): Promise<TransactionSummary> {
       const networkParams = await resolveNetworkParams();
-      const tx = await fetchJson<TxResponse>(baseUrl, `/v1/tx/${txid}?format=json`);
-      const [header, tip, details] = await Promise.all([
+      const [details, outputs, header, tip] = await Promise.all([
+        fetchJson<TxDetailsResponse>(baseUrl, `/v1/tx/${txid}/details?format=json`),
+        fetchJson<TxOutputResponse[]>(baseUrl, `/v1/output/${txid}?format=json`),
         tryFetchJson<BlockHeaderResponse>(baseUrl, `/v1/tx/${txid}/header?format=json`),
         fetchTopHeightCached(baseUrl).catch(() => null),
-        tryFetchJson<TxDetailsResponse>(baseUrl, `/v1/tx/${txid}/details?format=json`),
       ]);
       if (typeof tip === 'number') {
         lastHeight = Math.max(lastHeight ?? 0, tip);
       }
 
-      const mapped = mapTransaction(
-        tx,
-        [],
-        networkParams,
-        {
-          blockHeight: header?.height,
-          blockHash: header?.hash,
-          tipHeight: typeof tip === 'number' ? tip : undefined,
-          timestamp: header?.timestamp,
-        },
-        typeof details?.fee === 'number' ? details.fee : undefined
-      );
-      return applyTxDetails(mapped, details);
+      const height = header?.height;
+      const confirmed = typeof height === 'number';
+      const confirmations =
+        confirmed && typeof tip === 'number' ? Math.max(0, tip - height + 1) : 0;
+      return {
+        txid,
+        hash: txid,
+        status: confirmed ? 'confirmed' : 'unconfirmed',
+        confirmations,
+        blockHeight: height,
+        blockHash: header?.hash,
+        receivedTime: header?.timestamp,
+        feeSats: details.fee ?? null,
+        feeRate: feeRate(details),
+        size: details.maximal,
+        weight: details.weight,
+        totalInput: details.coinbase ? null : (details.value ?? null),
+        totalOutput: details.spend ?? 0,
+        inputs: [],
+        outputs: outputs.map((output, index) => mapOutput(output, index, networkParams)),
+      };
     },
 
     async getTransactionInputScriptHex(txid: string, inputIndex: number): Promise<string> {

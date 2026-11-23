@@ -1198,6 +1198,21 @@ BC_AUTO_TEST_CASE(native__file__missing__not_found)
     BC_REQUIRE_EQUAL(get_status("/missing.css"), http::status::not_found);
 }
 
+BC_AUTO_TEST_CASE(native__file__query__default_page)
+{
+    BC_REQUIRE_EQUAL(get_text("/some/route?q=abc"), "<p>index</p>");
+}
+
+BC_AUTO_TEST_CASE(native__file__format_html__default_page)
+{
+    BC_REQUIRE_EQUAL(get_text("/v1/top?format=html"), "<p>index</p>");
+}
+
+BC_AUTO_TEST_CASE(native__file__named_query__expected)
+{
+    BC_REQUIRE_EQUAL(get_text("/page.css?v=1"), "p{}");
+}
+
 BC_AUTO_TEST_SUITE_END()
 
 BC_FIXTURE_TEST_SUITE(native_no_default_tests, native_no_default_setup_fixture)

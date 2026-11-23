@@ -1,4 +1,7 @@
+import { useId, useState } from 'react';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { formatNumber } from '@/lib/utils/format';
+import { loadSectionExpanded, saveSectionExpanded } from '@/lib/utils/template-settings';
 
 const MAX_BLOCK_BYTES = 4_000_000;
 const ONE_MB = 1_000_000;
@@ -17,6 +20,9 @@ interface BlockSizeBreakdown {
 }
 
 export function BlockSizeBar({ nominal, size, weight }: BlockSizeBarProps) {
+  const [expanded, setExpanded] = useState(() => loadSectionExpanded('size'));
+  const regionId = useId();
+  const headingId = useId();
   const breakdown = getBlockSizeBreakdown({ nominal, size, weight });
   if (!breakdown) return null;
 
@@ -26,13 +32,33 @@ export function BlockSizeBar({ nominal, size, weight }: BlockSizeBarProps) {
   const usagePct = (clamp(breakdown.totalBytes, 0, MAX_BLOCK_BYTES) / MAX_BLOCK_BYTES) * 100;
 
   return (
-    <section className="border-accent/30 bg-surface/80 space-y-5 rounded-xl border p-6">
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <span className="text-accentSecondary text-xs tracking-wide uppercase">Block Size</span>
-        <span className="text-textPrimary">
-          {formatMegabytes(breakdown.totalBytes)} / 4.00 MB
-        </span>
-      </div>
+    <section className="border-accent/30 bg-surface/80 rounded-xl border" aria-labelledby={headingId}>
+      <h2 id={headingId}>
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={regionId}
+          onClick={() => {
+            saveSectionExpanded('size', !expanded);
+            setExpanded(!expanded);
+          }}
+          className="text-accent flex w-full items-center justify-between gap-4 rounded-xl px-6 py-4 text-left font-semibold"
+        >
+          Block size
+          <span className="flex items-center gap-4">
+            <span className="text-textPrimary text-sm font-normal">
+              {formatMegabytes(breakdown.totalBytes)} / 4.00 MB
+            </span>
+            <ChevronDownIcon
+              aria-hidden="true"
+              className={`h-5 w-5 shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
+            />
+          </span>
+        </button>
+      </h2>
+      <div id={regionId} hidden={!expanded}>
+        {expanded && (
+          <div className="border-accent/20 space-y-5 border-t p-6">
 
       <div className="relative">
         <div className="border-accentSecondary/20 from-accent/8 to-surface/60 relative h-8 overflow-hidden rounded-full border bg-gradient-to-r">
@@ -97,6 +123,9 @@ export function BlockSizeBar({ nominal, size, weight }: BlockSizeBarProps) {
           primaryValue={formatBytes(breakdown.totalBytes)}
           detail={`${formatNumber(usagePct, { maximumFractionDigits: 1 })}% of 4.00 MB max`}
         />
+      </div>
+          </div>
+        )}
       </div>
     </section>
   );

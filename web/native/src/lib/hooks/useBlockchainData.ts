@@ -19,7 +19,9 @@ import {
   BlockStats,
   BlockSummary,
   BlockchainEvent,
+  PoolFees,
   RecentMiners,
+  TemplateTransaction,
   TransactionSummary,
   TransactionOutputSpend,
   useBlockchainClient,
@@ -158,6 +160,44 @@ export function useServerConfiguration() {
     queryFn: (client) => client.getConfiguration(),
     staleTime: 60_000,
     refetchInterval: (query) => (query.state.status === 'error' ? 15_000 : false),
+  });
+}
+
+export function useFees() {
+  return useBlockchainQuery<PoolFees>({
+    queryKey: ['fees'],
+    queryFn: (client) => client.getFees(),
+    staleTime: 10_000,
+    refetchInterval: 15_000,
+  });
+}
+
+export function useTemplate(height: number) {
+  return useBlockchainQuery<TemplateTransaction[]>({
+    queryKey: ['template', { height }],
+    queryFn: (client) => client.getTemplate(height),
+    staleTime: 10_000,
+    refetchInterval: 15_000,
+    retry: false,
+  });
+}
+
+export function useBlockTransactionDetails(hash: string, options?: { enabled?: boolean }) {
+  return useBlockchainQuery<TemplateTransaction[]>({
+    queryKey: ['block', hash, 'txs', 'details'],
+    queryFn: (client) => client.getBlockTransactionDetails({ chain: 'hash', id: hash }),
+    enabled: options?.enabled,
+    staleTime: Infinity,
+  });
+}
+
+export function useTemplateTransactionHashes(height: number) {
+  return useBlockchainQuery<string[]>({
+    queryKey: ['template', { height }, 'txs'],
+    queryFn: (client) => client.getTemplateTransactionHashes(height),
+    staleTime: 10_000,
+    refetchInterval: 15_000,
+    retry: false,
   });
 }
 

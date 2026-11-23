@@ -214,6 +214,11 @@ protected:
 
     void handle_get_template(const code& ec, interface::template_,
         uint8_t version, uint8_t media, uint32_t height) NOEXCEPT;
+    void handle_get_template_txs(const code& ec, interface::template_txs,
+        uint8_t version, uint8_t media, uint32_t height) NOEXCEPT;
+    void handle_get_template_txs_details(const code& ec,
+        interface::template_txs_details, uint8_t version, uint8_t media,
+        uint32_t height) NOEXCEPT;
     void handle_get_fees(const code& ec, interface::fees,
         uint8_t version, uint8_t media) NOEXCEPT;
 
@@ -280,12 +285,20 @@ private:
     void complete_get_address_balance(const code& ec, uint8_t media,
         const uint64_t balance, const gate_t::ptr& gate) NOEXCEPT;
 
+    enum class template_view : uint8_t { summary, txs, details };
+    void get_template_view(uint32_t height, template_view view,
+        uint8_t media) NOEXCEPT;
     void handle_template(const code& ec,
         const node::block_template::cptr& held, uint32_t height,
-        const gate_t::ptr& gate) NOEXCEPT;
+        template_view view, uint8_t media, const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_template(const code& ec,
         const node::block_template::cptr& held, uint32_t height,
-        const gate_t::ptr& gate) NOEXCEPT;
+        template_view view, uint8_t media, const gate_t::ptr& gate) NOEXCEPT;
+    void send_template_summary(const node::block_template& held) NOEXCEPT;
+    void send_template_txs(const node::block_template& held,
+        uint8_t media) NOEXCEPT;
+    void send_template_txs_details(
+        const node::block_template& held) NOEXCEPT;
 
     void handle_fees(const code& ec, const database::fee_rates& rates,
         const gate_t::ptr& gate) NOEXCEPT;

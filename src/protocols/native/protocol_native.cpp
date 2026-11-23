@@ -103,6 +103,8 @@ void protocol_native::start() NOEXCEPT
 
     // Fee methods.
     SUBSCRIBE_NATIVE(handle_get_template, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_template_txs, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_template_txs_details, _1, _2, _3, _4, _5);
     SUBSCRIBE_NATIVE(handle_get_fees, _1, _2, _3, _4);
     protocol_html::start();
 }

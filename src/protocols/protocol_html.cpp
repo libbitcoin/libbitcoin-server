@@ -262,11 +262,12 @@ void protocol_html::notify_empty(const request& request) NOEXCEPT
 // Utilities.
 // ----------------------------------------------------------------------------
 
+// The query of the target is not of its path.
 std::filesystem::path protocol_html::to_path(
     const std::string& target) const NOEXCEPT
 {
-    return system::to_path(target == "/" ? target + options_.default_ :
-        target);
+    const auto path = target.substr(zero, target.find('?'));
+    return system::to_path(path == "/" ? path + options_.default_ : path);
 }
 
 std::filesystem::path protocol_html::to_local_path(

@@ -10,6 +10,7 @@ import {
   useTransactionOutputScriptHex,
   useTransactionOutputSpends,
 } from '@/lib/hooks/useBlockchainData';
+import { errorStatus } from '@/lib/api/errors';
 import { useNow } from '@/lib/hooks/useNow';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
 import { scriptHashFromAddress } from '@/lib/api/providers/libbitcoin-mapper';
@@ -70,6 +71,7 @@ export function TransactionPage() {
     error: detailError,
   } = useTransaction(identifier);
   const tx = detailTx ?? headerTx;
+  const pruned = detailIsError && errorStatus(detailError) === 404;
   const outputIndices = useMemo(
     () => tx?.outputs.map((output) => output.index) ?? [],
     [tx?.outputs]
@@ -84,8 +86,8 @@ export function TransactionPage() {
     targetKind &&
     (targetKind === 'input' ? tx.inputs : tx.outputs).some((item) => item.index === targetIndex)
   );
-  const hasError = headerIsError || detailIsError;
-  const error = (detailIsError ? detailError : headerError) ?? null;
+  const hasError = headerIsError || (detailIsError && !pruned);
+  const error = (headerIsError ? headerError : detailError) ?? null;
   const [expandedInputs, setExpandedInputs] = useState<Record<string, boolean | undefined>>({});
   const [expandedOutputs, setExpandedOutputs] = useState<Record<string, boolean | undefined>>({});
   usePageTitle(identifier ? `Tx ${formatHash(identifier, 8)}` : 'Transaction');
@@ -211,12 +213,29 @@ export function TransactionPage() {
 
       <section className="border-accent/30 bg-surface/80 grid gap-4 rounded-xl border p-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
         <InfoItem label="Confirmations" value={confirmations ?? '—'} />
-        <InfoItem label="Block height" value={tx?.blockHeight ?? '—'} />
+        <InfoItem
+          label="Block height"
+          value={
+            tx?.blockHash && typeof tx.blockHeight === 'number' ? (
+              <Link
+                to={blockByHashPath(tx.blockHash)}
+                className="text-accent hover:text-accentSecondary"
+              >
+                {formatNumber(tx.blockHeight, { maximumFractionDigits: 0 })}
+              </Link>
+            ) : (
+              '—'
+            )
+          }
+        />
         <InfoItem
           label="Block hash"
           value={
             tx?.blockHash ? (
-              <Link to={blockByHashPath(tx.blockHash)}>
+              <Link
+                to={blockByHashPath(tx.blockHash)}
+                className="text-accent hover:text-accentSecondary"
+              >
                 <HashText value={tx.blockHash} />
               </Link>
             ) : (
@@ -253,13 +272,16 @@ export function TransactionPage() {
             <h2 className="text-accent text-sm font-semibold tracking-wide uppercase">Inputs</h2>
           </header>
           <div className="divide-accentSecondary/30 divide-y">
-            {!tx && (headerLoading || detailLoading) && (
+            {!detailTx && detailLoading && (
               <p className="text-textMuted px-4 py-4 text-sm">Loading inputs…</p>
             )}
-            {tx && tx.inputs.length === 0 && (
+            {pruned && (
+              <p className="text-textMuted px-4 py-4 text-sm">Inputs are pruned at this height.</p>
+            )}
+            {detailTx && detailTx.inputs.length === 0 && (
               <p className="text-textMuted px-4 py-4 text-sm">No inputs (coinbase transaction)</p>
             )}
-            {tx?.inputs.map((input) => {
+            {detailTx?.inputs.map((input) => {
               const key = inputKey(input);
               return (
                 <TransactionInputRow

@@ -576,7 +576,7 @@ def template_status(native_config, height: int) -> int:
 
 def template_key_sets(native_config, height: int) -> set:
     """The distinct key sets of the elements of the template at height."""
-    url = f"{native_config['base_url']}/template/{height}?format=json"
+    url = f"{native_config['base_url']}/template/{height}/txs/details?format=json"
     response = requests.get(url, timeout=TestConfig.DEFAULT_HTTP_TIMEOUT)
     response.raise_for_status()
     return {frozenset(element) for element in response.json()}
@@ -602,3 +602,17 @@ def test_template_text_not_acceptable(native_config):
 def test_template_next_elements(native_config):
     """Test /v1/template/{height} of the next block has tx details elements"""
     assert template_key_sets(native_config, confirmed_top(native_config) + 1) <= {frozenset(ReferenceData.TX_DETAILS_KEYS)}
+
+
+def template_summary_keys(native_config, height: int) -> set:
+    """The keys of the summary of the template at height."""
+    url = f"{native_config['base_url']}/template/{height}?format=json"
+    response = requests.get(url, timeout=TestConfig.DEFAULT_HTTP_TIMEOUT)
+    response.raise_for_status()
+    return set(response.json())
+
+
+@pytest.mark.requires_pool
+def test_template_next_summary(native_config):
+    """Test /v1/template/{height} of the next block is its summary"""
+    assert template_summary_keys(native_config, confirmed_top(native_config) + 1) == {"height", "count", "virtual", "weight", "fees", "clusters"}

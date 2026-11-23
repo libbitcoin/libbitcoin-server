@@ -212,7 +212,6 @@ void protocol_native::do_transaction(node::transaction_t link,
     }
 }
 
-// Only the template of the next block is held.
 void protocol_native::handle_get_template(const code& ec,
     interface::template_, uint8_t, uint8_t media, uint32_t height) NOEXCEPT
 {
@@ -225,25 +224,58 @@ void protocol_native::handle_get_template(const code& ec,
         return;
     }
 
+    get_template_view(height, template_view::summary, media);
+}
+
+void protocol_native::handle_get_template_txs(const code& ec,
+    interface::template_txs, uint8_t, uint8_t media, uint32_t height) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    get_template_view(height, template_view::txs, media);
+}
+
+void protocol_native::handle_get_template_txs_details(const code& ec,
+    interface::template_txs_details, uint8_t, uint8_t media,
+    uint32_t height) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (media != json)
+    {
+        send_not_acceptable();
+        return;
+    }
+
+    get_template_view(height, template_view::details, media);
+}
+
+// private
+// Only the template of the next block is held.
+void protocol_native::get_template_view(uint32_t height, template_view view,
+    uint8_t media) NOEXCEPT
+{
     if (add1(archive().get_top_confirmed()) != height)
     {
         send_not_found();
         return;
     }
 
-    get_template(BIND(handle_template, _1, _2, height, gate()));
+    get_template(BIND(handle_template, _1, _2, height, view, media, gate()));
 }
 
 void protocol_native::handle_template(const code& ec,
     const node::block_template::cptr& held, uint32_t height,
-    const gate_t::ptr& gate) NOEXCEPT
+    template_view view, uint8_t media, const gate_t::ptr& gate) NOEXCEPT
 {
-    POST(complete_get_template, ec, held, height, gate);
+    POST(complete_get_template, ec, held, height, view, media, gate);
 }
 
 void protocol_native::complete_get_template(const code& ec,
     const node::block_template::cptr& held, uint32_t height,
-    const gate_t::ptr& gate) NOEXCEPT
+    template_view view, uint8_t media, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -270,15 +302,109 @@ void protocol_native::complete_get_template(const code& ec,
     if (held->context.height != height)
     {
         if (add1(archive().get_top_confirmed()) == height)
-            get_template(BIND(handle_template, _1, _2, height, gate));
+            get_template(BIND(handle_template, _1, _2, height, view, media,
+                gate));
         else
             send_not_found();
 
         return;
     }
 
+    switch (view)
+    {
+        case template_view::summary:
+            send_template_summary(*held);
+            return;
+        case template_view::txs:
+            send_template_txs(*held, media);
+            return;
+        case template_view::details:
+            send_template_txs_details(*held);
+            return;
+    }
+}
+
+void protocol_native::send_template_summary(
+    const node::block_template& held) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    const auto& query = archive();
+    size_t nominal{}, maximal{};
+    for (const auto& link: held.links)
+    {
+        size_t light{}, heavy{};
+        if (!query.get_tx_sizes(light, heavy, link))
+        {
+            send_internal_server_error(database::error::integrity);
+            return;
+        }
+
+        nominal = ceilinged_add(nominal, light);
+        maximal = ceilinged_add(maximal, heavy);
+    }
+
+    auto roots = to_roots(held.txs);
+    std::vector<bool> labeled(roots.size(), false);
+    size_t clusters{};
+    for (size_t index{}; index < roots.size(); ++index)
+    {
+        const auto root = to_root(roots, index);
+        if (!labeled.at(root))
+        {
+            labeled.at(root) = true;
+            ++clusters;
+        }
+    }
+
+    send_json(system::json::object
+    {
+        { "height", held.context.height },
+        { "count", held.links.size() },
+        { "virtual", chain::virtual_size(nominal, maximal) },
+        { "weight", chain::weighted_size(nominal, maximal) },
+        { "fees", held.fees },
+        { "clusters", clusters }
+    });
+}
+
+void protocol_native::send_template_txs(const node::block_template& held,
+    uint8_t media) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    hashes txids{};
+    txids.reserve(held.txs.size());
+    for (const auto& tx: held.txs)
+        txids.push_back(tx.txid);
+
+    const auto size = txids.size() * hash_size;
+    const auto bytes = pointer_cast<const uint8_t>(txids.data());
+    switch (media)
+    {
+        case data:
+            send_chunk(to_chunk({ bytes, std::next(bytes, size) }));
+            return;
+        case text:
+            send_text(encode_base16({ bytes, std::next(bytes, size) }));
+            return;
+        case json:
+        {
+            system::json::array out(txids.size());
+            std::ranges::transform(txids, out.begin(),
+                [](const auto& hash) { return encode_hash(hash); });
+            send_json(std::move(out));
+            return;
+        }
+    }
+
+    send_not_acceptable();
+}
+
+void protocol_native::send_template_txs_details(
+    const node::block_template& held) NOEXCEPT
+{
+    BC_ASSERT(stranded());
     system::json::array out{};
-    if (!to_tx_details(out, held->links, to_roots(held->txs)))
+    if (!to_tx_details(out, held.links, to_roots(held.txs)))
     {
         send_internal_server_error(database::error::integrity);
         return;
