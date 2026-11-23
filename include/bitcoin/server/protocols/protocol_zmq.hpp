@@ -78,7 +78,7 @@ protected:
     bool handle_chase(const code& ec, node::event_value value) NOEXCEPT;
 
     /// Handlers (the method is native, its first parameter a shared_ptr).
-    bool handle_subscribe(const code& ec, const system::chunk_cptr& prefix,
+    void handle_subscribe(const code& ec, const system::chunk_cptr& prefix,
         bool cancel) NOEXCEPT;
 
     /// Broadcast handlers (stranded).

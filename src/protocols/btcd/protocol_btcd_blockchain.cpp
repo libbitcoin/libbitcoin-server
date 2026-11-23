@@ -102,11 +102,11 @@ bool protocol_btcd_blockchain::mempool_information(json::object& out,
     return true;
 }
 
-bool protocol_btcd_blockchain::handle_get_block_hash(const code& ec,
+void protocol_btcd_blockchain::handle_get_block_hash(const code& ec,
     rpc_interface::get_block_hash, double height) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     size_t block_height{};
@@ -118,11 +118,10 @@ bool protocol_btcd_blockchain::handle_get_block_hash(const code& ec,
     {
         send_error_message(error::btcd::misc_error,
             "Block number out of range");
-        return true;
+        return;
     }
 
     send_result(encode_hash(query.get_header_key(link)));
-    return true;
 }
 
 BC_POP_WARNING()

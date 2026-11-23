@@ -90,7 +90,7 @@ protected:
     void handle_complete(const code& ec, const code& reason) NOEXCEPT override;
 
     /// Handlers.
-    bool handle_negotiate_version(const code& ec,
+    void handle_negotiate_version(const code& ec,
         rpc_interface::negotiate_version,
         const std::optional<double>& minimum,
         const std::optional<double>& maximum) NOEXCEPT;

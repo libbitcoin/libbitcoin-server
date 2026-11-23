@@ -54,7 +54,7 @@ public:
 
 protected:
     /// Handlers.
-    bool handle_get_zmq_notifications(const code& ec,
+    void handle_get_zmq_notifications(const code& ec,
         rpc_interface::get_zmq_notifications) NOEXCEPT;
 };
 

@@ -65,12 +65,12 @@ void protocol_bitcoind_mining::start() NOEXCEPT
 // Mining methods.
 // ----------------------------------------------------------------------------
 
-bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
+void protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     rpc_interface::get_network_hash_ps, double nblocks,
     double height) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto top = query.get_top_confirmed();
@@ -84,7 +84,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     else if (!to_integer(target, height))
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
     else
     {
@@ -100,14 +100,14 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     else if (!to_integer(window, nblocks))
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     window = std::min(window, target);
     if (is_zero(window))
     {
         send_result(to64(zero));
-        return true;
+        return;
     }
 
     // The pinned ancestry makes the window walk reorg-stable.
@@ -115,7 +115,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     if (!query.get_ancestry(branch, query.to_confirmed(target), add1(window)))
     {
         send_error(error::bitcoind::internal_error);
-        return true;
+        return;
     }
 
     // The window timespan is bounded by its observed timestamps.
@@ -127,7 +127,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
         if (!header)
         {
             send_error(error::bitcoind::internal_error);
-            return true;
+            return;
         }
 
         minimum = std::min(minimum, header->timestamp());
@@ -137,7 +137,7 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
     if (minimum == maximum)
     {
         send_result(to64(zero));
-        return true;
+        return;
     }
 
     uint256_t start_work{}, end_work{};
@@ -145,22 +145,20 @@ bool protocol_bitcoind_mining::handle_get_network_hash_ps(const code& ec,
         !query.get_branch_work(end_work, branch.front()))
     {
         send_error(error::bitcoind::internal_error);
-        return true;
+        return;
     }
 
     const auto work = (end_work - start_work).convert_to<double>();
     send_result(work / (maximum - minimum));
-    return true;
 }
 
-bool protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
+void protocol_bitcoind_mining::handle_get_mining_info(const code& ec,
     rpc_interface::get_mining_info) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     get_confirmable_txs(BIND(handle_mining_info, _1, _2, gate()));
-    return true;
 }
 
 void protocol_bitcoind_mining::handle_mining_info(const code& ec,
@@ -238,18 +236,18 @@ void protocol_bitcoind_mining::do_mining_info(const code& ec,
     });
 }
 
-bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
+void protocol_bitcoind_mining::handle_submit_block(const code& ec,
     rpc_interface::submit_block, const std::string& hexdata,
     const std::string&) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     data_chunk data{};
     if (!decode_base16(data, hexdata))
     {
         send_error(error::bitcoind::deserialization_error);
-        return true;
+        return;
     }
 
     const auto header = emplace_shared<const chain::header>(data);
@@ -259,11 +257,10 @@ bool protocol_bitcoind_mining::handle_submit_block(const code& ec,
     if (!header->is_valid() || !block->is_valid())
     {
         send_error(error::bitcoind::deserialization_error);
-        return true;
+        return;
     }
 
     submit_block(header, block, gate());
-    return true;
 }
 
 // bip22: null when accepted, otherwise duplicate, inconclusive or reject token.
@@ -318,34 +315,33 @@ void protocol_bitcoind_mining::handle_submitted(submission outcome,
 }
 
 // The response defers to organize completion (see dispatch).
-bool protocol_bitcoind_mining::handle_submit_header(const code& ec,
+void protocol_bitcoind_mining::handle_submit_header(const code& ec,
     rpc_interface::submit_header, const std::string& hexdata) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     data_chunk data{};
     if (!decode_base16(data, hexdata))
     {
         send_error(error::bitcoind::deserialization_error);
-        return true;
+        return;
     }
 
     const auto header = emplace_shared<chain::header>(data);
     if (!header->is_valid())
     {
         send_error(error::bitcoind::deserialization_error);
-        return true;
+        return;
     }
 
     if (!archive().to_header(header->hash()).is_terminal())
     {
         send_result(null_t{});
-        return true;
+        return;
     }
 
     organize(header, BIND(handle_organize_header, _1, _2, gate()));
-    return true;
 }
 
 void protocol_bitcoind_mining::handle_organize_header(const code& ec,
@@ -370,12 +366,12 @@ void protocol_bitcoind_mining::do_submit_header(const code& ec,
 
 // bip22: template mode only (not bip23 proposals), without long polling.
 // bip145: client must declare segwit rule.
-bool protocol_bitcoind_mining::handle_get_block_template(const code& ec,
+void protocol_bitcoind_mining::handle_get_block_template(const code& ec,
     rpc_interface::get_block_template,
     const object_t& template_request) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto mode = template_request.find("mode");
     if (mode != template_request.end())
@@ -384,7 +380,7 @@ bool protocol_bitcoind_mining::handle_get_block_template(const code& ec,
         if (is_null(name) || *name != "template")
         {
             send_error(error::bitcoind::invalid_parameter);
-            return true;
+            return;
         }
     }
 
@@ -406,11 +402,10 @@ bool protocol_bitcoind_mining::handle_get_block_template(const code& ec,
     if (!segwit)
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     get_template(BIND(handle_template, _1, _2, gate()));
-    return true;
 }
 
 void protocol_bitcoind_mining::handle_template(const code& ec,
@@ -583,20 +578,18 @@ void protocol_bitcoind_mining::finish_template(object_t&) const NOEXCEPT
 {
 }
 
-bool protocol_bitcoind_mining::handle_get_prioritised_transactions(
+void protocol_bitcoind_mining::handle_get_prioritised_transactions(
     const code& ec, rpc_interface::get_prioritised_transactions) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::client_mempool_disabled);
-    return true;
 }
 
-bool protocol_bitcoind_mining::handle_prioritise_transaction(const code& ec,
+void protocol_bitcoind_mining::handle_prioritise_transaction(const code& ec,
     rpc_interface::prioritise_transaction) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::client_mempool_disabled);
-    return true;
 }
 
 BC_POP_WARNING()

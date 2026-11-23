@@ -54,43 +54,43 @@ public:
 
 protected:
     /// Handlers.
-    bool handle_add_connection(const code& ec,
+    void handle_add_connection(const code& ec,
         rpc_interface::add_connection) NOEXCEPT;
-    bool handle_add_peer_address(const code& ec,
+    void handle_add_peer_address(const code& ec,
         rpc_interface::add_peer_address) NOEXCEPT;
-    bool handle_echo(const code& ec,
+    void handle_echo(const code& ec,
         rpc_interface::echo) NOEXCEPT;
-    bool handle_echo_ipc(const code& ec,
+    void handle_echo_ipc(const code& ec,
         rpc_interface::echo_ipc) NOEXCEPT;
-    bool handle_echo_json(const code& ec,
+    void handle_echo_json(const code& ec,
         rpc_interface::echo_json) NOEXCEPT;
-    bool handle_estimate_raw_fee(const code& ec,
+    void handle_estimate_raw_fee(const code& ec,
         rpc_interface::estimate_raw_fee) NOEXCEPT;
-    bool handle_generate(const code& ec,
+    void handle_generate(const code& ec,
         rpc_interface::generate) NOEXCEPT;
-    bool handle_generate_block(const code& ec,
+    void handle_generate_block(const code& ec,
         rpc_interface::generate_block) NOEXCEPT;
-    bool handle_generate_to_address(const code& ec,
+    void handle_generate_to_address(const code& ec,
         rpc_interface::generate_to_address) NOEXCEPT;
-    bool handle_generate_to_descriptor(const code& ec,
+    void handle_generate_to_descriptor(const code& ec,
         rpc_interface::generate_to_descriptor) NOEXCEPT;
-    bool handle_get_mempool_fee_rate_diagram(const code& ec,
+    void handle_get_mempool_fee_rate_diagram(const code& ec,
         rpc_interface::get_mempool_fee_rate_diagram) NOEXCEPT;
-    bool handle_get_orphan_txs(const code& ec,
+    void handle_get_orphan_txs(const code& ec,
         rpc_interface::get_orphan_txs) NOEXCEPT;
-    bool handle_get_raw_addrman(const code& ec,
+    void handle_get_raw_addrman(const code& ec,
         rpc_interface::get_raw_addrman) NOEXCEPT;
-    bool handle_invalidate_block(const code& ec,
+    void handle_invalidate_block(const code& ec,
         rpc_interface::invalidate_block) NOEXCEPT;
-    bool handle_mock_scheduler(const code& ec,
+    void handle_mock_scheduler(const code& ec,
         rpc_interface::mock_scheduler) NOEXCEPT;
-    bool handle_reconsider_block(const code& ec,
+    void handle_reconsider_block(const code& ec,
         rpc_interface::reconsider_block) NOEXCEPT;
-    bool handle_send_msg_to_peer(const code& ec,
+    void handle_send_msg_to_peer(const code& ec,
         rpc_interface::send_msg_to_peer) NOEXCEPT;
-    bool handle_set_mock_time(const code& ec,
+    void handle_set_mock_time(const code& ec,
         rpc_interface::set_mock_time) NOEXCEPT;
-    bool handle_sync_with_validation_interface_queue(const code& ec,
+    void handle_sync_with_validation_interface_queue(const code& ec,
         rpc_interface::sync_with_validation_interface_queue) NOEXCEPT;
 };
 

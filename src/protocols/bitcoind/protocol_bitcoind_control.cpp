@@ -96,16 +96,16 @@ void protocol_bitcoind_control::send_help_unknown(
     send_result("help: unknown command: " + command);
 }
 
-bool protocol_bitcoind_control::handle_help(const code& ec, rpc_interface::help,
+void protocol_bitcoind_control::handle_help(const code& ec, rpc_interface::help,
     const std::string& command) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (command.empty())
     {
         send_help_list();
-        return true;
+        return;
     }
 
     auto line = usage(command);
@@ -113,29 +113,26 @@ bool protocol_bitcoind_control::handle_help(const code& ec, rpc_interface::help,
         send_help_unknown(command);
     else
         send_result(std::move(line));
-
-    return true;
 }
 
-bool protocol_bitcoind_control::handle_stop(const code& ec,
+void protocol_bitcoind_control::handle_stop(const code& ec,
     rpc_interface::stop) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_control::handle_get_memory_info(const code& ec,
+void protocol_bitcoind_control::handle_get_memory_info(const code& ec,
     rpc_interface::get_memory_info, const std::string& mode) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     // mallocinfo is a glibc-specific malloc dump.
     if (mode != "stats")
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     // Nothing is locked and the arena is empty, not unknown.
@@ -153,7 +150,6 @@ bool protocol_bitcoind_control::handle_get_memory_info(const code& ec,
     {
         { "locked", std::move(locked) }
     });
-    return true;
 }
 
 template <typename Method>
@@ -226,53 +222,50 @@ void protocol_bitcoind_control::send_openrpc() NOEXCEPT
     });
 }
 
-bool protocol_bitcoind_control::handle_get_openrpc_info(const code& ec,
+void protocol_bitcoind_control::handle_get_openrpc_info(const code& ec,
     rpc_interface::get_openrpc_info, bool) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     send_openrpc();
-    return true;
 }
 
-bool protocol_bitcoind_control::handle_rpc_discover(const code& ec,
+void protocol_bitcoind_control::handle_rpc_discover(const code& ec,
     rpc_interface::rpc_discover, bool) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     send_openrpc();
-    return true;
 }
 
 // Dispatch is synchronous on channel strand, so there is no set of in-flight
 // commands to report (bitcoind lists its own call here).
-bool protocol_bitcoind_control::handle_get_rpc_info(const code& ec,
+void protocol_bitcoind_control::handle_get_rpc_info(const code& ec,
     rpc_interface::get_rpc_info) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     send_result(object_t
     {
         { "active_commands", array_t{} },
         { "logpath", from_path(server_config().log.log_file1()) }
     });
-    return true;
 }
 
-bool protocol_bitcoind_control::handle_logging(const code& ec,
+void protocol_bitcoind_control::handle_logging(const code& ec,
     rpc_interface::logging, const array_t& include,
     const array_t& exclude) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (!include.empty() || !exclude.empty())
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     using namespace network::levels;
@@ -290,18 +283,16 @@ bool protocol_bitcoind_control::handle_logging(const code& ec,
         { "objects", objects_defined && out.objects },
         { "verbose", verbose_defined && out.verbose }
     });
-    return true;
 }
 
-bool protocol_bitcoind_control::handle_uptime(const code& ec,
+void protocol_bitcoind_control::handle_uptime(const code& ec,
     rpc_interface::uptime) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     send_result(possible_wide_cast<uint64_t>(floored_subtract(
         to_unsigned(zulu_time()), to_unsigned(start_time()))));
-    return true;
 }
 
 BC_POP_WARNING()

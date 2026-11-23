@@ -95,11 +95,11 @@ static array_t to_service_names(uint64_t services) NOEXCEPT
     return out;
 }
 
-bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
+void protocol_bitcoind_network::handle_get_network_info(const code& ec,
     rpc_interface::get_network_info) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto version = interface_version();
 
@@ -172,52 +172,48 @@ bool protocol_bitcoind_network::handle_get_network_info(const code& ec,
         { "localaddresses", std::move(locals) },
         { "warnings", array_t{} }
     });
-    return true;
 }
 
-bool protocol_bitcoind_network::handle_clear_banned(const code& ec,
+void protocol_bitcoind_network::handle_clear_banned(const code& ec,
     rpc_interface::clear_banned) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::database_error);
-    return true;
 }
 
-bool protocol_bitcoind_network::handle_list_banned(const code& ec,
+void protocol_bitcoind_network::handle_list_banned(const code& ec,
     rpc_interface::list_banned) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::database_error);
-    return true;
 }
 
-bool protocol_bitcoind_network::handle_set_ban(const code& ec,
+void protocol_bitcoind_network::handle_set_ban(const code& ec,
     rpc_interface::set_ban) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::database_error);
-    return true;
 }
 
 // The transport is determined by the outbound p2ps configuration.
-bool protocol_bitcoind_network::handle_add_node(const code& ec,
+void protocol_bitcoind_network::handle_add_node(const code& ec,
     rpc_interface::add_node, const std::string& node,
     const std::string& command, bool v2transport) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     // bitcoind reports v2transport as invalid when not enabled.
     if (v2transport)
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     if (command != "add" && command != "onetry" && command != "remove")
     {
         send_error(error::bitcoind::misc_error);
-        return true;
+        return;
     }
 
     // The address and endpoint parses throw on malformed input.
@@ -234,7 +230,7 @@ bool protocol_bitcoind_network::handle_add_node(const code& ec,
                 network::error::channel_dropped, zero,
                 network::config::endpoint{ node }));
 
-            return true;
+            return;
         }
 
         // A one try connection is not retained, so is not reconnected.
@@ -246,26 +242,25 @@ bool protocol_bitcoind_network::handle_add_node(const code& ec,
     catch (const std::exception&)
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     send_result(null_t{});
-    return true;
 }
 
 // Manual channels reconnect, as the stop code is not a drop.
-bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
+void protocol_bitcoind_network::handle_disconnect_node(const code& ec,
     rpc_interface::disconnect_node, const std::optional<std::string>& address,
     const std::optional<double>& nodeid) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     // bitcoind requires exactly one of the two identifying parameters.
     if (address.has_value() == nodeid.has_value())
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     uint64_t identifier{};
@@ -277,7 +272,7 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
         if (nodeid && !to_integer(identifier, nodeid.value()))
         {
             send_error(error::bitcoind::invalid_parameter);
-            return true;
+            return;
         }
 
         if (address)
@@ -286,7 +281,7 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
     catch (const std::exception&)
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     const auto complete = emplace_shared<terminator::race>(
@@ -295,8 +290,6 @@ bool protocol_bitcoind_network::handle_disconnect_node(const code& ec,
 
     BROADCAST(terminator, to_shared<terminator>(complete,
         network::error::channel_stopped, identifier, peer));
-
-    return true;
 }
 
 void protocol_bitcoind_network::handle_stopped(const code& ec,
@@ -329,21 +322,20 @@ void protocol_bitcoind_network::finish_peer(object_t&,
 {
 }
 
-bool protocol_bitcoind_network::handle_export_asmap(const code& ec,
+void protocol_bitcoind_network::handle_export_asmap(const code& ec,
     rpc_interface::export_asmap, const std::string&) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::misc_error);
-    return true;
 }
 
 // Manual nodes are not retained, so only connected nodes are reported.
-bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
+void protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
     rpc_interface::get_added_node_info,
     const std::optional<std::string>& node) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto captured = to_shared<diagnostics::rows>();
     const auto complete = emplace_shared<diagnostics::race>(
@@ -352,8 +344,6 @@ bool protocol_bitcoind_network::handle_get_added_node_info(const code& ec,
 
     BROADCAST(diagnostics, to_shared<diagnostics>(complete,
         to_collector(captured), diagnostics::target::manual));
-
-    return true;
 }
 
 void protocol_bitcoind_network::handle_captured_manual(const code&,
@@ -431,11 +421,11 @@ static object_t address_bucket(size_t count) NOEXCEPT
     };
 }
 
-bool protocol_bitcoind_network::handle_get_addrman_info(const code& ec,
+void protocol_bitcoind_network::handle_get_addrman_info(const code& ec,
     rpc_interface::get_addrman_info) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     using namespace messages::peer;
     const auto counts = address_counts();
@@ -454,26 +444,24 @@ bool protocol_bitcoind_network::handle_get_addrman_info(const code& ec,
         { "cjdns", address_bucket(cjdns) },
         { "all_networks", address_bucket(ipv4 + ipv6 + onion + i2p + cjdns) }
     });
-    return true;
 }
 
-bool protocol_bitcoind_network::handle_get_node_addresses(const code& ec,
+void protocol_bitcoind_network::handle_get_node_addresses(const code& ec,
     rpc_interface::get_node_addresses, double count,
     const std::string& network) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     size_t limit{};
     if (!to_integer(limit, count) ||
         (!network.empty() && !contains(network_names, network)))
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     dump_addresses(BIND(handle_dump_nodes, _1, _2, limit, network, gate()));
-    return true;
 }
 
 void protocol_bitcoind_network::handle_dump_nodes(const code& ec,
@@ -525,21 +513,20 @@ void protocol_bitcoind_network::do_send_nodes(const code& ec,
 }
 
 // An injected ping would violate channel pong correlation (no-op).
-bool protocol_bitcoind_network::handle_ping(const code& ec,
+void protocol_bitcoind_network::handle_ping(const code& ec,
     rpc_interface::ping) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     send_result(null_t{});
-    return true;
 }
 
-bool protocol_bitcoind_network::handle_set_network_active(const code& ec,
+void protocol_bitcoind_network::handle_set_network_active(const code& ec,
     rpc_interface::set_network_active, bool state) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     auto active = false;
     if (state)
@@ -553,28 +540,25 @@ bool protocol_bitcoind_network::handle_set_network_active(const code& ec,
     }
 
     send_result(active);
-    return true;
 }
 
 // Peer channels only (client channels are not connections).
-bool protocol_bitcoind_network::handle_get_connection_count(const code& ec,
+void protocol_bitcoind_network::handle_get_connection_count(const code& ec,
     rpc_interface::get_connection_count) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     send_result(to64(channel_count()));
-    return true;
 }
 
-bool protocol_bitcoind_network::handle_get_net_totals(const code& ec,
+void protocol_bitcoind_network::handle_get_net_totals(const code& ec,
     rpc_interface::get_net_totals) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     capture_totals(BIND(do_send_net_totals, _1, _2, _3, gate()));
-    return true;
 }
 
 void protocol_bitcoind_network::do_send_net_totals(const code& ec,
@@ -665,11 +649,11 @@ static object_t to_message_bytes(const diagnostics::counters& counts) NOEXCEPT
 }
 
 // The round completes when the last captured channel releases the message.
-bool protocol_bitcoind_network::handle_get_peer_info(const code& ec,
+void protocol_bitcoind_network::handle_get_peer_info(const code& ec,
     rpc_interface::get_peer_info) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto captured = to_shared<diagnostics::rows>();
     const auto complete = emplace_shared<diagnostics::race>(
@@ -677,8 +661,6 @@ bool protocol_bitcoind_network::handle_get_peer_info(const code& ec,
 
     BROADCAST(diagnostics, to_shared<diagnostics>(complete,
         to_collector(captured), diagnostics::target::all));
-
-    return true;
 }
 
 void protocol_bitcoind_network::handle_captured(const code&,

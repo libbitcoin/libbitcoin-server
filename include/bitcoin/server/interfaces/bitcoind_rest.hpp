@@ -62,7 +62,7 @@ struct bitcoind_rest_methods
     };
 
     template <typename... Args>
-    using subscriber = network::unsubscriber<Args...>;
+    using subscriber = network::subscriber<Args...>;
 
     template <size_t Index>
     using at = method_at<methods, Index>;

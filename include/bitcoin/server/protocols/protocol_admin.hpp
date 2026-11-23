@@ -76,10 +76,10 @@ protected:
     /// Interface handlers.
     /// -----------------------------------------------------------------------
 
-    bool handle_get_log_subscribe(const code& ec,
+    void handle_get_log_subscribe(const code& ec,
         admin_interface::log_subscribe, uint8_t version,
         uint64_t filter) NOEXCEPT;
-    bool handle_get_event_subscribe(const code& ec,
+    void handle_get_event_subscribe(const code& ec,
         admin_interface::event_subscribe, uint8_t version,
         uint64_t filter) NOEXCEPT;
 

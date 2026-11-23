@@ -69,78 +69,78 @@ protected:
     code to_parameter_error(const code& ec) const NOEXCEPT override;
 
     /// Handlers (administrative).
-    bool handle_authenticate(const code& ec, btcd_interface::authenticate,
+    void handle_authenticate(const code& ec, btcd_interface::authenticate,
         const std::string& username, const std::string& passphrase) NOEXCEPT;
-    bool handle_session(const code& ec, btcd_interface::session) NOEXCEPT;
+    void handle_session(const code& ec, btcd_interface::session) NOEXCEPT;
 
     /// Handlers (getters).
-    bool handle_estimate_fee(const code& ec, btcd_interface::estimate_fee,
+    void handle_estimate_fee(const code& ec, btcd_interface::estimate_fee,
         double numblocks) NOEXCEPT;
-    bool handle_get_best_block(const code& ec,
+    void handle_get_best_block(const code& ec,
         btcd_interface::get_best_block) NOEXCEPT;
-    bool handle_get_block_chain_info(const code& ec,
+    void handle_get_block_chain_info(const code& ec,
         btcd_interface::get_block_chain_info) NOEXCEPT;
-    bool handle_get_cfilter(const code& ec, btcd_interface::get_cfilter,
+    void handle_get_cfilter(const code& ec, btcd_interface::get_cfilter,
         const std::string& hash, double filtertype) NOEXCEPT;
-    bool handle_get_cfilter_header(const code& ec,
+    void handle_get_cfilter_header(const code& ec,
         btcd_interface::get_cfilter_header, const std::string& hash,
         double filtertype) NOEXCEPT;
-    bool handle_get_current_net(const code& ec,
+    void handle_get_current_net(const code& ec,
         btcd_interface::get_current_net) NOEXCEPT;
-    bool handle_get_difficulty(const code& ec,
+    void handle_get_difficulty(const code& ec,
         btcd_interface::get_difficulty) NOEXCEPT;
-    bool handle_get_headers(const code& ec, btcd_interface::get_headers,
+    void handle_get_headers(const code& ec, btcd_interface::get_headers,
         const network::rpc::array_t& blocklocators,
         const std::string& hashstop) NOEXCEPT;
-    bool handle_get_info(const code& ec, btcd_interface::get_info) NOEXCEPT;
-    bool handle_get_net_totals(const code& ec,
+    void handle_get_info(const code& ec, btcd_interface::get_info) NOEXCEPT;
+    void handle_get_net_totals(const code& ec,
         btcd_interface::get_net_totals) NOEXCEPT;
     void do_send_net_totals(const code& ec, uint64_t sent,
         uint64_t received, const gate_t::ptr& gate) NOEXCEPT;
-    bool handle_node(const code& ec, btcd_interface::node,
+    void handle_node(const code& ec, btcd_interface::node,
         const std::string& subcmd, const std::string& target,
         const std::string& connectsubcmd) NOEXCEPT;
     void handle_stopped(const code& ec, const gate_t::ptr& gate) NOEXCEPT;
     void do_send_stopped(const code& ec, const gate_t::ptr& gate) NOEXCEPT;
-    bool handle_search_raw_transactions(const code& ec,
+    void handle_search_raw_transactions(const code& ec,
         btcd_interface::search_raw_transactions, const std::string& address,
         double verbose, double skip, double count, double prevouts,
         bool reverse, const network::rpc::array_t& filteraddrs) NOEXCEPT;
-    bool handle_version(const code& ec, btcd_interface::version) NOEXCEPT;
+    void handle_version(const code& ec, btcd_interface::version) NOEXCEPT;
 
     /// Handlers (subscription).
-    bool handle_notify_blocks(const code& ec,
+    void handle_notify_blocks(const code& ec,
         btcd_interface::notify_blocks) NOEXCEPT;
-    bool handle_stop_notify_blocks(const code& ec,
+    void handle_stop_notify_blocks(const code& ec,
         btcd_interface::stop_notify_blocks) NOEXCEPT;
-    bool handle_notify_new_transactions(const code& ec,
+    void handle_notify_new_transactions(const code& ec,
         btcd_interface::notify_new_transactions, bool verbose) NOEXCEPT;
-    bool handle_stop_notify_new_transactions(const code& ec,
+    void handle_stop_notify_new_transactions(const code& ec,
         btcd_interface::stop_notify_new_transactions) NOEXCEPT;
 
     /// Handlers (filters).
-    bool handle_load_tx_filter(const code& ec,
+    void handle_load_tx_filter(const code& ec,
         btcd_interface::load_tx_filter, bool reload,
         const std::optional<network::rpc::value_t>& addresses,
         const std::optional<network::rpc::value_t>& outpoints) NOEXCEPT;
-    bool handle_rescan_blocks(const code& ec,
+    void handle_rescan_blocks(const code& ec,
         btcd_interface::rescan_blocks,
         const std::optional<network::rpc::value_t>& blockhashes) NOEXCEPT;
 
     /// Handlers (deprecated).
-    bool handle_notify_received(const code& ec,
+    void handle_notify_received(const code& ec,
         btcd_interface::notify_received,
         const std::optional<network::rpc::value_t>& addresses) NOEXCEPT;
-    bool handle_stop_notify_received(const code& ec,
+    void handle_stop_notify_received(const code& ec,
         btcd_interface::stop_notify_received,
         const std::optional<network::rpc::value_t>& addresses) NOEXCEPT;
-    bool handle_notify_spent(const code& ec,
+    void handle_notify_spent(const code& ec,
         btcd_interface::notify_spent,
         const std::optional<network::rpc::value_t>& outpoints) NOEXCEPT;
-    bool handle_stop_notify_spent(const code& ec,
+    void handle_stop_notify_spent(const code& ec,
         btcd_interface::stop_notify_spent,
         const std::optional<network::rpc::value_t>& outpoints) NOEXCEPT;
-    bool handle_rescan(const code& ec, btcd_interface::rescan,
+    void handle_rescan(const code& ec, btcd_interface::rescan,
         const std::string& beginblock,
         const std::optional<network::rpc::value_t>& addresses,
         const std::optional<network::rpc::value_t>& outpoints,

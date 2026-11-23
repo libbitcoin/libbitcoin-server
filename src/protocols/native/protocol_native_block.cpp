@@ -32,75 +32,73 @@ using namespace network::messages::peer;
 BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-bool protocol_native::handle_get_top(const code& ec, interface::top,
+void protocol_native::handle_get_top(const code& ec, interface::top,
     uint8_t, uint8_t media) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     switch (media)
     {
         case data:
             send_chunk(to_tops());
-            return true;
+            return;
         case text:
             send_text(encode_base16(to_tops()));
-            return true;
+            return;
         case json:
             send_json(to_tops_json());
-            return true;
+            return;
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_top_subscribe(const code& ec,
+void protocol_native::handle_get_top_subscribe(const code& ec,
     interface::top_subscribe, uint8_t version, uint8_t media,
     bool stop) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto value = stop ? media_type::unknown : (media_type)media;
     top_subscribe_.store(value, std::memory_order_relaxed);
     if (stop)
     {
         send_empty();
-        return true;
+        return;
     }
 
     return handle_get_top(ec, {}, version, media);
 }
 
-bool protocol_native::handle_get_top_chain(const code& ec,
+void protocol_native::handle_get_top_chain(const code& ec,
     interface::top_chain, uint8_t, uint8_t media, bool candidate) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     switch (media)
     {
         case data:
             send_chunk(to_top(candidate));
-            return true;
+            return;
         case text:
             send_text(encode_base16(to_top(candidate)));
-            return true;
+            return;
         case json:
             send_json(to_top_json(candidate));
-            return true;
+            return;
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_top_height(const code& ec,
+void protocol_native::handle_get_top_height(const code& ec,
     interface::top_height, uint8_t, uint8_t media, bool candidate) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto height = possible_narrow_cast<uint32_t>(candidate ?
@@ -110,17 +108,16 @@ bool protocol_native::handle_get_top_height(const code& ec,
     {
         case data:
             send_chunk(to_chunk(to_little_endian(height)));
-            return true;
+            return;
         case text:
             send_text(encode_base16(to_little_endian(height)));
-            return true;
+            return;
         case json:
             send_json(height);
-            return true;
+            return;
     }
 
     send_not_found();
-    return true;
 }
 
 // notify
@@ -142,26 +139,26 @@ void protocol_native::do_top(media_type media) NOEXCEPT
     }
 }
 
-bool protocol_native::handle_get_block(const code& ec, interface::block,
+void protocol_native::handle_get_block(const code& ec, interface::block,
     uint8_t, uint8_t media, std::optional<hash_cptr> hash,
     std::optional<uint32_t> height, bool witness, bool candidate) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto link = to_header(height, hash, candidate);
     if (link.is_terminal() || query.is_pruned(link))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     size_t size{};
     if (!query.get_block_size(size, link, witness))
     {
         send_internal_server_error(database::error::integrity);
-        return true;
+        return;
     }
 
     switch (media)
@@ -173,7 +170,7 @@ bool protocol_native::handle_get_block(const code& ec, interface::block,
             {
                 return query.get_wire_block(out, link, witness, turbo);
             }, media_type::application_octet_stream);
-            return true;
+            return;
         }
         case text:
         {
@@ -183,7 +180,7 @@ bool protocol_native::handle_get_block(const code& ec, interface::block,
                 return query.get_wire_block<write::base16::fast>(out, link,
                     witness, turbo);
             }, media_type::text_plain);
-            return true;
+            return;
         }
         case json:
         {
@@ -191,27 +188,26 @@ bool protocol_native::handle_get_block(const code& ec, interface::block,
             if (!block)
             {
                 send_internal_server_error(database::error::integrity);
-                return true;
+                return;
             }
 
             auto model = value_from(block);
             inject(model.at("header"), height, link);
             send_json(std::move(model));
-            return true;
+            return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_block_header(const code& ec,
+void protocol_native::handle_get_block_header(const code& ec,
     interface::block_header, uint8_t, uint8_t media,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height,
     bool candidate) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto link = to_header(height, hash, candidate);
     if (const auto header = archive().get_header(link))
@@ -221,34 +217,33 @@ bool protocol_native::handle_get_block_header(const code& ec,
         {
             case data:
                 send_chunk(to_bin(*header, size));
-                return true;
+                return;
             case text:
                 send_text(to_hex(*header, size));
-                return true;
+                return;
             case json:
                 auto model = value_from(header);
                 inject(model, height, link);
                 send_json(std::move(model));
-                return true;
+                return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_block_header_context(const code& ec,
+void protocol_native::handle_get_block_header_context(const code& ec,
     interface::block_header_context, uint8_t, uint8_t media,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height,
     bool candidate) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     database::context context{};
@@ -257,7 +252,7 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
     if (!query.get_context(context, link))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     system::json::object object
@@ -274,7 +269,7 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
         if (!query.get_block_sizes(nominal, maximal, link))
         {
             send_internal_server_error(database::error::integrity);
-            return true;
+            return;
         }
 
         const auto bypass = query.is_bypass(link);
@@ -317,21 +312,20 @@ bool protocol_native::handle_get_block_header_context(const code& ec,
     };
 
     send_json(std::move(object));
-    return true;
 }
 
-bool protocol_native::handle_get_block_details(const code& ec,
+void protocol_native::handle_get_block_details(const code& ec,
     interface::block_details, uint8_t, uint8_t media,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height,
     bool candidate) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     const auto& query = archive();
@@ -341,7 +335,7 @@ bool protocol_native::handle_get_block_details(const code& ec,
     if (!query.is_associated(link))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     const auto count = query.get_tx_count(link);
@@ -360,7 +354,7 @@ bool protocol_native::handle_get_block_details(const code& ec,
         is_subtract_overflow(value, spend))
     {
         send_internal_server_error(database::error::integrity);
-        return true;
+        return;
     }
 
     const auto fees = floored_subtract(value, spend);
@@ -388,16 +382,15 @@ bool protocol_native::handle_get_block_details(const code& ec,
     };
 
     send_json(std::move(object));
-    return true;
 }
 
-bool protocol_native::handle_get_block_txs(const code& ec,
+void protocol_native::handle_get_block_txs(const code& ec,
     interface::block_txs, uint8_t, uint8_t media,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height,
     bool candidate) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto link = to_header(height, hash, candidate);
@@ -410,13 +403,13 @@ bool protocol_native::handle_get_block_txs(const code& ec,
             {
                 const auto bytes = pointer_cast<const uint8_t>(hashes.data());
                 send_chunk(to_chunk({ bytes, std::next(bytes, size) }));
-                return true;
+                return;
             }
             case text:
             {
                 const auto bytes = pointer_cast<const uint8_t>(hashes.data());
                 send_text(encode_base16({ bytes, std::next(bytes, size) }));
-                return true;
+                return;
             }
             case json:
             {
@@ -424,28 +417,27 @@ bool protocol_native::handle_get_block_txs(const code& ec,
                 std::ranges::transform(hashes, out.begin(),
                     [](const auto& hash) { return encode_hash(hash); });
                 send_json(out);
-                return true;
+                return;
             }
         }
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_block_filter(const code& ec,
+void protocol_native::handle_get_block_filter(const code& ec,
     interface::block_filter, uint8_t, uint8_t media, uint8_t type,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height,
     bool candidate) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     if (!query.filter_enabled() || type != client_filter::type_id::neutrino)
     {
         send_not_implemented();
-        return true;
+        return;
     }
 
     data_chunk filter{};
@@ -455,33 +447,32 @@ bool protocol_native::handle_get_block_filter(const code& ec,
         {
             case data:
                 send_chunk(std::move(filter));
-                return true;
+                return;
             case text:
                 send_text(encode_base16(filter));
-                return true;
+                return;
             case json:
                 send_json(value_from(encode_base16(filter)));
-                return true;
+                return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_block_filter_hash(const code& ec,
+void protocol_native::handle_get_block_filter_hash(const code& ec,
     interface::block_filter_hash, uint8_t, uint8_t media, uint8_t type,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height,
     bool candidate) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     if (!query.filter_enabled() || type != client_filter::type_id::neutrino)
     {
         send_not_implemented();
-        return true;
+        return;
     }
 
     hash_digest filter_hash{ hash_size };
@@ -491,33 +482,32 @@ bool protocol_native::handle_get_block_filter_hash(const code& ec,
         {
             case data:
                 send_chunk(to_chunk(filter_hash));
-                return true;
+                return;
             case text:
                 send_text(encode_base16(filter_hash));
-                return true;
+                return;
             case json:
                 send_json(value_from(encode_hash(filter_hash)));
-                return true;
+                return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_block_filter_header(const code& ec,
+void protocol_native::handle_get_block_filter_header(const code& ec,
     interface::block_filter_header, uint8_t, uint8_t media, uint8_t type,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height,
     bool candidate) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     if (!query.filter_enabled() || type != client_filter::type_id::neutrino)
     {
         send_not_implemented();
-        return true;
+        return;
     }
 
     hash_digest filter_head{ hash_size };
@@ -527,26 +517,25 @@ bool protocol_native::handle_get_block_filter_header(const code& ec,
         {
             case data:
                 send_chunk(to_chunk(filter_head));
-                return true;
+                return;
             case text:
                 send_text(encode_base16(filter_head));
-                return true;
+                return;
             case json:
                 send_json(value_from(encode_hash(filter_head)));
-                return true;
+                return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_block_tx(const code& ec, interface::block_tx,
+void protocol_native::handle_get_block_tx(const code& ec, interface::block_tx,
     uint8_t, uint8_t media, uint32_t position, std::optional<hash_cptr> hash,
     std::optional<uint32_t> height, bool witness, bool candidate) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto link = query.to_transaction(to_header(height, hash, candidate),
@@ -554,7 +543,7 @@ bool protocol_native::handle_get_block_tx(const code& ec, interface::block_tx,
     if (query.is_pruned(link))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     if (const auto tx = query.get_transaction(link, witness))
@@ -564,27 +553,26 @@ bool protocol_native::handle_get_block_tx(const code& ec, interface::block_tx,
         {
             case data:
                 send_chunk(to_bin(*tx, size, witness));
-                return true;
+                return;
             case text:
                 send_text(to_hex(*tx, size, witness));
-                return true;
+                return;
             case json:
                 send_json(value_from(tx));
-                return true;
+                return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_block_tx_input_script(const code& ec,
+void protocol_native::handle_get_block_tx_input_script(const code& ec,
     interface::block_tx_input_script, uint8_t, uint8_t media,
     uint32_t position, uint32_t index, std::optional<hash_cptr> hash,
     std::optional<uint32_t> height, bool candidate) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto link = query.to_transaction(to_header(height, hash, candidate),
@@ -592,7 +580,7 @@ bool protocol_native::handle_get_block_tx_input_script(const code& ec,
     if (query.is_pruned(link))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     if (const auto script = query.get_input_script(query.to_point(link, index)))
@@ -602,27 +590,26 @@ bool protocol_native::handle_get_block_tx_input_script(const code& ec,
         {
             case data:
                 send_chunk(to_bin(*script, size, false));
-                return true;
+                return;
             case text:
                 send_text(to_hex(*script, size, false));
-                return true;
+                return;
             case json:
                 send_json(value_from(script));
-                return true;
+                return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_block_tx_output_script(const code& ec,
+void protocol_native::handle_get_block_tx_output_script(const code& ec,
     interface::block_tx_output_script, uint8_t, uint8_t media,
     uint32_t position, uint32_t index, std::optional<hash_cptr> hash,
     std::optional<uint32_t> height, bool candidate) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto tx = query.to_transaction(to_header(height, hash, candidate),
@@ -635,32 +622,31 @@ bool protocol_native::handle_get_block_tx_output_script(const code& ec,
         {
             case data:
                 send_chunk(to_bin(*script, size, false));
-                return true;
+                return;
             case text:
                 send_text(to_hex(*script, size, false));
-                return true;
+                return;
             case json:
                 send_json(value_from(script));
-                return true;
+                return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_block_subscribe(const code& ec,
+void protocol_native::handle_get_block_subscribe(const code& ec,
     interface::block_subscribe, uint8_t, uint8_t media, bool stop) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto value = stop ? media_type::unknown : (media_type)media;
     block_subscribe_.store(value, std::memory_order_relaxed);
     if (stop)
     {
         send_empty();
-        return true;
+        return;
     }
 
     // Return top block hash upon block subscription.
@@ -672,18 +658,17 @@ bool protocol_native::handle_get_block_subscribe(const code& ec,
         {
             case data:
                 send_chunk(to_chunk(hash));
-                return true;
+                return;
             case text:
                 send_text(encode_base16(hash));
-                return true;
+                return;
             case json:
                 send_json(value_from(encode_hash(hash)));
-                return true;
+                return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
 // notify

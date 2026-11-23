@@ -34,7 +34,7 @@ struct bitcoind_notifications_methods
     };
 
     template <typename... Args>
-    using subscriber = network::unsubscriber<Args...>;
+    using subscriber = network::subscriber<Args...>;
 
     /// Method names as reported by help.
     static constexpr auto name_data = method_names<methods>();

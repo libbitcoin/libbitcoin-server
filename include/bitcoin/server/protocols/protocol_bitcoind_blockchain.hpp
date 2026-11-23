@@ -83,103 +83,103 @@ protected:
         uint64_t increment) const NOEXCEPT;
 
     /// Handlers.
-    bool handle_get_best_block_hash(const code& ec,
+    void handle_get_best_block_hash(const code& ec,
         rpc_interface::get_best_block_hash) NOEXCEPT;
-    bool handle_get_block(const code& ec,
+    void handle_get_block(const code& ec,
         rpc_interface::get_block, const std::string&,
         double verbosity) NOEXCEPT;
-    bool handle_get_block_chain_info(const code& ec,
+    void handle_get_block_chain_info(const code& ec,
         rpc_interface::get_block_chain_info) NOEXCEPT;
-    bool handle_get_block_count(const code& ec,
+    void handle_get_block_count(const code& ec,
         rpc_interface::get_block_count) NOEXCEPT;
-    bool handle_get_block_filter(const code& ec,
+    void handle_get_block_filter(const code& ec,
         rpc_interface::get_block_filter, const std::string&,
         const std::string&) NOEXCEPT;
-    virtual bool handle_get_block_hash(const code& ec,
+    virtual void handle_get_block_hash(const code& ec,
         rpc_interface::get_block_hash, double) NOEXCEPT;
-    bool handle_get_block_header(const code& ec,
+    void handle_get_block_header(const code& ec,
         rpc_interface::get_block_header, const std::string&, bool) NOEXCEPT;
-    bool handle_get_block_stats(const code& ec,
+    void handle_get_block_stats(const code& ec,
         rpc_interface::get_block_stats, const network::rpc::value_t&,
         const network::rpc::array_t&) NOEXCEPT;
-    bool handle_get_chain_tx_stats(const code& ec,
+    void handle_get_chain_tx_stats(const code& ec,
         rpc_interface::get_chain_tx_stats, double,
         const std::string&) NOEXCEPT;
-    bool handle_get_tx_out(const code& ec,
+    void handle_get_tx_out(const code& ec,
         rpc_interface::get_tx_out, const std::string&, double, bool) NOEXCEPT;
-    bool handle_get_tx_out_set_info(const code& ec,
+    void handle_get_tx_out_set_info(const code& ec,
         rpc_interface::get_tx_out_set_info, const std::string&,
         const network::rpc::value_t&, bool) NOEXCEPT;
-    bool handle_prune_block_chain(const code& ec,
+    void handle_prune_block_chain(const code& ec,
         rpc_interface::prune_block_chain, double) NOEXCEPT;
-    bool handle_save_mempool(const code& ec,
+    void handle_save_mempool(const code& ec,
         rpc_interface::save_mempool) NOEXCEPT;
-    bool handle_scan_tx_out_set(const code& ec,
+    void handle_scan_tx_out_set(const code& ec,
         rpc_interface::scan_tx_out_set, const std::string&,
         const network::rpc::array_t&) NOEXCEPT;
-    bool handle_verify_chain(const code& ec,
+    void handle_verify_chain(const code& ec,
         rpc_interface::verify_chain, double, double) NOEXCEPT;
-    bool handle_dump_tx_out_set(const code& ec,
+    void handle_dump_tx_out_set(const code& ec,
         rpc_interface::dump_tx_out_set) NOEXCEPT;
-    bool handle_load_tx_out_set(const code& ec,
+    void handle_load_tx_out_set(const code& ec,
         rpc_interface::load_tx_out_set) NOEXCEPT;
-    bool handle_get_tx_out_proof(const code& ec,
+    void handle_get_tx_out_proof(const code& ec,
         rpc_interface::get_tx_out_proof, const network::rpc::array_t& txids,
         const std::string& blockhash) NOEXCEPT;
-    bool handle_verify_tx_out_proof(const code& ec,
+    void handle_verify_tx_out_proof(const code& ec,
         rpc_interface::verify_tx_out_proof, const std::string& proof) NOEXCEPT;
-    bool handle_get_block_from_peer(const code& ec,
+    void handle_get_block_from_peer(const code& ec,
         rpc_interface::get_block_from_peer) NOEXCEPT;
-    bool handle_get_chain_states(const code& ec,
+    void handle_get_chain_states(const code& ec,
         rpc_interface::get_chain_states) NOEXCEPT;
-    bool handle_get_chain_tips(const code& ec,
+    void handle_get_chain_tips(const code& ec,
         rpc_interface::get_chain_tips) NOEXCEPT;
-    bool handle_get_deployment_info(const code& ec,
+    void handle_get_deployment_info(const code& ec,
         rpc_interface::get_deployment_info,
         const std::string& blockhash) NOEXCEPT;
-    bool handle_get_descriptor_activity(const code& ec,
+    void handle_get_descriptor_activity(const code& ec,
         rpc_interface::get_descriptor_activity,
         const network::rpc::array_t& blockhashes,
         const network::rpc::array_t& scanobjects,
         bool include_mempool) NOEXCEPT;
-    bool handle_get_difficulty(const code& ec,
+    void handle_get_difficulty(const code& ec,
         rpc_interface::get_difficulty) NOEXCEPT;
-    bool handle_precious_block(const code& ec,
+    void handle_precious_block(const code& ec,
         rpc_interface::precious_block, const std::string& blockhash) NOEXCEPT;
-    bool handle_scan_blocks(const code& ec,
+    void handle_scan_blocks(const code& ec,
         rpc_interface::scan_blocks, const std::string& action,
         const network::rpc::array_t& scanobjects, double start_height,
         double stop_height, const std::string& filtertype,
         const network::rpc::object_t& options) NOEXCEPT;
-    bool handle_wait_for_block(const code& ec,
+    void handle_wait_for_block(const code& ec,
         rpc_interface::wait_for_block, const std::string& blockhash,
         double timeout) NOEXCEPT;
-    bool handle_wait_for_block_height(const code& ec,
+    void handle_wait_for_block_height(const code& ec,
         rpc_interface::wait_for_block_height, double height,
         double timeout) NOEXCEPT;
-    bool handle_wait_for_new_block(const code& ec,
+    void handle_wait_for_new_block(const code& ec,
         rpc_interface::wait_for_new_block, double timeout,
         const std::string& current_tip) NOEXCEPT;
-    bool handle_get_mempool_ancestors(const code& ec,
+    void handle_get_mempool_ancestors(const code& ec,
         rpc_interface::get_mempool_ancestors, const std::string& txid,
         bool verbose) NOEXCEPT;
-    bool handle_get_mempool_cluster(const code& ec,
+    void handle_get_mempool_cluster(const code& ec,
         rpc_interface::get_mempool_cluster) NOEXCEPT;
-    bool handle_get_mempool_descendants(const code& ec,
+    void handle_get_mempool_descendants(const code& ec,
         rpc_interface::get_mempool_descendants, const std::string& txid,
         bool verbose) NOEXCEPT;
-    bool handle_get_mempool_entry(const code& ec,
+    void handle_get_mempool_entry(const code& ec,
         rpc_interface::get_mempool_entry, const std::string& txid) NOEXCEPT;
-    bool handle_get_mempool_info(const code& ec,
+    void handle_get_mempool_info(const code& ec,
         rpc_interface::get_mempool_info) NOEXCEPT;
-    bool handle_get_raw_mempool(const code& ec,
+    void handle_get_raw_mempool(const code& ec,
         rpc_interface::get_raw_mempool, bool verbose,
         bool mempool_sequence) NOEXCEPT;
-    bool handle_get_tx_spending_prevout(const code& ec,
+    void handle_get_tx_spending_prevout(const code& ec,
         rpc_interface::get_tx_spending_prevout,
         const network::rpc::array_t& outputs,
         const std::optional<network::rpc::object_t>& options) NOEXCEPT;
-    bool handle_import_mempool(const code& ec,
+    void handle_import_mempool(const code& ec,
         rpc_interface::import_mempool, const std::string& filepath,
         const std::optional<network::rpc::object_t>& options) NOEXCEPT;
 
@@ -226,7 +226,7 @@ private:
         uint64_t increment, const gate_t::ptr& gate) NOEXCEPT;
     database::tx_link to_mempool_tx(
         const system::hash_digest& hash) const NOEXCEPT;
-    bool get_mempool_relatives(const std::string& txid, bool verbose,
+    void get_mempool_relatives(const std::string& txid, bool verbose,
         bool ancestors) NOEXCEPT;
     void handle_raw_mempool(const code& ec, const database::tx_links& links,
         bool verbose, bool sequence, const gate_t::ptr& gate) NOEXCEPT;

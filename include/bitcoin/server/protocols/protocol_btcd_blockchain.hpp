@@ -60,7 +60,7 @@ protected:
         const database::fee_rates& rates, uint64_t minimum, uint64_t relay,
         uint64_t increment) const NOEXCEPT override;
 
-    bool handle_get_block_hash(const code& ec,
+    void handle_get_block_hash(const code& ec,
         rpc_interface::get_block_hash, double height) NOEXCEPT override;
 };
 

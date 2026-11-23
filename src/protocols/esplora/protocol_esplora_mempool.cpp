@@ -44,68 +44,64 @@ constexpr std::array<size_t, 28> targets
 constexpr size_t histogram_bin = 50'000;
 constexpr size_t recent_count = 10;
 
-bool protocol_esplora::handle_get_mempool(const code& ec, interface::mempool,
+void protocol_esplora::handle_get_mempool(const code& ec, interface::mempool,
     uint8_t media) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     get_confirmable_fees(BIND(handle_mempool, _1, _2, gate()));
-    return true;
 }
 
-bool protocol_esplora::handle_get_mempool_txids(const code& ec,
+void protocol_esplora::handle_get_mempool_txids(const code& ec,
     interface::mempool_txids, uint8_t media) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     get_confirmable_txs(BIND(handle_mempool_txids, _1, _2, gate()));
-    return true;
 }
 
-bool protocol_esplora::handle_get_mempool_recent(const code& ec,
+void protocol_esplora::handle_get_mempool_recent(const code& ec,
     interface::mempool_recent, uint8_t media) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     get_confirmable_txs(BIND(handle_mempool_recent, _1, _2, gate()));
-    return true;
 }
 
-bool protocol_esplora::handle_get_fee_estimates(const code& ec,
+void protocol_esplora::handle_get_fee_estimates(const code& ec,
     interface::fee_estimates, uint8_t media) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     next_estimate(zero, emplace_shared<system::json::object>(), gate());
-    return true;
 }
 
 // Completion handlers.

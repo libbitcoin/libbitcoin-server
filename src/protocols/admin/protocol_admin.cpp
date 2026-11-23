@@ -185,14 +185,14 @@ void protocol_admin::dispatch_websocket(const http::request& request) NOEXCEPT
 // Interface handlers.
 // ----------------------------------------------------------------------------
 
-bool protocol_admin::handle_get_log_subscribe(const code& ec,
+void protocol_admin::handle_get_log_subscribe(const code& ec,
     admin_interface::log_subscribe, uint8_t /*version*/,
     uint64_t filter) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (stopped(ec))
-        return false;
+        return;
 
     // log outlives node, so cannot hold shared_ptr to the protocol.
     const auto previous = log_interest_->set(filter);
@@ -204,17 +204,16 @@ bool protocol_admin::handle_get_log_subscribe(const code& ec,
     }
 
     send_json({ { "previous", previous } });
-    return true;
 }
 
-bool protocol_admin::handle_get_event_subscribe(const code& ec,
+void protocol_admin::handle_get_event_subscribe(const code& ec,
     admin_interface::event_subscribe, uint8_t /*version*/,
     uint64_t filter) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (stopped(ec))
-        return false;
+        return;
 
     // log outlives node, so cannot hold shared_ptr to the protocol.
     uint64_t previous{};
@@ -222,7 +221,6 @@ bool protocol_admin::handle_get_event_subscribe(const code& ec,
         log.subscribe_events(BIND_WEAK(handle_event, _1, _2, _3, _4));
 
     send_json({ { "previous", previous } });
-    return true;
 }
 
 // Event handlers.

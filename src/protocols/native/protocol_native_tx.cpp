@@ -35,18 +35,18 @@ constexpr size_t histogram_bin = 50'000;
 BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-bool protocol_native::handle_get_tx(const code& ec, interface::tx, uint8_t,
+void protocol_native::handle_get_tx(const code& ec, interface::tx, uint8_t,
     uint8_t media, const hash_cptr& hash, bool witness) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto link = query.to_tx(*hash);
     if (query.is_pruned(link))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     if (const auto tx = query.get_transaction(link, witness))
@@ -56,40 +56,39 @@ bool protocol_native::handle_get_tx(const code& ec, interface::tx, uint8_t,
         {
             case data:
                 send_chunk(to_bin(*tx, size, witness));
-                return true;
+                return;
             case text:
                 send_text(to_hex(*tx, size, witness));
-                return true;
+                return;
             case json:
                 send_json(value_from(tx));
-                return true;
+                return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_tx_header(const code& ec,
+void protocol_native::handle_get_tx_header(const code& ec,
     interface::tx_header, uint8_t, uint8_t media,
     const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto link = query.find_confirmed_block(*hash);
     if (link.is_terminal())
     {
         send_not_found();
-        return true;
+        return;
     }
 
     const auto header = query.get_header(link);
     if (!header)
     {
         send_internal_server_error(database::error::integrity);
-        return true;
+        return;
     }
 
     constexpr auto size = chain::header::serialized_size();
@@ -97,32 +96,31 @@ bool protocol_native::handle_get_tx_header(const code& ec,
     {
         case data:
             send_chunk(to_bin(*header, size));
-            return true;
+            return;
         case text:
             send_text(to_hex(*header, size));
-            return true;
+            return;
         case json:
             auto model = value_from(header);
             inject(model, {}, link);
             send_json(std::move(model));
-            return true;
+            return;
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_tx_details(const code& ec,
+void protocol_native::handle_get_tx_details(const code& ec,
     interface::tx_details, uint8_t, uint8_t media,
     const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     const auto& query = archive();
@@ -132,7 +130,7 @@ bool protocol_native::handle_get_tx_details(const code& ec,
     if (link.is_terminal())
     {
         send_not_found();
-        return true;
+        return;
     }
 
     uint64_t value{}, spend{};
@@ -144,7 +142,7 @@ bool protocol_native::handle_get_tx_details(const code& ec,
         (!coinbase && is_subtract_overflow(value, spend)))
     {
         send_internal_server_error(database::error::integrity);
-        return true;
+        return;
     }
 
     // sigops and wtxid are not cached, so removed for now.
@@ -169,7 +167,7 @@ bool protocol_native::handle_get_tx_details(const code& ec,
             !query.get_tx_position(position, link, block))
         {
             send_internal_server_error(database::error::integrity);
-            return true;
+            return;
         }
 
         object["confirmed"] = system::json::object
@@ -180,19 +178,17 @@ bool protocol_native::handle_get_tx_details(const code& ec,
     }
 
     send_json(std::move(object));
-    return true;
 }
 
-bool protocol_native::handle_get_tx_subscribe(const code& ec,
+void protocol_native::handle_get_tx_subscribe(const code& ec,
     interface::tx_subscribe, uint8_t, uint8_t media, bool stop) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto value = stop ? media_type::unknown : (media_type)media;
     tx_subscribe_.store(value, std::memory_order_relaxed);
     notify_empty();
-    return true;
 }
 
 // notify
@@ -216,20 +212,19 @@ void protocol_native::do_transaction(node::transaction_t link,
     }
 }
 
-bool protocol_native::handle_get_fees(const code& ec, interface::fees,
+void protocol_native::handle_get_fees(const code& ec, interface::fees,
     uint8_t, uint8_t media) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     get_confirmable_fees(BIND(handle_fees, _1, _2, gate()));
-    return true;
 }
 
 void protocol_native::handle_fees(const code& ec,

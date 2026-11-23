@@ -198,13 +198,13 @@ void protocol_bitcoind_transaction::start() NOEXCEPT
 // Raw transaction methods.
 // ----------------------------------------------------------------------------
 
-bool protocol_bitcoind_transaction::handle_create_raw_transaction(
+void protocol_bitcoind_transaction::handle_create_raw_transaction(
     const code& ec, rpc_interface::create_raw_transaction,
     const array_t& inputs, const value_t& outputs, double locktime,
     bool replaceable, double version) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     chain::transaction tx{};
     if (const auto fault = parse_transaction(tx, inputs, outputs, locktime,
@@ -212,26 +212,25 @@ bool protocol_bitcoind_transaction::handle_create_raw_transaction(
         system_settings().max_money()))
     {
         send_error(fault);
-        return true;
+        return;
     }
 
     constexpr auto witness = false;
     send_result(to_text(tx, tx.serialized_size(witness), witness));
-    return true;
 }
 
-bool protocol_bitcoind_transaction::handle_decode_raw_transaction(
+void protocol_bitcoind_transaction::handle_decode_raw_transaction(
     const code& ec, rpc_interface::decode_raw_transaction,
     const std::string& hexstring, const std::optional<bool>& iswitness) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     data_chunk data{};
     if (!decode_base16(data, hexstring))
     {
         send_error(error::bitcoind::deserialization_error);
-        return true;
+        return;
     }
 
     // Absent the hint, witness deserialization is tried first.
@@ -243,28 +242,27 @@ bool protocol_bitcoind_transaction::handle_decode_raw_transaction(
     if (!tx.is_valid())
     {
         send_error(error::bitcoind::deserialization_error);
-        return true;
+        return;
     }
 
     auto model = value_from(bitcoind(tx, flags_));
     inject_decoded(model.as_object(), tx);
     send_result(std::move(model));
-    return true;
 }
 
 // The hint is unused (not required).
-bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
+void protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     rpc_interface::get_raw_transaction, const std::string& txid,
     double verbose, const std::string&) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     hash_digest hash{};
     if (!decode_hash(hash, txid))
     {
         send_error(to_hex_error(error::bitcoind::invalid_parameter));
-        return true;
+        return;
     }
 
     constexpr auto witness = true;
@@ -274,7 +272,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     if (query.is_pruned(link) || !query.get_tx_size(size, link, witness))
     {
         send_error(error::bitcoind::invalid_address_or_key, txid);
-        return true;
+        return;
     }
 
     enum verbosity : size_t
@@ -288,7 +286,7 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     if (!to_integer(requested, verbose))
     {
         send_error(error::bitcoind::misc_error);
-        return true;
+        return;
     }
 
     // bitcoind clamps out of range verbosity.
@@ -304,14 +302,14 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
         }))
             send_error(error::bitcoind::internal_error);
 
-        return true;
+        return;
     }
 
     const auto tx = query.get_transaction(link, witness);
     if (!tx)
     {
         send_error(error::bitcoind::invalid_address_or_key, txid);
-        return true;
+        return;
     }
 
     auto model = value_from(bitcoind(*tx, flags_));
@@ -326,20 +324,19 @@ bool protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
     }
 
     send_result(std::move(model));
-    return true;
 }
 
-bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
+void protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
     rpc_interface::send_raw_transaction, const std::string& hexstring,
     double maxfeerate, double maxburnamount) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (!is_amount(maxfeerate) || !is_amount(maxburnamount))
     {
         send_error(error::bitcoind::type_error);
-        return true;
+        return;
     }
 
     data_chunk data{};
@@ -347,7 +344,7 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
     {
         send_error_message(error::bitcoind::deserialization_error,
             decode_failed);
-        return true;
+        return;
     }
 
     const auto tx = emplace_shared<chain::transaction>(data, true);
@@ -355,13 +352,13 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
     {
         send_error_message(error::bitcoind::deserialization_error,
             decode_failed);
-        return true;
+        return;
     }
 
     if (exceeds_burn(*tx, maxburnamount))
     {
         send_error_message(error::bitcoind::verify_error, burn_exceeded);
-        return true;
+        return;
     }
 
     // A confirmed tx with any unspent output is reported without validating.
@@ -371,20 +368,19 @@ bool protocol_bitcoind_transaction::handle_send_raw_transaction(const code& ec,
         has_unspent_output(link))
     {
         send_rejected(node::error::duplicate_transaction, *tx);
-        return true;
+        return;
     }
 
     if (link.is_terminal() && exceeds_fee_rate(*tx, {}, maxfeerate, query))
     {
         send_error_message(error::bitcoind::verify_error, fee_exceeded);
-        return true;
+        return;
     }
 
     // A single tx is the minimal package.
     constexpr auto test = false;
     submit(to_shared(chain::transaction_cptrs{ tx }),
         test, BIND(handle_submit_tx, _1, _2, tx, gate()));
-    return true;
 }
 
 void protocol_bitcoind_transaction::handle_submit_tx(const code& ec, size_t,
@@ -441,23 +437,23 @@ void protocol_bitcoind_transaction::send_rejected(const code& ec,
         send_error(coded);
 }
 
-bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
+void protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
     rpc_interface::test_mempool_accept, const array_t& rawtxs,
     double maxfeerate) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (!is_amount(maxfeerate))
     {
         send_error(error::bitcoind::type_error);
-        return true;
+        return;
     }
 
     if (rawtxs.empty())
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     chain::transaction_cptrs txs{};
@@ -467,7 +463,7 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
         if (!std::holds_alternative<string_t>(item.value()))
         {
             send_error(error::bitcoind::type_error);
-            return true;
+            return;
         }
 
         read::base16::copy hexer{ std::get<string_t>(item.value()) };
@@ -475,7 +471,7 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
         if (!tx->is_valid() || !hexer.is_exhausted())
         {
             send_error(error::bitcoind::deserialization_error);
-            return true;
+            return;
         }
 
         txs.push_back(tx);
@@ -485,7 +481,6 @@ bool protocol_bitcoind_transaction::handle_test_mempool_accept(const code& ec,
     const auto package = to_shared<chain::transaction_cptrs>(std::move(txs));
     submit(package, test, BIND(handle_test_package, _1, _2, package,
         maxfeerate, gate()));
-    return true;
 }
 
 void protocol_bitcoind_transaction::handle_test_package(const code& ec, size_t,
@@ -573,17 +568,17 @@ object_t protocol_bitcoind_transaction::test_result(const code& ec,
 
 using psbt_tx = wallet::psbt::transaction;
 
-bool protocol_bitcoind_transaction::handle_analyze_psbt(const code& ec,
+void protocol_bitcoind_transaction::handle_analyze_psbt(const code& ec,
     rpc_interface::analyze_psbt, const std::string& psbt) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const psbt_tx doc(psbt);
     if (!doc)
     {
         send_error(error::bitcoind::deserialization_error);
-        return true;
+        return;
     }
 
     auto missing_utxo = false;
@@ -655,14 +650,13 @@ bool protocol_bitcoind_transaction::handle_analyze_psbt(const code& ec,
     }
 
     send_result(std::move(result));
-    return true;
 }
 
-bool protocol_bitcoind_transaction::handle_combine_psbt(const code& ec,
+void protocol_bitcoind_transaction::handle_combine_psbt(const code& ec,
     rpc_interface::combine_psbt, const array_t& txs) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     psbt_tx combined{};
     for (const auto& item: txs)
@@ -670,20 +664,20 @@ bool protocol_bitcoind_transaction::handle_combine_psbt(const code& ec,
         if (!std::holds_alternative<string_t>(item.value()))
         {
             send_error(error::bitcoind::type_error);
-            return true;
+            return;
         }
 
         psbt_tx doc(std::get<string_t>(item.value()));
         if (!doc)
         {
             send_error(error::bitcoind::deserialization_error);
-            return true;
+            return;
         }
 
         if (combined && !combined.combine(doc))
         {
             send_error(error::bitcoind::invalid_parameter);
-            return true;
+            return;
         }
 
         if (!combined)
@@ -693,20 +687,19 @@ bool protocol_bitcoind_transaction::handle_combine_psbt(const code& ec,
     if (!combined)
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     send_result(combined.encoded());
-    return true;
 }
 
-bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
+void protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
     rpc_interface::convert_to_psbt, const std::string& hexstring,
     bool permitsigdata, const std::optional<bool>& iswitness,
     double psbt_version) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     // Construction is bip174 (version 0) or bip370 (version 2).
     uint32_t document{};
@@ -714,14 +707,14 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
         (document != psbt_tx::version_0 && document != psbt_tx::version_2))
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     data_chunk data{};
     if (!decode_base16(data, hexstring))
     {
         send_error(error::bitcoind::deserialization_error);
-        return true;
+        return;
     }
 
     // Absent the hint, witness deserialization is tried first.
@@ -732,7 +725,7 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
     if (!tx.is_valid())
     {
         send_error(error::bitcoind::deserialization_error);
-        return true;
+        return;
     }
 
     const auto is_signed = [](const auto& in) NOEXCEPT
@@ -746,7 +739,7 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
         if (!permitsigdata)
         {
             send_error(error::bitcoind::deserialization_error);
-            return true;
+            return;
         }
 
         // Strip signature data for the unsigned psbt transaction.
@@ -763,20 +756,19 @@ bool protocol_bitcoind_transaction::handle_convert_to_psbt(const code& ec,
     if (!doc)
     {
         send_error(error::bitcoind::deserialization_error);
-        return true;
+        return;
     }
 
     send_result(doc.encoded());
-    return true;
 }
 
-bool protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
+void protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
     rpc_interface::create_psbt, const array_t& inputs,
     const value_t& outputs, double locktime, bool replaceable, double version,
     double psbt_version) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     // Construction is bip174 (version 0) or bip370 (version 2).
     uint32_t document{};
@@ -784,7 +776,7 @@ bool protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
         (document != psbt_tx::version_0 && document != psbt_tx::version_2))
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     chain::transaction tx{};
@@ -793,31 +785,30 @@ bool protocol_bitcoind_transaction::handle_create_psbt(const code& ec,
         system_settings().max_money()))
     {
         send_error(fault);
-        return true;
+        return;
     }
 
     const psbt_tx doc(tx, document);
     if (!doc)
     {
         send_error(error::bitcoind::deserialization_error);
-        return true;
+        return;
     }
 
     send_result(doc.encoded());
-    return true;
 }
 
-bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
+void protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
     rpc_interface::decode_psbt, const std::string& psbt) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const psbt_tx doc(psbt);
     if (!doc)
     {
         send_error(error::bitcoind::deserialization_error);
-        return true;
+        return;
     }
 
     object_t result{};
@@ -889,21 +880,20 @@ bool protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
         result.emplace("fee", to_btc(fee.value()));
 
     send_result(std::move(result));
-    return true;
 }
 
-bool protocol_bitcoind_transaction::handle_finalize_psbt(const code& ec,
+void protocol_bitcoind_transaction::handle_finalize_psbt(const code& ec,
     rpc_interface::finalize_psbt, const std::string& psbt,
     bool extract) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     psbt_tx doc(psbt);
     if (!doc)
     {
         send_error(error::bitcoind::deserialization_error);
-        return true;
+        return;
     }
 
     const auto complete = doc.finalize();
@@ -921,19 +911,18 @@ bool protocol_bitcoind_transaction::handle_finalize_psbt(const code& ec,
 
     result.emplace("complete", complete);
     send_result(std::move(result));
-    return true;
 }
 
-bool protocol_bitcoind_transaction::handle_join_psbts(const code& ec,
+void protocol_bitcoind_transaction::handle_join_psbts(const code& ec,
     rpc_interface::join_psbts, const array_t& txs) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (txs.size() < two)
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     psbt_tx joined{};
@@ -942,20 +931,20 @@ bool protocol_bitcoind_transaction::handle_join_psbts(const code& ec,
         if (!std::holds_alternative<string_t>(item.value()))
         {
             send_error(error::bitcoind::type_error);
-            return true;
+            return;
         }
 
         psbt_tx doc(std::get<string_t>(item.value()));
         if (!doc)
         {
             send_error(error::bitcoind::deserialization_error);
-            return true;
+            return;
         }
 
         if (joined && !joined.join(doc))
         {
             send_error(error::bitcoind::invalid_parameter);
-            return true;
+            return;
         }
 
         if (!joined)
@@ -963,23 +952,21 @@ bool protocol_bitcoind_transaction::handle_join_psbts(const code& ec,
     }
 
     send_result(joined.encoded());
-    return true;
 }
 
-bool protocol_bitcoind_transaction::handle_descriptor_process_psbt(
+void protocol_bitcoind_transaction::handle_descriptor_process_psbt(
     const code& ec, rpc_interface::descriptor_process_psbt) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_transaction::handle_utxo_update_psbt(const code& ec,
+void protocol_bitcoind_transaction::handle_utxo_update_psbt(const code& ec,
     rpc_interface::utxo_update_psbt, const std::string& psbt,
     const array_t& descriptors) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     using namespace wallet;
     descriptor::signing::list signings{};
@@ -988,7 +975,7 @@ bool protocol_bitcoind_transaction::handle_utxo_update_psbt(const code& ec,
         if (!expand_scan_signings(signings, item, context_))
         {
             send_error(error::bitcoind::invalid_address_or_key);
-            return true;
+            return;
         }
     }
 
@@ -996,47 +983,44 @@ bool protocol_bitcoind_transaction::handle_utxo_update_psbt(const code& ec,
     if (!doc)
     {
         send_error(error::bitcoind::deserialization_error);
-        return true;
+        return;
     }
 
     update_psbt(doc, archive(), signings);
     send_result(doc.encoded());
-    return true;
 }
 
-bool protocol_bitcoind_transaction::handle_abort_private_broadcast(
+void protocol_bitcoind_transaction::handle_abort_private_broadcast(
     const code& ec, rpc_interface::abort_private_broadcast) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_transaction::handle_get_private_broadcast_info(
+void protocol_bitcoind_transaction::handle_get_private_broadcast_info(
     const code& ec, rpc_interface::get_private_broadcast_info) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_transaction::handle_submit_package(const code& ec,
+void protocol_bitcoind_transaction::handle_submit_package(const code& ec,
     rpc_interface::submit_package, const array_t& package, double maxfeerate,
     double maxburnamount) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (!is_amount(maxfeerate) || !is_amount(maxburnamount))
     {
         send_error(error::bitcoind::type_error);
-        return true;
+        return;
     }
 
     if (package.empty() || package.size() > maximum_package)
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     chain::transaction_cptrs txs{};
@@ -1046,7 +1030,7 @@ bool protocol_bitcoind_transaction::handle_submit_package(const code& ec,
         if (!std::holds_alternative<string_t>(item.value()))
         {
             send_error(error::bitcoind::type_error);
-            return true;
+            return;
         }
 
         read::base16::copy hexer{ std::get<string_t>(item.value()) };
@@ -1054,7 +1038,7 @@ bool protocol_bitcoind_transaction::handle_submit_package(const code& ec,
         if (!tx->is_valid() || !hexer.is_exhausted())
         {
             send_error(error::bitcoind::deserialization_error);
-            return true;
+            return;
         }
 
         txs.push_back(tx);
@@ -1068,19 +1052,18 @@ bool protocol_bitcoind_transaction::handle_submit_package(const code& ec,
         if (exceeds_burn(tx, maxburnamount))
         {
             send_error_message(error::bitcoind::verify_error, burn_exceeded);
-            return true;
+            return;
         }
 
         if (exceeds_fee_rate(tx, *txs_ptr, maxfeerate, query))
         {
             complete_package(error::max_fee_exceeded, index, txs_ptr, gate());
-            return true;
+            return;
         }
     }
 
     constexpr auto test = false;
     submit(txs_ptr, test, BIND(handle_package, _1, _2, txs_ptr, gate()));
-    return true;
 }
 
 void protocol_bitcoind_transaction::handle_package(const code& ec,
@@ -1109,12 +1092,12 @@ void protocol_bitcoind_transaction::complete_package(const code& ec,
     send_result(system::json::value{ std::move(result) });
 }
 
-bool protocol_bitcoind_transaction::handle_combine_raw_transaction(
+void protocol_bitcoind_transaction::handle_combine_raw_transaction(
     const code& ec, rpc_interface::combine_raw_transaction,
     const array_t& txs) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     using namespace chain;
     transaction_cptrs variants{};
@@ -1126,14 +1109,14 @@ bool protocol_bitcoind_transaction::handle_combine_raw_transaction(
             !decode_base16(data, std::get<string_t>(item.value())))
         {
             send_error(error::bitcoind::deserialization_error);
-            return true;
+            return;
         }
 
         const auto tx = emplace_shared<transaction>(data, true);
         if (!tx->is_valid())
         {
             send_error(error::bitcoind::deserialization_error);
-            return true;
+            return;
         }
 
         variants.push_back(tx);
@@ -1142,7 +1125,7 @@ bool protocol_bitcoind_transaction::handle_combine_raw_transaction(
     if (variants.empty())
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     const auto& base = *variants.front();
@@ -1157,7 +1140,7 @@ bool protocol_bitcoind_transaction::handle_combine_raw_transaction(
             index))
         {
             send_error(fault);
-            return true;
+            return;
         }
 
         ins->push_back(combined);
@@ -1167,16 +1150,14 @@ bool protocol_bitcoind_transaction::handle_combine_raw_transaction(
     const auto outs = base.outputs_ptr();
     const transaction merged{ base.version(), ins, outs, base.locktime() };
     send_result(to_text(merged, merged.serialized_size(witness), witness));
-    return true;
 }
 
 // Signing is a wallet function, keys never transit the server.
-bool protocol_bitcoind_transaction::handle_sign_raw_transaction_with_key(
+void protocol_bitcoind_transaction::handle_sign_raw_transaction_with_key(
     const code& ec, rpc_interface::sign_raw_transaction_with_key) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
 BC_POP_WARNING()

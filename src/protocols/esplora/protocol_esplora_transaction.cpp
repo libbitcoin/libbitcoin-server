@@ -177,16 +177,16 @@ bool protocol_esplora::to_tx(object& out,
 // Transaction methods.
 // ----------------------------------------------------------------------------
 
-bool protocol_esplora::handle_get_tx(const code& ec, interface::tx,
+void protocol_esplora::handle_get_tx(const code& ec, interface::tx,
     uint8_t media, const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media == data && !at_least(esplora::version::v3_0))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     const auto& query = archive();
@@ -194,7 +194,7 @@ bool protocol_esplora::handle_get_tx(const code& ec, interface::tx,
     if (link.is_terminal() || query.is_pruned(link))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     if (media == json)
@@ -203,70 +203,68 @@ bool protocol_esplora::handle_get_tx(const code& ec, interface::tx,
         if (!to_tx(out, link))
         {
             send_internal_server_error(database::error::integrity);
-            return true;
+            return;
         }
 
         send_json(std::move(out));
-        return true;
+        return;
     }
 
     const auto tx = query.get_transaction(link, true);
     if (!tx)
     {
         send_internal_server_error(database::error::integrity);
-        return true;
+        return;
     }
 
     switch (media)
     {
         case data:
             send_chunk(tx->to_data(true));
-            return true;
+            return;
         case text:
             send_text(encode_base16(tx->to_data(true)));
-            return true;
+            return;
     }
 
     send_not_acceptable();
-    return true;
 }
 
-bool protocol_esplora::handle_get_tx_status(const code& ec,
+void protocol_esplora::handle_get_tx_status(const code& ec,
     interface::tx_status, uint8_t media, const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     const auto link = archive().to_tx(*hash);
     if (link.is_terminal())
     {
         send_not_found();
-        return true;
+        return;
     }
 
     send_json(to_status(link));
-    return true;
 }
 
-bool protocol_esplora::handle_get_tx_merkleblock_proof(const code& ec,
+void protocol_esplora::handle_get_tx_merkleblock_proof(const code& ec,
     interface::tx_merkleblock_proof, uint8_t media,
     const hash_cptr& hash) NOEXCEPT
 {
     using namespace network::messages::peer;
 
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != text)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     const auto& query = archive();
@@ -274,7 +272,7 @@ bool protocol_esplora::handle_get_tx_merkleblock_proof(const code& ec,
     if (!query.is_associated(link))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     const auto header = query.get_header(link);
@@ -282,7 +280,7 @@ bool protocol_esplora::handle_get_tx_merkleblock_proof(const code& ec,
     if (!header || keys.empty())
     {
         send_internal_server_error(database::error::integrity);
-        return true;
+        return;
     }
 
     // The vector<bool> proxy iterator does not satisfy ranges algorithms.
@@ -296,7 +294,7 @@ bool protocol_esplora::handle_get_tx_merkleblock_proof(const code& ec,
     if (!is_one(to_unsigned(std::count(match.cbegin(), match.cend(), true))))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     const auto count = possible_narrow_cast<uint32_t>(keys.size());
@@ -307,19 +305,18 @@ bool protocol_esplora::handle_get_tx_merkleblock_proof(const code& ec,
     data_chunk out(merkle.size(version));
     merkle.serialize(version, out);
     send_text(encode_base16(out));
-    return true;
 }
 
-bool protocol_esplora::handle_get_tx_merkle_proof(const code& ec,
+void protocol_esplora::handle_get_tx_merkle_proof(const code& ec,
     interface::tx_merkle_proof, uint8_t media, const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     const auto& query = archive();
@@ -331,7 +328,7 @@ bool protocol_esplora::handle_get_tx_merkle_proof(const code& ec,
         !query.get_height(height, block))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     auto hashes = query.get_tx_keys(block);
@@ -339,7 +336,7 @@ bool protocol_esplora::handle_get_tx_merkle_proof(const code& ec,
     if (is_negative(index))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     const auto position = to_unsigned(index);
@@ -357,20 +354,19 @@ bool protocol_esplora::handle_get_tx_merkle_proof(const code& ec,
         { "merkle", std::move(branch) },
         { "pos", position }
     });
-    return true;
 }
 
-bool protocol_esplora::handle_get_tx_outspend(const code& ec,
+void protocol_esplora::handle_get_tx_outspend(const code& ec,
     interface::tx_outspend, uint8_t media, const hash_cptr& hash,
     uint32_t index) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     const auto& query = archive();
@@ -378,30 +374,29 @@ bool protocol_esplora::handle_get_tx_outspend(const code& ec,
     if (link.is_terminal())
     {
         send_not_found();
-        return true;
+        return;
     }
 
     object out{};
     if (!to_outspend(out, *hash, index))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     send_json(std::move(out));
-    return true;
 }
 
-bool protocol_esplora::handle_get_tx_outspends(const code& ec,
+void protocol_esplora::handle_get_tx_outspends(const code& ec,
     interface::tx_outspends, uint8_t media, const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     const auto& query = archive();
@@ -410,7 +405,7 @@ bool protocol_esplora::handle_get_tx_outspends(const code& ec,
     if (link.is_terminal() || !tx)
     {
         send_not_found();
-        return true;
+        return;
     }
 
     const auto count = tx->outputs_ptr()->size();
@@ -421,29 +416,28 @@ bool protocol_esplora::handle_get_tx_outspends(const code& ec,
         if (!to_outspend(spend, *hash, index))
         {
             send_internal_server_error(database::error::integrity);
-            return true;
+            return;
         }
 
         out.emplace_back(std::move(spend));
     }
 
     send_json(std::move(out));
-    return true;
 }
 
 // Broadcast.
 // ----------------------------------------------------------------------------
 
-bool protocol_esplora::handle_broadcast(const code& ec, interface::broadcast,
+void protocol_esplora::handle_broadcast(const code& ec, interface::broadcast,
     uint8_t media, const std::string& transaction) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != text)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     read::base16::copy hexer{ transaction };
@@ -451,14 +445,13 @@ bool protocol_esplora::handle_broadcast(const code& ec, interface::broadcast,
     if (!tx->is_valid() || !hexer.is_exhausted())
     {
         send_rejected(error::invalid_argument);
-        return true;
+        return;
     }
 
     // A single tx is the minimal package.
     constexpr auto test = false;
     submit(to_shared(chain::transaction_cptrs{ tx }),
         test, BIND(handle_submit_tx, _1, _2, tx, gate()));
-    return true;
 }
 
 void protocol_esplora::handle_submit_tx(const code& ec, size_t,
@@ -484,24 +477,24 @@ void protocol_esplora::complete_submit_tx(const code& ec,
     send_text(encode_hash(tx->hash(false)));
 }
 
-bool protocol_esplora::handle_broadcast_package(const code& ec,
+void protocol_esplora::handle_broadcast_package(const code& ec,
     interface::broadcast_package, uint8_t media,
     const network::rpc::array_t& transactions,
     const std::optional<double>&, const std::optional<double>&) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     if (transactions.empty() || transactions.size() > maximum_package)
     {
         send_rejected(error::invalid_argument);
-        return true;
+        return;
     }
 
     chain::transaction_cptrs txs{};
@@ -512,7 +505,7 @@ bool protocol_esplora::handle_broadcast_package(const code& ec,
         if (is_null(hex))
         {
             send_rejected(error::invalid_argument);
-            return true;
+            return;
         }
 
         read::base16::copy hexer{ *hex };
@@ -520,7 +513,7 @@ bool protocol_esplora::handle_broadcast_package(const code& ec,
         if (!tx->is_valid() || !hexer.is_exhausted())
         {
             send_rejected(error::invalid_argument);
-            return true;
+            return;
         }
 
         txs.push_back(tx);
@@ -529,7 +522,6 @@ bool protocol_esplora::handle_broadcast_package(const code& ec,
     constexpr auto test = false;
     const auto package = to_shared<chain::transaction_cptrs>(std::move(txs));
     submit(package, test, BIND(handle_submit_package, _1, _2, package, gate()));
-    return true;
 }
 
 void protocol_esplora::handle_submit_package(const code& ec, size_t index,

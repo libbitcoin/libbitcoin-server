@@ -260,12 +260,12 @@ code protocol_btcd::to_parameter_error(const code& ec) const NOEXCEPT
 // Handlers (administrative).
 // ----------------------------------------------------------------------------
 
-bool protocol_btcd::handle_authenticate(const code& ec,
+void protocol_btcd::handle_authenticate(const code& ec,
     btcd_interface::authenticate, const std::string& username,
     const std::string& passphrase) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     // Reachable only when not authorized (see dispatch_websocket).
     set_authorized(network::config::credential::to_digest(username,
@@ -274,73 +274,67 @@ bool protocol_btcd::handle_authenticate(const code& ec,
     if (authorized())
     {
         send_result({});
-        return true;
+        return;
     }
 
     // Failed authentication ends session once error has reached caller.
     const code unauthorized{ network::error::unauthorized };
     send_error(unauthorized, unauthorized);
-    return true;
 }
 
-bool protocol_btcd::handle_session(const code& ec,
+void protocol_btcd::handle_session(const code& ec,
     btcd_interface::session) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     object_t result{};
     result.emplace("sessionid", identifier());
     send_result(std::move(result));
-    return true;
 }
 
 // Handlers (subscription).
 // ----------------------------------------------------------------------------
 
-bool protocol_btcd::handle_notify_blocks(const code& ec,
+void protocol_btcd::handle_notify_blocks(const code& ec,
     btcd_interface::notify_blocks) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     subscribed_blocks_.store(true, relaxed);
     send_result({});
-    return true;
 }
 
-bool protocol_btcd::handle_stop_notify_blocks(const code& ec,
+void protocol_btcd::handle_stop_notify_blocks(const code& ec,
     btcd_interface::stop_notify_blocks) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     subscribed_blocks_.store(false, relaxed);
     send_result({});
-    return true;
 }
 
-bool protocol_btcd::handle_notify_new_transactions(const code& ec,
+void protocol_btcd::handle_notify_new_transactions(const code& ec,
     btcd_interface::notify_new_transactions, bool verbose) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     verbose_transactions_.store(verbose, relaxed);
     subscribed_transactions_.store(true, relaxed);
     send_result({});
-    return true;
 }
 
-bool protocol_btcd::handle_stop_notify_new_transactions(const code& ec,
+void protocol_btcd::handle_stop_notify_new_transactions(const code& ec,
     btcd_interface::stop_notify_new_transactions) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     subscribed_transactions_.store(false, relaxed);
     send_result({});
-    return true;
 }
 
 // Handlers (deprecated).
@@ -349,26 +343,26 @@ bool protocol_btcd::handle_stop_notify_new_transactions(const code& ec,
 
 // Implemented only for empty addresses/outpoints case.
 // Call btcwallet makes to bootstrap its sync starting point.
-bool protocol_btcd::handle_rescan(const code& ec,
+void protocol_btcd::handle_rescan(const code& ec,
     btcd_interface::rescan, const std::string& beginblock,
     const std::optional<value_t>& addresses,
     const std::optional<value_t>& outpoints,
     const std::string&) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
 
     hash_digest begin_hash{};
     if (!decode_hash(begin_hash, beginblock))
     {
         send_error(error::btcd::deserialization_error);
-        return true;
+        return;
     }
 
     const auto& query = archive();
     if (query.to_header(begin_hash).is_terminal())
     {
         send_error(error::btcd::invalid_address_or_key);
-        return true;
+        return;
     }
 
     const auto has_entries = [](const std::optional<value_t>& list) NOEXCEPT
@@ -384,7 +378,7 @@ bool protocol_btcd::handle_rescan(const code& ec,
     if (has_addresses || has_outpoints)
     {
         send_error(error::btcd::unimplemented);
-        return true;
+        return;
     }
 
     size_t top{};
@@ -393,7 +387,7 @@ bool protocol_btcd::handle_rescan(const code& ec,
     if (!header || !query.get_height(top, confirmed))
     {
         send_error(error::btcd::internal_error);
-        return true;
+        return;
     }
 
     send_result({});
@@ -403,7 +397,6 @@ bool protocol_btcd::handle_rescan(const code& ec,
         to64(top),
         header->timestamp()
     });
-    return true;
 }
 
 // Chase events.
