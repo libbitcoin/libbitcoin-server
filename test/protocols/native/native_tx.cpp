@@ -268,7 +268,7 @@ BC_FIXTURE_TEST_SUITE(native_broadcast_tests, native_broadcast_setup_fixture)
 
 BC_AUTO_TEST_CASE(native__template__pooled__expected)
 {
-    BC_REQUIRE_EQUAL(submit(test::tx1c), network::error::success);
+    BC_REQUIRE(!submit(test::tx1c));
 
     const auto response = get_json("/v1/template/2?format=json");
     BC_REQUIRE(response.is_array());
@@ -285,8 +285,8 @@ BC_AUTO_TEST_CASE(native__template__pooled__expected)
 
 BC_AUTO_TEST_CASE(native__template__pooled_child__clustered)
 {
-    BC_REQUIRE_EQUAL(submit(test::tx1c), network::error::success);
-    BC_REQUIRE_EQUAL(submit(test::tx1c_child), network::error::success);
+    BC_REQUIRE(!submit(test::tx1c));
+    BC_REQUIRE(!submit(test::tx1c_child));
 
     const auto response = get_json("/v1/template/2?format=json");
     BC_REQUIRE(response.is_array());
