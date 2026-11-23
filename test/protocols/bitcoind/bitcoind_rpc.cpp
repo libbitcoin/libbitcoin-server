@@ -156,7 +156,7 @@ const std::vector<method_params> scope_methods
     { "enumeratesigners", "[]" }
 };
 
-using interface_version = server::interface::bitcoind::version;
+using interface_version = server::bitcoind::version;
 
 // Methods introduced in v31, which do not exist at v30.
 const std::vector<method_params> v31_methods

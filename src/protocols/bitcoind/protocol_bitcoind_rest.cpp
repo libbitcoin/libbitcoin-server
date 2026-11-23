@@ -460,7 +460,7 @@ void protocol_bitcoind_rest::handle_get_block_part(const code& ec,
     if (stopped(ec))
         return;
 
-    if (!at_least(interface::bitcoind::version::v31_0) || !hash)
+    if (!at_least(server::bitcoind::version::v31_0) || !hash)
     {
         send_not_found();
         return;

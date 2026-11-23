@@ -125,7 +125,7 @@ system::json::value bitcoind_setup_fixture::tcp_rpc(std::string_view method,
 }
 
 // The params of a negotiateversion request for exactly the version.
-static std::string negotiation(server::interface::bitcoind::version version)
+static std::string negotiation(server::bitcoind::version version)
 {
     const auto value = std::to_string(to_value(version));
     return "[" + value + "," + value + "]";
@@ -133,7 +133,7 @@ static std::string negotiation(server::interface::bitcoind::version version)
 
 // The negotiateversion response negotiated exactly the version.
 static bool negotiated(const system::json::value& response,
-    server::interface::bitcoind::version version)
+    server::bitcoind::version version)
 {
     try
     {
@@ -146,20 +146,20 @@ static bool negotiated(const system::json::value& response,
 }
 
 bool bitcoind_setup_fixture::negotiate(
-    server::interface::bitcoind::version version)
+    server::bitcoind::version version)
 {
     return negotiated(rpc("negotiateversion", negotiation(version)), version);
 }
 
 bool bitcoind_setup_fixture::tcp_negotiate(
-    server::interface::bitcoind::version version)
+    server::bitcoind::version version)
 {
     const auto params = negotiation(version);
     return negotiated(tcp_rpc("negotiateversion", params), version);
 }
 
 bool bitcoind_setup_fixture::ws_negotiate(
-    server::interface::bitcoind::version version)
+    server::bitcoind::version version)
 {
     const auto params = negotiation(version);
     return negotiated(ws_rpc("negotiateversion", params), version);

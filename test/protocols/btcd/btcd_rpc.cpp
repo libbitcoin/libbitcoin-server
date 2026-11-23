@@ -1129,19 +1129,19 @@ BC_AUTO_TEST_CASE(btcd_rpc__getnetworkinfo__default__maximum_version)
 
 BC_AUTO_TEST_CASE(btcd_rpc__negotiate__v30__getnetworkinfo_version)
 {
-    BC_REQUIRE(negotiate(server::interface::bitcoind::version::v30_0));
+    BC_REQUIRE(negotiate(server::bitcoind::version::v30_0));
     BC_REQUIRE_EQUAL(rpc("getnetworkinfo").at("result").at("version").as_int64(), 300000);
 }
 
 BC_AUTO_TEST_CASE(btcd_rpc__exportasmap__v31__method_not_found)
 {
-    BC_REQUIRE(negotiate(server::interface::bitcoind::version::v31_0));
+    BC_REQUIRE(negotiate(server::bitcoind::version::v31_0));
     BC_REQUIRE_EQUAL(rpc_error("exportasmap", R"([""])"), -32601);
 }
 
 BC_AUTO_TEST_CASE(btcd_rpc__exportasmap__v32__dispatched)
 {
-    BC_REQUIRE(negotiate(server::interface::bitcoind::version::v32_0));
+    BC_REQUIRE(negotiate(server::bitcoind::version::v32_0));
     BC_REQUIRE_NE(rpc_error("exportasmap", R"([""])"), -32601);
 }
 

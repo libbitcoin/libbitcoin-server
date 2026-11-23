@@ -25,6 +25,57 @@
 
 namespace libbitcoin {
 namespace server {
+namespace bitcoind
+{
+    /// A method and the version that introduced it.
+    struct introduction
+    {
+        std::string_view name;
+        version since;
+    };
+
+    /// The methods introduced after the minimum version, by name.
+    inline constexpr std::array introductions
+    {
+        introduction{ "abortprivatebroadcast", version::v31_0 },
+        introduction{ "getmempoolcluster", version::v31_0 },
+        introduction{ "getmempoolfeeratediagram", version::v31_0 },
+        introduction{ "getprivatebroadcastinfo", version::v31_0 },
+        introduction{ "addhdkey", version::v32_0 },
+        introduction{ "derivehdkey", version::v32_0 },
+        introduction{ "exportasmap", version::v32_0 },
+        introduction{ "exportwatchonlywallet", version::v32_0 },
+        introduction{ "getopenrpcinfo", version::v32_0 },
+        introduction{ "rpc.discover", version::v32_0 }
+    };
+
+    /// The version that introduced the method (the minimum if not listed).
+    constexpr version introduced(std::string_view name) NOEXCEPT
+    {
+        for (const auto& entry: introductions)
+            if (entry.name == name)
+                return entry.since;
+
+        return versions.front();
+    }
+
+    /// The dotted form of a version (major.minor.patch).
+    inline std::string to_string(version value) NOEXCEPT
+    {
+        constexpr uint32_t major = 10'000;
+        constexpr uint32_t minor = 100;
+        const auto number = to_value(value);
+        return std::to_string(number / major) + "." +
+            std::to_string((number % major) / minor) + "." +
+            std::to_string(number % minor);
+    }
+
+    /// The bitcoind user agent form of a version.
+    inline std::string to_subversion(version value) NOEXCEPT
+    {
+        return "/Satoshi:" + to_string(value) + "/";
+    }
+} // namespace bitcoind
 
 /// Common base for bitcoind interface subgroup protocols, and terminal default
 /// responder. Subgroup protocols carry their own interface dispatchers and are
@@ -75,13 +126,13 @@ protected:
     }
 
     /// The interface version of the channel (requires strand).
-    inline interface::bitcoind::version interface_version() const NOEXCEPT
+    inline server::bitcoind::version interface_version() const NOEXCEPT
     {
         return channel_->version();
     }
 
     /// The interface version of the channel is at least the specified version.
-    inline bool at_least(interface::bitcoind::version version) const NOEXCEPT
+    inline bool at_least(server::bitcoind::version version) const NOEXCEPT
     {
         return interface_version() >= version;
     }
@@ -89,7 +140,7 @@ protected:
     /// The method exists at the interface version of the channel.
     inline bool is_active(std::string_view method) const NOEXCEPT
     {
-        return at_least(interface::bitcoind::introduced(method));
+        return at_least(server::bitcoind::introduced(method));
     }
 
     /// Terminal dispatch (unclaimed requests only).

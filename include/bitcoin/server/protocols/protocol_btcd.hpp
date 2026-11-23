@@ -29,6 +29,56 @@
 
 namespace libbitcoin {
 namespace server {
+namespace btcd
+{
+    /// Three part release number (major.minor.patch).
+    struct release
+    {
+        uint32_t major;
+        uint32_t minor;
+        uint32_t patch;
+    };
+
+    /// Btcd release and json-rpc api presented from interface version.
+    struct presentation
+    {
+        bitcoind::version since;
+        release btcd;
+        release api;
+    };
+
+    /// Presentations, ascending by interface version.
+    inline constexpr std::array presentations
+    {
+        presentation{ bitcoind::version::v30_0, { 0, 26, 2 }, { 1, 3, 0 } }
+    };
+
+    /// Presentation of interface version.
+    constexpr const presentation& presented(bitcoind::version value) NOEXCEPT
+    {
+        auto found = presentations.begin();
+        for (auto it = found; it != presentations.end(); ++it)
+            if (it->since <= value)
+                found = it;
+
+        return *found;
+    }
+
+    /// Dotted form of release (major.minor.patch).
+    inline std::string to_string(const release& value) NOEXCEPT
+    {
+        return std::to_string(value.major) + "." +
+            std::to_string(value.minor) + "." +
+            std::to_string(value.patch);
+    }
+
+    /// Btcd encoding of release (1'000'000 major, 10'000 minor, 100 patch).
+    constexpr uint32_t to_number(const release& value) NOEXCEPT
+    {
+        return 1'000'000 * value.major + 10'000 * value.minor +
+            100 * value.patch;
+    }
+} // namespace btcd
 
 /// btcd interface, added to the inherited bitcoind interface.
 class BCS_API protocol_btcd

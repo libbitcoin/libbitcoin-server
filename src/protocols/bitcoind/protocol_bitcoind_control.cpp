@@ -154,10 +154,10 @@ void protocol_bitcoind_control::handle_get_memory_info(const code& ec,
 
 template <typename Method>
 static void append_method(array_t& out, const Method& entry,
-    interface::bitcoind::version version) NOEXCEPT
+    server::bitcoind::version version) NOEXCEPT
 {
     if (!entry.implemented() ||
-        version < interface::bitcoind::introduced(entry.name))
+        version < server::bitcoind::introduced(entry.name))
         return;
 
     array_t parameters{};
@@ -186,7 +186,7 @@ static void append_method(array_t& out, const Method& entry,
 
 template <typename Methods>
 static void append_methods(array_t& out,
-    interface::bitcoind::version version) NOEXCEPT
+    server::bitcoind::version version) NOEXCEPT
 {
     std::apply([&](const auto&... entries) NOEXCEPT
     {
@@ -215,8 +215,8 @@ void protocol_bitcoind_control::send_openrpc() NOEXCEPT
         { "openrpc", std::string{ "1.4.1" } },
         { "info", object_t
         {
-            { "title", server::interface::bitcoind::to_subversion(version) },
-            { "version", server::interface::bitcoind::to_string(version) }
+            { "title", server::bitcoind::to_subversion(version) },
+            { "version", server::bitcoind::to_string(version) }
         } },
         { "methods", std::move(methods) }
     });

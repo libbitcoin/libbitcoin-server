@@ -120,7 +120,6 @@ struct btcd_methods
 };
 
 } // namespace interface
-
 } // namespace server
 } // namespace libbitcoin
 

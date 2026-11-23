@@ -149,7 +149,7 @@ void protocol_bitcoind_network::handle_get_network_info(const code& ec,
     send_result(object_t
     {
         { "version", to_value(version) },
-        { "subversion", server::interface::bitcoind::to_subversion(version) },
+        { "subversion", server::bitcoind::to_subversion(version) },
         { "protocolversion", net_settings.protocol_maximum },
         { "localservices", encode_base16(to_big_endian(services)) },
         { "localservicesnames", to_service_names(services) },

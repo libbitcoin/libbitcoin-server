@@ -330,7 +330,7 @@ settings::html_server::tags() const NOEXCEPT
 // settings::bitcoind_server
 code settings::bitcoind_server::initialize_context() NOEXCEPT
 {
-    using namespace interface::bitcoind;
+    using namespace bitcoind;
     if (const auto ec = base::initialize_context())
         return ec;
 

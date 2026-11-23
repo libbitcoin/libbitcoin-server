@@ -279,8 +279,8 @@ void protocol_bitcoind_version::handle_negotiate_version(const code& ec,
 
     lower = std::max(lower, options().protocol_minimum);
     upper = std::min(upper, options().protocol_maximum);
-    const auto floor = server::interface::bitcoind::version_floor(upper);
-    if (floor == server::interface::bitcoind::version::v0_0 ||
+    const auto floor = server::bitcoind::version_floor(upper);
+    if (floor == server::bitcoind::version::v0_0 ||
         to_value(floor) < lower)
     {
         const code invalid{ error::bitcoind::invalid_parameter };

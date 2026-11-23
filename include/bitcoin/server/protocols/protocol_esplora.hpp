@@ -27,6 +27,35 @@
 
 namespace libbitcoin {
 namespace server {
+namespace esplora
+{
+    /// A method and the version that introduced it.
+    struct introduction
+    {
+        std::string_view name;
+        version since;
+    };
+
+    /// The methods introduced after the minimum version, by name.
+    inline constexpr std::array introductions
+    {
+        introduction{ "tx_merkleblock_proof", version::v3_0 },
+        introduction{ "broadcast", version::v3_0 },
+        introduction{ "broadcast_package", version::v3_0 },
+        introduction{ "block_header", version::v3_0 },
+        introduction{ "block_txid", version::v3_0 }
+    };
+
+    /// The version that introduced the method (the minimum if not listed).
+    constexpr version introduced(std::string_view name) NOEXCEPT
+    {
+        for (const auto& entry: introductions)
+            if (entry.name == name)
+                return entry.since;
+
+        return versions.front();
+    }
+} // namespace esplora
 
 class BCS_API protocol_esplora
   : public server::protocol_http,

@@ -45,12 +45,12 @@ public:
         network::tracker<channel_bitcoind>(log),
         error_status_(options.error_status)
     {
-        using namespace server::interface::bitcoind;
+        using namespace server::bitcoind;
         version_ = version_floor(options.protocol_maximum);
     }
 
     /// The interface version of the channel (requires strand).
-    inline server::interface::bitcoind::version version() const NOEXCEPT
+    inline server::bitcoind::version version() const NOEXCEPT
     {
         BC_ASSERT(stranded());
         return version_;
@@ -58,7 +58,7 @@ public:
 
     /// Set the interface version of the channel (requires strand).
     inline void set_version(
-        server::interface::bitcoind::version version) NOEXCEPT
+        server::bitcoind::version version) NOEXCEPT
     {
         BC_ASSERT(stranded());
         version_ = version;
@@ -140,7 +140,7 @@ private:
     const bool error_status_;
 
     // These are protected by strand.
-    server::interface::bitcoind::version version_{};
+    server::bitcoind::version version_{};
     network::http::request_ptr current_{};
     network::http::request_ptr opener_{};
 };

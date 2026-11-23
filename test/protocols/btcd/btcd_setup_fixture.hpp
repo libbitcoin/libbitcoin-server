@@ -51,7 +51,7 @@ struct btcd_setup_fixture
         std::string_view params = "[]");
 
     // Negotiate exactly the interface version, as the channel opener.
-    bool negotiate(server::interface::bitcoind::version version);
+    bool negotiate(server::bitcoind::version version);
 
     // Authorize connection (btcd's in-band credential method), for tests that
     // require it as precondition -- mirrors electrum's handshake().

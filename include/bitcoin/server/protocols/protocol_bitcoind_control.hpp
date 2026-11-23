@@ -66,7 +66,7 @@ protected:
     /// with optional parameters parenthesized.
     template <typename Methods>
     static void find_usage(std::string& out, const std::string& command,
-        interface::bitcoind::version version) NOEXCEPT
+        server::bitcoind::version version) NOEXCEPT
     {
         std::apply([&](const auto&... entries) NOEXCEPT
         {
@@ -97,11 +97,11 @@ private:
     template <typename Method>
     static void append_usage(std::string& out, const Method& entry,
         const std::string& command,
-        interface::bitcoind::version version) NOEXCEPT
+        server::bitcoind::version version) NOEXCEPT
     {
         using namespace network::rpc;
         if (!entry.implemented() || entry.name != command ||
-            version < interface::bitcoind::introduced(entry.name))
+            version < server::bitcoind::introduced(entry.name))
             return;
 
         out = command;

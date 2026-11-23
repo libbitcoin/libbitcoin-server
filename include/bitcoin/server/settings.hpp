@@ -68,6 +68,82 @@ public:
 } // namespace log
 
 namespace server {
+namespace bitcoind
+{
+    /// Implemented interface versions, valued in bitcoind version encoding
+    /// (10'000 major, 100 minor, patch).
+    enum class version : uint32_t
+    {
+        /// Invalid version.
+        v0_0 = 0,
+
+        /// bitcoind v30.0 (minimum).
+        v30_0 = 300000,
+
+        /// bitcoind v31.0.
+        v31_0 = 310000,
+
+        /// bitcoind v32.0 (maximum).
+        v32_0 = 320000
+    };
+
+    /// The implemented versions, ascending.
+    inline constexpr std::array versions
+    {
+        version::v30_0,
+        version::v31_0,
+        version::v32_0
+    };
+    inline constexpr uint32_t minimum_version = to_value(versions.front());
+    inline constexpr uint32_t maximum_version = to_value(versions.back());
+
+    /// The greatest implemented version not exceeding value (v0_0 if none).
+    constexpr version version_floor(uint32_t value) NOEXCEPT
+    {
+        auto floor = version::v0_0;
+        for (const auto implemented: versions)
+            if (to_value(implemented) <= value)
+                floor = implemented;
+
+        return floor;
+    }
+} // namespace bitcoind
+
+namespace esplora
+{
+    /// Implemented interface versions (10'000 major, 100 minor, patch).
+    enum class version : uint32_t
+    {
+        /// Invalid version.
+        v0_0 = 0,
+
+        /// esplora v2.10 (minimum).
+        v2_10 = 21000,
+
+        /// esplora v3.0 (maximum).
+        v3_0 = 30000
+    };
+
+    /// The implemented versions, ascending.
+    inline constexpr std::array versions
+    {
+        version::v2_10,
+        version::v3_0
+    };
+    inline constexpr uint32_t minimum_version = to_value(versions.front());
+    inline constexpr uint32_t maximum_version = to_value(versions.back());
+
+    /// The greatest implemented version not exceeding value (v0_0 if none).
+    constexpr version version_floor(uint32_t value) NOEXCEPT
+    {
+        auto floor = version::v0_0;
+        for (const auto implemented: versions)
+            if (to_value(implemented) <= value)
+                floor = implemented;
+
+        return floor;
+    }
+} // namespace esplora
 
 // HACK: must cast writer to non-const.
 using span_value = network::http::span_body::value_type;
@@ -283,10 +359,10 @@ public:
         using base::base;
 
         /// Minimum interface version (bitcoind version encoding).
-        uint32_t protocol_minimum{ interface::bitcoind::minimum_version };
+        uint32_t protocol_minimum{ server::bitcoind::minimum_version };
 
         /// Maximum interface version (bitcoind version encoding).
-        uint32_t protocol_maximum{ interface::bitcoind::maximum_version };
+        uint32_t protocol_maximum{ server::bitcoind::maximum_version };
 
         /// Validate the interface versions and initialize the context.
         code initialize_context() NOEXCEPT override;
