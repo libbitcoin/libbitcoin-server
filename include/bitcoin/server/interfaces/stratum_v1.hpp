@@ -28,22 +28,18 @@ namespace interface {
 
 struct stratum_v1_methods
 {
+    /// Methods requested by the client (notifications are sent by name).
     static constexpr std::tuple methods
     {
-        /// Client requests.
-        method<"mining.subscribe", optional<""_t>, optional<0.0>>{ "user_agent", "extranonce1_size" },
-        method<"mining.authorize", string_t, string_t>{ "username", "password" },
-        method<"mining.submit", string_t, string_t, string_t, number_t, string_t>{ "worker_name", "job_id", "extranonce2", "ntime", "nonce" },
-        method<"mining.extranonce.subscribe">{},
-        method<"mining.extranonce.unsubscribe", number_t>{ "id" },
-
-        /// Server notifications.
-        method<"mining.configure", object_t>{ "extensions" },
-        method<"mining.set_difficulty", optional<1.0>>{ "difficulty" },
-        method<"mining.notify", string_t, string_t, string_t, string_t, array_t, number_t, number_t, number_t, boolean_t, boolean_t, boolean_t>{ "job_id", "prevhash", "coinb1", "coinb2", "merkle_branch", "version", "nbits", "ntime", "clean_jobs", "hash1", "hash2" },
-        method<"client.reconnect", string_t, number_t, number_t>{ "url", "port", "id" },
-        method<"client.hello", object_t>{ "protocol" },
-        method<"client.rejected", string_t, string_t>{ "job_id", "reject_reason" }
+        method<"mining.subscribe", optional<""_t>, optional<""_t>>{ "user_agent", "session_id" },
+        method<"mining.authorize", string_t, optional<""_t>>{ "username", "password" },
+        method<"mining.submit", string_t, string_t, string_t, string_t, string_t, optional<""_t>>{ "worker_name", "job_id", "extranonce2", "ntime", "nonce", "version_bits" },
+        method<"mining.configure", array_t, object_t>{ "extensions", "parameters" },
+        method<"mining.suggest_difficulty", number_t>{ "difficulty" },
+        method<"mining.suggest_target", string_t>{ "target" },
+        method<"mining.get_transactions", string_t>{ "job_id" },
+        method<"mining.multi_version", number_t>{ "version" },
+        method<"mining.extranonce.subscribe">{}
     };
 
     template <typename... Args>
@@ -56,14 +52,12 @@ struct stratum_v1_methods
     using mining_subscribe = at<0>;
     using mining_authorize = at<1>;
     using mining_submit = at<2>;
-    using mining_extranonce_subscribe = at<3>;
-    using mining_extranonce_unsubscribe = at<4>;
-    using mining_configure = at<5>;
-    using mining_set_difficulty = at<6>;
-    using mining_notify = at<7>;
-    using client_reconnect = at<8>;
-    using client_hello = at<9>;
-    using client_rejected = at<10>;
+    using mining_configure = at<3>;
+    using mining_suggest_difficulty = at<4>;
+    using mining_suggest_target = at<5>;
+    using mining_get_transactions = at<6>;
+    using mining_multi_version = at<7>;
+    using mining_extranonce_subscribe = at<8>;
 };
 
 } // namespace interface

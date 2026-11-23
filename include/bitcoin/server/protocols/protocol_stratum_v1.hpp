@@ -52,43 +52,35 @@ public:
     void start() NOEXCEPT override;
 
 protected:
-    /// Handlers (client requests).
+    /// Handlers.
     bool handle_mining_subscribe(const code& ec,
         rpc_interface::mining_subscribe, const std::string& user_agent,
-        double extranonce1_size) NOEXCEPT;
+        const std::string& session_id) NOEXCEPT;
     bool handle_mining_authorize(const code& ec,
         rpc_interface::mining_authorize, const std::string& username,
         const std::string& password) NOEXCEPT;
     bool handle_mining_submit(const code& ec,
         rpc_interface::mining_submit, const std::string& worker_name,
         const std::string& job_id, const std::string& extranonce2,
-        double ntime, const std::string& nonce) NOEXCEPT;
-    bool handle_mining_extranonce_subscribe(const code& ec,
-        rpc_interface::mining_extranonce_subscribe) NOEXCEPT;
-    bool handle_mining_extranonce_unsubscribe(const code& ec,
-        rpc_interface::mining_extranonce_unsubscribe, double id) NOEXCEPT;
-
-    /// Handlers (server notifications).
+        const std::string& ntime, const std::string& nonce,
+        const std::string& version_bits) NOEXCEPT;
     bool handle_mining_configure(const code& ec,
         rpc_interface::mining_configure,
-        const interface::object_t& extensions) NOEXCEPT;
-    bool handle_mining_set_difficulty(const code& ec,
-        rpc_interface::mining_set_difficulty, double difficulty) NOEXCEPT;
-    bool handle_mining_notify(const code& ec,
-        rpc_interface::mining_notify, const std::string& job_id,
-        const std::string& prevhash, const std::string& coinb1,
-        const std::string& coinb2, const interface::array_t& merkle_branch,
-        double version, double nbits, double ntime, bool clean_jobs,
-        bool hash1, bool hash2) NOEXCEPT;
-    bool handle_client_reconnect(const code& ec,
-        rpc_interface::client_reconnect, const std::string& url, double port,
-        double id) NOEXCEPT;
-    bool handle_client_hello(const code& ec,
-        rpc_interface::client_hello,
-        const interface::object_t& protocol) NOEXCEPT;
-    bool handle_client_rejected(const code& ec,
-        rpc_interface::client_rejected, const std::string& job_id,
-        const std::string& reject_reason) NOEXCEPT;
+        const interface::array_t& extensions,
+        const interface::object_t& parameters) NOEXCEPT;
+    bool handle_mining_suggest_difficulty(const code& ec,
+        rpc_interface::mining_suggest_difficulty,
+        double difficulty) NOEXCEPT;
+    bool handle_mining_suggest_target(const code& ec,
+        rpc_interface::mining_suggest_target,
+        const std::string& target) NOEXCEPT;
+    bool handle_mining_get_transactions(const code& ec,
+        rpc_interface::mining_get_transactions,
+        const std::string& job_id) NOEXCEPT;
+    bool handle_mining_multi_version(const code& ec,
+        rpc_interface::mining_multi_version, double version) NOEXCEPT;
+    bool handle_mining_extranonce_subscribe(const code& ec,
+        rpc_interface::mining_extranonce_subscribe) NOEXCEPT;
 };
 
 } // namespace server

@@ -114,6 +114,9 @@
     <ClCompile Include="..\..\..\..\src\error\error_t.cpp">
       <Filter>src\error</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\error\stratum_v1_error_t.cpp">
+      <Filter>src\error</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\parser.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -411,6 +414,9 @@
       <Filter>include\bitcoin\server\error</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\error\error_t.hpp">
+      <Filter>include\bitcoin\server\error</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\error\stratum_v1_error_t.hpp">
       <Filter>include\bitcoin\server\error</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\have.hpp">

@@ -44,30 +44,25 @@ void protocol_stratum_v1::start() NOEXCEPT
     if (started())
         return;
 
-    // Client requests.
     SUBSCRIBE_CHANNEL(void, handle_mining_subscribe, _1, _2, _3, _4);
     SUBSCRIBE_CHANNEL(void, handle_mining_authorize, _1, _2, _3, _4);
-    SUBSCRIBE_CHANNEL(void, handle_mining_submit, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_CHANNEL(void, handle_mining_submit, _1, _2, _3, _4, _5, _6, _7,
+        _8);
+    SUBSCRIBE_CHANNEL(void, handle_mining_configure, _1, _2, _3, _4);
+    SUBSCRIBE_CHANNEL(void, handle_mining_suggest_difficulty, _1, _2, _3);
+    SUBSCRIBE_CHANNEL(void, handle_mining_suggest_target, _1, _2, _3);
+    SUBSCRIBE_CHANNEL(void, handle_mining_get_transactions, _1, _2, _3);
+    SUBSCRIBE_CHANNEL(void, handle_mining_multi_version, _1, _2, _3);
     SUBSCRIBE_CHANNEL(void, handle_mining_extranonce_subscribe, _1, _2);
-    SUBSCRIBE_CHANNEL(void, handle_mining_extranonce_unsubscribe, _1, _2, _3);
-
-    // Server notifications.
-    SUBSCRIBE_CHANNEL(void, handle_mining_configure, _1, _2, _3);
-    SUBSCRIBE_CHANNEL(void, handle_mining_set_difficulty, _1, _2, _3);
-    SUBSCRIBE_CHANNEL(void, handle_mining_notify, _1, _2, _3, _4, _5, _6, _7,
-        _8, _9, _10, _11, _12, _13);
-    SUBSCRIBE_CHANNEL(void, handle_client_reconnect, _1, _2, _3, _4, _5);
-    SUBSCRIBE_CHANNEL(void, handle_client_hello, _1, _2, _3);
-    SUBSCRIBE_CHANNEL(void, handle_client_rejected, _1, _2, _3, _4);
     network::protocol_rpc<channel_stratum_v1>::start();
 }
 
-// Handlers (client requests).
+// Handlers.
 // ----------------------------------------------------------------------------
 
 bool protocol_stratum_v1::handle_mining_subscribe(const code& ec,
-    rpc_interface::mining_subscribe, const std::string& ,
-    double ) NOEXCEPT
+    rpc_interface::mining_subscribe, const std::string&,
+    const std::string&) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_code(error::not_implemented);
@@ -75,8 +70,8 @@ bool protocol_stratum_v1::handle_mining_subscribe(const code& ec,
 }
 
 bool protocol_stratum_v1::handle_mining_authorize(const code& ec,
-    rpc_interface::mining_authorize, const std::string& ,
-    const std::string& ) NOEXCEPT
+    rpc_interface::mining_authorize, const std::string&,
+    const std::string&) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_code(error::not_implemented);
@@ -84,9 +79,50 @@ bool protocol_stratum_v1::handle_mining_authorize(const code& ec,
 }
 
 bool protocol_stratum_v1::handle_mining_submit(const code& ec,
-    rpc_interface::mining_submit, const std::string& ,
-    const std::string& , const std::string& ,
-    double , const std::string& ) NOEXCEPT
+    rpc_interface::mining_submit, const std::string&, const std::string&,
+    const std::string&, const std::string&, const std::string&,
+    const std::string&) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_code(error::not_implemented);
+    return true;
+}
+
+bool protocol_stratum_v1::handle_mining_configure(const code& ec,
+    rpc_interface::mining_configure, const interface::array_t&,
+    const interface::object_t&) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_code(error::not_implemented);
+    return true;
+}
+
+bool protocol_stratum_v1::handle_mining_suggest_difficulty(const code& ec,
+    rpc_interface::mining_suggest_difficulty, double) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_code(error::not_implemented);
+    return true;
+}
+
+bool protocol_stratum_v1::handle_mining_suggest_target(const code& ec,
+    rpc_interface::mining_suggest_target, const std::string&) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_code(error::not_implemented);
+    return true;
+}
+
+bool protocol_stratum_v1::handle_mining_get_transactions(const code& ec,
+    rpc_interface::mining_get_transactions, const std::string&) NOEXCEPT
+{
+    if (stopped(ec)) return false;
+    send_code(error::not_implemented);
+    return true;
+}
+
+bool protocol_stratum_v1::handle_mining_multi_version(const code& ec,
+    rpc_interface::mining_multi_version, double) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_code(error::not_implemented);
@@ -95,73 +131,6 @@ bool protocol_stratum_v1::handle_mining_submit(const code& ec,
 
 bool protocol_stratum_v1::handle_mining_extranonce_subscribe(const code& ec,
     rpc_interface::mining_extranonce_subscribe) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_code(error::not_implemented);
-    return true;
-}
-
-bool protocol_stratum_v1::handle_mining_extranonce_unsubscribe(const code& ec,
-    rpc_interface::mining_extranonce_unsubscribe, double ) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_code(error::not_implemented);
-    return true;
-}
-
-// Handlers (server notifications).
-// ----------------------------------------------------------------------------
-
-bool protocol_stratum_v1::handle_mining_configure(const code& ec,
-    rpc_interface::mining_configure,
-    const interface::object_t& ) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_code(error::not_implemented);
-    return true;
-}
-
-bool protocol_stratum_v1::handle_mining_set_difficulty(const code& ec,
-    rpc_interface::mining_set_difficulty, double ) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_code(error::not_implemented);
-    return true;
-}
-
-bool protocol_stratum_v1::handle_mining_notify(const code& ec,
-    rpc_interface::mining_notify, const std::string& ,
-    const std::string& , const std::string& ,
-    const std::string& , const interface::array_t& ,
-    double , double , double , bool ,
-    bool , bool ) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_code(error::not_implemented);
-    return true;
-}
-
-bool protocol_stratum_v1::handle_client_reconnect(const code& ec,
-    rpc_interface::client_reconnect, const std::string& , double ,
-    double ) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_code(error::not_implemented);
-    return true;
-}
-
-bool protocol_stratum_v1::handle_client_hello(const code& ec,
-    rpc_interface::client_hello,
-    const interface::object_t& ) NOEXCEPT
-{
-    if (stopped(ec)) return false;
-    send_code(error::not_implemented);
-    return true;
-}
-
-bool protocol_stratum_v1::handle_client_rejected(const code& ec,
-    rpc_interface::client_rejected, const std::string& ,
-    const std::string& ) NOEXCEPT
 {
     if (stopped(ec)) return false;
     send_code(error::not_implemented);

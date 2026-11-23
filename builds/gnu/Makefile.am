@@ -63,6 +63,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/error/btcd_error_t.cpp \
     ${srcdir}/../../src/error/electrum_error_t.cpp \
     ${srcdir}/../../src/error/error_t.cpp \
+    ${srcdir}/../../src/error/stratum_v1_error_t.cpp \
     ${srcdir}/../../src/parsers/admin_query.cpp \
     ${srcdir}/../../src/parsers/admin_target.cpp \
     ${srcdir}/../../src/parsers/bitcoind_query.cpp \
@@ -202,7 +203,8 @@ include_bitcoin_server_error_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/error/btcd_error_t.hpp \
     ${srcdir}/../../include/bitcoin/server/error/electrum_error_t.hpp \
     ${srcdir}/../../include/bitcoin/server/error/error.hpp \
-    ${srcdir}/../../include/bitcoin/server/error/error_t.hpp
+    ${srcdir}/../../include/bitcoin/server/error/error_t.hpp \
+    ${srcdir}/../../include/bitcoin/server/error/stratum_v1_error_t.hpp
 
 include_bitcoin_server_impl_protocolsdir = \
     ${includedir}/bitcoin/server/impl/protocols
