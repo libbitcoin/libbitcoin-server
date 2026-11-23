@@ -212,6 +212,81 @@ void protocol_native::do_transaction(node::transaction_t link,
     }
 }
 
+// Only the template of the next block is held.
+void protocol_native::handle_get_template(const code& ec,
+    interface::template_, uint8_t, uint8_t media, uint32_t height) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (media != json)
+    {
+        send_not_acceptable();
+        return;
+    }
+
+    if (add1(archive().get_top_confirmed()) != height)
+    {
+        send_not_found();
+        return;
+    }
+
+    get_template(BIND(handle_template, _1, _2, height, gate()));
+}
+
+void protocol_native::handle_template(const code& ec,
+    const node::block_template::cptr& held, uint32_t height,
+    const gate_t::ptr& gate) NOEXCEPT
+{
+    POST(complete_get_template, ec, held, height, gate);
+}
+
+void protocol_native::complete_get_template(const code& ec,
+    const node::block_template::cptr& held, uint32_t height,
+    const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    if (ec == node::error::pooling_disabled)
+    {
+        if (network_settings().enable_relay)
+            send_service_unavailable();
+        else
+            send_not_implemented();
+
+        return;
+    }
+
+    if (ec)
+    {
+        send_internal_server_error(ec);
+        return;
+    }
+
+    // A template held for another height is of a chain that has since moved.
+    if (held->height != height)
+    {
+        if (add1(archive().get_top_confirmed()) == height)
+            get_template(BIND(handle_template, _1, _2, height, gate));
+        else
+            send_not_found();
+
+        return;
+    }
+
+    system::json::array out{};
+    if (!to_tx_details(out, held->links))
+    {
+        send_internal_server_error(database::error::integrity);
+        return;
+    }
+
+    send_json(std::move(out));
+}
+
 void protocol_native::handle_get_fees(const code& ec, interface::fees,
     uint8_t, uint8_t media) NOEXCEPT
 {

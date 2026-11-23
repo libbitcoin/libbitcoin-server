@@ -74,6 +74,7 @@ struct native_methods
         method<"address_balance", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
         method<"address_subscribe", uint8_t, uint8_t, system::hash_cptr, optional<true>, optional<false>>{ "version", "media", "hash", "turbo", "stop" },
 
+        method<"template", uint8_t, uint8_t, uint32_t>{ "version", "media", "height" },
         method<"fees", uint8_t, uint8_t>{ "version", "media" }
     };
 
@@ -129,7 +130,8 @@ struct native_methods
     using address_balance = at<35>;
     using address_subscribe = at<36>;
 
-    using fees = at<37>;
+    using template_ = at<37>;
+    using fees = at<38>;
 };
 
 /// ?format=data|text|json (via query string).
@@ -220,6 +222,8 @@ struct native_methods
 /// /v1/address/[output-script-hash]/balance {all confirmed}
 
 /// ---------------------------------------------------------------------------
+
+/// /v1/template/[height] {1}
 
 /// /v1/fees {1}
 

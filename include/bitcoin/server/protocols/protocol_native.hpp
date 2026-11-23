@@ -212,6 +212,8 @@ protected:
         interface::address_subscribe, uint8_t version, uint8_t media,
         const system::hash_cptr& hash, bool turbo, bool stop) NOEXCEPT;
 
+    void handle_get_template(const code& ec, interface::template_,
+        uint8_t version, uint8_t media, uint32_t height) NOEXCEPT;
     void handle_get_fees(const code& ec, interface::fees,
         uint8_t version, uint8_t media) NOEXCEPT;
 
@@ -277,6 +279,13 @@ private:
         const system::hash_cptr& hash, const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_address_balance(const code& ec, uint8_t media,
         const uint64_t balance, const gate_t::ptr& gate) NOEXCEPT;
+
+    void handle_template(const code& ec,
+        const node::block_template::cptr& held, uint32_t height,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_template(const code& ec,
+        const node::block_template::cptr& held, uint32_t height,
+        const gate_t::ptr& gate) NOEXCEPT;
 
     void handle_fees(const code& ec, const database::fee_rates& rates,
         const gate_t::ptr& gate) NOEXCEPT;
