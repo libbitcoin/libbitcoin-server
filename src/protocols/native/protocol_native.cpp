@@ -332,6 +332,8 @@ void protocol_native::inject(value& out, std::optional<uint32_t> height,
 
 // The details of each tx, with its cluster: the label, in order of first
 // appearance, of its component under spends of other txs of the set.
+// TODO: clusters are rebuilt by hashing every txid and input point of the
+// TODO: set. Obtain them from the pool index (children, cells) in a query.
 bool protocol_native::to_tx_details(system::json::array& out,
     const database::tx_links& txs) const NOEXCEPT
 {

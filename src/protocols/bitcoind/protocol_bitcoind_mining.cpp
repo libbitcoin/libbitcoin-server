@@ -452,6 +452,8 @@ void protocol_bitcoind_mining::do_template(const code& ec,
     const auto bip141 = ctx.is_enabled(flags::bip141_rule);
 
     // Tx depends on template txs it spends, by position from one (coinbase 0).
+    // TODO: dependencies are rebuilt by hashing every txid and input point of
+    // TODO: the template. Obtain them from the pool index in a query.
     array_t transactions{};
     std::unordered_map<hash_digest, size_t> positions{};
     for (const auto& tx_link: held->links)
