@@ -146,7 +146,7 @@ void protocol_stratum_v1::handle_mining_authorize(const code& ec,
         username.substr(zero, username.find('.')) : address;
 
     if (output_script(payout, name, p2kh_, p2sh_, witness_) ||
-        (channel_->authorized() && payout != channel_->payout()))
+        (channel_->has_payout() && payout != channel_->payout()))
     {
         send_code(unauthorized_worker);
         return;
@@ -173,7 +173,7 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
         return;
     }
 
-    if (!channel_->authorized(worker_name))
+    if (!channel_->authorized_worker(worker_name))
     {
         send_code(unauthorized_worker);
         return;
@@ -352,7 +352,7 @@ void protocol_stratum_v1::handle_mining_extranonce_subscribe(const code& ec,
 void protocol_stratum_v1::start_jobs() NOEXCEPT
 {
     BC_ASSERT(stranded());
-    if (!channel_->subscribed() || !channel_->authorized() ||
+    if (!channel_->subscribed() || !channel_->has_payout() ||
         active_.exchange(true))
         return;
 

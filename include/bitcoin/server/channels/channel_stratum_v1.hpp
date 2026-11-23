@@ -101,12 +101,12 @@ public:
         workers_.insert(worker);
     }
 
-    inline bool authorized() const NOEXCEPT
+    inline bool has_payout() const NOEXCEPT
     {
         return !workers_.empty();
     }
 
-    inline bool authorized(const std::string& worker) const NOEXCEPT
+    inline bool authorized_worker(const std::string& worker) const NOEXCEPT
     {
         return workers_.contains(worker);
     }
