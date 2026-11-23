@@ -7,6 +7,7 @@ import { onwarn } from "../warnings.mjs";
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), tsconfigPaths(), licenses()],
+  publicDir: "../shared", // favicon.svg
   build: {
     assetsDir: "", // all files in dist root
     chunkSizeWarningLimit: 1024, // single bundle per page

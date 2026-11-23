@@ -39,6 +39,7 @@
 #include <bitcoin/server/error/electrum_error_t.hpp>
 #include <bitcoin/server/error/error.hpp>
 #include <bitcoin/server/error/error_t.hpp>
+#include <bitcoin/server/error/stratum_v1_error_t.hpp>
 #include <bitcoin/server/interfaces/admin.hpp>
 #include <bitcoin/server/interfaces/bitcoind_blockchain.hpp>
 #include <bitcoin/server/interfaces/bitcoind_control.hpp>
@@ -105,6 +106,7 @@
 #include <bitcoin/server/protocols/protocol_sparrow.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
+#include <bitcoin/server/protocols/protocol_submit.hpp>
 #include <bitcoin/server/protocols/protocol_zmq.hpp>
 #include <bitcoin/server/protocols/protocols.hpp>
 #include <bitcoin/server/serializers/bitcoind_block_stats.hpp>
@@ -124,8 +126,10 @@
 #include <bitcoin/server/utilities/bitcoind_descriptor.hpp>
 #include <bitcoin/server/utilities/bitcoind_update.hpp>
 #include <bitcoin/server/utilities/chain.hpp>
+#include <bitcoin/server/utilities/coinbase.hpp>
 #include <bitcoin/server/utilities/electrum_version.hpp>
 #include <bitcoin/server/utilities/merkle.hpp>
+#include <bitcoin/server/utilities/stratum_v1.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
 
 #endif

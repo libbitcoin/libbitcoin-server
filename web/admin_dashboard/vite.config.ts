@@ -7,6 +7,7 @@ import { onwarn } from "../warnings.mjs";
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), tsconfigPaths(), licenses()],
+  publicDir: "../shared",
   worker: {
     plugins: () => [worker_licenses()],
     rollupOptions: { onwarn },

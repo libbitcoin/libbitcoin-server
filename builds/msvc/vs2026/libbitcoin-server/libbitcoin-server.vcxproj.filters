@@ -114,6 +114,9 @@
     <ClCompile Include="..\..\..\..\src\error\error_t.cpp">
       <Filter>src\error</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\error\stratum_v1_error_t.cpp">
+      <Filter>src\error</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\parser.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -348,10 +351,16 @@
     <ClCompile Include="..\..\..\..\src\utilities\chain.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utilities\coinbase.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\utilities\electrum_version.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\utilities\merkle.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utilities\stratum_v1.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
   </ItemGroup>
@@ -411,6 +420,9 @@
       <Filter>include\bitcoin\server\error</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\error\error_t.hpp">
+      <Filter>include\bitcoin\server\error</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\error\stratum_v1_error_t.hpp">
       <Filter>include\bitcoin\server\error</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\have.hpp">
@@ -620,6 +632,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_submit.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_zmq.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
@@ -683,10 +698,16 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\chain.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\coinbase.hpp">
+      <Filter>include\bitcoin\server\utilities</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\electrum_version.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\merkle.hpp">
+      <Filter>include\bitcoin\server\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\stratum_v1.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\utilities.hpp">
@@ -703,6 +724,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_native.ipp">
+      <Filter>include\bitcoin\server\impl\protocols</Filter>
+    </None>
+    <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_submit.ipp">
       <Filter>include\bitcoin\server\impl\protocols</Filter>
     </None>
     <None Include="..\..\..\..\include\bitcoin\server\version.hpp.in">

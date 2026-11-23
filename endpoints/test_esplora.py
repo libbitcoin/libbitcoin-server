@@ -298,16 +298,17 @@ def test_broadcast_invalid_encoding(esplora_config):
     assert response.text
 
 
-def test_broadcast_package_not_implemented(esplora_config):
-    """Package broadcast awaits the transaction pool."""
+def test_broadcast_package_empty(esplora_config):
+    """An empty package is refused."""
     response = post(esplora_config["base_url"], "txs/package", "[]")
-    assert response.status_code == 501
+    assert response.status_code == 400
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ADDRESSES
 # ═══════════════════════════════════════════════════════════════════════════════
 
+@pytest.mark.requires_current
 def test_address(esplora_config):
     """GET /address/:address returns the chain and mempool statistics."""
     address = get_json(esplora_config["base_url"],
@@ -330,6 +331,7 @@ def test_address_undecodable(esplora_config):
     assert response.status_code == 400
 
 
+@pytest.mark.requires_current
 def test_address_txs(esplora_config):
     """GET /address/:address/txs returns decoded transactions, newest first."""
     txs = get_json(esplora_config["base_url"],
@@ -339,6 +341,7 @@ def test_address_txs(esplora_config):
     assert heights == sorted(heights, reverse=True)
 
 
+@pytest.mark.requires_current
 def test_address_txs_chain_paging(esplora_config):
     """The confirmed page continues from the last seen txid."""
     base_url = esplora_config["base_url"]
@@ -398,6 +401,7 @@ def test_scripthash_utxo_unfunded(esplora_config):
 # MEMPOOL AND FEES
 # ═══════════════════════════════════════════════════════════════════════════════
 
+@pytest.mark.requires_current
 def test_mempool(esplora_config):
     """GET /mempool returns backlog statistics."""
     mempool = get_json(esplora_config["base_url"], "mempool")
@@ -407,11 +411,13 @@ def test_mempool(esplora_config):
     assert mempool["fee_histogram"] == []
 
 
+@pytest.mark.requires_current
 def test_mempool_txids(esplora_config):
     """There is no transaction pool, so the txid list is empty."""
     assert get_json(esplora_config["base_url"], "mempool/txids") == []
 
 
+@pytest.mark.requires_current
 def test_mempool_recent(esplora_config):
     """There is no transaction pool, so the recent list is empty."""
     assert get_json(esplora_config["base_url"], "mempool/recent") == []
@@ -495,22 +501,23 @@ def test_websocket_body_frame(esplora_config):
 
 
 def test_websocket_body_frame_missing_body(esplora_config):
-    """A body-bearing target without a body is refused."""
+    """A body-bearing target without a body is answered with an error and closed."""
     connection = connect(esplora_config)
     try:
         connection.send("/tx")
-        with pytest.raises(Exception):
-            connection.recv()
+        assert connection.recv()
+        assert not connection.recv()
     finally:
         connection.close()
 
 
 def test_websocket_invalid_target(esplora_config):
-    """An unrecognized target is refused."""
+    """An unrecognized target is answered with an error."""
     connection = connect(esplora_config)
     try:
         connection.send("/bogus")
-        with pytest.raises(Exception):
-            connection.recv()
+        assert connection.recv()
+        connection.send("/blocks/tip/height")
+        assert connection.recv().strip().isdigit()
     finally:
         connection.close()

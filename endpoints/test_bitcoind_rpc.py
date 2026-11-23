@@ -510,6 +510,7 @@ def test_getrawtransaction_coinbase(bitcoind_rpc_config, pruned):
         assert result["hash"] == result["txid"]
 
 
+@pytest.mark.requires_height(ReferenceData.SEGWIT_HEIGHT)
 def test_getrawtransaction_segwit(bitcoind_rpc_config, pruned):
     """getrawtransaction handles segwit transactions (witness serialization)."""
     if pruned:

@@ -132,10 +132,12 @@ export function App() {
         </div>
       </header>
 
-      <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-7xl min-w-0 space-y-6 px-4 py-8">
-        <header>
+      <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-7xl min-w-0 space-y-8 px-4 py-8">
+        <header className="space-y-2">
           <p className="text-accentSecondary text-sm tracking-wide uppercase">Administration</p>
-          <h1 className="text-accent text-3xl font-semibold">Admin Dashboard</h1>
+          <div className="flex min-h-10 flex-wrap items-end justify-between gap-4">
+            <h1 className="text-accent text-3xl font-semibold">Admin Dashboard</h1>
+          </div>
         </header>
         {view === 'overview' && (
           <Overview

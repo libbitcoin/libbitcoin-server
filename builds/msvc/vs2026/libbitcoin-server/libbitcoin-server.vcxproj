@@ -119,6 +119,7 @@
     <ClCompile Include="..\..\..\..\src\error\btcd_error_t.cpp" />
     <ClCompile Include="..\..\..\..\src\error\electrum_error_t.cpp" />
     <ClCompile Include="..\..\..\..\src\error\error_t.cpp" />
+    <ClCompile Include="..\..\..\..\src\error\stratum_v1_error_t.cpp" />
     <ClCompile Include="..\..\..\..\src\parser.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\admin_query.cpp" />
     <ClCompile Include="..\..\..\..\src\parsers\admin_target.cpp" />
@@ -197,8 +198,10 @@
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_descriptor.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\bitcoind_update.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\chain.cpp" />
+    <ClCompile Include="..\..\..\..\src\utilities\coinbase.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\electrum_version.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\merkle.cpp" />
+    <ClCompile Include="..\..\..\..\src\utilities\stratum_v1.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp" />
@@ -220,6 +223,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\error\electrum_error_t.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\error\error.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\error\error_t.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\error\stratum_v1_error_t.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\have.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\admin.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\bitcoind_blockchain.hpp" />
@@ -289,6 +293,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_sparrow.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v1.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_submit.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_zmq.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocols.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_block_stats.hpp" />
@@ -310,12 +315,15 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_descriptor.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\bitcoind_update.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\chain.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\coinbase.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\electrum_version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\merkle.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\stratum_v1.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\utilities.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_native.ipp" />
+    <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_submit.ipp" />
     <None Include="..\..\..\..\include\bitcoin\server\version.hpp.in" />
     <None Include="packages.config" />
   </ItemGroup>

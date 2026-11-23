@@ -22,6 +22,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/protocols/protocol_bitcoind_dispatch.hpp>
+#include <bitcoin/server/protocols/protocol_submit.hpp>
 
 namespace libbitcoin {
 
@@ -31,29 +32,34 @@ extern template class network::rpc::dispatcher<
 
 namespace server {
 
+// The dispatch metaprogramming is isolated to the subgroup translation unit.
 extern template class protocol_bitcoind_dispatch<
     interface::bitcoind_mining>;
 
 class BCS_API protocol_bitcoind_mining
-  : public protocol_bitcoind_dispatch<interface::bitcoind_mining>,
+  : public protocol_submit<protocol_bitcoind_dispatch<interface::bitcoind_mining>>,
     protected network::tracker<protocol_bitcoind_mining>
 {
 public:
     typedef std::shared_ptr<protocol_bitcoind_mining> ptr;
     using rpc_interface = interface::bitcoind_mining;
+    using submit_t = protocol_submit<protocol_bitcoind_dispatch<rpc_interface>>;
 
     inline protocol_bitcoind_mining(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : protocol_bitcoind_dispatch<rpc_interface>(session, channel, options),
+      : submit_t(session, channel, options),
         network::tracker<protocol_bitcoind_mining>(session->log)
     {
     }
 
     void start() NOEXCEPT override;
-    void stopping(const code& ec) NOEXCEPT override;
 
 protected:
+    /// Answer the submitted block (bip22).
+    void handle_submitted(submission outcome,
+        const code& ec) NOEXCEPT override;
+
     /// Complete a getblocktemplate result.
     virtual void finish_template(network::rpc::object_t& out) const NOEXCEPT;
 
@@ -76,12 +82,7 @@ protected:
     bool handle_prioritise_transaction(const code& ec,
         rpc_interface::prioritise_transaction) NOEXCEPT;
 
-    /// Chase events (submitted block completion).
-    bool handle_chase(const code& ec, node::event_value value) NOEXCEPT;
-
 private:
-    using block_cptr = system::chain::view::block::cptr;
-
     /// Pool completions (bounced to the channel strand).
     void handle_mining_info(const code& ec, const database::tx_links& links,
         const gate_t::ptr& gate) NOEXCEPT;
@@ -94,28 +95,12 @@ private:
         const gate_t::ptr& gate) NOEXCEPT;
     void do_submit_header(const code& ec, const gate_t::ptr& gate) NOEXCEPT;
 
-    /// Submit block completions (bounced to the channel strand).
-    void handle_organize_block(const code& ec, size_t height,
-        const block_cptr& block, const gate_t::ptr& gate) NOEXCEPT;
-    void do_organize_block(const code& ec, const block_cptr& block,
-        const gate_t::ptr& gate) NOEXCEPT;
-    void submit_block(const block_cptr& block,
-        const database::header_link& link, const gate_t::ptr& gate) NOEXCEPT;
-    void handle_archive_block(const code& ec, const system::hash_digest& hash,
-        size_t height) NOEXCEPT;
-    void do_archive_block(const code& ec) NOEXCEPT;
-    void do_submitted(const code& ec, node::event_value value) NOEXCEPT;
-    void send_submitted(network::rpc::value_option&& result) NOEXCEPT;
-
     /// Template completions (bounced to the channel strand).
-    void handle_template(const code& ec, size_t height,
-        const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
-    void do_template(const code& ec, size_t height,
-        const database::tx_links& links, const gate_t::ptr& gate) NOEXCEPT;
-
-    // These are protected by strand.
-    database::header_link submitted_{};
-    gate_t::ptr submitted_gate_{};
+    void handle_template(const code& ec,
+        const node::block_template::cptr& held,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void do_template(const code& ec, const node::block_template::cptr& held,
+        const gate_t::ptr& gate) NOEXCEPT;
 };
 
 } // namespace server

@@ -190,6 +190,17 @@ void server_node::start_stratum_v1(const code& ec,
         return;
     }
 
+    const auto& stratum = config_.server.stratum_v1;
+    const auto& wallet = config_.server.wallet;
+    system::chain::script payout{};
+    if (stratum.enabled() && !stratum.payout_address.empty() &&
+        output_script(payout, stratum.payout_address, wallet.p2kh_prefix,
+            wallet.p2sh_prefix, wallet.witness_prefix))
+    {
+        handler(network::error::invalid_configuration);
+        return;
+    }
+
     attach_stratum_v1_session()->start(
         std::bind(&server_node::start_stratum_v2, this, _1, handler));
 }

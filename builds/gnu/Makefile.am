@@ -63,6 +63,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/error/btcd_error_t.cpp \
     ${srcdir}/../../src/error/electrum_error_t.cpp \
     ${srcdir}/../../src/error/error_t.cpp \
+    ${srcdir}/../../src/error/stratum_v1_error_t.cpp \
     ${srcdir}/../../src/parsers/admin_query.cpp \
     ${srcdir}/../../src/parsers/admin_target.cpp \
     ${srcdir}/../../src/parsers/bitcoind_query.cpp \
@@ -138,8 +139,10 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/utilities/bitcoind_descriptor.cpp \
     ${srcdir}/../../src/utilities/bitcoind_update.cpp \
     ${srcdir}/../../src/utilities/chain.cpp \
+    ${srcdir}/../../src/utilities/coinbase.cpp \
     ${srcdir}/../../src/utilities/electrum_version.cpp \
-    ${srcdir}/../../src/utilities/merkle.cpp
+    ${srcdir}/../../src/utilities/merkle.cpp \
+    ${srcdir}/../../src/utilities/stratum_v1.cpp
 
 nodist_src_libbitcoin_server_la_SOURCES = \
     src/version.cpp
@@ -202,13 +205,15 @@ include_bitcoin_server_error_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/error/btcd_error_t.hpp \
     ${srcdir}/../../include/bitcoin/server/error/electrum_error_t.hpp \
     ${srcdir}/../../include/bitcoin/server/error/error.hpp \
-    ${srcdir}/../../include/bitcoin/server/error/error_t.hpp
+    ${srcdir}/../../include/bitcoin/server/error/error_t.hpp \
+    ${srcdir}/../../include/bitcoin/server/error/stratum_v1_error_t.hpp
 
 include_bitcoin_server_impl_protocolsdir = \
     ${includedir}/bitcoin/server/impl/protocols
 
 include_bitcoin_server_impl_protocols_HEADERS = \
-    ${srcdir}/../../include/bitcoin/server/impl/protocols/protocol_native.ipp
+    ${srcdir}/../../include/bitcoin/server/impl/protocols/protocol_native.ipp \
+    ${srcdir}/../../include/bitcoin/server/impl/protocols/protocol_submit.ipp
 
 include_bitcoin_server_interfacesdir = \
     ${includedir}/bitcoin/server/interfaces
@@ -290,6 +295,7 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_sparrow.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_stratum_v1.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_stratum_v2.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_submit.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_zmq.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocols.hpp
 
@@ -324,8 +330,10 @@ include_bitcoin_server_utilities_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_descriptor.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/bitcoind_update.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/chain.hpp \
+    ${srcdir}/../../include/bitcoin/server/utilities/coinbase.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/electrum_version.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/merkle.hpp \
+    ${srcdir}/../../include/bitcoin/server/utilities/stratum_v1.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/utilities.hpp
 
 # Tests.
@@ -406,8 +414,10 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/serializers/bitcoind_block_stats.cpp \
     ${srcdir}/../../test/serializers/bitcoind_json.cpp \
     ${srcdir}/../../test/utilities/bitcoind_descriptor.cpp \
+    ${srcdir}/../../test/utilities/coinbase.cpp \
     ${srcdir}/../../test/utilities/electrum_version.cpp \
-    ${srcdir}/../../test/utilities/merkle.cpp
+    ${srcdir}/../../test/utilities/merkle.cpp \
+    ${srcdir}/../../test/utilities/stratum_v1.cpp
 
 TESTS = test_runner.sh
 

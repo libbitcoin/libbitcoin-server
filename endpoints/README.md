@@ -8,6 +8,7 @@ This directory contains Python-based integration tests for all libbitcoin-server
 
 | Interface | Protocol | Test File | Status |
 |-----------|----------|-----------|--------|
+| **Smoke (any network)** | HTTP + pages, heights, log | `test_smoke.py` | ✅ Active |
 | **Native REST** | HTTP/S + JSON | `test_native.py` | ✅ Active |
 | **Esplora REST** | HTTP/S + JSON | `test_esplora.py` | ✅ Active |
 | **bitcoind REST** | HTTP/S + JSON/Binary | `test_bitcoind_rest.py` | 🚧 Planned |

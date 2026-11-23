@@ -121,6 +121,7 @@ class ReferenceData:
     FILTER_TYPE_BASIC = "basic"
     FILTER_TYPE_BLOOM = "bloom"
     FILTER_TYPE_COMPACT = "compact"
+    FILTER_TYPE_NEUTRINO = 0
 
     # p2p handshake magic (network_settings().identifier), mainnet
     MAINNET_MAGIC = 3652501241
