@@ -330,11 +330,33 @@ void protocol_native::inject(value& out, std::optional<uint32_t> height,
         archive().get_height(link).value);
 }
 
-// The details of each tx, with its cluster: the label, in order of first
-// appearance, of its component under spends of other txs of the set.
-// TODO: clusters are rebuilt by hashing every txid and input point of the
-// TODO: set. Obtain them from the pool index (children, cells) in a query.
-bool protocol_native::to_tx_details(system::json::array& out,
+size_t protocol_native::to_root(std::vector<size_t>& roots,
+    size_t index) NOEXCEPT
+{
+    while (roots.at(index) != index)
+        index = roots.at(index) = roots.at(roots.at(index));
+
+    return index;
+}
+
+std::vector<size_t> protocol_native::to_roots(
+    const database::template_txs& txs) NOEXCEPT
+{
+    std::vector<size_t> roots(txs.size());
+    std::iota(roots.begin(), roots.end(), zero);
+    for (size_t index{}; index < txs.size(); ++index)
+    {
+        for (const auto parent: txs.at(index).parents)
+        {
+            const auto child = to_root(roots, index);
+            roots.at(child) = to_root(roots, parent);
+        }
+    }
+
+    return roots;
+}
+
+std::vector<size_t> protocol_native::to_roots(
     const database::tx_links& txs) const NOEXCEPT
 {
     const auto& query = archive();
@@ -346,24 +368,29 @@ bool protocol_native::to_tx_details(system::json::array& out,
 
     std::vector<size_t> roots(count);
     std::iota(roots.begin(), roots.end(), zero);
-    const auto root = [&roots](size_t index) NOEXCEPT
-    {
-        while (roots.at(index) != index)
-            index = roots.at(index) = roots.at(roots.at(index));
-
-        return index;
-    };
-
     for (size_t index{}; index < count; ++index)
     {
         for (const auto& point: query.to_points(txs.at(index)))
         {
             const auto parent = positions.find(query.get_point_hash(point));
-            if (parent != positions.end())
-                roots.at(root(index)) = root(parent->second);
+            if (parent == positions.end())
+                continue;
+
+            const auto child = to_root(roots, index);
+            roots.at(child) = to_root(roots, parent->second);
         }
     }
 
+    return roots;
+}
+
+// The details of each tx, with its cluster: the label, in order of first
+// appearance, of its component under spends of other txs of the set.
+bool protocol_native::to_tx_details(system::json::array& out,
+    const database::tx_links& txs, std::vector<size_t>&& roots) const NOEXCEPT
+{
+    const auto& query = archive();
+    const auto count = txs.size();
     out.clear();
     out.reserve(count);
     size_t clusters{};
@@ -380,7 +407,7 @@ bool protocol_native::to_tx_details(system::json::array& out,
             (!coinbase && is_subtract_overflow(value, spend)))
             return false;
 
-        auto& label = labels.at(root(index));
+        auto& label = labels.at(to_root(roots, index));
         if (label == max_size_t)
             label = clusters++;
 

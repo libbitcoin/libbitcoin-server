@@ -295,10 +295,15 @@ private:
     // Utilities.
     // ------------------------------------------------------------------------
 
+    static size_t to_root(std::vector<size_t>& roots, size_t index) NOEXCEPT;
+    static std::vector<size_t> to_roots(
+        const database::template_txs& txs) NOEXCEPT;
+
     void inject(system::json::value& out, std::optional<uint32_t> height,
         const database::header_link& link) const NOEXCEPT;
-    bool to_tx_details(system::json::array& out,
-        const database::tx_links& txs) const NOEXCEPT;
+    std::vector<size_t> to_roots(const database::tx_links& txs) const NOEXCEPT;
+    bool to_tx_details(system::json::array& out, const database::tx_links& txs,
+        std::vector<size_t>&& roots) const NOEXCEPT;
 
     system::chain::header::cptr get_top(bool candidate,
         size_t& height) const NOEXCEPT;

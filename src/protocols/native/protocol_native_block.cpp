@@ -451,7 +451,7 @@ void protocol_native::handle_get_block_txs_details(const code& ec,
 
     system::json::array out{};
     const auto txs = query.to_transactions(link);
-    if (txs.empty() || !to_tx_details(out, txs))
+    if (txs.empty() || !to_tx_details(out, txs, to_roots(txs)))
     {
         send_internal_server_error(database::error::integrity);
         return;

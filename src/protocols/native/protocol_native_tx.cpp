@@ -278,7 +278,7 @@ void protocol_native::complete_get_template(const code& ec,
     }
 
     system::json::array out{};
-    if (!to_tx_details(out, held->links))
+    if (!to_tx_details(out, held->links, to_roots(held->txs)))
     {
         send_internal_server_error(database::error::integrity);
         return;
