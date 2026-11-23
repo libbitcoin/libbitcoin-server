@@ -245,7 +245,7 @@ void protocol_bitcoind_transaction::handle_decode_raw_transaction(
         return;
     }
 
-    auto model = value_from(bitcoind(tx, flags_));
+    auto model = value_from(bc::bitcoind(tx, flags_));
     inject_decoded(model.as_object(), tx);
     send_result(std::move(model));
 }
@@ -312,7 +312,7 @@ void protocol_bitcoind_transaction::handle_get_raw_transaction(const code& ec,
         return;
     }
 
-    auto model = value_from(bitcoind(*tx, flags_));
+    auto model = value_from(bc::bitcoind(*tx, flags_));
     auto& object = model.as_object();
     inject_context(object, link);
     inject_scripts(object, *tx);
@@ -816,7 +816,7 @@ void protocol_bitcoind_transaction::handle_decode_psbt(const code& ec,
     if (version0)
     {
         const auto& unsigned_tx = doc.unsigned_tx();
-        auto tx = value_from(bitcoind(unsigned_tx, flags_));
+        auto tx = value_from(bc::bitcoind(unsigned_tx, flags_));
         inject_tx_scripts(tx.as_object(), unsigned_tx, p2kh_, p2sh_, witness_);
 
         // bitcoind omits the hex of the decoded psbt transaction.

@@ -298,7 +298,7 @@ void protocol_electrum::handle_blockchain_transaction_get(const code& ec,
         }
 
         // Verbose is whatever bitcoind returns for getrawtransaction, lolz.
-        value = value_from(bitcoind(*tx, flags_));
+        value = value_from(bc::bitcoind(*tx, flags_));
         if (!value.is_object())
         {
             send_code(error::electrum::daemon_error);

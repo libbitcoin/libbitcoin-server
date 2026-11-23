@@ -271,7 +271,7 @@ void protocol_bitcoind_rest::handle_get_tx(const code& ec,
             return;
         case json:
         {
-            auto model = value_from(bitcoind(*tx, flags_));
+            auto model = value_from(bc::bitcoind(*tx, flags_));
             inject_tx_context(model.as_object(), query, link);
             inject_tx_scripts(model.as_object(), *tx, p2kh_, p2sh_, witness_);
             send_json(std::move(model));
@@ -442,7 +442,7 @@ void protocol_bitcoind_rest::handle_get_block_headers(const code& ec,
                     return;
                 }
 
-                out.push_back(value_from(bitcoind(*header)));
+                out.push_back(value_from(bc::bitcoind(*header)));
             }
 
             send_json(std::move(out));

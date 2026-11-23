@@ -406,7 +406,7 @@ void protocol_bitcoind_blockchain::handle_get_block_header(const code& ec,
         return;
     }
 
-    auto model = value_from(bitcoind(*header));
+    auto model = value_from(bc::bitcoind(*header));
     auto& out = model.as_object();
     out["nTx"] = query.get_tx_count(link);
     inject_block(out, link, *header);

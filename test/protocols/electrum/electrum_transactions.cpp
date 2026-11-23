@@ -358,7 +358,7 @@ BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get__version_1_2_verbose__exp
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     // Parsed as the response is, so that amounts are doubles.
-    auto expected = json::parse(json::serialize(value_from(bitcoind(coinbase))));
+    auto expected = json::parse(json::serialize(value_from(bc::bitcoind(coinbase))));
     BC_REQUIRE(expected.is_object());
 
     // The test store is ten confirmed blocks, so top height of nine.

@@ -50,7 +50,7 @@ BC_AUTO_TEST_SUITE(bitcoind_header_to_bitcoind_tests)
 BC_AUTO_TEST_CASE(bitcoind_json__header_to_bitcoind__block1_header__maps_fields)
 {
     const auto& header = test::block1.header();
-    const auto out = system::json::value_from(bitcoind(header)).as_object();
+    const auto out = system::json::value_from(bc::bitcoind(header)).as_object();
 
     BC_REQUIRE_EQUAL(as_text(out.at("hash")), encode_hash(header.hash()));
     BC_REQUIRE_EQUAL(out.at("version").to_number<int64_t>(), header.version());
