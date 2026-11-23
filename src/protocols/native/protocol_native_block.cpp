@@ -425,6 +425,41 @@ void protocol_native::handle_get_block_txs(const code& ec,
     send_not_found();
 }
 
+void protocol_native::handle_get_block_txs_details(const code& ec,
+    interface::block_txs_details, uint8_t, uint8_t media,
+    std::optional<hash_cptr> hash, std::optional<uint32_t> height,
+    bool candidate) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    if (media != json)
+    {
+        send_not_acceptable();
+        return;
+    }
+
+    const auto& query = archive();
+    const auto link = to_header(height, hash, candidate);
+
+    // Missing block.
+    if (!query.is_associated(link))
+    {
+        send_not_found();
+        return;
+    }
+
+    system::json::array out{};
+    const auto txs = query.to_transactions(link);
+    if (txs.empty() || !to_tx_details(out, txs))
+    {
+        send_internal_server_error(database::error::integrity);
+        return;
+    }
+
+    send_json(std::move(out));
+}
+
 void protocol_native::handle_get_block_filter(const code& ec,
     interface::block_filter, uint8_t, uint8_t media, uint8_t type,
     std::optional<hash_cptr> hash, std::optional<uint32_t> height,

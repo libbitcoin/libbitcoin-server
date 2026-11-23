@@ -704,6 +704,57 @@ BC_AUTO_TEST_CASE(native__block_txs__above_top__not_found)
     BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10/txs?format=json"), http::status::not_found);
 }
 
+// block/txs/details
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(native__block_txs_details__coinbase__expected)
+{
+    const auto response = get_json("/v1/block/confirmed/1/txs/details?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
+
+    const auto& object = response.as_array().front().as_object();
+    BC_REQUIRE(!object.at("segregated").as_bool());
+    BC_REQUIRE_EQUAL(object.at("nominal").as_int64(), 134);
+    BC_REQUIRE_EQUAL(object.at("maximal").as_int64(), 134);
+    BC_REQUIRE_EQUAL(object.at("weight").as_int64(), 536);
+    BC_REQUIRE_EQUAL(object.at("virtual").as_int64(), 134);
+    BC_REQUIRE_EQUAL(object.at("value").as_int64(), 0);
+    BC_REQUIRE_EQUAL(object.at("spend").as_int64(), 5000000000);
+    BC_REQUIRE_EQUAL(object.at("fee").as_int64(), 0);
+    BC_REQUIRE_EQUAL(object.at("cluster").as_int64(), 0);
+    BC_REQUIRE(!object.contains("coinbase"));
+    BC_REQUIRE(!object.contains("confirmed"));
+}
+
+BC_AUTO_TEST_CASE(native__block_txs_details__hash__expected)
+{
+    const auto response = get_json("/v1/block/hash/" + encode_hash(test::block1_hash) + "/txs/details?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
+}
+
+BC_AUTO_TEST_CASE(native__block_txs_details__text__not_acceptable)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/txs/details?format=text"), http::status::not_acceptable);
+}
+
+BC_AUTO_TEST_CASE(native__block_txs_details__candidate_unpushed__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/candidate/1/txs/details?format=json"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block_txs_details__candidate_pushed__expected)
+{
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    BC_REQUIRE_EQUAL(get_json("/v1/block/candidate/1/txs/details?format=json").as_array().size(), 1u);
+}
+
+BC_AUTO_TEST_CASE(native__block_txs_details__above_top__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10/txs/details?format=json"), http::status::not_found);
+}
+
 // block/tx
 // ----------------------------------------------------------------------------
 
@@ -1254,6 +1305,31 @@ BC_AUTO_TEST_CASE(native__block_details__missing_prevouts__internal_server_error
     BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/2/details?format=json"), http::status::internal_server_error);
 }
 
+BC_AUTO_TEST_CASE(native__block_txs_details__missing_prevouts__internal_server_error)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/2/txs/details?format=json"), http::status::internal_server_error);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(native_cluster_tests, native_cluster_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__block_txs_details__in_block_spends__clustered)
+{
+    const auto response = get_json("/v1/block/confirmed/2/txs/details?format=json");
+    BC_REQUIRE(response.is_array());
+
+    const auto& txs = response.as_array();
+    BC_REQUIRE_EQUAL(txs.size(), 3u);
+    BC_REQUIRE_EQUAL(txs.at(0).as_object().at("cluster").as_int64(), 0);
+    BC_REQUIRE_EQUAL(txs.at(1).as_object().at("cluster").as_int64(), 1);
+    BC_REQUIRE_EQUAL(txs.at(2).as_object().at("cluster").as_int64(), 1);
+    BC_REQUIRE_EQUAL(txs.at(0).as_object().at("fee").as_int64(), 0);
+    BC_REQUIRE_EQUAL(txs.at(1).as_object().at("fee").as_int64(), 10);
+    BC_REQUIRE_EQUAL(txs.at(2).as_object().at("fee").as_int64(), 10);
+}
+
+
 BC_AUTO_TEST_SUITE_END()
 
 BC_FIXTURE_TEST_SUITE(native_scoped_credential_tests, native_scoped_credential_setup_fixture)
@@ -1290,6 +1366,13 @@ BC_AUTO_TEST_CASE(native__block__pruned_text__not_found)
 BC_AUTO_TEST_CASE(native__block__pruned_json__not_found)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/5?format=json"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__block_txs_details__pruned__expected)
+{
+    const auto response = get_json("/v1/block/confirmed/1/txs/details?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().front().as_object().at("nominal").as_int64(), 134);
 }
 
 BC_AUTO_TEST_CASE(native__block_tx__pruned_data__not_found)

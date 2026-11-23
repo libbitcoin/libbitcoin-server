@@ -101,6 +101,18 @@ struct native_ten_block_setup_fixture
     }
 };
 
+struct native_cluster_setup_fixture
+  : native_setup_fixture
+{
+    inline native_cluster_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_cluster_store(query);
+        })
+    {
+    }
+};
+
 struct native_witness_setup_fixture
   : native_setup_fixture
 {

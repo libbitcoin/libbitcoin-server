@@ -119,6 +119,10 @@ protected:
     void handle_get_block_txs(const code& ec, interface::block_txs,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool candidate) NOEXCEPT;
+    void handle_get_block_txs_details(const code& ec,
+        interface::block_txs_details, uint8_t version, uint8_t media,
+        std::optional<system::hash_cptr> hash, std::optional<uint32_t> height,
+        bool candidate) NOEXCEPT;
     void handle_get_block_filter(const code& ec, interface::block_filter,
         uint8_t version, uint8_t media, uint8_t type,
         std::optional<system::hash_cptr> hash,
@@ -284,6 +288,8 @@ private:
 
     void inject(system::json::value& out, std::optional<uint32_t> height,
         const database::header_link& link) const NOEXCEPT;
+    bool to_tx_details(system::json::array& out,
+        const database::tx_links& txs) const NOEXCEPT;
 
     system::chain::header::cptr get_top(bool candidate,
         size_t& height) const NOEXCEPT;

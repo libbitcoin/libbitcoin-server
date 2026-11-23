@@ -103,6 +103,7 @@ extern const system::chain::transaction tx2b;
 extern const system::chain::block block1c;
 extern const system::chain::transaction tx1c;
 extern const system::chain::transaction tx1c_child;
+extern const system::chain::block block2c;
 
 bool setup_ten_block_store(query_t& query, uint32_t top_flags=0) NOEXCEPT;
 bool setup_ten_block_pruned_store(query_t& query) NOEXCEPT;
@@ -112,6 +113,7 @@ bool setup_three_block_witness_store(query_t& query) NOEXCEPT;
 bool setup_three_block_confirmed_address_store(query_t& query) NOEXCEPT;
 bool setup_three_block_unconfirmed_address_store(query_t& query) NOEXCEPT;
 bool setup_broadcast_store(query_t& query) NOEXCEPT;
+bool setup_cluster_store(query_t& query) NOEXCEPT;
 bool setup_unassociated_store(query_t& query) NOEXCEPT;
 bool setup_dangling_store(query_t& query) NOEXCEPT;
 

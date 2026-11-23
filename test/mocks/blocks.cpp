@@ -222,6 +222,13 @@ bool setup_broadcast_store(query_t& query) NOEXCEPT
         query.push_confirmed(query.to_header(block1c.hash()), true);
 }
 
+bool setup_cluster_store(query_t& query) NOEXCEPT
+{
+    return setup_broadcast_store(query) &&
+        query.set(block2c, database::context{ 0, 2, 0 }, {}, false, false) &&
+        query.push_confirmed(query.to_header(block2c.hash()), true);
+}
+
 // A faulted store: block 3 is confirmed without its transactions.
 bool setup_unassociated_store(query_t& query) NOEXCEPT
 {
@@ -1028,6 +1035,48 @@ const transaction tx1c_child
         }
     },
     0x00            // locktime (not absolute locked)
+};
+
+// A coinbase, then tx1c and its child, spending within the block.
+const block block2c
+{
+    header
+    {
+        0x31323334,         // version
+        block1c.hash(),     // previous_block_hash
+        hash_digest{ 0x2c },// merkle_root
+        0x41424344,         // timestamp
+        0x1d00ffff,         // bits
+        0x61626364          // nonce
+    },
+    transactions
+    {
+        transaction
+        {
+            0x01,           // version
+            inputs
+            {
+                input
+                {
+                    point{},
+                    script{},
+                    witness{},
+                    max_uint32  // sequence
+                }
+            },
+            outputs
+            {
+                output
+                {
+                    0x14,   // value (20)
+                    script{ { { opcode::push_positive_1 } } }
+                }
+            },
+            0x00            // locktime
+        },
+        tx1c,
+        tx1c_child
+    }
 };
 
 // Pays found_address, spent by a later transaction in the same block.
