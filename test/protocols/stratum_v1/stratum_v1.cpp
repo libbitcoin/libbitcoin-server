@@ -323,6 +323,22 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__job_not_word__unknown)
     BC_REQUIRE_EQUAL(get_error(std::format(R"({{"id":3,"method":"mining.submit","params":["{}","job","00000000","00000000","00000000"]}})", worker())), unknown.value());
 }
 
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__anachronistic_ntime__unknown_dropped)
+{
+    const auto job = start_job();
+    const auto response = get(std::format(R"({{"id":3,"method":"mining.submit","params":["{}","{}","00000000","00000001","00000000"]}})", worker(), job.at("params").as_array().at(0).as_string()));
+    BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
+    BC_REQUIRE(receive().as_object().contains("dropped"));
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__futuristic_ntime__unknown_dropped)
+{
+    const auto job = start_job();
+    const auto response = get(std::format(R"({{"id":3,"method":"mining.submit","params":["{}","{}","00000000","ffffffff","00000000"]}})", worker(), job.at("params").as_array().at(0).as_string()));
+    BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
+    BC_REQUIRE(receive().as_object().contains("dropped"));
+}
+
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__extranonce2_size__unknown)
 {
     const auto job = start_job();

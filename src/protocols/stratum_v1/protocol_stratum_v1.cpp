@@ -231,6 +231,25 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
         solution
     };
 
+    // The miner sets only header fields, so a valid header is a valid block,
+    // and a miner that invalidates the header is dropped.
+    const auto& bitcoin = system_settings();
+    const auto limit = add<uint64_t>(network::unix_time(),
+        bitcoin.timestamp_limit_seconds);
+
+    if (const auto failed = header.accept(job->held->context,
+        bitcoin.retargeting_interval()))
+    {
+        send_code(unknown, failed);
+        return;
+    }
+
+    if (timestamp > limit)
+    {
+        send_code(unknown, system::error::futuristic_timestamp);
+        return;
+    }
+
     const auto hash = header.hash();
     if (!job->shares.insert(hash).second)
     {
@@ -565,6 +584,8 @@ void protocol_stratum_v1::submit_mined(const chain::header& header,
     submit_block(to_shared<chain::header>(header), block, {});
 }
 
+// The block is the template with the miner's valid header, so a block that
+// is not valid is a store integrity fault. One not confirmed is not a fault.
 void protocol_stratum_v1::handle_submitted(submission outcome,
     const code& ec) NOEXCEPT
 {
@@ -575,23 +596,24 @@ void protocol_stratum_v1::handle_submitted(submission outcome,
     switch (outcome)
     {
         case submission::accepted:
+        case submission::duplicate:
         {
             LOGN("Stratum block accepted " << block);
             break;
         }
-        case submission::rejected:
-        {
-            LOGN("Stratum block rejected " << block << ", " << ec.message());
-            break;
-        }
-        case submission::failed:
-        {
-            LOGF("Stratum block failed " << block << ", " << ec.message());
-            break;
-        }
-        default:
+        case submission::inconclusive:
+        case submission::duplicate_inconclusive:
         {
             LOGN("Stratum block inconclusive " << block);
+            break;
+        }
+        case submission::duplicate_invalid:
+        case submission::bad_parent:
+        case submission::rejected:
+        case submission::failed:
+        {
+            LOGF("Stratum block invalid " << block << ", " << ec.message());
+            fault(database::error::integrity);
             break;
         }
     }
