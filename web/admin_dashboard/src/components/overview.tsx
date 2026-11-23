@@ -48,6 +48,8 @@ export function Overview({ adminStatus, endpoints, metrics, native, sync }: Over
   const warnings = [
     adminStatus.error ? `${shared ? 'Connection' : 'Admin'}: ${adminStatus.error}` : null,
     native.status.error && !shared ? `Native: ${native.status.error}` : null,
+    adminStatus.refused ? `${shared ? 'Server' : 'Admin'} refused: ${adminStatus.refused}` : null,
+    native.status.refused && !shared ? `Native refused: ${native.status.refused}` : null,
     native.transport === 'none' && native.restError ? `Native REST: ${native.restError}` : null,
     metrics.invalidFrames > 0
       ? `${String(metrics.invalidFrames)} malformed admin frame${metrics.invalidFrames === 1 ? '' : 's'} ignored`

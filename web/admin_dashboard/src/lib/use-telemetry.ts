@@ -12,6 +12,7 @@ import {
 import {
   fetchNativeSnapshot,
   fetchNativeFees,
+  isRelaying,
   POOL_POLL_INTERVAL_MS,
   POOL_STALE_AFTER_MS,
   type NativeSnapshot,
@@ -103,7 +104,7 @@ export function useNativeTelemetry(
   const restFees = useQuery({
     queryKey: ['native-fees', endpoint],
     queryFn: ({ signal }) => fetchNativeFees(endpoint, signal),
-    enabled: canUseRestFallback && liveFees === null,
+    enabled: canUseRestFallback && liveFees === null && isRelaying(selection.configuration),
     refetchInterval: POOL_POLL_INTERVAL_MS,
     retry: false,
   });

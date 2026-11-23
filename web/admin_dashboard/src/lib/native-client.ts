@@ -6,6 +6,7 @@ import {
   type NativeTops,
   NATIVE_FEES_PATH,
   POOL_POLL_INTERVAL_MS,
+  isRelaying,
   nativeBranchPath,
   parseNativeFrame,
   topHeaderOf,
@@ -188,6 +189,7 @@ export class NativeClient {
       configuration: frame.payload,
       configurationReceivedAt: receivedAt,
     });
+    this.#requestPool();
   }
 
   #requestBranch(height: number, now: number): void {
@@ -209,6 +211,7 @@ export class NativeClient {
   }
 
   #requestPool(): void {
+    if (!isRelaying(this.#state.configuration)) return;
     const now = this.#now();
     // Avoid piling up snapshot queries; retry an unanswered request after 30 seconds.
     if (this.#poolRequestedAt !== null && now - this.#poolRequestedAt < 30_000) return;
