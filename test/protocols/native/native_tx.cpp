@@ -190,6 +190,25 @@ BC_AUTO_TEST_CASE(native__fees__data__not_acceptable)
     BC_REQUIRE_EQUAL(get_status("/v1/fees?format=data"), http::status::not_acceptable);
 }
 
+// template
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(native__template__relay_disabled__not_implemented)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/template/10?format=json"), status::not_implemented);
+}
+
+BC_AUTO_TEST_CASE(native__template__text__not_acceptable)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/template/10?format=text"), http::status::not_acceptable);
+}
+
+BC_AUTO_TEST_CASE(native__template__not_next__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/template/9?format=json"), status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/template/11?format=json"), status::not_found);
+}
+
 BC_AUTO_TEST_SUITE_END()
 
 BC_FIXTURE_TEST_SUITE(native_closed_tests, native_closed_setup_fixture)
@@ -203,6 +222,11 @@ BC_AUTO_TEST_CASE(native__ws_fees__closed_pool__service_unavailable)
 {
     BC_REQUIRE(!ws_upgrade());
     BC_REQUIRE(ws_get_text("/v1/fees").starts_with("Service Unavailable"));
+}
+
+BC_AUTO_TEST_CASE(native__template__closed_pool__service_unavailable)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/template/10?format=json"), status::service_unavailable);
 }
 
 BC_AUTO_TEST_SUITE_END()
@@ -229,6 +253,50 @@ BC_AUTO_TEST_CASE(native__ws_fees__empty_pool__json)
     const auto response = ws_get_json("/v1/fees");
     BC_REQUIRE(response.is_object());
     BC_REQUIRE_EQUAL(response.as_object().at("count").as_int64(), 0);
+}
+
+BC_AUTO_TEST_CASE(native__template__empty_pool__empty)
+{
+    const auto response = get_json("/v1/template/10?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE(response.as_array().empty());
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(native_broadcast_tests, native_broadcast_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__template__pooled__expected)
+{
+    BC_REQUIRE_EQUAL(submit(test::tx1c), network::error::success);
+
+    const auto response = get_json("/v1/template/2?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
+
+    const auto& object = response.as_array().front().as_object();
+    BC_REQUIRE(!object.at("segregated").as_bool());
+    BC_REQUIRE_EQUAL(object.at("virtual").as_int64(), to_signed(test::tx1c.virtual_size()));
+    BC_REQUIRE_EQUAL(object.at("value").as_int64(), 100);
+    BC_REQUIRE_EQUAL(object.at("spend").as_int64(), 90);
+    BC_REQUIRE_EQUAL(object.at("fee").as_int64(), 10);
+    BC_REQUIRE_EQUAL(object.at("cluster").as_int64(), 0);
+}
+
+BC_AUTO_TEST_CASE(native__template__pooled_child__clustered)
+{
+    BC_REQUIRE_EQUAL(submit(test::tx1c), network::error::success);
+    BC_REQUIRE_EQUAL(submit(test::tx1c_child), network::error::success);
+
+    const auto response = get_json("/v1/template/2?format=json");
+    BC_REQUIRE(response.is_array());
+
+    const auto& txs = response.as_array();
+    BC_REQUIRE_EQUAL(txs.size(), 2u);
+    BC_REQUIRE_EQUAL(txs.at(0).as_object().at("fee").as_int64(), 10);
+    BC_REQUIRE_EQUAL(txs.at(1).as_object().at("fee").as_int64(), 10);
+    BC_REQUIRE_EQUAL(txs.at(0).as_object().at("cluster").as_int64(), 0);
+    BC_REQUIRE_EQUAL(txs.at(1).as_object().at("cluster").as_int64(), 0);
 }
 
 BC_AUTO_TEST_SUITE_END()

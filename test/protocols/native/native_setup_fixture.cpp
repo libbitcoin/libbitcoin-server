@@ -389,6 +389,18 @@ void native_setup_fixture::notify(node::event_value value)
     server_.notify(node::error::success, value);
 }
 
+code native_setup_fixture::submit(const chain::transaction& tx)
+{
+    std::promise<code> submitted{};
+    const auto txs = to_shared(chain::transaction_cptrs{ to_shared(tx) });
+    server_.submit(txs, false, [&](const code& ec, size_t) NOEXCEPT
+    {
+        submitted.set_value(ec);
+    });
+
+    return submitted.get_future().get();
+}
+
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
 server_node_setup_fixture::server_node_setup_fixture()
