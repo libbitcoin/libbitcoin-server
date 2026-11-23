@@ -317,10 +317,11 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__unknown_job__job_not_found)
     BC_REQUIRE_EQUAL(get_error(std::format(R"({{"id":3,"method":"mining.submit","params":["{}","00000009","00000000","00000000","00000000"]}})", worker())), job_not_found.value());
 }
 
-BC_AUTO_TEST_CASE(stratum_v1__mining_submit__job_not_word__unknown)
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__job_not_word__unknown_dropped)
 {
     start_job();
     BC_REQUIRE_EQUAL(get_error(std::format(R"({{"id":3,"method":"mining.submit","params":["{}","job","00000000","00000000","00000000"]}})", worker())), unknown.value());
+    BC_REQUIRE(receive().as_object().contains("dropped"));
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__anachronistic_ntime__unknown_dropped)
@@ -339,29 +340,33 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__futuristic_ntime__unknown_dropped)
     BC_REQUIRE(receive().as_object().contains("dropped"));
 }
 
-BC_AUTO_TEST_CASE(stratum_v1__mining_submit__extranonce2_size__unknown)
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__extranonce2_size__unknown_dropped)
 {
     const auto job = start_job();
     BC_REQUIRE_EQUAL(submit(job, "000000", "00000000").at("error").as_array().at(0).as_int64(), unknown.value());
+    BC_REQUIRE(receive().as_object().contains("dropped"));
 }
 
-BC_AUTO_TEST_CASE(stratum_v1__mining_submit__nonce_not_word__unknown)
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__nonce_not_word__unknown_dropped)
 {
     const auto job = start_job();
     BC_REQUIRE_EQUAL(submit(job, "00000000", "zz").at("error").as_array().at(0).as_int64(), unknown.value());
+    BC_REQUIRE(receive().as_object().contains("dropped"));
 }
 
-BC_AUTO_TEST_CASE(stratum_v1__mining_submit__version_bits_without_mask__unknown)
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__version_bits_without_mask__unknown_dropped)
 {
     const auto job = start_job();
     BC_REQUIRE_EQUAL(submit(job, "00000000", "00000000", "00002000").at("error").as_array().at(0).as_int64(), unknown.value());
+    BC_REQUIRE(receive().as_object().contains("dropped"));
 }
 
-BC_AUTO_TEST_CASE(stratum_v1__mining_submit__version_bits_not_word__unknown)
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__version_bits_not_word__unknown_dropped)
 {
     const auto job = start_job();
     BC_REQUIRE(get(R"({"id":4,"method":"mining.configure","params":[["version-rolling"],{}]})").at("result").as_object().at("version-rolling").as_bool());
     BC_REQUIRE_EQUAL(submit(job, "00000000", "00000000", "zz").at("error").as_array().at(0).as_int64(), unknown.value());
+    BC_REQUIRE(receive().as_object().contains("dropped"));
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__version_bits_within_mask__true)
@@ -371,11 +376,12 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__version_bits_within_mask__true)
     BC_REQUIRE(submit(job, "00000000", "00000000", "00002000").at("result").as_bool());
 }
 
-BC_AUTO_TEST_CASE(stratum_v1__mining_submit__version_bits_outside_mask__unknown)
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__version_bits_outside_mask__unknown_dropped)
 {
     const auto job = start_job();
     BC_REQUIRE(get(R"({"id":4,"method":"mining.configure","params":[["version-rolling"],{}]})").at("result").as_object().at("version-rolling").as_bool());
     BC_REQUIRE_EQUAL(submit(job, "00000000", "00000000", "00000001").at("error").as_array().at(0).as_int64(), unknown.value());
+    BC_REQUIRE(receive().as_object().contains("dropped"));
 }
 
 BC_AUTO_TEST_SUITE_END()

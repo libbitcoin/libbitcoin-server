@@ -182,7 +182,7 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
     uint32_t id{};
     if (!decode_word(id, job_id))
     {
-        send_code(unknown);
+        send_code(unknown, error::invalid_argument);
         return;
     }
 
@@ -200,7 +200,7 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
         !decode_word(timestamp, ntime) ||
         !decode_word(solution, nonce))
     {
-        send_code(unknown);
+        send_code(unknown, error::invalid_argument);
         return;
     }
 
@@ -212,7 +212,7 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
         const auto mask = channel_->mask();
         if (!decode_word(bits, version_bits) || !is_zero(bits & ~mask))
         {
-            send_code(unknown);
+            send_code(unknown, error::invalid_argument);
             return;
         }
 
