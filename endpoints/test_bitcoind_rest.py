@@ -2,8 +2,8 @@
 Tests for libbitcoin-server bitcoind REST compatibility interface.
 
 Covers the bitcoind REST endpoints served under /rest/: chaininfo, block,
-block/notxdetails, block/spent (libbitcoin extension), blockhashbyheight,
-headers, blockpart (libbitcoin extension), and the basic (neutrino) filters.
+block/notxdetails, spenttxouts, blockhashbyheight, headers, blockpart, and the
+basic (neutrino) filters.
 
 Per-endpoint media type is selected by the URL extension: .json, .hex (text),
 or .bin (raw bytes). doc:
@@ -44,7 +44,8 @@ def _get(rest_config: dict, path: str) -> requests.Response:
         resp = requests.get(
             url,
             timeout=TestConfig.DEFAULT_RPC_TIMEOUT,
-            headers={"Connection": "close"}
+            headers={"Connection": "close"},
+            auth=rest_config.get("auth")
         )
     except requests.exceptions.RequestException as e:
         raise RuntimeError(f"REST connection error: {e}")
@@ -140,14 +141,14 @@ def test_block_notxdetails_json(bitcoind_rest_config):
     assert len(data["tx"][0]) == 64
 
 
-def test_block_spent_json(bitcoind_rest_config):
-    """GET /rest/block/spent/<hash>.json (libbitcoin extension) returns spent outputs."""
+def test_spenttxouts_json(bitcoind_rest_config):
+    """GET /rest/spenttxouts/<hash>.json returns the outputs spent by the block."""
     data = get_json(
         bitcoind_rest_config,
-        f"block/spent/{ReferenceData.KNOWN_BLOCK_HASH}.json"
+        f"spenttxouts/{ReferenceData.KNOWN_BLOCK_HASH}.json"
     )
 
-    assert isinstance(data, (list, dict))
+    assert isinstance(data, list)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -207,14 +208,15 @@ def test_headers_bin(bitcoind_rest_config):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# BLOCK PART (libbitcoin extension, bin|hex only)
+# BLOCK PART (bin|hex only)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def test_blockpart_hex_header(bitcoind_rest_config):
-    """GET /rest/blockpart/<hash>/0/80.hex returns the block's 80-byte header."""
+    """GET /rest/blockpart/<hash>.hex?offset=0&size=80 returns the block's header."""
     raw = get_hex(
         bitcoind_rest_config,
-        f"blockpart/{ReferenceData.KNOWN_BLOCK_HASH}/0/{HEADER_SIZE}.hex"
+        f"blockpart/{ReferenceData.KNOWN_BLOCK_HASH}.hex"
+        f"?offset=0&size={HEADER_SIZE}"
     )
 
     assert len(raw) == 2 * HEADER_SIZE
@@ -222,10 +224,11 @@ def test_blockpart_hex_header(bitcoind_rest_config):
 
 
 def test_blockpart_bin_header(bitcoind_rest_config):
-    """GET /rest/blockpart/<hash>/0/80.bin returns the block's 80-byte header."""
+    """GET /rest/blockpart/<hash>.bin?offset=0&size=80 returns the block's header."""
     raw = get_bin(
         bitcoind_rest_config,
-        f"blockpart/{ReferenceData.KNOWN_BLOCK_HASH}/0/{HEADER_SIZE}.bin"
+        f"blockpart/{ReferenceData.KNOWN_BLOCK_HASH}.bin"
+        f"?offset=0&size={HEADER_SIZE}"
     )
 
     assert len(raw) == HEADER_SIZE

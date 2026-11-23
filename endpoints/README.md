@@ -15,6 +15,7 @@ This directory contains Python-based integration tests for all libbitcoin-server
 | **bitcoind RPC** | HTTP/S + JSON-RPC 2.0 | `test_bitcoind_rpc.py` | ✅ Active |
 | **Electrum** | TCP + JSON-RPC 2.0 | `test_electrum.py` | ✅ Active |
 | **Electrum subscriptions** | TCP + push notifications | `test_electrum_subscriptions.py` | ✅ Active |
+| **Robustness** (all services) | raw TCP / HTTP / WS, misbehaving clients | `test_robustness_*.py`, `test_longrun.py` | ✅ Active |
 | **Stratum v1** | TCP + JSON-RPC 1.0 | `test_stratum_v1.py` | 🚧 Planned |
 | **Stratum v2** | TCP + Binary | `test_stratum_v2.py` | 🚧 Planned |
 
@@ -247,12 +248,12 @@ pytest test_native.py -k "not address"
 Tests JSON-RPC 2.0 interface compatible with the bitcoind RPC interface.
 
 **Coverage:**
-- ✅ Blockchain methods (17 methods)
+- ✅ Blockchain methods (15 methods)
   - getbestblockhash, getblock, getblockchaininfo, getblockcount
   - getblockfilter, getblockhash, getblockheader, getblockstats
-  - getchaintxstats, getchainwork, gettxout, gettxoutsetinfo
+  - getchaintxstats, gettxout, gettxoutsetinfo
   - pruneblockchain, savemempool, scantxoutset
-  - verifychain, verifytxoutset
+  - verifychain
 - ✅ Error handling
 - ⏭️ Control methods (commented out — 6 methods)
 - ⏭️ Mining methods (commented out — 4 methods)
@@ -395,6 +396,85 @@ ELECTRUM_TRIGGER_HEADERS="bitcoin-cli generatetoaddress 1 <address>" \
 **Tests:**
 - `test_headers_notification` — subscribes to `blockchain.headers.subscribe`, waits for a block notification, validates `{method, params: [{height, hex}]}` format
 - `test_scripthash_notification` — subscribes to `blockchain.scripthash.subscribe`, waits for a status-change notification, validates `{method, params: [scripthash, status]}` format
+
+### test_robustness_*.py — Misbehaving Clients
+
+These suites act as broken, slow or hostile clients against the libbitcoin-network
+http/websocket layer and the json-rpc streaming above it. They do not check
+answers to valid requests. They check that misbehavior stays contained.
+
+| File | Layer |
+|------|-------|
+| `test_robustness_http.py` | http framing and limits, on every http service |
+| `test_robustness_ws.py` | rfc6455 frames, fragmentation, control frames, on every http service |
+| `test_robustness_native.py` | native targets, queries, large responses, ws subscriptions |
+| `test_robustness_esplora.py` | esplora targets, broadcast bodies, large responses, ws targets |
+| `test_robustness_admin.py` | admin log/event subscriptions: hostile targets and filters, unread pushes |
+| `test_robustness_electrum.py` | newline-delimited json-rpc (electrum, sparrow): malformed json, envelopes, handshake, volume |
+| `test_robustness_bitcoind.py` | bitcoind json-rpc over http/tcp, edge parameters, authorization, REST targets |
+| `test_robustness_btcd.py` | authorization abuse, json-rpc 1.0 over ws/http, filters, notifications |
+| `test_longrun.py` | heavy requests: cancellation, isolation, shutdown (`--bs-pid`, same host) |
+| `robustness.py` | raw socket/http/ws client, canaries, server-side checks |
+
+Each case passes only if the bad connection gets an error or a close within
+5 s (unless the input is legitimately incomplete). The autouse `contained`
+fixture then checks after every case:
+
+- every service in `--robust-services` still answers a fresh, valid request
+  (electrum and sparrow over tcp, btcd over ws, the others over http). The
+  default is `native,electrum,btcd`, and a service that is not listed is
+  skipped;
+- no server-side socket on a service port is left in ESTABLISHED or
+  CLOSE_WAIT (released connection slots). This check runs only on the same host;
+- with `--bs-pid`, the process is alive and no thread stays pegged over two
+  3 s windows. `--no-spin-check` turns the CPU check off.
+
+Server configuration used (mainnet, syncing, loopback only):
+
+```ini
+[node]
+delay_inbound = false      # serve electrum/btcd while syncing
+
+[native]
+bind = 127.0.0.1:8181
+connections = 32
+websocket = true
+
+[btcd]
+bind = 127.0.0.1:8334
+connections = 32
+credential = robust:robust
+
+[electrum]
+bind = 127.0.0.1:50001
+connections = 32
+
+# For --robust-services with the other services.
+[esplora]
+bind = 127.0.0.1:3000
+connections = 32
+
+[sparrow]
+bind = 127.0.0.1:50003
+connections = 32
+
+[admin]
+bind = 127.0.0.1:8080
+connections = 32
+
+[bitcoind]
+bind = 127.0.0.1:8332
+connections = 32
+```
+
+```bash
+pytest test_robustness_*.py --btcd-username=robust --btcd-password=robust \
+  --bs-pid=$(pidof bs) --robust-connections=32
+pytest test_robustness_*.py \
+  --robust-services=native,esplora,admin,electrum,sparrow,bitcoind,btcd \
+  --esplora-port=3000 --admin-port=8080 --sparrow-port=50003 \
+  --btcd-username=robust --btcd-password=robust
+```
 
 ---
 

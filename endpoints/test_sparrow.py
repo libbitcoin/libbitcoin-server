@@ -19,9 +19,9 @@ the electrum methods themselves.
   - Tests with no xfail marker assert real, currently-implemented behavior.
     A failure here is a regression.
   - Tests marked `@pytest.mark.xfail(strict=False)` describe the intended
-    behavior of the method bodies, which are stubs. They fail now, and start
-    passing (as XPASS) when the queries are bound to the store -- the cue to
-    tighten the assertion and drop the marker.
+    behavior of blockchain.block.stats, which is a stub. They fail now, and
+    start passing (as XPASS) when the query is bound to the store -- the cue
+    to tighten the assertion and drop the marker.
 
 The suite skips entirely when no sparrow service is bound.
 
@@ -260,7 +260,6 @@ def test_block_stats_unknown_height_rejected(conn):
 
 # ─── blockchain.silentpayments ───────────────────────────────────────────────
 
-@pytest.mark.xfail(strict=False, reason="stub: not yet bound to the store")
 def test_silentpayments_subscribe_returns_subscription(conn):
     """A scan key pair returns the subscription (address, labels, start)."""
     subscription = conn.result("blockchain.silentpayments.subscribe",
@@ -272,7 +271,6 @@ def test_silentpayments_subscribe_returns_subscription(conn):
     assert isinstance(subscription["labels"], list)
 
 
-@pytest.mark.xfail(strict=False, reason="stub: not yet bound to the store")
 def test_silentpayments_subscribe_malformed_key_rejected(conn):
     """A key of the wrong length is invalid, not unimplemented."""
     code = conn.error_code("blockchain.silentpayments.subscribe",
@@ -281,7 +279,6 @@ def test_silentpayments_subscribe_malformed_key_rejected(conn):
     assert code is not None and code != METHOD_NOT_FOUND
 
 
-@pytest.mark.xfail(strict=False, reason="stub: not yet bound to the store")
 def test_silentpayments_unsubscribe_returns_address(conn):
     """Unsubscribe returns the scan address of the dropped subscription."""
     conn.result("blockchain.silentpayments.subscribe",
@@ -297,10 +294,6 @@ def test_silentpayments_unsubscribe_returns_address(conn):
 
 @pytest.mark.parametrize("method,params", [
     ("blockchain.block.stats", [1]),
-    ("blockchain.silentpayments.subscribe",
-        [SCAN_PRIVATE_KEY, SPEND_PUBLIC_KEY]),
-    ("blockchain.silentpayments.unsubscribe",
-        [SCAN_PRIVATE_KEY, SPEND_PUBLIC_KEY]),
 ])
 def test_sparrow_methods_are_stubs(conn, method, params):
     """The methods are served but unimplemented."""

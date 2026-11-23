@@ -524,27 +524,20 @@ def test_btcd_and_bitcoind_method_share_one_websocket_connection(conn):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# WIRED BUT NOT YET IMPLEMENTED (blocked on a v5 mempool)
+# TRANSACTION NOTIFICATIONS
 # ═══════════════════════════════════════════════════════════════════════════════
-# These methods are present in interfaces/btcd.hpp's method table today, but
-# every handler unconditionally returns not_implemented. Each xfail here is a
-# checklist item: implement the handler and the test flips to XPASS.
 
-NOT_YET_IMPLEMENTED_STUBS = [
-    ("notifynewtransactions", [False]),
-    ("stopnotifynewtransactions", []),
-]
+@pytest.mark.parametrize("verbose", [False, True])
+def test_notifynewtransactions_acknowledges(conn, verbose):
+    response = conn.raw_rpc("notifynewtransactions", [verbose])
+    assert "error" not in response or response["error"] is None
+    assert response.get("result") is None
 
 
-
-@pytest.mark.xfail(reason="wired stub, handler not yet implemented",
-                    strict=False)
-@pytest.mark.parametrize("method,params", NOT_YET_IMPLEMENTED_STUBS)
-def test_stub_not_yet_implemented(conn, method, params):
-    data = conn.raw_rpc(method, params)
-    assert data.get("error") is None, (
-        f"{method} still returns not_implemented: {data.get('error')}"
-    )
+def test_stopnotifynewtransactions_acknowledges(conn):
+    response = conn.raw_rpc("stopnotifynewtransactions", [])
+    assert "error" not in response or response["error"] is None
+    assert response.get("result") is None
 
 
 def test_notifyreceived_valid_address_acknowledges(conn):
