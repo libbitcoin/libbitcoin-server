@@ -219,6 +219,9 @@ protected:
     void handle_get_template_txs_details(const code& ec,
         interface::template_txs_details, uint8_t version, uint8_t media,
         uint32_t height) NOEXCEPT;
+    void handle_get_template_subscribe(const code& ec,
+        interface::template_subscribe, uint8_t version, uint8_t media,
+        bool stop) NOEXCEPT;
     void handle_get_fees(const code& ec, interface::fees,
         uint8_t version, uint8_t media) NOEXCEPT;
 
@@ -230,6 +233,7 @@ protected:
     void do_top(media_type media) NOEXCEPT;
     void do_block(node::header_t link, media_type media) NOEXCEPT;
     void do_transaction(node::transaction_t link, media_type media) NOEXCEPT;
+    void do_template(node::height_t height, media_type media) NOEXCEPT;
 
 private:
     static constexpr uint8_t text = to_value(media_type::text_plain);
@@ -308,6 +312,8 @@ private:
     // Utilities.
     // ------------------------------------------------------------------------
 
+    static media_type to_media(bool stop, uint8_t media) NOEXCEPT;
+    uint64_t to_subsidy(size_t height, bool bip42) const NOEXCEPT;
     static size_t to_root(std::vector<size_t>& roots, size_t index) NOEXCEPT;
     static std::vector<size_t> to_roots(
         const database::template_txs& txs) NOEXCEPT;
@@ -346,6 +352,7 @@ private:
     std::atomic<media_type> top_subscribe_{ media_type::unknown };
     std::atomic<media_type> block_subscribe_{ media_type::unknown };
     std::atomic<media_type> tx_subscribe_{ media_type::unknown };
+    std::atomic<media_type> template_subscribe_{ media_type::unknown };
 
     // TODO: map of outpoints (notify on spenders).
     std::atomic_bool output_subscribe_{};

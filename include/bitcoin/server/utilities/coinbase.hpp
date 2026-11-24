@@ -30,6 +30,15 @@ constexpr size_t max_address_script = 34;
 /// Largest single byte push (data size implied by opcode).
 constexpr size_t max_direct_push = 75;
 
+/// Bytes of the witness of a coinbase: marker, flag, count, size and the
+/// reserved value (bip141).
+constexpr size_t coinbase_witness_size = 2u + 1u + 1u + system::hash_size;
+
+/// Bytes of the witness commitment output of a coinbase: value, script size,
+/// op_return, push, head and commitment (bip141).
+constexpr size_t coinbase_commitment_size = sizeof(uint64_t) + 1u + 2u +
+    sizeof(uint32_t) + system::hash_size;
+
 /// Size of a coinbase input script, the bip34 height at its largest followed
 /// by the tag and extranonce each pushed by size (an empty tag is omitted).
 BCS_API size_t coinbase_script_size(size_t tag, size_t extranonce) NOEXCEPT;

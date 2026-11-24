@@ -105,6 +105,7 @@ void protocol_native::start() NOEXCEPT
     SUBSCRIBE_NATIVE(handle_get_template, _1, _2, _3, _4, _5);
     SUBSCRIBE_NATIVE(handle_get_template_txs, _1, _2, _3, _4, _5);
     SUBSCRIBE_NATIVE(handle_get_template_txs_details, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_template_subscribe, _1, _2, _3, _4, _5);
     SUBSCRIBE_NATIVE(handle_get_fees, _1, _2, _3, _4);
     protocol_html::start();
 }
@@ -113,6 +114,9 @@ void protocol_native::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     stopping_.store(true);
+    if (template_subscribe_.exchange(media_type::unknown) != media_type::unknown)
+        demand_template(false);
+
     dispatcher_.stop(ec);
     unsubscribe_chase();
     protocol_html::stopping(ec);
@@ -308,6 +312,18 @@ bool protocol_native::handle_chase(const code&,
 
             break;
         }
+        case node::chase::template_:
+        {
+            const auto media = template_subscribe_.load(relaxed);
+            if (media != media_type::unknown)
+            {
+                POST(do_template,
+                    node::to_payload<node::chase::template_>(value).height,
+                    media);
+            }
+
+            break;
+        }
         default:
         {
             break;
@@ -320,6 +336,19 @@ bool protocol_native::handle_chase(const code&,
 // Utilities.
 // ----------------------------------------------------------------------------
 // private
+
+protocol_native::media_type protocol_native::to_media(bool stop,
+    uint8_t media) NOEXCEPT
+{
+    return stop ? media_type::unknown : static_cast<media_type>(media);
+}
+
+uint64_t protocol_native::to_subsidy(size_t height, bool bip42) const NOEXCEPT
+{
+    const auto& settings = system_settings();
+    return chain::block::subsidy(height, settings.subsidy_interval_blocks,
+        settings.initial_subsidy(), bip42);
+}
 
 using namespace system::json;
 

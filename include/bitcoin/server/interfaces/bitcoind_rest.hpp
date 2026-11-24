@@ -52,7 +52,6 @@ struct bitcoind_rest_methods
         // info (json only)
         method<"chain_information">{},
         method<"mempool_information">{},
-        method<"fork_information", nullable<system::hash_cptr>>{ "hash" },
 
         // transactions
         method<"tx", uint8_t, system::hash_cptr>{ "media", "hash" },
@@ -80,9 +79,8 @@ struct bitcoind_rest_methods
     using mempool = at<9>;
     using chain_information = at<10>;
     using mempool_information = at<11>;
-    using fork_information = at<12>;
-    using tx = at<13>;
-    using deployment_info = at<14>;
+    using tx = at<12>;
+    using deployment_info = at<13>;
 };
 
 } // namespace interface

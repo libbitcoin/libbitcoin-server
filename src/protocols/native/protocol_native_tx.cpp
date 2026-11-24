@@ -186,8 +186,7 @@ void protocol_native::handle_get_tx_subscribe(const code& ec,
     if (stopped(ec))
         return;
 
-    const auto value = stop ? media_type::unknown : (media_type)media;
-    tx_subscribe_.store(value, std::memory_order_relaxed);
+    tx_subscribe_.store(to_media(stop, media), std::memory_order_relaxed);
     notify_empty();
 }
 
@@ -208,6 +207,43 @@ void protocol_native::do_transaction(node::transaction_t link,
             return;
         case json:
             notify_json(value_from(encode_hash(hash)));
+            return;
+    }
+}
+
+void protocol_native::handle_get_template_subscribe(const code& ec,
+    interface::template_subscribe, uint8_t, uint8_t media, bool stop) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    // Templates are built for notification only while demanded.
+    const auto prior = template_subscribe_.exchange(to_media(stop, media));
+    if (prior == media_type::unknown && !stop)
+        demand_template(true);
+    else if (prior != media_type::unknown && stop)
+        demand_template(false);
+
+    notify_empty();
+}
+
+// notify
+void protocol_native::do_template(node::height_t height,
+    media_type media) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto value = possible_narrow_cast<uint32_t>(height);
+    switch (to_value(media))
+    {
+        case data:
+            notify_chunk(to_chunk(to_little_endian(value)));
+            return;
+        case text:
+            notify_text(encode_base16(to_little_endian(value)));
+            return;
+        case json:
+            notify_json(value);
             return;
     }
 }
@@ -371,8 +407,10 @@ void protocol_native::send_template_txs(const node::block_template& held,
     uint8_t media) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    hashes txids{};
-    txids.reserve(held.txs.size());
+
+    // Position zero is the coinbase, which is not of the template.
+    hashes txids{ null_hash };
+    txids.reserve(add1(held.txs.size()));
     for (const auto& tx: held.txs)
         txids.push_back(tx.txid);
 
@@ -403,11 +441,43 @@ void protocol_native::send_template_txs_details(
     const node::block_template& held) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    system::json::array out{};
-    if (!to_tx_details(out, held.links, to_roots(held.txs)))
+    system::json::array txs{};
+    if (!to_tx_details(txs, held.links, to_roots(held.txs)))
     {
         send_internal_server_error(database::error::integrity);
         return;
+    }
+
+    const auto weight = size_t{ node_settings().pool.coinbase_weight };
+    const auto base = floored_subtract(weight, coinbase_witness_size) /
+        chain::light_weight_factor;
+    const auto maximal = base + coinbase_witness_size;
+    const auto nominal = floored_subtract(maximal,
+        coinbase_witness_size + coinbase_commitment_size);
+    const auto bip42 = held.context.is_enabled(chain::flags::bip42_rule);
+    const auto reward = ceilinged_add(to_subsidy(held.context.height, bip42),
+        held.fees);
+
+    system::json::array out{};
+    out.reserve(add1(txs.size()));
+    out.emplace_back(system::json::object
+    {
+        { "segregated", maximal != nominal },
+        { "nominal", nominal },
+        { "maximal", maximal },
+        { "weight", weight },
+        { "virtual", ceilinged_divide(weight, chain::light_weight_factor) },
+        { "value", reward },
+        { "spend", reward },
+        { "fee", 0 },
+        { "cluster", 0 }
+    });
+
+    for (auto& tx: txs)
+    {
+        auto& object = tx.as_object();
+        object["cluster"] = add1(object.at("cluster").to_number<size_t>());
+        out.push_back(std::move(tx));
     }
 
     send_json(std::move(out));

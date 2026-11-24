@@ -192,10 +192,9 @@ export interface AddressSummary {
   utxoCount?: number;
 }
 
-export interface BlockchainEvent {
-  type: 'block.new';
-  payload: BlockSummary;
-}
+export type BlockchainEvent =
+  | { type: 'block.new'; payload: BlockSummary }
+  | { type: 'template.new'; payload: { height: number } };
 
 export type BlockchainEventHandler = (event: BlockchainEvent) => void;
 export type BlockchainEventTransport = 'idle' | 'connecting' | 'websocket' | 'polling';
@@ -228,6 +227,7 @@ export interface BlockchainClient {
   getBlockTransactions(hashOrHeight: string, startIndex?: number): Promise<TransactionSummary[]>;
   /** Txs of the block in block order, with their clusters within the block. */
   getBlockTransactionDetails(block: BlockReference): Promise<TemplateTransaction[]>;
+  getBlockTransactionHashes(block: BlockReference): Promise<string[]>;
   /** Hash of the candidate block at height. */
   getCandidateBlockHash(height: number): Promise<string>;
   /** Hash of the tx at position in the block. */

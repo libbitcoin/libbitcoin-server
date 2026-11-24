@@ -1850,6 +1850,32 @@ BC_AUTO_TEST_CASE(parsers__native_target__template_valid__expected)
     BC_REQUIRE_EQUAL(height, 123456u);
 }
 
+BC_AUTO_TEST_CASE(parsers__native_target__template_subscribe_valid__expected)
+{
+    const std::string path = "/v42/template/subscribe";
+
+    request_t request{};
+    BC_REQUIRE(!native_target(request, path));
+    BC_REQUIRE_EQUAL(request.method, "template_subscribe");
+    BC_REQUIRE(request.params.has_value());
+
+    const auto& params = request.params.value();
+    BC_REQUIRE(std::holds_alternative<object_t>(params));
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 1u);
+
+    const auto version = std::get<uint8_t>(object.at("version").value());
+    BC_REQUIRE_EQUAL(version, 42u);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__template_subscribe_extra_segment__extra_segment)
+{
+    const std::string path = "/v3/template/subscribe/extra";
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
+}
+
 BC_AUTO_TEST_CASE(parsers__native_target__template_missing_height__missing_height)
 {
     request_t out{};

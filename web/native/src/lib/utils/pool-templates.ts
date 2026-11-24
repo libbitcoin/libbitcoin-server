@@ -11,6 +11,9 @@ export interface TemplateElement {
   virtual: number;
   fee: number;
   cluster: number;
+  weight?: number;
+  value?: number;
+  spend?: number;
 }
 
 export const BLOCK_VIRTUAL_SIZE = 1_000_000;
