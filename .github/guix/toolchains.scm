@@ -129,9 +129,17 @@ FILE-NAME found in ./patches relative to this module."
 (define (make-linux-cross-toolchain target)
   "Return a gcc 14 / glibc 2.31 cross toolchain package for TARGET."
   (let* ((xbinutils (base-binutils target))
-         (xgcc-sans-libc (cross-gcc target
-                                    #:xgcc linux-base-gcc
-                                    #:xbinutils xbinutils))
+         (xgcc-sans-libc-base (cross-gcc target
+                                         #:xgcc linux-base-gcc
+                                         #:xbinutils xbinutils))
+         (xgcc-sans-libc
+           (package
+             (inherit xgcc-sans-libc-base)
+             (arguments
+               (substitute-keyword-arguments
+                   (package-arguments xgcc-sans-libc-base)
+                 ((#:configure-flags flags)
+                  #~(append #$flags (list "--disable-fixincludes")))))))
          (xkernel (cross-kernel-headers target
                                         #:linux-headers linux-libre-headers-6.1
                                         #:xgcc xgcc-sans-libc
@@ -140,7 +148,8 @@ FILE-NAME found in ./patches relative to this module."
                             #:libc glibc-2.31
                             #:xgcc xgcc-sans-libc
                             #:xbinutils xbinutils
-                            #:xheaders xkernel))
+                            #:xheaders xkernel
+                            #:static-bash #f))
          (xgcc (cross-gcc target
                           #:xgcc linux-base-gcc
                           #:xbinutils xbinutils
