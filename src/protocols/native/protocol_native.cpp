@@ -114,6 +114,9 @@ void protocol_native::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     stopping_.store(true);
+    if (template_subscribe_.exchange(media_type::unknown) != media_type::unknown)
+        demand_template(false);
+
     dispatcher_.stop(ec);
     unsubscribe_chase();
     protocol_html::stopping(ec);

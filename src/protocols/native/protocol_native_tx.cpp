@@ -217,7 +217,13 @@ void protocol_native::handle_get_template_subscribe(const code& ec,
     if (stopped(ec))
         return;
 
-    template_subscribe_.store(to_media(stop, media), std::memory_order_relaxed);
+    // Templates are built for notification only while demanded.
+    const auto prior = template_subscribe_.exchange(to_media(stop, media));
+    if (prior == media_type::unknown && !stop)
+        demand_template(true);
+    else if (prior != media_type::unknown && stop)
+        demand_template(false);
+
     notify_empty();
 }
 
