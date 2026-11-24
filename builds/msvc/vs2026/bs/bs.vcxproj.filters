@@ -19,74 +19,80 @@
     <Filter Include="web">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000003}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\admin_dashboard">
+    <Filter Include="web\admin-dashboard">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\admin_dashboard">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
     </Filter>
     <Filter Include="web\admin_dashboard\src">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
     </Filter>
     <Filter Include="web\admin_dashboard\src\app">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
     </Filter>
     <Filter Include="web\admin_dashboard\src\components">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
     </Filter>
     <Filter Include="web\admin_dashboard\src\lib">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000009}</UniqueIdentifier>
     </Filter>
     <Filter Include="web\admin_dashboard\test">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000009}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="web\admin_dashboard\test\lib">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000A}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native">
+    <Filter Include="web\admin_dashboard\test\lib">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000B}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src">
+    <Filter Include="web\blockexplorer">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\app">
+    <Filter Include="web\native">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000D}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\components">
+    <Filter Include="web\native\src">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000E}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib">
+    <Filter Include="web\native\src\app">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000F}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib\api">
+    <Filter Include="web\native\src\components">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000001}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib\api\providers">
+    <Filter Include="web\native\src\lib">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000002}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib\hooks">
+    <Filter Include="web\native\src\lib\api">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000003}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib\utils">
+    <Filter Include="web\native\src\lib\api\providers">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000004}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\routes">
+    <Filter Include="web\native\src\lib\hooks">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\vendor">
+    <Filter Include="web\native\src\lib\utils">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\vendor\mining-pools">
+    <Filter Include="web\native\src\routes">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\test">
+    <Filter Include="web\native\src\vendor">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\test\lib">
+    <Filter Include="web\native\src\vendor\mining-pools">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\test\lib\utils">
+    <Filter Include="web\native\test">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000010}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\shared">
+    <Filter Include="web\native\test\lib">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000A1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\test\lib\utils">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000B1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\shared">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000C1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -406,6 +412,9 @@
     <None Include="..\..\..\..\web\native\src\components\block-validation-inspector.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\components\block-viewer.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\components\command-palette.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
@@ -433,7 +442,22 @@
     <None Include="..\..\..\..\web\native\src\components\search-bar.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\components\sort-header.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\components\template-scene-view.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\components\template-treemap.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\components\theme-select.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\components\transaction-table.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\components\view-frame.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\index.css">
@@ -463,6 +487,9 @@
     <None Include="..\..\..\..\web\native\src\lib\hooks\usePaginatedList.ts">
       <Filter>web\native\src\lib\hooks</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\lib\hooks\useSwipeNavigation.ts">
+      <Filter>web\native\src\lib\hooks</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\lib\hooks\useWindowScrollToBottom.ts">
       <Filter>web\native\src\lib\hooks</Filter>
     </None>
@@ -473,6 +500,9 @@
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\clipboard.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\coinbase.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\format.ts">
@@ -487,6 +517,15 @@
     <None Include="..\..\..\..\web\native\src\lib\utils\miner.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\notify.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\pool-template.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\pool-templates.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\routes.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
@@ -497,6 +536,12 @@
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\search.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\template-scene.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\template-settings.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\main.tsx">
@@ -511,7 +556,13 @@
     <None Include="..\..\..\..\web\native\src\routes\blocks.tsx">
       <Filter>web\native\src\routes</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\routes\configuration.tsx">
+      <Filter>web\native\src\routes</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\routes\dashboard.tsx">
+      <Filter>web\native\src\routes</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\routes\fees.tsx">
       <Filter>web\native\src\routes</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\routes\investigations.tsx">
@@ -520,7 +571,13 @@
     <None Include="..\..\..\..\web\native\src\routes\not-found.tsx">
       <Filter>web\native\src\routes</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\routes\redirects.tsx">
+      <Filter>web\native\src\routes</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\routes\search.tsx">
+      <Filter>web\native\src\routes</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\routes\template.tsx">
       <Filter>web\native\src\routes</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\routes\top-block.tsx">
@@ -547,16 +604,28 @@
     <None Include="..\..\..\..\web\native\test\lib\utils\address.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\coinbase.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\format.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\miner.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\pool-template.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\pool-templates.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\routes.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\search.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\template-scene.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\tsconfig.json">
@@ -570,6 +639,9 @@
     </None>
     <None Include="..\..\..\..\web\shared\favicon.svg">
       <Filter>web\shared</Filter>
+    </None>
+    <None Include="..\..\..\..\web\warnings.mjs">
+      <Filter>web</Filter>
     </None>
     <None Include="packages.config" />
   </ItemGroup>

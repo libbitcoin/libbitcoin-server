@@ -3,7 +3,7 @@
 (list (channel
         (name 'guix)
         (url "https://git.guix.gnu.org/guix.git")
-        (commit "60f6956aeffa7f30285745bd0ea615e9acfc74f8")
+        (commit "ab6a9f84e783710335a29f6591f570e5e2df143c")
         (introduction
           (make-channel-introduction
             "9edb3f66fd807b096b48283debdcddccfea34bad"

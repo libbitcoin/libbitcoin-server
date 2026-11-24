@@ -5,7 +5,7 @@
              ((gnu packages cmake) #:select (cmake-minimal))
              ((gnu packages compression) #:select (gzip zip))
              ((gnu packages gawk) #:select (gawk))
-             ((gnu packages llvm) #:select (clang-toolchain-19 clang-toolchain-21 lld-19 lld-21))
+             ((gnu packages llvm) #:select (clang-toolchain-19 clang-toolchain-22 lld-19 lld-22))
              ((gnu packages version-control) #:select (git-minimal))
              (toolchains))
 
@@ -29,5 +29,5 @@
           ((string-suffix? "-apple-darwin" target)
            (list clang-toolchain-19 lld-19 zip))
           ((string-suffix? "-windows-msvc" target)
-           (list clang-toolchain-21 lld-21 zip))
+           (list clang-toolchain-22 lld-22 zip))
           (else '())))))
