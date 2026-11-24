@@ -94,6 +94,11 @@ void executor::warn_memory(system::string_list& out) const
 
 void executor::warn_space(system::string_list& out) const
 {
+    // Space requirements are sized for mainnet.
+    using namespace system;
+    if (metadata_.configured.node.network != chain::selection::mainnet)
+        return;
+
     uint64_t available{};
     if (!database::file::space(available, metadata_.configured.database.path))
         return;
