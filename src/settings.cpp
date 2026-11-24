@@ -126,6 +126,12 @@ settings::settings(system::chain::selection context,
     zmq.inactivity_minutes = 0;
     zmq.expiration_minutes = 0;
 
+    // Miners hold channels open and may go silent, so they do not expire.
+    stratum_v1.inactivity_minutes = 0;
+    stratum_v1.expiration_minutes = 0;
+    stratum_v2.inactivity_minutes = 0;
+    stratum_v2.expiration_minutes = 0;
+
     // A submitted block is base16 encoded within a json envelope.
     constexpr auto encoded = 2 * network::max_payload + 4 * network::kilobyte;
     bitcoind.maximum_request = encoded;
