@@ -169,6 +169,7 @@ jobs:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          enable-AzPSSession: false
 
       - name: Authenticode signature
         if: ${{ vars.AZURE_CLIENT_ID != '' }}
@@ -215,6 +216,7 @@ jobs:
           API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_WAIT_TIMEOUT: ${{ vars.APPLE_WAIT_TIMEOUT }}
         run: |
           RELEASE="apple-codesign-0.29.0-x86_64-unknown-linux-musl"
           curl -sSfL -o "${RUNNER_TEMP}/rcodesign.tar.gz" \
@@ -248,8 +250,12 @@ jobs:
               "${FILE}"
           done
 
+          WAIT_TIMEOUT="${APPLE_WAIT_TIMEOUT:-600}"
+
           zip -j "${KEYS}/notarize.zip" "${FILES[@]}"
-          "${RCODESIGN}" notary-submit --api-key-file "${KEYS}/key.json" --wait \
+          "${RCODESIGN}" notary-submit \
+            --api-key-file "${KEYS}/key.json" \
+            --wait --max-wait-seconds "${WAIT_TIMEOUT}" \
             "${KEYS}/notarize.zip"
 
       - name: GPG Keyring Initialization
