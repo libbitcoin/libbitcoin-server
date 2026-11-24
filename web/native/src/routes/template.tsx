@@ -1,22 +1,27 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BlockViewer } from '@/components/block-viewer';
-import { HashText } from '@/components/hash-text';
+import { TransactionTable } from '@/components/transaction-table';
 import { errorStatus } from '@/lib/api/errors';
 import {
   useBlockHeader,
+  useLatestTemplateHeight,
   useTemplate,
   useTemplateTransactionHashes,
 } from '@/lib/hooks/useBlockchainData';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
+import { useSwipeNavigation } from '@/lib/hooks/useSwipeNavigation';
 import { formatInteger, formatSats } from '@/lib/utils/format';
+import { notifyBrowser } from '@/lib/utils/notify';
 import {
   blockByHeightPath,
   sectionId,
   sectionSuffix,
   templatePath,
-  transactionPath,
 } from '@/lib/utils/routes';
+
+// A held arrow key pages no faster than this, in milliseconds.
+const REPEAT = 100;
 
 function unavailable(error: unknown): string {
   const status = errorStatus(error);
@@ -44,15 +49,42 @@ export function TemplatePage() {
   const { data: txs, isLoading, isError, error } = useTemplate(height);
   const { data: hashes } = useTemplateTransactionHashes(height);
   const previous = previousPath(height, top?.height, suffix);
-  const next = `${templatePath(height + 1)}${suffix}`;
-  const mined = top !== undefined && height <= top.height;
-  const clusters = new Set(txs?.map((tx) => tx.cluster)).size;
+  // Paging stops one past the last template, as notified or found.
+  const latest = useLatestTemplateHeight();
+  const absent = isError && errorStatus(error) === 404;
+  const more = latest === undefined ? !absent : height <= latest;
+  const next = more ? `${templatePath(height + 1)}${suffix}` : null;
+
+  // The top when this height was opened. A template already mined then opens
+  // as its block; one mined while open stays, linking to its block.
+  const [opened, setOpened] = useState<{ height: number; top: number }>();
+  const overtaken =
+    opened?.height === height && opened.top < height && top !== undefined && height <= top.height;
+  const [focus, setFocus] = useState<{ position: number; key: number }>();
+  const showPosition = (position: number) => {
+    setFocus((current) => ({ position, key: (current?.key ?? 0) + 1 }));
+  };
+  useSwipeNavigation(previous, next);
+  const clusters = new Set(txs?.slice(1).map((tx) => tx.cluster)).size;
   const size = txs?.reduce((sum, tx) => sum + tx.virtual, 0) ?? 0;
   const fees = txs?.reduce((sum, tx) => sum + tx.fee, 0) ?? 0;
+  const rows = useMemo(
+    () =>
+      (txs ?? []).map((tx, index) => ({
+        position: index,
+        hash: hashes?.at(index),
+        virtual: tx.virtual,
+        fee: tx.fee,
+        cluster: tx.cluster,
+      })),
+    [txs, hashes]
+  );
 
+  const paged = useRef(0);
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.repeat) return;
+      if (event.defaultPrevented) return;
+      if (event.repeat && event.timeStamp - paged.current < REPEAT) return;
       if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
       const target = event.target;
       if (target instanceof HTMLElement) {
@@ -63,11 +95,13 @@ export function TemplatePage() {
 
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
+        paged.current = event.timeStamp;
         void navigate(previous);
       }
 
-      if (event.key === 'ArrowRight') {
+      if (event.key === 'ArrowRight' && next) {
         event.preventDefault();
+        paged.current = event.timeStamp;
         void navigate(next);
       }
     };
@@ -78,10 +112,21 @@ export function TemplatePage() {
     };
   }, [navigate, next, previous]);
 
-  // A template that has since been mined opens as its block.
   useEffect(() => {
-    if (mined) void navigate(`${blockByHeightPath(height)}${suffix}`, { replace: true });
-  }, [height, mined, navigate, suffix]);
+    if (top === undefined || opened?.height === height) return;
+    if (height <= top.height) {
+      void navigate(`${blockByHeightPath(height)}${suffix}`, { replace: true });
+      return;
+    }
+    setOpened({ height, top: top.height });
+  }, [height, navigate, opened?.height, suffix, top]);
+
+  useEffect(() => {
+    if (!overtaken) return;
+    notifyBrowser(`Block #${String(height)} mined`, 'The template has been mined.', () => {
+      void navigate(blockByHeightPath(height));
+    });
+  }, [height, navigate, overtaken]);
 
   // A path ending in a section opens the page at it, once it is drawn.
   const section = sectionId(suffix);
@@ -108,14 +153,38 @@ export function TemplatePage() {
           >
             ← Previous
           </Link>
-          <Link
-            to={next}
-            className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent rounded-md border px-3 py-2 text-sm"
-          >
-            Next →
-          </Link>
+          {next ? (
+            <Link
+              to={next}
+              className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent rounded-md border px-3 py-2 text-sm"
+            >
+              Next →
+            </Link>
+          ) : (
+            <span
+              aria-disabled="true"
+              className="border-accent/20 text-textMuted cursor-not-allowed rounded-md border px-3 py-2 text-sm opacity-50"
+            >
+              Next →
+            </span>
+          )}
         </div>
       </header>
+
+      {overtaken && (
+        <div className="border-accent/40 bg-accent/10 text-textPrimary flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm">
+          <p>
+            <span className="text-accent font-semibold">Block #{param} has been mined.</span>{' '}
+            <span className="text-textMuted">This template is as it was.</span>
+          </p>
+          <Link
+            to={`${blockByHeightPath(height)}${suffix}`}
+            className="text-accent hover:text-accentSecondary font-medium"
+          >
+            View block →
+          </Link>
+        </div>
+      )}
 
       {isError && (
         <div className="border-accentSecondary/40 bg-accentSecondary/10 text-textPrimary rounded-xl border px-4 py-3 text-sm">
@@ -138,81 +207,16 @@ export function TemplatePage() {
             key={height}
             elements={txs}
             height={height}
-            coinbase={false}
+            coinbase
+            reservation
             forceExpanded={suffix === '/txs/details'}
+            focus={focus}
           />
 
-          <section id="transactions" className="scroll-mt-24">
-            <header className="mb-4 flex items-center justify-between">
-              <h2 className="text-accent text-lg font-semibold">Transactions</h2>
-              <p className="text-textMuted text-sm">
-                Showing {formatInteger(txs.length)} transactions
-              </p>
-            </header>
-            <div className="border-accent/30 overflow-hidden overflow-x-auto rounded-xl border">
-              <table className="divide-accentSecondary/30 min-w-full divide-y text-sm">
-                <thead className="bg-accentSecondary/20 text-textMuted text-xs uppercase">
-                  <tr>
-                    <th className="px-4 py-3 text-left">Position</th>
-                    <th className="px-4 py-3 text-left">TxID</th>
-                    <th className="px-4 py-3 text-right">Virtual size</th>
-                    <th className="px-4 py-3 text-right">Fee</th>
-                    <th className="px-4 py-3 text-right">Rate</th>
-                    <th className="px-4 py-3 text-right">Cluster</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-accentSecondary/20 divide-y tabular-nums">
-                  {txs.map((tx, index) => (
-                    <TransactionRow
-                      key={index}
-                      position={index + 1}
-                      hash={hashes?.at(index)}
-                      virtual={tx.virtual}
-                      fee={tx.fee}
-                      cluster={tx.cluster}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          <TransactionTable key={`txs-${String(height)}`} rows={rows} onPosition={showPosition} />
         </>
       )}
     </div>
-  );
-}
-
-function TransactionRow({
-  position,
-  hash,
-  virtual,
-  fee,
-  cluster,
-}: {
-  position: number;
-  hash?: string;
-  virtual: number;
-  fee: number;
-  cluster: number;
-}) {
-  const rate = virtual === 0 ? 0 : fee / virtual;
-  return (
-    <tr>
-      <td className="px-4 py-2">{formatInteger(position)}</td>
-      <td className="px-4 py-2">
-        {hash ? (
-          <Link to={transactionPath(hash)} className="text-accent hover:text-accentSecondary">
-            <HashText value={hash} />
-          </Link>
-        ) : (
-          '—'
-        )}
-      </td>
-      <td className="px-4 py-2 text-right">{formatInteger(virtual)} vB</td>
-      <td className="px-4 py-2 text-right">{formatInteger(fee)} sat</td>
-      <td className="px-4 py-2 text-right">{rate.toFixed(2)} sat/vB</td>
-      <td className="px-4 py-2 text-right">{formatInteger(cluster)}</td>
-    </tr>
   );
 }
 

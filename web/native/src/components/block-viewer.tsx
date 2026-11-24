@@ -1,6 +1,6 @@
-import { useCallback, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { formatInteger } from '@/lib/utils/format';
 import {
   chunkRate,
@@ -43,6 +43,9 @@ const heights: Array<{ id: HeightMode; label: string; legend: string }> = [
 
 const ticks = [1, 2, 5, 10, 20, 50, 100, RATE_CEILING];
 
+// A tx of the view by its index, or the coinbase, which is not of the view.
+type Selection = number | 'coinbase';
+
 // The 3D camera, kept across the blocks and templates of the session.
 const view: { current: Camera | null } = { current: null };
 
@@ -54,12 +57,18 @@ export function BlockViewer({
   coinbase,
   positionPath,
   forceExpanded = false,
+  focus,
+  reservation = false,
 }: {
   elements: readonly TemplateElement[];
   height: number;
   coinbase: boolean;
   positionPath?: (position: number) => string;
   forceExpanded?: boolean;
+  // A request, new by its key, to select and show the tx at a position.
+  focus?: { position: number; key: number };
+  // The coinbase is the space reserved for it, as of a template.
+  reservation?: boolean;
 }) {
   const [expanded, setExpanded] = useState(() => forceExpanded || loadSectionExpanded('details'));
   const regionId = useId();
@@ -70,14 +79,34 @@ export function BlockViewer({
   );
   const [display, setDisplay] = useState(loadTemplateDisplay);
   const [mode, setMode] = useState<HeightMode>(loadHeightMode);
-  const [selection, setSelection] = useState<number | null>(null);
-  const valid = selection !== null && selection < pool.transactions.length;
+  const coinbaseElement = coinbase ? elements.at(0) : undefined;
+  const [selection, setSelection] = useState<Selection | null>(null);
+  const valid =
+    selection === 'coinbase'
+      ? coinbaseElement !== undefined
+      : selection !== null && selection < pool.transactions.length;
   const selected = valid ? selection : featuredTransaction(pool, 0);
+  const viewed = typeof selected === 'number' ? selected : null;
   const current = pool.templates.at(0);
+  const fees = current?.fee ?? 0;
 
-  const select = useCallback((transaction: number) => {
+  const select = useCallback((transaction: Selection) => {
     setSelection(transaction);
   }, []);
+
+  useEffect(() => {
+    if (!focus) return;
+    const index = pool.transactions.findIndex((entry) => entry.position === focus.position);
+    const transaction = focus.position === 0 && coinbaseElement ? 'coinbase' : index;
+    if (transaction === -1) return;
+    setSelection(transaction);
+    setExpanded(true);
+    requestAnimationFrame(() => {
+      document.getElementById('details')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+    // A focus request is acted on once, when made.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.key]);
 
   function updateDisplay(next: TemplateDisplay) {
     saveTemplateDisplay(next);
@@ -106,7 +135,7 @@ export function BlockViewer({
           }}
           className="text-accent flex w-full items-center justify-between gap-4 rounded-xl px-6 py-4 text-left font-semibold"
         >
-          Details
+          Block reward
           <ChevronDownIcon
             aria-hidden="true"
             className={`h-5 w-5 shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
@@ -137,13 +166,18 @@ export function BlockViewer({
             <TemplateSceneView
               pool={pool}
               template={0}
-              selected={selected}
+              selected={viewed}
               mode={mode}
               onSelect={select}
               view={view}
             />
           ) : (
-            <TemplateTreemap pool={pool} template={0} selected={selected} onSelect={select} />
+            <TemplateTreemap
+              pool={pool}
+              template={0}
+              selected={viewed}
+              onSelect={select}
+            />
           )}
           <Legend
             height={display === '3d' ? heights.find((entry) => entry.id === mode)?.legend : undefined}
@@ -151,6 +185,9 @@ export function BlockViewer({
         </div>
         <TransactionPanel
           pool={pool}
+          coinbase={coinbaseElement}
+          reservation={reservation}
+          fees={fees}
           selected={selected}
           onSelect={select}
           positionPath={positionPath}
@@ -223,20 +260,79 @@ function Legend({ height }: { height?: string }) {
 
 function TransactionPanel({
   pool,
+  coinbase,
+  reservation,
+  fees,
   selected,
   onSelect,
   positionPath,
 }: {
   pool: PoolTemplates;
-  selected: number | null;
-  onSelect: (transaction: number) => void;
+  coinbase?: TemplateElement;
+  reservation: boolean;
+  fees: number;
+  selected: Selection | null;
+  onSelect: (transaction: Selection) => void;
   positionPath?: (position: number) => string;
 }) {
-  const transaction = selected === null ? undefined : pool.transactions[selected];
+  const [membersShown, setMembersShown] = useState(() => loadSectionExpanded('members'));
+  const membersId = useId();
+
+  // The coinbase then the txs of the view in block order, for stepping.
+  const ordered = useMemo<Selection[]>(
+    () => [
+      ...(coinbase ? ['coinbase' as const] : []),
+      ...pool.transactions
+        .map((entry, index) => ({ position: entry.position, index }))
+        .sort((left, right) => left.position - right.position)
+        .map((entry) => entry.index),
+    ],
+    [coinbase, pool]
+  );
+  if (selected === null) return null;
+  const order = ordered.indexOf(selected);
+  const previous = order > 0 ? ordered[order - 1] : undefined;
+  const next = order + 1 < ordered.length ? ordered[order + 1] : undefined;
+  const header = (position: number) => (
+    <PanelHeader
+      position={position}
+      previous={previous}
+      next={next}
+      onSelect={onSelect}
+      positionPath={positionPath}
+    />
+  );
+
+  if (selected === 'coinbase') {
+    if (!coinbase) return null;
+    const reward = coinbase.value;
+    const subsidy = reward === undefined ? undefined : reward - fees;
+    const claim = coinbase.spend;
+    const amount = (value?: number) => (value === undefined ? '—' : formatBitcoin(value));
+    const rows: PanelRow[] = [
+      ['Fees', amount(fees)],
+      ['Subsidy', amount(subsidy)],
+      ['Reward (fees + subsidy)', amount(reward)],
+      ['Claim', amount(claim), reward !== undefined && claim !== undefined && claim !== reward],
+    ];
+    return (
+      <aside className="border-accent/30 bg-surface/80 min-w-0 flex-[1_1_300px] space-y-4 rounded-2xl border p-5">
+        {header(0)}
+        <PanelRows rows={rows} />
+        <p className="border-accentSecondary/20 text-textMuted border-t pt-3 text-sm">
+          {reservation
+            ? 'The space reserved for the coinbase, which pays the subsidy and the fees.'
+            : 'The coinbase, which pays the subsidy and the fees.'}
+        </p>
+      </aside>
+    );
+  }
+
+  const transaction = pool.transactions[selected];
   if (!transaction) return null;
   const chunk = pool.chunks[transaction.chunk];
   const own = transactionRate(transaction);
-  const rows: Array<[string, string]> = [
+  const rows: PanelRow[] = [
     ['Fee rate', `${formatTemplateRate(own)} sat/vB`],
     ['Cluster rate', `${formatTemplateRate(chunkRate(chunk))} sat/vB`],
     ['Fee', `${formatInteger(transaction.fee)} sat`],
@@ -246,37 +342,29 @@ function TransactionPanel({
 
   return (
     <aside className="border-accent/30 bg-surface/80 min-w-0 flex-[1_1_300px] space-y-4 rounded-2xl border p-5">
-      <div className="space-y-1">
-        <p className="text-accentSecondary text-xs tracking-wide uppercase">Transaction</p>
-        {positionPath ? (
-          <Link
-            to={positionPath(transaction.position)}
-            className="text-accent hover:text-accentSecondary font-mono text-sm"
-          >
-            Position {formatInteger(transaction.position)}
-          </Link>
-        ) : (
-          <p className="text-accent font-mono text-sm">
-            Position {formatInteger(transaction.position)}
-          </p>
-        )}
-      </div>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm tabular-nums">
-        {rows.map(([label, value]) => (
-          <div key={label} className="contents">
-            <dt className="text-textMuted">{label}</dt>
-            <dd className="text-textPrimary text-right">{value}</dd>
-          </div>
-        ))}
-      </dl>
+      {header(transaction.position)}
+      <PanelRows rows={rows} />
       <p className="border-accentSecondary/20 text-textMuted border-t pt-3 text-sm">
         {describePlacement(chunk, own)}
       </p>
       <div className="space-y-1">
-        <p className="text-accentSecondary text-xs tracking-wide uppercase">
-          Cluster members, in mining order
-        </p>
-        <ul className="space-y-0.5">
+        <button
+          type="button"
+          aria-expanded={membersShown}
+          aria-controls={membersId}
+          onClick={() => {
+            saveSectionExpanded('members', !membersShown);
+            setMembersShown(!membersShown);
+          }}
+          className="text-accentSecondary hover:text-accent flex w-full items-center justify-between gap-2 text-left text-xs tracking-wide uppercase"
+        >
+          <span>Cluster members, in mining order</span>
+          <ChevronDownIcon
+            aria-hidden="true"
+            className={`h-4 w-4 shrink-0 transition-transform ${membersShown ? 'rotate-180' : ''}`}
+          />
+        </button>
+        <ul id={membersId} hidden={!membersShown} className="space-y-0.5">
           {chunk.transactions.map((member) => {
             const entry = pool.transactions[member];
             const rate = transactionRate(entry);
@@ -310,5 +398,86 @@ function TransactionPanel({
         </ul>
       </div>
     </aside>
+  );
+}
+
+function StepButton({
+  label,
+  Icon,
+  target,
+  onSelect,
+}: {
+  label: string;
+  Icon: typeof ChevronLeftIcon;
+  target: Selection | undefined;
+  onSelect: (transaction: Selection) => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={target === undefined}
+      onClick={() => {
+        if (target !== undefined) onSelect(target);
+      }}
+      className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent rounded-md border p-1 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-accent/40 disabled:hover:text-textPrimary"
+    >
+      <Icon aria-hidden="true" strokeWidth={2} className="h-4 w-4" />
+    </button>
+  );
+}
+
+function PanelHeader({
+  position,
+  previous,
+  next,
+  onSelect,
+  positionPath,
+}: {
+  position: number;
+  previous?: Selection;
+  next?: Selection;
+  onSelect: (transaction: Selection) => void;
+  positionPath?: (position: number) => string;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-accentSecondary text-xs tracking-wide uppercase">Transaction</p>
+        <div className="flex gap-1">
+          <StepButton label="Previous position" Icon={ChevronLeftIcon} target={previous} onSelect={onSelect} />
+          <StepButton label="Next position" Icon={ChevronRightIcon} target={next} onSelect={onSelect} />
+        </div>
+      </div>
+      {positionPath ? (
+        <Link
+          to={positionPath(position)}
+          className="text-accent hover:text-accentSecondary font-mono text-sm"
+        >
+          Position {formatInteger(position)}
+        </Link>
+      ) : (
+        <p className="text-accent font-mono text-sm">Position {formatInteger(position)}</p>
+      )}
+    </div>
+  );
+}
+
+// A label and value, the value flagged where it is not as expected.
+type PanelRow = [string, string] | [string, string, boolean];
+
+function PanelRows({ rows }: { rows: PanelRow[] }) {
+  return (
+    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm tabular-nums">
+      {rows.map(([label, value, flagged]) => (
+        <div key={label} className="contents">
+          <dt className="text-textMuted">{label}</dt>
+          <dd className={`text-right ${flagged ? 'font-semibold text-red-500' : 'text-textPrimary'}`}>
+            {value}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }

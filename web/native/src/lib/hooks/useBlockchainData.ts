@@ -173,14 +173,26 @@ export function useFees() {
   });
 }
 
+// Templates are refreshed by template notifications, kept once mined.
 export function useTemplate(height: number) {
   return useBlockchainQuery<TemplateTransaction[]>({
     queryKey: ['template', { height }],
     queryFn: (client) => client.getTemplate(height),
-    staleTime: 10_000,
-    refetchInterval: 15_000,
+    staleTime: Infinity,
     retry: false,
   });
+}
+
+// The height of the latest template notified, if any.
+export function useLatestTemplateHeight(): number | undefined {
+  const client = useBlockchainClient();
+  const { data } = useQuery<number | null>({
+    queryKey: [getBlockchainQueryScope(client), 'template', 'latest'],
+    queryFn: () => null,
+    enabled: false,
+    staleTime: Infinity,
+  });
+  return data ?? undefined;
 }
 
 export function useBlockTransactionDetails(hash: string, options?: { enabled?: boolean }) {
@@ -192,12 +204,20 @@ export function useBlockTransactionDetails(hash: string, options?: { enabled?: b
   });
 }
 
+export function useBlockTransactionHashes(hash: string, options?: { enabled?: boolean }) {
+  return useBlockchainQuery<string[]>({
+    queryKey: ['block', hash, 'txs'],
+    queryFn: (client) => client.getBlockTransactionHashes({ chain: 'hash', id: hash }),
+    enabled: options?.enabled,
+    staleTime: Infinity,
+  });
+}
+
 export function useTemplateTransactionHashes(height: number) {
   return useBlockchainQuery<string[]>({
     queryKey: ['template', { height }, 'txs'],
     queryFn: (client) => client.getTemplateTransactionHashes(height),
-    staleTime: 10_000,
-    refetchInterval: 15_000,
+    staleTime: Infinity,
     retry: false,
   });
 }
@@ -400,6 +420,14 @@ export function useBlockchainEventStatus(): BlockchainEventStatus {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
+// A query of the template at a height: [scope, 'template', { height }, ...].
+function isTemplateQuery(key: readonly unknown[], scope: BlockchainQueryScope, height: number) {
+  const [candidate, kind, target] = key;
+  if (!isMatchingQueryScope(candidate, scope) || kind !== 'template') return false;
+  if (!target || typeof target !== 'object') return false;
+  return (target as { height?: unknown }).height === height;
+}
+
 export function BlockchainEventCacheUpdater() {
   const client = useBlockchainClient();
   const queryScope = useMemo(() => getBlockchainQueryScope(client), [client]);
@@ -440,6 +468,15 @@ export function BlockchainEventCacheUpdater() {
 
   const handleEvent = useCallback(
     (event: BlockchainEvent) => {
+      if (event.type === 'template.new') {
+        const { height } = event.payload;
+        queryClient.setQueryData([queryScope, 'template', 'latest'], height);
+        void queryClient.invalidateQueries({
+          predicate: (query) => isTemplateQuery(query.queryKey, queryScope, height),
+        });
+        return;
+      }
+
       updateLatestBlocksCache(queryClient, queryScope, event.payload);
 
       const scopeKey = queryScope.endpoint;

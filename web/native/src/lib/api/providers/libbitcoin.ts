@@ -55,6 +55,8 @@ const TOP_QUERY_PATH = '/v1/top?format=json';
 const MINER_CACHE_DEPTH = 6;
 const TOP_SUBSCRIBE_PATH = '/v1/top/subscribe?format=json';
 const TOP_UNSUBSCRIBE_PATH = '/v1/top/subscribe?format=json&stop=true';
+const TEMPLATE_SUBSCRIBE_PATH = '/v1/template/subscribe?format=json';
+const TEMPLATE_UNSUBSCRIBE_PATH = '/v1/template/subscribe?format=json&stop=true';
 const WEBSOCKET_CONNECT_TIMEOUT_MS = 5_000;
 const WEBSOCKET_HEARTBEAT_INTERVAL_MS = 15_000;
 const WEBSOCKET_RESPONSE_TIMEOUT_MS = 45_000;
@@ -403,6 +405,13 @@ function normalizeTextMessage(data: MessageEvent['data']): Promise<string | null
     return data.text();
   }
   return Promise.resolve(null);
+}
+
+// A template notification is the bare height of the replaced template.
+function parseTemplateSubscriptionMessage(text: string): number | null {
+  const trimmed = text.trim();
+  if (!/^\d+$/u.test(trimmed)) return null;
+  return Number(trimmed);
 }
 
 function parseTopSubscriptionMessage(text: string): string | null {
@@ -1061,6 +1070,7 @@ export function createLibbitcoinClient({
     try {
       if (sendStop && socket.readyState === 1) {
         socket.send(TOP_UNSUBSCRIBE_PATH);
+        socket.send(TEMPLATE_UNSUBSCRIBE_PATH);
       }
       socket.close();
     } catch {
@@ -1103,6 +1113,7 @@ export function createLibbitcoinClient({
       clearSocketConnectTimer();
       try {
         activeSocket.send(TOP_SUBSCRIBE_PATH);
+        activeSocket.send(TEMPLATE_SUBSCRIBE_PATH);
         stopPolling();
         websocketUnavailable = false;
         socketHeartbeatTimer = setInterval(() => {
@@ -1138,6 +1149,13 @@ export function createLibbitcoinClient({
         try {
           const text = await normalizeTextMessage(event.data);
           if (text === null || socket !== activeSocket) return;
+          const height = parseTemplateSubscriptionMessage(text);
+          if (height !== null) {
+            for (const listener of listeners) {
+              listener({ type: 'template.new', payload: { height } });
+            }
+            return;
+          }
           const identifier = parseTopSubscriptionMessage(text);
           if (identifier === null) return;
           probeSentAt = null;
@@ -1434,6 +1452,12 @@ export function createLibbitcoinClient({
     async getTemplate(height: number): Promise<TemplateTransaction[]> {
       const path = `/v1/template/${String(height)}/txs/details?format=json`;
       return templateSchema.parse(await fetchJson<unknown>(baseUrl, path));
+    },
+
+    async getBlockTransactionHashes(block: BlockReference): Promise<string[]> {
+      const id = encodeURIComponent(block.id);
+      const path = `/v1/block/${block.chain}/${id}/txs?format=json`;
+      return hashesSchema.parse(await fetchJson<unknown>(baseUrl, path));
     },
 
     async getTemplateTransactionHashes(height: number): Promise<string[]> {

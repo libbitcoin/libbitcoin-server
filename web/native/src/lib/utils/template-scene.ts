@@ -120,6 +120,7 @@ export class TemplateScene {
   private hover = -1;
   private pointer: [number, number] | null = null;
   private drag: Drag | null = null;
+  private touches = new Map<number, [number, number]>();
   private frame = 0;
   private ratio = 1;
   private palette: ScenePalette = {
@@ -141,6 +142,7 @@ export class TemplateScene {
     canvas.addEventListener('pointerdown', this.pointerDown);
     canvas.addEventListener('pointermove', this.pointerMove);
     canvas.addEventListener('pointerup', this.pointerUp);
+    canvas.addEventListener('pointercancel', this.pointerCancel);
     canvas.addEventListener('pointerleave', this.pointerLeave);
     canvas.addEventListener('contextmenu', this.contextMenu);
     canvas.addEventListener('wheel', this.wheel, { passive: false });
@@ -156,6 +158,7 @@ export class TemplateScene {
     this.canvas.removeEventListener('pointerdown', this.pointerDown);
     this.canvas.removeEventListener('pointermove', this.pointerMove);
     this.canvas.removeEventListener('pointerup', this.pointerUp);
+    this.canvas.removeEventListener('pointercancel', this.pointerCancel);
     this.canvas.removeEventListener('pointerleave', this.pointerLeave);
     this.canvas.removeEventListener('contextmenu', this.contextMenu);
     this.canvas.removeEventListener('wheel', this.wheel);
@@ -234,6 +237,13 @@ export class TemplateScene {
   setView(camera: Camera): void {
     this.camera = { ...camera };
     this.goal = null;
+    this.request();
+  }
+
+  // Pans by a share of the canvas extent, positive toward the right/bottom.
+  panBy(dx: number, dy: number): void {
+    this.goal = null;
+    this.pan(dx * this.canvas.clientWidth, dy * this.canvas.clientHeight);
     this.request();
   }
 
@@ -495,6 +505,11 @@ export class TemplateScene {
   private readonly pointerDown = (event: PointerEvent): void => {
     this.canvas.setPointerCapture(event.pointerId);
     const [x, y] = this.local(event);
+    this.touches.set(event.pointerId, [x, y]);
+    if (this.touches.size > 1) {
+      if (this.drag) this.drag.moved = true;
+      return;
+    }
     this.drag = { x, y, startX: x, startY: y, pan: event.shiftKey || event.button === 2, moved: false };
     this.hover = -1;
     this.goal = null;
@@ -502,6 +517,12 @@ export class TemplateScene {
 
   private readonly pointerMove = (event: PointerEvent): void => {
     const [x, y] = this.local(event);
+    const last = this.touches.get(event.pointerId);
+    if (last && this.touches.size > 1) {
+      this.gesture(event.pointerId, last, [x, y]);
+      return;
+    }
+    if (last) this.touches.set(event.pointerId, [x, y]);
     const drag = this.drag;
     if (!drag) {
       this.pointer = [x, y];
@@ -518,10 +539,7 @@ export class TemplateScene {
     if (Math.abs(x - drag.startX) + Math.abs(y - drag.startY) > 4) drag.moved = true;
     const camera = this.camera;
     if (drag.pan) {
-      const scale = camera.distance * 0.0016;
-      const [sin, cos] = [Math.sin(camera.azimuth), Math.cos(camera.azimuth)];
-      camera.x += (-dx * cos - dy * sin) * scale;
-      camera.z += (dx * sin - dy * cos) * scale;
+      this.pan(dx, dy);
     } else {
       camera.azimuth -= dx * 0.006;
       camera.elevation = Math.max(0.1, Math.min(1.45, camera.elevation + dy * 0.005));
@@ -530,12 +548,44 @@ export class TemplateScene {
   };
 
   private readonly pointerUp = (event: PointerEvent): void => {
+    if (this.release(event)) return;
     const drag = this.drag;
     this.drag = null;
     if (!drag || drag.moved) return;
     const box = this.boxes.at(this.pick(...this.local(event)));
     if (box) this.onSelect(box.transaction);
   };
+
+  private readonly pointerCancel = (event: PointerEvent): void => {
+    if (!this.release(event)) this.drag = null;
+  };
+
+  // Ends a pointer, true if others remain, the drag then following one of them.
+  private release(event: PointerEvent): boolean {
+    this.touches.delete(event.pointerId);
+    const [rest] = this.touches.values();
+    if (!rest) return false;
+    const [x, y] = rest;
+    this.drag = { x, y, startX: x, startY: y, pan: false, moved: true };
+    return true;
+  }
+
+  // Two pointers pan by their midpoint, zoom by their spread and turn by
+  // their angle, each following the fingers.
+  private gesture(id: number, last: [number, number], next: [number, number]): void {
+    const other = [...this.touches].find(([key]) => key !== id)?.[1];
+    this.touches.set(id, next);
+    if (!other) return;
+    const [ox, oy] = other;
+    const before = Math.hypot(last[0] - ox, last[1] - oy);
+    const after = Math.hypot(next[0] - ox, next[1] - oy);
+    const angle = Math.atan2(next[1] - oy, next[0] - ox) - Math.atan2(last[1] - oy, last[0] - ox);
+    const turn = Math.atan2(Math.sin(angle), Math.cos(angle));
+    this.pan((next[0] - last[0]) / 2, (next[1] - last[1]) / 2);
+    this.camera.azimuth += turn;
+    if (before > 0 && after > 0) this.zoom(before / after);
+    this.request();
+  }
 
   private readonly pointerLeave = (): void => {
     this.pointer = null;
@@ -588,6 +638,15 @@ export class TemplateScene {
     event.preventDefault();
     this.request();
   };
+
+  // Moves the scene with the pointer by pixels across the canvas.
+  private pan(dx: number, dy: number): void {
+    const camera = this.camera;
+    const scale = camera.distance * 0.0016;
+    const [sin, cos] = [Math.sin(camera.azimuth), Math.cos(camera.azimuth)];
+    camera.x += (-dx * cos - dy * sin) * scale;
+    camera.z += (dx * sin - dy * cos) * scale;
+  }
 
   private zoom(factor: number): void {
     this.camera.distance = Math.max(6, Math.min(110, this.camera.distance * factor));

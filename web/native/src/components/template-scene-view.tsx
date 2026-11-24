@@ -8,6 +8,7 @@ import {
   type ScenePalette,
 } from '@/lib/utils/template-scene';
 import { useTheme } from '@/lib/theme';
+import { ViewFrame } from '@/components/view-frame';
 
 interface TemplateSceneViewProps {
   pool: PoolTemplates;
@@ -85,25 +86,22 @@ export function TemplateSceneView({
   }, [template, selected]);
 
   return (
-    <div className="space-y-2">
+    <ViewFrame
+      onPan={(dx, dy) => {
+        scene.current?.panBy(-dx, -dy);
+      }}
+      onReset={() => {
+        scene.current?.resetView();
+      }}
+      hint="Drag to orbit · shift- or right-drag to pan · scroll to zoom · arrow keys and + / − when focused"
+      touchHint="Drag to orbit · two fingers to pan, pinch to zoom, twist to turn"
+    >
       <canvas
         ref={canvas}
         tabIndex={0}
         aria-label="Block templates in 3D. Drag to orbit, shift-drag or right-drag to pan, scroll to zoom. Arrow keys orbit and plus or minus zoom while focused."
         className="bg-surface focus-visible:outline-textPrimary block h-[min(640px,70vh)] min-h-80 w-full cursor-grab touch-none rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 active:cursor-grabbing"
       />
-      <div className="text-textMuted flex flex-wrap items-center justify-between gap-2 text-xs">
-        <span>Drag to orbit · shift- or right-drag to pan · scroll to zoom · arrow keys and + / − when focused</span>
-        <button
-          type="button"
-          onClick={() => {
-            scene.current?.resetView();
-          }}
-          className="border-accent/30 text-textMuted hover:text-accent hover:bg-accentSecondary/10 rounded-md border px-2 py-1.5"
-        >
-          Reset view
-        </button>
-      </div>
-    </div>
+    </ViewFrame>
   );
 }

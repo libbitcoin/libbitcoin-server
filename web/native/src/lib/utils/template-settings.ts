@@ -3,7 +3,7 @@ import type { HeightMode } from './template-scene';
 export type TemplateDisplay = '2d' | '3d';
 
 /** A collapsible section of the block and template pages. */
-export type PageSection = 'details' | 'size';
+export type PageSection = 'details' | 'size' | 'members';
 
 const STORAGE_KEY = 'libbitcoinTemplateDisplay';
 const HEIGHT_KEY = 'libbitcoinTemplateHeight';
@@ -11,6 +11,7 @@ const HEIGHT_MODES: readonly HeightMode[] = ['chunk', 'own', 'fee'];
 const SECTION_KEYS: Record<PageSection, string> = {
   details: 'libbitcoinSectionDetails',
   size: 'libbitcoinSectionSize',
+  members: 'libbitcoinSectionMembers',
 };
 
 function browserStorage(): Storage | null {

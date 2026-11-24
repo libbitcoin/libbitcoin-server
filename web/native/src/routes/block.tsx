@@ -1,48 +1,40 @@
-import { type ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   useBlockHeader,
   useBlockStats,
   useBlockTransactionDetails,
+  useBlockTransactionHashes,
   useBlockTransactions,
 } from '@/lib/hooks/useBlockchainData';
-import {
-  useBlockchainClient,
-  type BlockHeaderDetail,
-  type TransactionSummary,
-} from '@/lib/api/client';
+import { useBlockchainClient, type BlockHeaderDetail } from '@/lib/api/client';
 import { useNow } from '@/lib/hooks/useNow';
+import { useSwipeNavigation } from '@/lib/hooks/useSwipeNavigation';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
-import { usePaginatedList } from '@/lib/hooks/usePaginatedList';
-import { useWindowScrollToBottom } from '@/lib/hooks/useWindowScrollToBottom';
 import {
   blockByHashPath,
   blockValidationPath,
   sectionId,
   sectionSuffix,
   templatePath,
-  transactionPath,
 } from '@/lib/utils/routes';
 import {
-  formatBtc,
   formatBytes,
   formatHex,
   formatNumber,
   formatRelativeTime,
   formatSats,
   formatTimestamp,
-  satsToBtc,
 } from '@/lib/utils/format';
-import { HashText } from '@/components/hash-text';
 import { BlockSizeBar } from '@/components/block-size-bar';
 import { BlockViewer } from '@/components/block-viewer';
-import { MinerValue } from '@/components/miner-value';
+import { CoinbaseTextValue, MinerValue } from '@/components/miner-value';
+import { TransactionTable } from '@/components/transaction-table';
 import { BlockValidationInspector } from '@/components/block-validation-inspector';
 import { SaveBookmarkButton } from '@/components/save-bookmark';
 
-const TRANSACTION_PAGE_SIZE = 25;
-
-const transactionKey = (tx: TransactionSummary) => tx.txid;
+// A held arrow key pages no faster than this, in milliseconds.
+const REPEAT = 100;
 
 export function BlockPage() {
   const { hash, height } = useParams<{ hash?: string; height?: string }>();
@@ -55,7 +47,6 @@ export function BlockPage() {
   const now = useNow();
   const {
     data: block,
-    isLoading: blockLoading,
     isError: blockIsError,
     error: blockError,
   } = useBlockHeader(identifier);
@@ -64,38 +55,40 @@ export function BlockPage() {
   const { data: stats, isLoading: statsLoading } = useBlockStats(statsTarget, {
     enabled: Boolean(block?.hash),
   });
+  const { data: initialTransactions } = useBlockTransactions(identifier, 0);
   const {
-    data: initialTransactions,
-    isLoading: initialTransactionsLoading,
-    error: initialTransactionsError,
-  } = useBlockTransactions(identifier, 0);
-  const { data: details } = useBlockTransactionDetails(block?.hash ?? '', {
+    data: details,
+    isLoading: detailsLoading,
+    isError: detailsError,
+  } = useBlockTransactionDetails(block?.hash ?? '', {
+    enabled: Boolean(block?.hash),
+  });
+  const { data: hashes } = useBlockTransactionHashes(block?.hash ?? '', {
     enabled: Boolean(block?.hash),
   });
   const previousPathRef = useRef<string | null>(null);
   const nextPathRef = useRef<string | null>(null);
   const nextPath = nextBlockPath(block, suffix);
-  const previousPath = block?.previousBlockHash
-    ? `${blockByHashPath(block.previousBlockHash)}${suffix}`
-    : null;
-  const {
-    items: transactions,
-    isFetchingMore,
-    hasMore,
-    loadMore,
-    loadMoreError,
-  } = usePaginatedList<TransactionSummary>({
-    initialItems: initialTransactions,
-    resetDeps: [client, identifier],
-    getItemKey: transactionKey,
-    fetchNextPage: (items) => client.getBlockTransactions(block?.hash ?? identifier, items.length),
-    canFetchMore: (items) => {
-      if (!block) return false;
-      if (typeof block.txCount === 'number') return items.length < block.txCount;
-      return true;
-    },
-    pageSize: TRANSACTION_PAGE_SIZE,
-  });
+  const previousPath =
+    block?.previousBlockHash && block.height > 0
+      ? `${blockByHashPath(block.previousBlockHash)}${suffix}`
+      : null;
+  const [focus, setFocus] = useState<{ position: number; key: number }>();
+  const showPosition = (position: number) => {
+    setFocus((current) => ({ position, key: (current?.key ?? 0) + 1 }));
+  };
+  useSwipeNavigation(previousPath, nextPath);
+  const rows = useMemo(
+    () =>
+      details?.map((tx, position) => ({
+        position,
+        hash: hashes?.at(position),
+        virtual: tx.virtual,
+        fee: tx.fee,
+        cluster: tx.cluster,
+      })),
+    [details, hashes]
+  );
 
   useLayoutEffect(() => {
     previousPathRef.current = previousPath;
@@ -103,9 +96,15 @@ export function BlockPage() {
   }, [previousPath, nextPath]);
 
   useEffect(() => {
+    let last = { path: '', time: 0 };
+    const page = (path: string, event: KeyboardEvent) => {
+      event.preventDefault();
+      if (event.repeat && (path === last.path || event.timeStamp - last.time < REPEAT)) return;
+      last = { path, time: event.timeStamp };
+      void navigate(path);
+    };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
-      if (event.repeat) return;
       if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
 
       const target = event.target;
@@ -116,14 +115,12 @@ export function BlockPage() {
       }
 
       if (event.key === 'ArrowLeft' && previousPathRef.current) {
-        event.preventDefault();
-        void navigate(previousPathRef.current);
+        page(previousPathRef.current, event);
         return;
       }
 
       if (event.key === 'ArrowRight' && nextPathRef.current) {
-        event.preventDefault();
-        void navigate(nextPathRef.current);
+        page(nextPathRef.current, event);
       }
     };
 
@@ -152,13 +149,6 @@ export function BlockPage() {
     if (section === undefined || !sectionReady) return;
     document.getElementById(section)?.scrollIntoView({ block: 'start' });
   }, [section, sectionReady, location.key]);
-
-  useWindowScrollToBottom({
-    enabled: hasMore && !isFetchingMore && loadMoreError === null && transactions.length > 0,
-    onBottomReached: () => {
-      void loadMore();
-    },
-  });
 
   const timestamp = block?.timestamp;
   const feesSats = stats?.feesSats ?? block?.feesSats;
@@ -201,6 +191,13 @@ export function BlockPage() {
             >
               ← Previous
             </Link>
+          ) : block ? (
+            <span
+              aria-disabled="true"
+              className="border-accent/20 text-textMuted cursor-not-allowed rounded-md border px-3 py-2 text-sm opacity-50"
+            >
+              ← Previous
+            </span>
           ) : null}
           {nextPath ? (
             <Link
@@ -258,6 +255,10 @@ export function BlockPage() {
           }
         />
         <InfoItem label="Miner" value={<MinerValue coinbase={initialTransactions?.[0]} />} />
+        <InfoItem
+          label="Coinbase"
+          value={<CoinbaseTextValue coinbase={initialTransactions?.[0]} hash={block?.hash} />}
+        />
       </section>
 
       {(typeof size === 'number' ||
@@ -273,6 +274,7 @@ export function BlockPage() {
           coinbase
           positionPath={(position) => `${blockByHashPath(block.hash)}/tx/${String(position)}`}
           forceExpanded={suffix === '/txs/details'}
+          focus={focus}
         />
       )}
 
@@ -284,96 +286,13 @@ export function BlockPage() {
         />
       )}
 
-      <section id="transactions" className="scroll-mt-24">
-        <header className="mb-4 flex items-center justify-between">
-          <h2 className="text-accent text-lg font-semibold">Transactions</h2>
-          <p className="text-textMuted text-sm">Showing {transactions.length} transactions</p>
-        </header>
-        <div className="border-accent/30 overflow-hidden overflow-x-auto rounded-xl border">
-          <table className="divide-accentSecondary/30 min-w-full divide-y text-sm">
-            <thead className="bg-accentSecondary/20 text-textMuted text-xs uppercase">
-              <tr>
-                <th className="px-4 py-3 text-left">TxID</th>
-                <th className="px-4 py-3 text-right">Outputs</th>
-                <th className="px-4 py-3 text-right">Fee</th>
-                <th className="px-4 py-3 text-right">Size</th>
-              </tr>
-            </thead>
-            <tbody>
-              {initialTransactionsLoading && transactions.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="text-textMuted px-4 py-6 text-center">
-                    Loading transactions…
-                  </td>
-                </tr>
-              )}
-              {initialTransactionsError && transactions.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="text-accentSecondary px-4 py-6 text-center">
-                    Could not load transactions.
-                  </td>
-                </tr>
-              )}
-              {!initialTransactionsLoading &&
-                !initialTransactionsError &&
-                transactions.length === 0 &&
-                !blockLoading && (
-                  <tr>
-                    <td colSpan={4} className="text-textMuted px-4 py-6 text-center">
-                      No transactions available.
-                    </td>
-                  </tr>
-                )}
-              {transactions.map((tx) => (
-                <tr key={tx.txid} className="hover:bg-accentSecondary/10">
-                  <td className="px-4 py-3">
-                    <Link
-                      to={transactionPath(tx.txid)}
-                      className="text-accent hover:text-accentSecondary font-mono"
-                    >
-                      <HashText value={tx.txid} truncate={12} />
-                    </Link>
-                  </td>
-                  <td className="text-textPrimary px-4 py-3 text-right">
-                    {formatBtc(satsToBtc(tx.totalOutput))}
-                  </td>
-                  <td className="text-textPrimary px-4 py-3 text-right">
-                    {formatSats(tx.feeSats)}
-                  </td>
-                  <td className="text-textPrimary px-4 py-3 text-right">
-                    {typeof tx.size === 'number' && tx.size > 0
-                      ? `${formatNumber(tx.size)} bytes`
-                      : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {hasMore && (
-          <div className="mt-4 flex flex-col items-center gap-3">
-            {loadMoreError && (
-              <p role="alert" className="text-accentSecondary text-center text-sm break-words">
-                Could not load more transactions. {loadMoreError}
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                void loadMore();
-              }}
-              disabled={isFetchingMore}
-              className="border-accent text-accent hover:border-accentSecondary hover:text-accentSecondary rounded-md border px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isFetchingMore
-                ? 'Loading more…'
-                : loadMoreError
-                  ? 'Retry loading transactions'
-                  : 'Load more transactions'}
-            </button>
-          </div>
-        )}
-      </section>
+      <TransactionTable
+        key={`txs-${block?.hash ?? ''}`}
+        rows={rows}
+        isLoading={detailsLoading}
+        isError={detailsError}
+        onPosition={showPosition}
+      />
     </div>
   );
 }
