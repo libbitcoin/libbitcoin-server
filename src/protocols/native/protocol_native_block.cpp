@@ -61,8 +61,7 @@ void protocol_native::handle_get_top_subscribe(const code& ec,
     if (stopped(ec))
         return;
 
-    const auto value = stop ? media_type::unknown : (media_type)media;
-    top_subscribe_.store(value, std::memory_order_relaxed);
+    top_subscribe_.store(to_media(stop, media), std::memory_order_relaxed);
     if (stop)
     {
         send_empty();
@@ -676,8 +675,7 @@ void protocol_native::handle_get_block_subscribe(const code& ec,
     if (stopped(ec))
         return;
 
-    const auto value = stop ? media_type::unknown : (media_type)media;
-    block_subscribe_.store(value, std::memory_order_relaxed);
+    block_subscribe_.store(to_media(stop, media), std::memory_order_relaxed);
     if (stop)
     {
         send_empty();

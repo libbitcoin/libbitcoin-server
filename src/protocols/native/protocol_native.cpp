@@ -334,6 +334,12 @@ bool protocol_native::handle_chase(const code&,
 // ----------------------------------------------------------------------------
 // private
 
+protocol_native::media_type protocol_native::to_media(bool stop,
+    uint8_t media) NOEXCEPT
+{
+    return stop ? media_type::unknown : static_cast<media_type>(media);
+}
+
 using namespace system::json;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)

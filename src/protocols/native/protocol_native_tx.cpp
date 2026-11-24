@@ -186,8 +186,7 @@ void protocol_native::handle_get_tx_subscribe(const code& ec,
     if (stopped(ec))
         return;
 
-    const auto value = stop ? media_type::unknown : (media_type)media;
-    tx_subscribe_.store(value, std::memory_order_relaxed);
+    tx_subscribe_.store(to_media(stop, media), std::memory_order_relaxed);
     notify_empty();
 }
 
@@ -218,8 +217,7 @@ void protocol_native::handle_get_template_subscribe(const code& ec,
     if (stopped(ec))
         return;
 
-    const auto value = stop ? media_type::unknown : (media_type)media;
-    template_subscribe_.store(value, std::memory_order_relaxed);
+    template_subscribe_.store(to_media(stop, media), std::memory_order_relaxed);
     notify_empty();
 }
 
