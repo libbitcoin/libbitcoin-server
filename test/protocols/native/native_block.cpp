@@ -49,13 +49,23 @@ static bool is_top(const json::value& value, const chain::header& header,
         object.at("header") == json::value_from(header);
 }
 
+static bool is_chain(const json::value& value, const std::string& chain)
+{
+    return value.as_object().at("chain").as_string() == chain;
+}
+
 static bool is_tops(const json::value& value, const chain::header& confirmed,
     int64_t confirmed_height, const chain::header& candidate,
     int64_t candidate_height)
 {
-    return value.is_object() && value.as_object().size() == 2u &&
-        is_top(value.at("confirmed"), confirmed, confirmed_height) &&
-        is_top(value.at("candidate"), candidate, candidate_height);
+    if (!value.is_array() || value.as_array().size() != 2u)
+        return false;
+
+    const auto& tops = value.as_array();
+    return is_top(tops.at(0), confirmed, confirmed_height) &&
+        is_chain(tops.at(0), "confirmed") &&
+        is_top(tops.at(1), candidate, candidate_height) &&
+        is_chain(tops.at(1), "candidate");
 }
 
 static data_chunk default_tops()
@@ -64,6 +74,58 @@ static data_chunk default_tops()
 }
 
 BC_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
+
+// headers (http)
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(native__headers__json__not_implemented)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/headers?format=json"), http::status::not_implemented);
+}
+
+BC_AUTO_TEST_CASE(native__headers_confirmed__json__not_implemented)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/headers/confirmed?format=json"), http::status::not_implemented);
+}
+
+BC_AUTO_TEST_CASE(native__headers_candidate__data__not_implemented)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/headers/candidate?format=data"), http::status::not_implemented);
+}
+
+BC_AUTO_TEST_CASE(native__headers_confirmed_top__json__confirmed_top)
+{
+    const auto response = get_json("/v1/headers/confirmed/top?format=json");
+    BC_REQUIRE(is_top(response, test::block9.header(), 9));
+    BC_REQUIRE(is_chain(response, "confirmed"));
+}
+
+BC_AUTO_TEST_CASE(native__headers_candidate_top__json__candidate_top)
+{
+    const auto response = get_json("/v1/headers/candidate/top?format=json");
+    BC_REQUIRE(is_top(response, test::genesis.header(), 0));
+    BC_REQUIRE(is_chain(response, "candidate"));
+}
+
+BC_AUTO_TEST_CASE(native__headers_top__no_branches__strong_tops)
+{
+    BC_REQUIRE(is_tops(get_json("/v1/headers/top?format=json"), test::block9.header(), 9, test::genesis.header(), 0));
+    BC_REQUIRE_EQUAL(get_data("/v1/headers/top?format=data"), default_tops());
+}
+
+BC_AUTO_TEST_CASE(native__headers_top__weak_branch__branch_top)
+{
+    BC_REQUIRE(query_.set(test::block1a.header(), database::context{ 0, 1, 0 }, {}, false));
+
+    const auto response = get_json("/v1/headers/top?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 3u);
+
+    const auto& branch = response.as_array().at(2);
+    BC_REQUIRE(is_top(branch, test::block1a.header(), 1));
+    BC_REQUIRE(!branch.as_object().contains("chain"));
+    BC_REQUIRE_EQUAL(get_data("/v1/headers/top?format=data"), splice(default_tops(), to_top(test::block1a.header(), 1)));
+}
 
 // top (http)
 // ----------------------------------------------------------------------------
@@ -81,6 +143,26 @@ BC_AUTO_TEST_CASE(native__top__text__expected)
 BC_AUTO_TEST_CASE(native__top__data__expected)
 {
     BC_REQUIRE_EQUAL(get_data("/v1/top?format=data"), default_tops());
+}
+
+BC_AUTO_TEST_CASE(native__top__coincident_json__confirmed_top)
+{
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1_hash)));
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block2_hash)));
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block3_hash)));
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block4_hash)));
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block5_hash)));
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block6_hash)));
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block7_hash)));
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block8_hash)));
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block9_hash)));
+
+    const auto response = get_json("/v1/top?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
+    BC_REQUIRE(is_top(response.as_array().front(), test::block9.header(), 9));
+    BC_REQUIRE(is_chain(response.as_array().front(), "confirmed"));
+    BC_REQUIRE_EQUAL(get_data("/v1/top?format=data"), to_top(test::block9.header(), 9));
 }
 
 BC_AUTO_TEST_CASE(native__top__pushed_candidate_json__candidate_top)

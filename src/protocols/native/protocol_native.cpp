@@ -107,6 +107,20 @@ void protocol_native::start() NOEXCEPT
     SUBSCRIBE_NATIVE(handle_get_template_txs_details, _1, _2, _3, _4, _5);
     SUBSCRIBE_NATIVE(handle_get_template_subscribe, _1, _2, _3, _4, _5);
     SUBSCRIBE_NATIVE(handle_get_fees, _1, _2, _3, _4);
+
+    // Header methods.
+    SUBSCRIBE_NATIVE(handle_get_headers, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_headers_confirmed, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_headers_candidate, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_headers_top, _1, _2, _3, _4);
+
+    // Transactions methods.
+    SUBSCRIBE_NATIVE(handle_get_txs, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_txs_details, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_txs_confirmed, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_txs_confirmed_details, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_txs_unconfirmed, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_txs_unconfirmed_details, _1, _2, _3, _4);
     protocol_html::start();
 }
 
@@ -501,36 +515,104 @@ chain::header::cptr protocol_native::get_top(bool candidate,
         query.to_confirmed(height));
 }
 
-// A top is its checkpoint followed by its header.
-data_chunk protocol_native::to_top(bool candidate) const NOEXCEPT
+// The strong tops, confirmed then candidate, the candidate where distinct.
+database::header_links protocol_native::to_strong_tops() const NOEXCEPT
 {
+    const auto& query = archive();
+    const auto confirmed = query.to_confirmed(query.get_top_confirmed());
+    const auto candidate = query.to_candidate(query.get_top_candidate());
+    if (candidate == confirmed)
+        return { confirmed.value };
+
+    return { confirmed.value, candidate.value };
+}
+
+// A top is its checkpoint followed by its header.
+data_chunk protocol_native::to_header_top(
+    const database::header_link& link) const NOEXCEPT
+{
+    const auto& query = archive();
     size_t height{};
-    const auto header = get_top(candidate, height);
+    const auto header = query.get_header(link);
+    query.get_height(height, link);
     return splice(chain::checkpoint{ header->hash(), height }.to_data(),
         header->to_data());
 }
 
+value protocol_native::to_header_top_json(const database::header_link& link,
+    const std::string_view& role) const NOEXCEPT
+{
+    const auto& query = archive();
+    size_t height{};
+    const auto header = query.get_header(link);
+    query.get_height(height, link);
+    auto model = value_from(chain::checkpoint{ header->hash(), height });
+    auto& object = model.as_object();
+    object.emplace("header", value_from(header));
+    if (!role.empty())
+        object.emplace("chain", std::string{ role });
+
+    return model;
+}
+
+data_chunk protocol_native::to_top(bool candidate) const NOEXCEPT
+{
+    const auto& query = archive();
+    return to_header_top(candidate ?
+        query.to_candidate(query.get_top_candidate()) :
+        query.to_confirmed(query.get_top_confirmed()));
+}
+
 value protocol_native::to_top_json(bool candidate) const NOEXCEPT
 {
-    size_t height{};
-    const auto header = get_top(candidate, height);
-    auto model = value_from(chain::checkpoint{ header->hash(), height });
-    model.as_object().emplace("header", value_from(header));
-    return model;
+    const auto& query = archive();
+    return candidate ?
+        to_header_top_json(query.to_candidate(query.get_top_candidate()),
+            "candidate") :
+        to_header_top_json(query.to_confirmed(query.get_top_confirmed()),
+            "confirmed");
 }
 
 data_chunk protocol_native::to_tops() const NOEXCEPT
 {
-    return splice(to_top(false), to_top(true));
+    data_chunk out{};
+    for (const auto link: to_strong_tops())
+        extend(out, to_header_top(link));
+
+    return out;
 }
 
 value protocol_native::to_tops_json() const NOEXCEPT
 {
-    return
-    {
-        { "confirmed", to_top_json(false) },
-        { "candidate", to_top_json(true) }
-    };
+    const auto tops = to_strong_tops();
+    system::json::array out{};
+    out.reserve(tops.size());
+    out.push_back(to_header_top_json(tops.front(), "confirmed"));
+    if (is_one(tops.size()))
+        return out;
+
+    out.push_back(to_header_top_json(tops.back(), "candidate"));
+    return out;
+}
+
+// The strong tops, then the tops of weak branches.
+data_chunk protocol_native::to_headers_top() const NOEXCEPT
+{
+    auto out = to_tops();
+    for (const auto link: archive().get_branch_tops())
+        extend(out, to_header_top(link));
+
+    return out;
+}
+
+value protocol_native::to_headers_top_json() const NOEXCEPT
+{
+    auto out = to_tops_json();
+    auto& tops = out.as_array();
+    for (const auto link: archive().get_branch_tops())
+        tops.push_back(to_header_top_json(link, {}));
+
+    return out;
 }
 
 BC_POP_WARNING()

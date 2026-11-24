@@ -225,6 +225,32 @@ protected:
     void handle_get_fees(const code& ec, interface::fees,
         uint8_t version, uint8_t media) NOEXCEPT;
 
+    void handle_get_headers(const code& ec, interface::headers,
+        uint8_t version, uint8_t media) NOEXCEPT;
+    void handle_get_headers_confirmed(const code& ec,
+        interface::headers_confirmed, uint8_t version,
+        uint8_t media) NOEXCEPT;
+    void handle_get_headers_candidate(const code& ec,
+        interface::headers_candidate, uint8_t version,
+        uint8_t media) NOEXCEPT;
+    void handle_get_headers_top(const code& ec, interface::headers_top,
+        uint8_t version, uint8_t media) NOEXCEPT;
+
+    void handle_get_txs(const code& ec, interface::txs,
+        uint8_t version, uint8_t media) NOEXCEPT;
+    void handle_get_txs_details(const code& ec, interface::txs_details,
+        uint8_t version, uint8_t media) NOEXCEPT;
+    void handle_get_txs_confirmed(const code& ec, interface::txs_confirmed,
+        uint8_t version, uint8_t media) NOEXCEPT;
+    void handle_get_txs_confirmed_details(const code& ec,
+        interface::txs_confirmed_details, uint8_t version,
+        uint8_t media) NOEXCEPT;
+    void handle_get_txs_unconfirmed(const code& ec,
+        interface::txs_unconfirmed, uint8_t version, uint8_t media) NOEXCEPT;
+    void handle_get_txs_unconfirmed_details(const code& ec,
+        interface::txs_unconfirmed_details, uint8_t version,
+        uint8_t media) NOEXCEPT;
+
 protected:
     using media_type = network::http::media_type;
 
@@ -309,6 +335,14 @@ private:
     void complete_get_fees(const code& ec, const database::fee_rates& rates,
         const gate_t::ptr& gate) NOEXCEPT;
 
+    void get_txs_unconfirmed(bool details, uint8_t media) NOEXCEPT;
+    void handle_txs_unconfirmed(const code& ec,
+        const database::tx_links& links, bool details, uint8_t media,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_txs_unconfirmed(const code& ec,
+        const database::tx_links& links, bool details, uint8_t media,
+        const gate_t::ptr& gate) NOEXCEPT;
+
     // Utilities.
     // ------------------------------------------------------------------------
 
@@ -334,6 +368,13 @@ private:
     system::json::value to_top_json(bool candidate) const NOEXCEPT;
     system::data_chunk to_tops() const NOEXCEPT;
     system::json::value to_tops_json() const NOEXCEPT;
+    database::header_links to_strong_tops() const NOEXCEPT;
+    system::data_chunk to_header_top(
+        const database::header_link& link) const NOEXCEPT;
+    system::json::value to_header_top_json(const database::header_link& link,
+        const std::string_view& role) const NOEXCEPT;
+    system::data_chunk to_headers_top() const NOEXCEPT;
+    system::json::value to_headers_top_json() const NOEXCEPT;
     database::header_link to_header(const std::optional<uint32_t>& height,
         const std::optional<system::hash_cptr>& hash,
         bool candidate = false) NOEXCEPT;

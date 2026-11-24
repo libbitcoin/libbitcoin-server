@@ -1876,6 +1876,119 @@ BC_AUTO_TEST_CASE(parsers__native_target__template_subscribe_extra_segment__extr
     BC_REQUIRE_EQUAL(native_target(out, path), server::error::extra_segment);
 }
 
+// headers
+
+BC_AUTO_TEST_CASE(parsers__native_target__headers_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/headers"));
+    BC_REQUIRE_EQUAL(request.method, "headers");
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__headers_top_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/headers/top"));
+    BC_REQUIRE_EQUAL(request.method, "headers_top");
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__headers_confirmed_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/headers/confirmed"));
+    BC_REQUIRE_EQUAL(request.method, "headers_confirmed");
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__headers_candidate_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/headers/candidate"));
+    BC_REQUIRE_EQUAL(request.method, "headers_candidate");
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__headers_confirmed_top_valid__top_chain)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/headers/confirmed/top"));
+    BC_REQUIRE_EQUAL(request.method, "top_chain");
+    BC_REQUIRE(!std::get<object_t>(request.params.value()).contains("candidate"));
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__headers_candidate_top_valid__top_chain)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/headers/candidate/top"));
+    BC_REQUIRE_EQUAL(request.method, "top_chain");
+    BC_REQUIRE(std::get<bool>(std::get<object_t>(request.params.value()).at("candidate").value()));
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__headers_invalid_component__invalid_component)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/headers/invalid"), server::error::invalid_component);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__headers_invalid_subcomponent__invalid_subcomponent)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/headers/confirmed/invalid"), server::error::invalid_subcomponent);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__headers_top_extra_segment__extra_segment)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/headers/top/extra"), server::error::extra_segment);
+}
+
+// txs
+
+BC_AUTO_TEST_CASE(parsers__native_target__txs_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/txs"));
+    BC_REQUIRE_EQUAL(request.method, "txs");
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__txs_details_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/txs/details"));
+    BC_REQUIRE_EQUAL(request.method, "txs_details");
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__txs_confirmed_details_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/txs/confirmed/details"));
+    BC_REQUIRE_EQUAL(request.method, "txs_confirmed_details");
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__txs_unconfirmed_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/txs/unconfirmed"));
+    BC_REQUIRE_EQUAL(request.method, "txs_unconfirmed");
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__txs_unconfirmed_details_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/txs/unconfirmed/details"));
+    BC_REQUIRE_EQUAL(request.method, "txs_unconfirmed_details");
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__txs_invalid_component__invalid_component)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/txs/invalid"), server::error::invalid_component);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__txs_unconfirmed_details_extra__extra_segment)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/txs/unconfirmed/details/extra"), server::error::extra_segment);
+}
+
 BC_AUTO_TEST_CASE(parsers__native_target__template_missing_height__missing_height)
 {
     request_t out{};

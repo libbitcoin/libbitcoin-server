@@ -85,7 +85,8 @@ def test_configuration(native_config):
 def test_top(native_config):
     """Test /v1/top endpoint - chain top information."""
     data = get_json(native_config["base_url"], "top")
-    assert data["confirmed"]["height"] >= ReferenceData.KNOWN_HEIGHT
+    assert data[0]["chain"] == "confirmed"
+    assert data[0]["height"] >= ReferenceData.KNOWN_HEIGHT
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -565,7 +566,7 @@ def test_unsupported_format(native_config):
 
 def confirmed_top(native_config) -> int:
     """The confirmed top height."""
-    return get_json(native_config["base_url"], "top")["confirmed"]["height"]
+    return get_json(native_config["base_url"], "top")[0]["height"]
 
 
 def template_status(native_config, height: int) -> int:

@@ -460,6 +460,67 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
     {
         method = "fees";
     }
+    else if (target == "headers")
+    {
+        if (segment == segments.size())
+        {
+            method = "headers";
+        }
+        else
+        {
+            const auto component = segments[segment++];
+            if (component == "top")
+            {
+                method = "headers_top";
+            }
+            else if (component == "confirmed" || component == "candidate")
+            {
+                const auto candidate = (component == "candidate");
+                if (segment == segments.size())
+                {
+                    method = candidate ? "headers_candidate" :
+                        "headers_confirmed";
+                }
+                else if (segments[segment++] == "top")
+                {
+                    method = "top_chain";
+                    if (candidate)
+                        params["candidate"] = true;
+                }
+                else
+                {
+                    return error::invalid_subcomponent;
+                }
+            }
+            else
+            {
+                return error::invalid_component;
+            }
+        }
+    }
+    else if (target == "txs")
+    {
+        std::string name{ "txs" };
+        if (segment < segments.size())
+        {
+            const auto component = segments[segment];
+            if (component == "confirmed" || component == "unconfirmed")
+            {
+                name += "_" + std::string{ component };
+                ++segment;
+            }
+        }
+
+        if (segment < segments.size())
+        {
+            if (segments[segment++] != "details")
+                return error::invalid_component;
+
+            name += "_details";
+        }
+
+        method = name;
+    }
     else
     {
         return error::invalid_target;

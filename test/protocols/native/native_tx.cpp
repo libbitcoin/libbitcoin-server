@@ -211,6 +211,39 @@ BC_AUTO_TEST_CASE(native__ws_template_subscribe__stop__empty)
     BC_REQUIRE(ws_get_text("/v1/template/subscribe?stop=true").empty());
 }
 
+// txs
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(native__txs__json__not_implemented)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/txs?format=json"), status::not_implemented);
+}
+
+BC_AUTO_TEST_CASE(native__txs_details__json__not_implemented)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/txs/details?format=json"), status::not_implemented);
+}
+
+BC_AUTO_TEST_CASE(native__txs_confirmed__json__not_implemented)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/txs/confirmed?format=json"), status::not_implemented);
+}
+
+BC_AUTO_TEST_CASE(native__txs_confirmed_details__json__not_implemented)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/txs/confirmed/details?format=json"), status::not_implemented);
+}
+
+BC_AUTO_TEST_CASE(native__txs_unconfirmed__relay_disabled__not_implemented)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/txs/unconfirmed?format=json"), status::not_implemented);
+}
+
+BC_AUTO_TEST_CASE(native__txs_unconfirmed_details__text__not_acceptable)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/txs/unconfirmed/details?format=text"), http::status::not_acceptable);
+}
+
 // fees
 // ----------------------------------------------------------------------------
 
@@ -292,6 +325,20 @@ BC_AUTO_TEST_CASE(native__ws_fees__empty_pool__json)
     const auto response = ws_get_json("/v1/fees");
     BC_REQUIRE(response.is_object());
     BC_REQUIRE_EQUAL(response.as_object().at("count").as_int64(), 0);
+}
+
+BC_AUTO_TEST_CASE(native__txs_unconfirmed__empty_pool__empty)
+{
+    const auto response = get_json("/v1/txs/unconfirmed?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE(response.as_array().empty());
+}
+
+BC_AUTO_TEST_CASE(native__txs_unconfirmed_details__empty_pool__empty)
+{
+    const auto response = get_json("/v1/txs/unconfirmed/details?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE(response.as_array().empty());
 }
 
 BC_AUTO_TEST_CASE(native__template__empty_pool__summary)
@@ -408,6 +455,40 @@ BC_AUTO_TEST_CASE(native__template_txs__pooled_child__json_hashes)
     BC_REQUIRE_EQUAL(response.as_array().at(0).as_string(), encode_hash(null_hash));
     BC_REQUIRE_EQUAL(response.as_array().at(1).as_string(), encode_hash(test::tx1c.hash(false)));
     BC_REQUIRE_EQUAL(response.as_array().at(2).as_string(), encode_hash(test::tx1c_child.hash(false)));
+}
+
+BC_AUTO_TEST_CASE(native__txs_unconfirmed__pooled_child__json_hashes)
+{
+    BC_REQUIRE(!submit(test::tx1c));
+    BC_REQUIRE(!submit(test::tx1c_child));
+
+    const auto response = get_json("/v1/txs/unconfirmed?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 2u);
+    BC_REQUIRE_EQUAL(response.as_array().at(0).as_string(), encode_hash(test::tx1c.hash(false)));
+    BC_REQUIRE_EQUAL(response.as_array().at(1).as_string(), encode_hash(test::tx1c_child.hash(false)));
+}
+
+BC_AUTO_TEST_CASE(native__txs_unconfirmed__pooled__data_hashes)
+{
+    BC_REQUIRE(!submit(test::tx1c));
+    BC_REQUIRE_EQUAL(get_data("/v1/txs/unconfirmed?format=data"), to_chunk(test::tx1c.hash(false)));
+}
+
+BC_AUTO_TEST_CASE(native__txs_unconfirmed_details__pooled_child__clustered)
+{
+    BC_REQUIRE(!submit(test::tx1c));
+    BC_REQUIRE(!submit(test::tx1c_child));
+
+    const auto response = get_json("/v1/txs/unconfirmed/details?format=json");
+    BC_REQUIRE(response.is_array());
+
+    const auto& txs = response.as_array();
+    BC_REQUIRE_EQUAL(txs.size(), 2u);
+    BC_REQUIRE_EQUAL(txs.at(0).as_object().at("fee").as_int64(), 10);
+    BC_REQUIRE_EQUAL(txs.at(1).as_object().at("fee").as_int64(), 10);
+    BC_REQUIRE_EQUAL(txs.at(0).as_object().at("cluster").as_int64(), 0);
+    BC_REQUIRE_EQUAL(txs.at(1).as_object().at("cluster").as_int64(), 0);
 }
 
 BC_AUTO_TEST_CASE(native__template_txs__pooled__data_hashes)
