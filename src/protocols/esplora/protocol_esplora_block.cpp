@@ -79,16 +79,16 @@ bool protocol_esplora::to_block(object& out,
 // Block methods.
 // ----------------------------------------------------------------------------
 
-bool protocol_esplora::handle_get_block(const code& ec, interface::block,
+void protocol_esplora::handle_get_block(const code& ec, interface::block,
     uint8_t media, const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media == data && !at_least(esplora::version::v3_0))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     const auto& query = archive();
@@ -96,7 +96,7 @@ bool protocol_esplora::handle_get_block(const code& ec, interface::block,
     if (link.is_terminal())
     {
         send_not_found();
-        return true;
+        return;
     }
 
     if (media == data)
@@ -105,7 +105,7 @@ bool protocol_esplora::handle_get_block(const code& ec, interface::block,
         if (query.is_pruned(link) || !query.get_block_size(size, link, true))
         {
             send_not_found();
-            return true;
+            return;
         }
 
         const auto turbo = database_settings().turbo;
@@ -113,44 +113,43 @@ bool protocol_esplora::handle_get_block(const code& ec, interface::block,
         {
             return query.get_wire_block(out, link, true, turbo);
         }, network::http::media_type::application_octet_stream);
-        return true;
+        return;
     }
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     object out{};
     if (!to_block(out, link))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     send_json(std::move(out));
-    return true;
 }
 
-bool protocol_esplora::handle_get_block_txs(const code& ec,
+void protocol_esplora::handle_get_block_txs(const code& ec,
     interface::block_txs, uint8_t media, const hash_cptr& hash,
     uint32_t start) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     // The interface constrains the page to a fixed size and alignment.
     if (!is_zero(start % tx_page))
     {
         send_bad_request();
-        return true;
+        return;
     }
 
     const auto& query = archive();
@@ -159,7 +158,7 @@ bool protocol_esplora::handle_get_block_txs(const code& ec,
     if (txs.empty() || start >= txs.size() || query.is_pruned(link))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     const auto position = ceilinged_add<size_t>(start, tx_page);
@@ -171,33 +170,32 @@ bool protocol_esplora::handle_get_block_txs(const code& ec,
         if (!to_tx(tx, txs.at(index)))
         {
             send_internal_server_error(database::error::integrity);
-            return true;
+            return;
         }
 
         out.emplace_back(std::move(tx));
     }
 
     send_json(std::move(out));
-    return true;
 }
 
-bool protocol_esplora::handle_get_block_header(const code& ec,
+void protocol_esplora::handle_get_block_header(const code& ec,
     interface::block_header, uint8_t media, const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != text)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     const auto header = archive().get_header(archive().to_header(*hash));
     if (!header)
     {
         send_not_found();
-        return true;
+        return;
     }
 
     constexpr auto size = chain::header::serialized_size();
@@ -206,19 +204,18 @@ bool protocol_esplora::handle_get_block_header(const code& ec,
     write::base16::fast writer{ sink };
     header->to_data(writer);
     send_text(std::move(out));
-    return true;
 }
 
-bool protocol_esplora::handle_get_block_status(const code& ec,
+void protocol_esplora::handle_get_block_status(const code& ec,
     interface::block_status, uint8_t media, const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     const auto& query = archive();
@@ -228,7 +225,7 @@ bool protocol_esplora::handle_get_block_status(const code& ec,
     if (link.is_terminal() || !query.get_height(height, link))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     const auto confirmed = query.is_confirmed_block(link);
@@ -239,19 +236,18 @@ bool protocol_esplora::handle_get_block_status(const code& ec,
             query.to_confirmed(add1(height))));
 
     send_json(std::move(out));
-    return true;
 }
 
-bool protocol_esplora::handle_get_block_txids(const code& ec,
+void protocol_esplora::handle_get_block_txids(const code& ec,
     interface::block_txids, uint8_t media, const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     const auto& query = archive();
@@ -259,7 +255,7 @@ bool protocol_esplora::handle_get_block_txids(const code& ec,
     if (keys.empty())
     {
         send_not_found();
-        return true;
+        return;
     }
 
     array out(keys.size());
@@ -269,20 +265,19 @@ bool protocol_esplora::handle_get_block_txids(const code& ec,
     });
 
     send_json(std::move(out));
-    return true;
 }
 
-bool protocol_esplora::handle_get_block_txid(const code& ec,
+void protocol_esplora::handle_get_block_txid(const code& ec,
     interface::block_txid, uint8_t media, const hash_cptr& hash,
     uint32_t index) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != text)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     const auto& query = archive();
@@ -290,23 +285,22 @@ bool protocol_esplora::handle_get_block_txid(const code& ec,
     if (index >= keys.size())
     {
         send_not_found();
-        return true;
+        return;
     }
 
     send_text(encode_hash(keys.at(index)));
-    return true;
 }
 
-bool protocol_esplora::handle_get_block_height(const code& ec,
+void protocol_esplora::handle_get_block_height(const code& ec,
     interface::block_height, uint8_t media, uint32_t height) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != text)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     const auto& query = archive();
@@ -314,23 +308,22 @@ bool protocol_esplora::handle_get_block_height(const code& ec,
     if (link.is_terminal())
     {
         send_not_found();
-        return true;
+        return;
     }
 
     send_text(encode_hash(query.get_header_key(link)));
-    return true;
 }
 
-bool protocol_esplora::handle_get_blocks(const code& ec, interface::blocks,
+void protocol_esplora::handle_get_blocks(const code& ec, interface::blocks,
     uint8_t media, std::optional<uint32_t> height) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     const auto& query = archive();
@@ -339,7 +332,7 @@ bool protocol_esplora::handle_get_blocks(const code& ec, interface::blocks,
     if (start > top)
     {
         send_not_found();
-        return true;
+        return;
     }
 
     array out{};
@@ -357,39 +350,36 @@ bool protocol_esplora::handle_get_blocks(const code& ec, interface::blocks,
     }
 
     send_json(std::move(out));
-    return true;
 }
 
-bool protocol_esplora::handle_get_tip_height(const code& ec,
+void protocol_esplora::handle_get_tip_height(const code& ec,
     interface::tip_height, uint8_t media) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != text)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     send_text(system::serialize(archive().get_top_confirmed()));
-    return true;
 }
 
-bool protocol_esplora::handle_get_tip_hash(const code& ec,
+void protocol_esplora::handle_get_tip_hash(const code& ec,
     interface::tip_hash, uint8_t media) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != text)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     send_text(encode_hash(archive().get_top_confirmed_hash()));
-    return true;
 }
 
 BC_POP_WARNING()

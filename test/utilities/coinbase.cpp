@@ -111,7 +111,7 @@ BC_AUTO_TEST_CASE(coinbase__coinbase_suffix__unwitnessed__valid_coinbase_of_heig
 {
     const data_chunk extranonce(8, 0x42);
     const auto prefix = coinbase_prefix(500'000, "/x/", 8);
-    const auto suffix = coinbase_suffix(50, payout_script(0x01), hash_digest{ 0x07 });
+    const auto suffix = coinbase_suffix(500'000, 50, payout_script(0x01), hash_digest{ 0x07 });
     const transaction tx{ unwitnessed(prefix, extranonce, suffix), false };
     BC_REQUIRE(tx.is_valid());
     BC_REQUIRE(tx.is_coinbase());
@@ -119,13 +119,15 @@ BC_AUTO_TEST_CASE(coinbase__coinbase_suffix__unwitnessed__valid_coinbase_of_heig
     BC_REQUIRE_EQUAL(tx.outputs_ptr()->front()->value(), 50u);
     BC_REQUIRE(tx.outputs_ptr()->front()->script() == payout_script(0x01));
     BC_REQUIRE_EQUAL(commitment_of(tx), hash_digest{ 0x07 });
+    BC_REQUIRE_EQUAL(tx.locktime(), 499'999u);
+    BC_REQUIRE(!tx.inputs_ptr()->front()->is_final());
 }
 
 BC_AUTO_TEST_CASE(coinbase__coinbase_witnessed__valid__same_txid_null_reserved)
 {
     const data_chunk extranonce(8, 0x42);
     const auto prefix = coinbase_prefix(500'000, "", 8);
-    const auto suffix = coinbase_suffix(50, payout_script(0x01), hash_digest{ 0x07 });
+    const auto suffix = coinbase_suffix(500'000, 50, payout_script(0x01), hash_digest{ 0x07 });
     const transaction tx{ coinbase_witnessed(prefix, extranonce, suffix), true };
     BC_REQUIRE(tx.is_valid());
     BC_REQUIRE(tx.is_segregated());
@@ -137,7 +139,7 @@ BC_AUTO_TEST_CASE(coinbase__coinbase_witnessed__largest_height__within_reserved_
 {
     const data_chunk extranonce(8, 0x42);
     const auto prefix = coinbase_prefix(max_int32, "/x/", 8);
-    const auto suffix = coinbase_suffix(50, payout_script(0x01), null_hash);
+    const auto suffix = coinbase_suffix(max_int32, 50, payout_script(0x01), null_hash);
     const transaction tx{ coinbase_witnessed(prefix, extranonce, suffix), true };
     BC_REQUIRE_EQUAL(tx.weight(), coinbase_weight(coinbase_script_size(3, 8), 22));
 }

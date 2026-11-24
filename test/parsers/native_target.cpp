@@ -1862,10 +1862,44 @@ BC_AUTO_TEST_CASE(parsers__native_target__template_invalid_height__invalid_numbe
     BC_REQUIRE_EQUAL(native_target(out, "/v3/template/invalid"), server::error::invalid_number);
 }
 
-BC_AUTO_TEST_CASE(parsers__native_target__template_extra_segment__extra_segment)
+BC_AUTO_TEST_CASE(parsers__native_target__template_invalid_component__invalid_component)
 {
     request_t out{};
-    BC_REQUIRE_EQUAL(native_target(out, "/v3/template/123/extra"), server::error::extra_segment);
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/template/123/extra"), server::error::invalid_component);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__template_txs_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/template/123456/txs"));
+    BC_REQUIRE_EQUAL(request.method, "template_txs");
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 2u);
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("height").value()), 123456u);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__template_txs_details_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!native_target(request, "/v42/template/123456/txs/details"));
+    BC_REQUIRE_EQUAL(request.method, "template_txs_details");
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 2u);
+    BC_REQUIRE_EQUAL(std::get<uint32_t>(object.at("height").value()), 123456u);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__template_txs_invalid_subcomponent__invalid_subcomponent)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/template/123/txs/extra"), server::error::invalid_subcomponent);
+}
+
+BC_AUTO_TEST_CASE(parsers__native_target__template_txs_details_extra_segment__extra_segment)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(native_target(out, "/v3/template/123/txs/details/extra"), server::error::extra_segment);
 }
 
 // fees

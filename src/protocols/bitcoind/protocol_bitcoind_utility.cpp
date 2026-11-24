@@ -67,17 +67,17 @@ void protocol_bitcoind_utility::start() NOEXCEPT
 // Utility methods.
 // ----------------------------------------------------------------------------
 
-bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
+void protocol_bitcoind_utility::handle_decode_script(const code& ec,
     rpc_interface::decode_script, const std::string& hexstring) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     data_chunk data{};
     if (!decode_base16(data, hexstring))
     {
         send_error(to_hex_error(error::bitcoind::invalid_parameter));
-        return true;
+        return;
     }
 
     using namespace chain;
@@ -97,7 +97,7 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
         result.stable_erase("address");
         finish_script(result);
         send_result(std::move(model));
-        return true;
+        return;
     }
 
     using namespace wallet;
@@ -121,7 +121,6 @@ bool protocol_bitcoind_utility::handle_decode_script(const code& ec,
 
     finish_script(result);
     send_result(std::move(model));
-    return true;
 }
 
 void protocol_bitcoind_utility::finish_script(
@@ -133,11 +132,11 @@ void protocol_bitcoind_utility::finish_validation(object_t&) const NOEXCEPT
 {
 }
 
-bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
+void protocol_bitcoind_utility::handle_validate_address(const code& ec,
     rpc_interface::validate_address, const std::string& address) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     using namespace wallet;
     const payment_address base58(address);
@@ -155,7 +154,7 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
 
         finish_validation(result);
         send_result(std::move(result));
-        return true;
+        return;
     }
 
     const witness_address witness{ address };
@@ -177,27 +176,26 @@ bool protocol_bitcoind_utility::handle_validate_address(const code& ec,
 
         finish_validation(result);
         send_result(std::move(result));
-        return true;
+        return;
     }
 
     send_result(object_t{ { "isvalid", false } });
-    return true;
 }
 
 // bech32m multisig is rejected.
-bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
+void protocol_bitcoind_utility::handle_create_multisig(const code& ec,
     rpc_interface::create_multisig, double nrequired, const array_t& keys,
     const std::string& address_type) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     uint8_t required{};
     if (!to_integer(required, nrequired) || is_zero(required) ||
         required > keys.size())
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     // The multisig pattern is limited to op_16 (bitcoind allows 20 for wsh).
@@ -205,7 +203,7 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
     if (keys.size() > maximum_keys)
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     if (address_type != "legacy" && 
@@ -213,7 +211,7 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
         address_type != "bech32")
     {
         send_error(error::bitcoind::invalid_address_or_key);
-        return true;
+        return;
     }
 
     // Invalid key (bitcoind -5) and oversized script (-8)
@@ -223,31 +221,30 @@ bool protocol_bitcoind_utility::handle_create_multisig(const code& ec,
     if (result.empty())
     {
         send_error(error::bitcoind::invalid_address_or_key);
-        return true;
+        return;
     }
 
     send_result(std::move(result));
-    return true;
 }
 
-bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
+void protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
     rpc_interface::derive_addresses, const std::string& expression,
     const std::optional<value_t>& range) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const wallet::descriptor parsed{ expression, context_ };
     if (!parsed)
     {
         send_error(error::bitcoind::invalid_address_or_key);
-        return true;
+        return;
     }
 
     if (parsed.ranged() != range.has_value())
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     uint32_t begin{};
@@ -255,14 +252,14 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
     if (range.has_value() && !parse_scan_range(begin, end, range.value()))
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     constexpr uint32_t maximum_range = 10'000;
     if (floored_subtract(end, begin) >= maximum_range)
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     array_t out{};
@@ -276,28 +273,27 @@ bool protocol_bitcoind_utility::handle_derive_addresses(const code& ec,
         if (address.empty())
         {
             send_error(error::bitcoind::invalid_address_or_key);
-            return true;
+            return;
         }
 
         out.emplace_back(std::move(address));
     }
 
     send_result(std::move(out));
-    return true;
 }
 
-bool protocol_bitcoind_utility::handle_get_descriptor_info(const code& ec,
+void protocol_bitcoind_utility::handle_get_descriptor_info(const code& ec,
     rpc_interface::get_descriptor_info,
     const std::string& expression) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const wallet::descriptor parsed{ expression, context_ };
     if (!parsed)
     {
         send_error(error::bitcoind::invalid_address_or_key);
-        return true;
+        return;
     }
 
     send_result(object_t
@@ -308,22 +304,21 @@ bool protocol_bitcoind_utility::handle_get_descriptor_info(const code& ec,
         { "issolvable", parsed.solvable() },
         { "hasprivatekeys", parsed.has_private_keys() }
     });
-    return true;
 }
 
-bool protocol_bitcoind_utility::handle_verify_message(const code& ec,
+void protocol_bitcoind_utility::handle_verify_message(const code& ec,
     rpc_interface::verify_message, const std::string& address,
     const std::string& signature, const std::string& message) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     using namespace wallet;
     const payment_address payment(address);
     if (!payment)
     {
         send_error(error::bitcoind::invalid_address_or_key);
-        return true;
+        return;
     }
 
     data_chunk decoded{};
@@ -331,7 +326,7 @@ bool protocol_bitcoind_utility::handle_verify_message(const code& ec,
         decoded.size() != message_signature_size)
     {
         send_error(error::bitcoind::type_error);
-        return true;
+        return;
     }
 
     message_signature signature_bytes{};
@@ -340,14 +335,13 @@ bool protocol_bitcoind_utility::handle_verify_message(const code& ec,
 
     const auto verified = verify_message(message, payment, signature_bytes);
     send_result(value{ verified });
-    return true;
 }
 
-bool protocol_bitcoind_utility::handle_get_index_info(const code& ec,
+void protocol_bitcoind_utility::handle_get_index_info(const code& ec,
     rpc_interface::get_index_info, const std::string& index_name) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     // Indexes track the confirmed chain only; all txs are archived (lookup).
     // synced: current chain and confirmation coalesced with candidate top.
@@ -367,22 +361,21 @@ bool protocol_bitcoind_utility::handle_get_index_info(const code& ec,
         result.emplace("basic block filter index", status);
 
     send_result(std::move(result));
-    return true;
 }
 
-bool protocol_bitcoind_utility::handle_estimate_smart_fee(const code& ec,
+void protocol_bitcoind_utility::handle_estimate_smart_fee(const code& ec,
     rpc_interface::estimate_smart_fee, double conf_target,
     const std::string& estimate_mode, const std::optional<object_t>&) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     size_t target{};
     if (!to_integer(target, conf_target) || is_zero(target) ||
         target > node::maximum_estimate_horizon)
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     // "unset" selects the default mode.
@@ -395,12 +388,11 @@ bool protocol_bitcoind_utility::handle_estimate_smart_fee(const code& ec,
     if (mode == mode_t::unknown)
     {
         send_error(error::bitcoind::invalid_parameter);
-        return true;
+        return;
     }
 
     // The estimator targets the next block as zero.
     estimate(sub1(target), mode, BIND(handle_estimate, _1, _2, target, gate()));
-    return true;
 }
 
 void protocol_bitcoind_utility::handle_estimate(const code& ec, uint64_t fee,
@@ -449,12 +441,11 @@ void protocol_bitcoind_utility::complete_estimate(const code& ec,
 }
 
 // Signing is a wallet function, keys never transit the server.
-bool protocol_bitcoind_utility::handle_sign_message_with_priv_key(
+void protocol_bitcoind_utility::handle_sign_message_with_priv_key(
     const code& ec, rpc_interface::sign_message_with_priv_key) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
 BC_POP_WARNING()

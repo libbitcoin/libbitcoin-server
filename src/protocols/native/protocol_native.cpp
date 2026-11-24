@@ -19,7 +19,9 @@
 #include <bitcoin/server/protocols/protocol_native.hpp>
 
 #include <atomic>
+#include <numeric>
 #include <optional>
+#include <unordered_map>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/parsers/parsers.hpp>
 
@@ -63,6 +65,7 @@ void protocol_native::start() NOEXCEPT
     SUBSCRIBE_NATIVE(handle_get_block_header_context, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_NATIVE(handle_get_block_details, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_NATIVE(handle_get_block_txs, _1, _2, _3, _4, _5, _6, _7);
+    SUBSCRIBE_NATIVE(handle_get_block_txs_details, _1, _2, _3, _4, _5, _6, _7);
     SUBSCRIBE_NATIVE(handle_get_block_filter, _1, _2, _3, _4, _5, _6, _7, _8);
     SUBSCRIBE_NATIVE(handle_get_block_filter_hash, _1, _2, _3, _4, _5, _6, _7, _8);
     SUBSCRIBE_NATIVE(handle_get_block_filter_header, _1, _2, _3, _4, _5, _6, _7, _8);
@@ -99,6 +102,9 @@ void protocol_native::start() NOEXCEPT
     SUBSCRIBE_NATIVE(handle_get_address_subscribe, _1, _2, _3, _4, _5, _6, _7);
 
     // Fee methods.
+    SUBSCRIBE_NATIVE(handle_get_template, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_template_txs, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_template_txs_details, _1, _2, _3, _4, _5);
     SUBSCRIBE_NATIVE(handle_get_fees, _1, _2, _3, _4);
     protocol_html::start();
 }
@@ -324,6 +330,137 @@ void protocol_native::inject(value& out, std::optional<uint32_t> height,
 {
     out.as_object().emplace("height", height.has_value() ? height.value() :
         archive().get_height(link).value);
+}
+
+size_t protocol_native::to_root(std::vector<size_t>& roots,
+    size_t index) NOEXCEPT
+{
+    while (roots.at(index) != index)
+        index = roots.at(index) = roots.at(roots.at(index));
+
+    return index;
+}
+
+std::vector<size_t> protocol_native::to_roots(
+    const database::template_txs& txs) NOEXCEPT
+{
+    std::vector<size_t> roots(txs.size());
+    std::iota(roots.begin(), roots.end(), zero);
+    for (size_t index{}; index < txs.size(); ++index)
+    {
+        for (const auto parent: txs.at(index).parents)
+        {
+            const auto child = to_root(roots, index);
+            roots.at(child) = to_root(roots, parent);
+        }
+    }
+
+    return roots;
+}
+
+std::vector<size_t> protocol_native::to_roots(
+    const database::tx_links& txs) const NOEXCEPT
+{
+    const auto& query = archive();
+    const auto count = txs.size();
+    std::unordered_map<hash_digest, size_t> positions{};
+    positions.reserve(count);
+    for (size_t index{}; index < count; ++index)
+        positions.emplace(query.get_tx_key(txs.at(index)), index);
+
+    std::vector<size_t> roots(count);
+    std::iota(roots.begin(), roots.end(), zero);
+    for (size_t index{}; index < count; ++index)
+    {
+        for (const auto& point: query.to_points(txs.at(index)))
+        {
+            const auto parent = positions.find(query.get_point_hash(point));
+            if (parent == positions.end())
+                continue;
+
+            const auto child = to_root(roots, index);
+            roots.at(child) = to_root(roots, parent->second);
+        }
+    }
+
+    return roots;
+}
+
+// The details of each tx, with its cluster: the label, in order of first
+// appearance, of its component under spends of other txs of the set.
+bool protocol_native::to_tx_details(system::json::array& out,
+    const database::tx_links& txs, std::vector<size_t>&& roots) const NOEXCEPT
+{
+    const auto& query = archive();
+    const auto count = txs.size();
+    out.clear();
+    out.reserve(count);
+    size_t clusters{};
+    std::vector<size_t> labels(count, max_size_t);
+    for (size_t index{}; index < count; ++index)
+    {
+        uint64_t value{}, spend{};
+        size_t nominal{}, maximal{};
+        const auto& link = txs.at(index);
+        const auto coinbase = query.is_coinbase(link);
+        if (!query.get_tx_sizes(nominal, maximal, link) ||
+            !query.get_tx_value(value, link) ||
+            !query.get_tx_spend(spend, link) ||
+            (!coinbase && is_subtract_overflow(value, spend)))
+            return false;
+
+        auto& label = labels.at(to_root(roots, index));
+        if (label == max_size_t)
+            label = clusters++;
+
+        out.emplace_back(system::json::object
+        {
+            { "segregated", maximal != nominal },
+            { "nominal", nominal },
+            { "maximal", maximal },
+            { "weight", chain::weighted_size(nominal, maximal) },
+            { "virtual", chain::virtual_size(nominal, maximal) },
+            { "value", value },
+            { "spend", spend },
+            { "fee", floored_subtract(value, spend) },
+            { "cluster", label }
+        });
+    }
+
+    return true;
+}
+
+bool protocol_native::to_pruned_input(system::json::value& out,
+    const database::ins_link& link) const NOEXCEPT
+{
+    const auto& query = archive();
+    uint32_t sequence{};
+    if (!query.get_input_sequence(sequence, link))
+        return false;
+
+    out = system::json::object
+    {
+        { "point", value_from(query.get_point(link)) },
+        { "sequence", sequence }
+    };
+
+    return true;
+}
+
+bool protocol_native::to_pruned_inputs(system::json::array& out,
+    const database::tx_link& link) const NOEXCEPT
+{
+    const auto points = archive().to_points(link);
+    if (points.empty())
+        return false;
+
+    out.clear();
+    out.reserve(points.size());
+    for (const auto& point: points)
+        if (!to_pruned_input(out.emplace_back(), point))
+            return false;
+
+    return true;
 }
 
 chain::header::cptr protocol_native::get_top(bool candidate,

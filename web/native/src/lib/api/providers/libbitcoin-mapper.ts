@@ -32,6 +32,11 @@ interface TxInputResponse {
   sequence: number;
 }
 
+export interface PrunedInputResponse {
+  point: TxPoint;
+  sequence: number;
+}
+
 export interface TxOutputResponse {
   value: number;
   script: string;
@@ -245,7 +250,29 @@ function mapInput(
   };
 }
 
-function mapOutput(
+export function mapPrunedInput(
+  input: PrunedInputResponse,
+  prevout: TxOutputResponse | null | undefined,
+  params: NetworkParams,
+  index: number
+): TransactionInput {
+  const decoded = prevout
+    ? decodeScriptAddress(prevout.script, params)
+    : { address: undefined, type: undefined };
+  return {
+    index,
+    prevTxId: input.point.hash,
+    prevOutputIndex: input.point.index,
+    address: decoded.address,
+    valueSats: prevout?.value,
+    scriptType: decoded.type,
+    isCoinbase: false,
+    sequence: input.sequence,
+    pruned: true,
+  };
+}
+
+export function mapOutput(
   output: TxOutputResponse,
   index: number,
   params: NetworkParams

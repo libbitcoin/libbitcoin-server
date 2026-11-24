@@ -61,39 +61,39 @@ protected:
         const network::diagnostics::row& row) const NOEXCEPT;
 
     /// Handlers.
-    bool handle_get_network_info(const code& ec,
+    void handle_get_network_info(const code& ec,
         rpc_interface::get_network_info) NOEXCEPT;
-    bool handle_clear_banned(const code& ec,
+    void handle_clear_banned(const code& ec,
         rpc_interface::clear_banned) NOEXCEPT;
-    bool handle_list_banned(const code& ec,
+    void handle_list_banned(const code& ec,
         rpc_interface::list_banned) NOEXCEPT;
-    bool handle_set_ban(const code& ec,
+    void handle_set_ban(const code& ec,
         rpc_interface::set_ban) NOEXCEPT;
-    bool handle_add_node(const code& ec,
+    void handle_add_node(const code& ec,
         rpc_interface::add_node, const std::string& node,
         const std::string& command, bool v2transport) NOEXCEPT;
-    bool handle_disconnect_node(const code& ec,
+    void handle_disconnect_node(const code& ec,
         rpc_interface::disconnect_node,
         const std::optional<std::string>& address,
         const std::optional<double>& nodeid) NOEXCEPT;
-    bool handle_export_asmap(const code& ec,
+    void handle_export_asmap(const code& ec,
         rpc_interface::export_asmap, const std::string&) NOEXCEPT;
-    bool handle_get_added_node_info(const code& ec,
+    void handle_get_added_node_info(const code& ec,
         rpc_interface::get_added_node_info,
         const std::optional<std::string>& node) NOEXCEPT;
-    bool handle_get_addrman_info(const code& ec,
+    void handle_get_addrman_info(const code& ec,
         rpc_interface::get_addrman_info) NOEXCEPT;
-    bool handle_get_node_addresses(const code& ec,
+    void handle_get_node_addresses(const code& ec,
         rpc_interface::get_node_addresses, double count,
         const std::string& network) NOEXCEPT;
-    bool handle_ping(const code& ec, rpc_interface::ping) NOEXCEPT;
-    bool handle_set_network_active(const code& ec,
+    void handle_ping(const code& ec, rpc_interface::ping) NOEXCEPT;
+    void handle_set_network_active(const code& ec,
         rpc_interface::set_network_active, bool state) NOEXCEPT;
-    bool handle_get_connection_count(const code& ec,
+    void handle_get_connection_count(const code& ec,
         rpc_interface::get_connection_count) NOEXCEPT;
-    bool handle_get_net_totals(const code& ec,
+    void handle_get_net_totals(const code& ec,
         rpc_interface::get_net_totals) NOEXCEPT;
-    bool handle_get_peer_info(const code& ec,
+    void handle_get_peer_info(const code& ec,
         rpc_interface::get_peer_info) NOEXCEPT;
 
 private:

@@ -91,124 +91,135 @@ protected:
     /// Interface handlers.
     /// -----------------------------------------------------------------------
 
-    bool handle_get_configuration(const code& ec, interface::configuration,
+    void handle_get_configuration(const code& ec, interface::configuration,
         uint8_t version, uint8_t media) NOEXCEPT;
 
-    bool handle_get_top(const code& ec, interface::top,
+    void handle_get_top(const code& ec, interface::top,
         uint8_t version, uint8_t media) NOEXCEPT;
-    bool handle_get_top_subscribe(const code& ec, interface::top_subscribe,
+    void handle_get_top_subscribe(const code& ec, interface::top_subscribe,
         uint8_t version, uint8_t media, bool stop) NOEXCEPT;
-    bool handle_get_top_chain(const code& ec, interface::top_chain,
+    void handle_get_top_chain(const code& ec, interface::top_chain,
         uint8_t version, uint8_t media, bool candidate) NOEXCEPT;
-    bool handle_get_top_height(const code& ec, interface::top_height,
+    void handle_get_top_height(const code& ec, interface::top_height,
         uint8_t version, uint8_t media, bool candidate) NOEXCEPT;
 
-    bool handle_get_block(const code& ec, interface::block,
+    void handle_get_block(const code& ec, interface::block,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool witness, bool candidate) NOEXCEPT;
-    bool handle_get_block_header(const code& ec, interface::block_header,
+    void handle_get_block_header(const code& ec, interface::block_header,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool candidate) NOEXCEPT;
-    bool handle_get_block_header_context(const code& ec,
+    void handle_get_block_header_context(const code& ec,
         interface::block_header_context, uint8_t version, uint8_t media,
         std::optional<system::hash_cptr> hash, std::optional<uint32_t> height,
         bool candidate) NOEXCEPT;
-    bool handle_get_block_details(const code& ec, interface::block_details,
+    void handle_get_block_details(const code& ec, interface::block_details,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool candidate) NOEXCEPT;
-    bool handle_get_block_txs(const code& ec, interface::block_txs,
+    void handle_get_block_txs(const code& ec, interface::block_txs,
         uint8_t version, uint8_t media, std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool candidate) NOEXCEPT;
-    bool handle_get_block_filter(const code& ec, interface::block_filter,
+    void handle_get_block_txs_details(const code& ec,
+        interface::block_txs_details, uint8_t version, uint8_t media,
+        std::optional<system::hash_cptr> hash, std::optional<uint32_t> height,
+        bool candidate) NOEXCEPT;
+    void handle_get_block_filter(const code& ec, interface::block_filter,
         uint8_t version, uint8_t media, uint8_t type,
         std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool candidate) NOEXCEPT;
-    bool handle_get_block_filter_hash(const code& ec,
+    void handle_get_block_filter_hash(const code& ec,
         interface::block_filter_hash, uint8_t version, uint8_t media,
         uint8_t type, std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool candidate) NOEXCEPT;
-    bool handle_get_block_filter_header(const code& ec,
+    void handle_get_block_filter_header(const code& ec,
         interface::block_filter_header, uint8_t version, uint8_t media,
         uint8_t type, std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool candidate) NOEXCEPT;
-    bool handle_get_block_tx(const code& ec, interface::block_tx,
+    void handle_get_block_tx(const code& ec, interface::block_tx,
         uint8_t version, uint8_t media, uint32_t position,
         std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool witness, bool candidate) NOEXCEPT;
-    bool handle_get_block_tx_input_script(const code& ec,
+    void handle_get_block_tx_input_script(const code& ec,
         interface::block_tx_input_script, uint8_t version, uint8_t media,
         uint32_t position, uint32_t index,
         std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool candidate) NOEXCEPT;
-    bool handle_get_block_tx_output_script(const code& ec,
+    void handle_get_block_tx_output_script(const code& ec,
         interface::block_tx_output_script, uint8_t version, uint8_t media,
         uint32_t position, uint32_t index,
         std::optional<system::hash_cptr> hash,
         std::optional<uint32_t> height, bool candidate) NOEXCEPT;
-    bool handle_get_block_subscribe(const code& ec, interface::block_subscribe,
+    void handle_get_block_subscribe(const code& ec, interface::block_subscribe,
         uint8_t version, uint8_t media, bool stop) NOEXCEPT;
 
-    bool handle_get_tx(const code& ec, interface::tx,
+    void handle_get_tx(const code& ec, interface::tx,
         uint8_t version, uint8_t media, const system::hash_cptr& hash,
         bool witness) NOEXCEPT;
-    bool handle_get_tx_header(const code& ec, interface::tx_header,
+    void handle_get_tx_header(const code& ec, interface::tx_header,
         uint8_t version, uint8_t media,
         const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_tx_details(const code& ec, interface::tx_details,
+    void handle_get_tx_details(const code& ec, interface::tx_details,
         uint8_t version, uint8_t media,
         const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_tx_subscribe(const code& ec, interface::tx_subscribe,
+    void handle_get_tx_subscribe(const code& ec, interface::tx_subscribe,
         uint8_t version, uint8_t media, bool stop) NOEXCEPT;
 
-    bool handle_get_inputs(const code& ec, interface::inputs,
+    void handle_get_inputs(const code& ec, interface::inputs,
         uint8_t version, uint8_t media, const system::hash_cptr& hash,
         bool witness) NOEXCEPT;
-    bool handle_get_input(const code& ec, interface::input,
+    void handle_get_input(const code& ec, interface::input,
         uint8_t version, uint8_t media, const system::hash_cptr& hash,
         uint32_t index, bool witness) NOEXCEPT;
-    bool handle_get_input_script(const code& ec, interface::input_script,
+    void handle_get_input_script(const code& ec, interface::input_script,
         uint8_t version, uint8_t media, const system::hash_cptr& hash,
         uint32_t index) NOEXCEPT;
-    bool handle_get_input_witness(const code& ec, interface::input_witness,
+    void handle_get_input_witness(const code& ec, interface::input_witness,
         uint8_t version, uint8_t media, const system::hash_cptr& hash,
         uint32_t index) NOEXCEPT;
 
-    bool handle_get_outputs(const code& ec, interface::outputs,
+    void handle_get_outputs(const code& ec, interface::outputs,
         uint8_t version, uint8_t media,
         const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_output(const code& ec, interface::output,
+    void handle_get_output(const code& ec, interface::output,
         uint8_t version, uint8_t media, const system::hash_cptr& hash,
         uint32_t index) NOEXCEPT;
-    bool handle_get_output_script(const code& ec, interface::output_script,
+    void handle_get_output_script(const code& ec, interface::output_script,
         uint8_t version, uint8_t media, const system::hash_cptr& hash,
         uint32_t index) NOEXCEPT;
-    bool handle_get_output_spender(const code& ec, interface::output_spender,
+    void handle_get_output_spender(const code& ec, interface::output_spender,
         uint8_t version, uint8_t media, const system::hash_cptr& hash,
         uint32_t index) NOEXCEPT;
-    bool handle_get_output_spenders(const code& ec, interface::output_spenders,
+    void handle_get_output_spenders(const code& ec, interface::output_spenders,
         uint8_t version, uint8_t media, const system::hash_cptr& hash,
         uint32_t index) NOEXCEPT;
-    bool handle_get_output_subscribe(const code& ec,
+    void handle_get_output_subscribe(const code& ec,
         interface::output_subscribe, uint8_t version, uint8_t media,
         const system::hash_cptr& hash, uint32_t index, bool stop) NOEXCEPT;
 
-    bool handle_get_address(const code& ec, interface::address,
+    void handle_get_address(const code& ec, interface::address,
         uint8_t version, uint8_t media,
         const system::hash_cptr& hash, bool turbo) NOEXCEPT;
-    bool handle_get_address_confirmed(const code& ec,
+    void handle_get_address_confirmed(const code& ec,
         interface::address_confirmed, uint8_t version, uint8_t media,
         const system::hash_cptr& hash, bool turbo) NOEXCEPT;
-    bool handle_get_address_unconfirmed(const code& ec,
+    void handle_get_address_unconfirmed(const code& ec,
         interface::address_unconfirmed, uint8_t version, uint8_t media,
         const system::hash_cptr& hash, bool turbo) NOEXCEPT;
-    bool handle_get_address_balance(const code& ec,
+    void handle_get_address_balance(const code& ec,
         interface::address_balance, uint8_t version, uint8_t media,
         const system::hash_cptr& hash, bool turbo) NOEXCEPT;
-    bool handle_get_address_subscribe(const code& ec,
+    void handle_get_address_subscribe(const code& ec,
         interface::address_subscribe, uint8_t version, uint8_t media,
         const system::hash_cptr& hash, bool turbo, bool stop) NOEXCEPT;
 
-    bool handle_get_fees(const code& ec, interface::fees,
+    void handle_get_template(const code& ec, interface::template_,
+        uint8_t version, uint8_t media, uint32_t height) NOEXCEPT;
+    void handle_get_template_txs(const code& ec, interface::template_txs,
+        uint8_t version, uint8_t media, uint32_t height) NOEXCEPT;
+    void handle_get_template_txs_details(const code& ec,
+        interface::template_txs_details, uint8_t version, uint8_t media,
+        uint32_t height) NOEXCEPT;
+    void handle_get_fees(const code& ec, interface::fees,
         uint8_t version, uint8_t media) NOEXCEPT;
 
 protected:
@@ -274,6 +285,21 @@ private:
     void complete_get_address_balance(const code& ec, uint8_t media,
         const uint64_t balance, const gate_t::ptr& gate) NOEXCEPT;
 
+    enum class template_view : uint8_t { summary, txs, details };
+    void get_template_view(uint32_t height, template_view view,
+        uint8_t media) NOEXCEPT;
+    void handle_template(const code& ec,
+        const node::block_template::cptr& held, uint32_t height,
+        template_view view, uint8_t media, const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_template(const code& ec,
+        const node::block_template::cptr& held, uint32_t height,
+        template_view view, uint8_t media, const gate_t::ptr& gate) NOEXCEPT;
+    void send_template_summary(const node::block_template& held) NOEXCEPT;
+    void send_template_txs(const node::block_template& held,
+        uint8_t media) NOEXCEPT;
+    void send_template_txs_details(
+        const node::block_template& held) NOEXCEPT;
+
     void handle_fees(const code& ec, const database::fee_rates& rates,
         const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_fees(const code& ec, const database::fee_rates& rates,
@@ -282,8 +308,19 @@ private:
     // Utilities.
     // ------------------------------------------------------------------------
 
+    static size_t to_root(std::vector<size_t>& roots, size_t index) NOEXCEPT;
+    static std::vector<size_t> to_roots(
+        const database::template_txs& txs) NOEXCEPT;
+
     void inject(system::json::value& out, std::optional<uint32_t> height,
         const database::header_link& link) const NOEXCEPT;
+    std::vector<size_t> to_roots(const database::tx_links& txs) const NOEXCEPT;
+    bool to_tx_details(system::json::array& out, const database::tx_links& txs,
+        std::vector<size_t>&& roots) const NOEXCEPT;
+    bool to_pruned_input(system::json::value& out,
+        const database::ins_link& link) const NOEXCEPT;
+    bool to_pruned_inputs(system::json::array& out,
+        const database::tx_link& link) const NOEXCEPT;
 
     system::chain::header::cptr get_top(bool candidate,
         size_t& height) const NOEXCEPT;

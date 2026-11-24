@@ -67,6 +67,9 @@ struct native_setup_fixture
     // 0_32 vs {} for xcode variant issue.
     void notify(node::event_value value);
 
+    // Validate and pool the tx (requires start).
+    network::code submit(const system::chain::transaction& tx);
+
 protected:
     server::configuration config_;
     test::store_t store_;
@@ -96,6 +99,18 @@ struct native_ten_block_setup_fixture
       : native_setup_fixture([](test::query_t& query)
         {
             return test::setup_ten_block_store(query);
+        })
+    {
+    }
+};
+
+struct native_cluster_setup_fixture
+  : native_setup_fixture
+{
+    inline native_cluster_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_cluster_store(query);
         })
     {
     }
@@ -307,6 +322,27 @@ struct native_pooling_setup_fixture
                 deployment::always_active;
             config.network.enable_relay = true;
             config.node.currency_window_minutes = 0;
+        }, test::web_pages, true)
+    {
+    }
+};
+
+// As pooling, over a store with an anyone-can-spend output.
+struct native_broadcast_setup_fixture
+  : native_setup_fixture
+{
+    inline native_broadcast_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_broadcast_store(query);
+        }, [](server::configuration& config)
+        {
+            using deployment = system::chain::chain_state::deployment;
+            config.bitcoin.bip9_bit0_deployment.start =
+                deployment::always_active;
+            config.network.enable_relay = true;
+            config.node.currency_window_minutes = 0;
+            config.node.pool.minimum_fee_rate = 0.0;
         }, test::web_pages, true)
     {
     }

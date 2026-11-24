@@ -28,25 +28,25 @@ using namespace system;
 BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-bool protocol_native::handle_get_outputs(const code& ec, interface::outputs,
+void protocol_native::handle_get_outputs(const code& ec, interface::outputs,
     uint8_t, uint8_t media, const hash_cptr& hash) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto tx = query.to_tx(*hash);
     if (tx.is_terminal())
     {
         send_not_found();
-        return true;
+        return;
     }
 
     const auto outputs = query.get_outputs(tx);
     if (!outputs || outputs->empty())
     {
         send_internal_server_error(database::error::integrity);
-        return true;
+        return;
     }
 
     // Wire serialization size of outputs set.
@@ -58,25 +58,24 @@ bool protocol_native::handle_get_outputs(const code& ec, interface::outputs,
     {
         case data:
             send_chunk(to_bin_ptr_array(*outputs, size));
-            return true;
+            return;
         case text:
             send_text(to_hex_ptr_array(*outputs, size));
-            return true;
+            return;
         case json:
             send_json(value_from(*outputs));
-            return true;
+            return;
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_output(const code& ec, interface::output,
+void protocol_native::handle_get_output(const code& ec, interface::output,
     uint8_t, uint8_t media, const hash_cptr& hash,
     uint32_t index) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     if (const auto output = query.get_output(query.to_tx(*hash), index))
@@ -86,26 +85,25 @@ bool protocol_native::handle_get_output(const code& ec, interface::output,
         {
             case data:
                 send_chunk(to_bin(*output, size));
-                return true;
+                return;
             case text:
                 send_text(to_hex(*output, size));
-                return true;
+                return;
             case json:
                 send_json(value_from(output));
-                return true;
+                return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_output_script(const code& ec,
+void protocol_native::handle_get_output_script(const code& ec,
     interface::output_script, uint8_t, uint8_t media, const hash_cptr& hash,
     uint32_t index) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     if (const auto script = query.get_output_script(query.to_output(
@@ -116,26 +114,25 @@ bool protocol_native::handle_get_output_script(const code& ec,
         {
             case data:
                 send_chunk(to_bin(*script, size, false));
-                return true;
+                return;
             case text:
                 send_text(to_hex(*script, size, false));
-                return true;
+                return;
             case json:
                 send_json(value_from(script));
-                return true;
+                return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_output_spender(const code& ec,
+void protocol_native::handle_get_output_spender(const code& ec,
     interface::output_spender, uint8_t, uint8_t media, const hash_cptr& hash,
     uint32_t index) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const chain::point spent{ *hash, index };
@@ -143,7 +140,7 @@ bool protocol_native::handle_get_output_spender(const code& ec,
     if (spender.is_null())
     {
         send_not_found();
-        return true;
+        return;
     }
 
     constexpr auto size = chain::point::serialized_size();
@@ -151,31 +148,30 @@ bool protocol_native::handle_get_output_spender(const code& ec,
     {
         case data:
             send_chunk(to_bin(spender, size));
-            return true;
+            return;
         case text:
             send_text(to_hex(spender, size));
-            return true;
+            return;
         case json:
             send_json(value_from(spender));
-            return true;
+            return;
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_output_spenders(const code& ec,
+void protocol_native::handle_get_output_spenders(const code& ec,
     interface::output_spenders, uint8_t, uint8_t media, const hash_cptr& hash,
     uint32_t index) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto ins = archive().get_spenders({ *hash, index });
     if (ins.empty())
     {
         send_not_found();
-        return true;
+        return;
     }
 
     const auto size = ins.size() * database::inpoint::serialized_size();
@@ -183,32 +179,31 @@ bool protocol_native::handle_get_output_spenders(const code& ec,
     {
         case data:
             send_chunk(to_bin_array(ins, size));
-            return true;
+            return;
         case text:
             send_text(to_hex_array(ins, size));
-            return true;
+            return;
         case json:
             send_json(value_from(ins));
-            return true;
+            return;
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_output_subscribe(const code& ec,
+void protocol_native::handle_get_output_subscribe(const code& ec,
     interface::output_subscribe, uint8_t version, uint8_t media,
     const system::hash_cptr& hash, uint32_t index, bool stop) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     // TODO: map.
     output_subscribe_.store(stop, std::memory_order_relaxed);
     if (stop)
     {
         send_empty();
-        return true;
+        return;
     }
 
     return handle_get_output(ec, {}, version, media, hash, index);

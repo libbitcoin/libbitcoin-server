@@ -44,24 +44,23 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 // Handlers (getters).
 // ----------------------------------------------------------------------------
 
-bool protocol_btcd::handle_estimate_fee(const code& ec,
+void protocol_btcd::handle_estimate_fee(const code& ec,
     btcd_interface::estimate_fee, double numblocks) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     size_t target{};
     if (!to_integer(target, numblocks) || is_zero(target) ||
         target > node::maximum_estimate_horizon)
     {
         send_error(error::btcd::invalid_params);
-        return true;
+        return;
     }
 
     // The estimator targets the next block as zero.
     estimate(sub1(target), node::estimate_mode::basic,
         BIND(handle_estimate, _1, _2, gate()));
-    return true;
 }
 
 void protocol_btcd::handle_estimate(const code& ec, uint64_t fee,
@@ -103,11 +102,11 @@ void protocol_btcd::complete_estimate(const code& ec, uint64_t fee,
 }
 
 // Required by btcwallet during wallet chain-sync bootstrap.
-bool protocol_btcd::handle_get_best_block(const code& ec,
+void protocol_btcd::handle_get_best_block(const code& ec,
     btcd_interface::get_best_block) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     send_result(object_t
@@ -115,41 +114,39 @@ bool protocol_btcd::handle_get_best_block(const code& ec,
         { "hash", encode_hash(query.get_top_confirmed_hash()) },
         { "height", to64(query.get_top_confirmed()) }
     });
-    return true;
 }
 
 // Overrides bitcoind method (btcd is attached first, so it claims request).
 // Required, an unsubscribed method drops request.
-bool protocol_btcd::handle_get_block_chain_info(const code& ec,
+void protocol_btcd::handle_get_block_chain_info(const code& ec,
     btcd_interface::get_block_chain_info) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     object_t out{};
     if (!chain_info(out, archive(), system_settings(),
         node_settings().limited_blocks, is_current_chain(true)))
     {
         send_error(error::btcd::internal_error);
-        return true;
+        return;
     }
 
     send_result(std::move(out));
-    return true;
 }
 
-bool protocol_btcd::handle_get_cfilter(const code& ec,
+void protocol_btcd::handle_get_cfilter(const code& ec,
     btcd_interface::get_cfilter, const std::string& hash,
     double filtertype) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     hash_digest key{};
     if (!decode_hash(key, hash))
     {
         send_error(error::btcd::deserialization_error);
-        return true;
+        return;
     }
 
     uint8_t type{};
@@ -158,7 +155,7 @@ bool protocol_btcd::handle_get_cfilter(const code& ec,
         !query.filter_enabled())
     {
         send_error(error::btcd::invalid_address_or_key);
-        return true;
+        return;
     }
 
     // btcd answers an unknown block with an empty filter.
@@ -167,25 +164,24 @@ bool protocol_btcd::handle_get_cfilter(const code& ec,
     if (!link.is_terminal() && !query.get_filter_body(filter, link))
     {
         send_error(error::btcd::invalid_address_or_key);
-        return true;
+        return;
     }
 
     send_result(encode_base16(filter));
-    return true;
 }
 
-bool protocol_btcd::handle_get_cfilter_header(const code& ec,
+void protocol_btcd::handle_get_cfilter_header(const code& ec,
     btcd_interface::get_cfilter_header, const std::string& hash,
     double filtertype) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     hash_digest key{};
     if (!decode_hash(key, hash))
     {
         send_error(error::btcd::deserialization_error);
-        return true;
+        return;
     }
 
     uint8_t type{};
@@ -196,49 +192,46 @@ bool protocol_btcd::handle_get_cfilter_header(const code& ec,
         !query.get_filter_head(head, query.to_header(key)))
     {
         send_error(error::btcd::invalid_address_or_key);
-        return true;
+        return;
     }
 
     send_result(encode_hash(head));
-    return true;
 }
 
 // p2p magic (checked once by btcwallet/lnd to confirm network).
-bool protocol_btcd::handle_get_current_net(const code& ec,
+void protocol_btcd::handle_get_current_net(const code& ec,
     btcd_interface::get_current_net) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     send_result(network_settings().identifier);
-    return true;
 }
 
-bool protocol_btcd::handle_get_difficulty(const code& ec,
+void protocol_btcd::handle_get_difficulty(const code& ec,
     btcd_interface::get_difficulty) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto header = query.get_header(query.to_top_confirmed());
     if (!header)
     {
         send_error(error::btcd::internal_error);
-        return true;
+        return;
     }
 
     const auto limit = system_settings().proof_of_work_limit;
     send_result(btcd::difficulty(header->bits(), limit));
-    return true;
 }
 
-bool protocol_btcd::handle_get_headers(const code& ec,
+void protocol_btcd::handle_get_headers(const code& ec,
     btcd_interface::get_headers, const array_t& blocklocators,
     const std::string& hashstop) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     hashes locator{};
     hash_digest hash{};
@@ -248,7 +241,7 @@ bool protocol_btcd::handle_get_headers(const code& ec,
             !decode_hash(hash, std::get<string_t>(item.value())))
         {
             send_error(error::btcd::deserialization_error);
-            return true;
+            return;
         }
 
         locator.push_back(hash);
@@ -258,7 +251,7 @@ bool protocol_btcd::handle_get_headers(const code& ec,
     if (!hashstop.empty() && !decode_hash(stop, hashstop))
     {
         send_error(error::btcd::deserialization_error);
-        return true;
+        return;
     }
     
     constexpr auto max = messages::peer::max_get_headers;
@@ -270,14 +263,13 @@ bool protocol_btcd::handle_get_headers(const code& ec,
         out.emplace_back(encode_base16(header->to_data()));
 
     send_result(std::move(out));
-    return true;
 }
 
-bool protocol_btcd::handle_get_info(const code& ec,
+void protocol_btcd::handle_get_info(const code& ec,
     btcd_interface::get_info) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     size_t top{};
     const auto& query = archive();
@@ -286,13 +278,11 @@ bool protocol_btcd::handle_get_info(const code& ec,
     if (!header || !query.get_height(top, link))
     {
         send_error(error::btcd::internal_error);
-        return true;
+        return;
     }
 
-    constexpr auto version =
-        1'000'000 * to_value(btcd::version::major) +
-        10'000 * to_value(btcd::version::minor) +
-        100 * to_value(btcd::version::patch);
+    const auto version = btcd::to_number(
+        btcd::presented(interface_version()).btcd);
 
     const auto& outbound = network_settings().outbound;
     const auto proxy = outbound.proxied() ? outbound.socks.to_string() :
@@ -313,17 +303,15 @@ bool protocol_btcd::handle_get_info(const code& ec,
         { "relayfee", node_settings().pool.minimum_fee_rate },
         { "errors", std::string{} }
     });
-    return true;
 }
 
-bool protocol_btcd::handle_get_net_totals(const code& ec,
+void protocol_btcd::handle_get_net_totals(const code& ec,
     btcd_interface::get_net_totals) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     capture_totals(BIND(do_send_net_totals, _1, _2, _3, gate()));
-    return true;
 }
 
 void protocol_btcd::do_send_net_totals(const code& ec, uint64_t sent,
@@ -346,12 +334,12 @@ void protocol_btcd::do_send_net_totals(const code& ec, uint64_t sent,
 }
 
 // A numeric target is a channel identifier, otherwise it is an endpoint.
-bool protocol_btcd::handle_node(const code& ec, btcd_interface::node,
+void protocol_btcd::handle_node(const code& ec, btcd_interface::node,
     const std::string& subcmd, const std::string& target,
     const std::string& connectsubcmd) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     uint64_t identifier{};
     const auto numeric = deserialize(identifier, target);
@@ -366,7 +354,7 @@ bool protocol_btcd::handle_node(const code& ec, btcd_interface::node,
                 !connectsubcmd.empty())
             {
                 send_error(error::btcd::invalid_parameter);
-                return true;
+                return;
             }
 
             if (connectsubcmd == "perm")
@@ -375,13 +363,13 @@ bool protocol_btcd::handle_node(const code& ec, btcd_interface::node,
                 connect(network::config::endpoint{ target }, to_once());
 
             send_result(null_t{});
-            return true;
+            return;
         }
 
         if (subcmd != "remove" && subcmd != "disconnect")
         {
             send_error(error::btcd::invalid_parameter);
-            return true;
+            return;
         }
 
         // Remove ends the reconnect cycle, disconnect allows reconnection.
@@ -402,8 +390,6 @@ bool protocol_btcd::handle_node(const code& ec, btcd_interface::node,
     {
         send_error(error::btcd::invalid_parameter);
     }
-
-    return true;
 }
 
 void protocol_btcd::handle_stopped(const code& ec,
@@ -426,25 +412,26 @@ void protocol_btcd::do_send_stopped(const code& ec,
         send_result(null_t{});
 }
 
-bool protocol_btcd::handle_version(const code& ec,
+void protocol_btcd::handle_version(const code& ec,
     btcd_interface::version) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
+
+    const auto& api = btcd::presented(interface_version()).api;
 
     send_result(object_t
     {
         { "btcdjsonrpcapi", object_t
             {
-                { "versionstring", std::string{ "1.3.0" } },
-                { "major", 1 },
-                { "minor", 3 },
-                { "patch", 0 },
+                { "versionstring", btcd::to_string(api) },
+                { "major", api.major },
+                { "minor", api.minor },
+                { "patch", api.patch },
                 { "prerelease", std::string{} },
                 { "buildmetadata", std::string{} }
             } }
     });
-    return true;
 }
 
 BC_POP_WARNING()

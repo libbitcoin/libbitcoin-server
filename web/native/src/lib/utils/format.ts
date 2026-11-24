@@ -1,3 +1,9 @@
+const integerFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+
+export function formatInteger(value: number): string {
+  return integerFormatter.format(value);
+}
+
 export function formatNumber(value?: number | null, options: Intl.NumberFormatOptions = {}) {
   if (value === null || value === undefined) return '—';
   const formatter = new Intl.NumberFormat('en-US', {

@@ -55,38 +55,38 @@ protected:
         const get::cptr& get) NOEXCEPT override;
 
     /// REST interface handlers.
-    bool handle_get_block(const code& ec, rest_interface::block,
+    void handle_get_block(const code& ec, rest_interface::block,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_tx(const code& ec, rest_interface::tx,
+    void handle_get_tx(const code& ec, rest_interface::tx,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_block_hash(const code& ec, rest_interface::block_hash,
+    void handle_get_block_hash(const code& ec, rest_interface::block_hash,
         uint8_t media, uint32_t height) NOEXCEPT;
-    bool handle_get_block_txs(const code& ec, rest_interface::block_txs,
+    void handle_get_block_txs(const code& ec, rest_interface::block_txs,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_block_headers(const code& ec, rest_interface::block_headers,
+    void handle_get_block_headers(const code& ec, rest_interface::block_headers,
         uint8_t media, const system::hash_cptr& hash, uint32_t count) NOEXCEPT;
-    bool handle_get_block_part(const code& ec, rest_interface::block_part,
+    void handle_get_block_part(const code& ec, rest_interface::block_part,
         uint8_t media, const system::hash_cptr& hash, uint32_t offset,
         uint32_t size) NOEXCEPT;
-    bool handle_get_block_spent_tx_outputs(const code& ec,
+    void handle_get_block_spent_tx_outputs(const code& ec,
         rest_interface::block_spent_tx_outputs, uint8_t media,
         const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_block_filter(const code& ec, rest_interface::block_filter,
+    void handle_get_block_filter(const code& ec, rest_interface::block_filter,
         uint8_t media, const system::hash_cptr& hash, uint8_t type) NOEXCEPT;
-    bool handle_get_block_filter_headers(const code& ec,
+    void handle_get_block_filter_headers(const code& ec,
         rest_interface::block_filter_headers, uint8_t media,
         const system::hash_cptr& hash, uint8_t type,
         uint32_t count) NOEXCEPT;
-    bool handle_get_chain_information(const code& ec,
+    void handle_get_chain_information(const code& ec,
         rest_interface::chain_information) NOEXCEPT;
-    bool handle_get_utxos(const code& ec, rest_interface::get_utxos,
+    void handle_get_utxos(const code& ec, rest_interface::get_utxos,
         uint8_t media, const network::rpc::array_t& outpoints,
         bool mempool) NOEXCEPT;
-    bool handle_get_mempool(const code& ec, rest_interface::mempool,
+    void handle_get_mempool(const code& ec, rest_interface::mempool,
         bool verbose, bool mempool_sequence) NOEXCEPT;
-    bool handle_get_mempool_information(const code& ec,
+    void handle_get_mempool_information(const code& ec,
         rest_interface::mempool_information) NOEXCEPT;
-    bool handle_get_deployment_info(const code& ec,
+    void handle_get_deployment_info(const code& ec,
         rest_interface::deployment_info,
         const std::optional<system::hash_cptr>& hash) NOEXCEPT;
 

@@ -424,7 +424,29 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
             return error::invalid_number;
 
         params["height"] = height;
-        method = "template";
+        if (segment == segments.size())
+        {
+            method = "template";
+        }
+        else
+        {
+            const auto component = segments[segment++];
+            if (component != "txs")
+                return error::invalid_component;
+
+            if (segment == segments.size())
+            {
+                method = "template_txs";
+            }
+            else
+            {
+                const auto subcomponent = segments[segment++];
+                if (subcomponent != "details")
+                    return error::invalid_subcomponent;
+
+                method = "template_txs_details";
+            }
+        }
     }
     else if (target == "fees")
     {

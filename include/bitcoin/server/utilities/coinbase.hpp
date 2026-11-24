@@ -43,7 +43,7 @@ BCS_API system::data_chunk coinbase_prefix(size_t height,
     const std::string& tag, size_t extranonce) NOEXCEPT;
 
 /// Coinbase serialized without witness, following the extranonce.
-BCS_API system::data_chunk coinbase_suffix(uint64_t value,
+BCS_API system::data_chunk coinbase_suffix(size_t height, uint64_t value,
     const system::chain::script& payout,
     const system::hash_digest& commitment) NOEXCEPT;
 

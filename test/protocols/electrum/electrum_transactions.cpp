@@ -358,7 +358,7 @@ BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get__version_1_2_verbose__exp
     REQUIRE_NO_THROW_TRUE(response.at("result").is_object());
 
     // Parsed as the response is, so that amounts are doubles.
-    auto expected = json::parse(json::serialize(value_from(bitcoind(coinbase))));
+    auto expected = json::parse(json::serialize(value_from(bc::bitcoind(coinbase))));
     BC_REQUIRE(expected.is_object());
 
     // The test store is ten confirmed blocks, so top height of nine.
@@ -908,7 +908,7 @@ BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get__pruned__daemon_error)
 {
     BC_REQUIRE(handshake(electrum::version::v1_0));
 
-    const auto txid = system::encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto txid = system::encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false));
     const auto response = get(R"({"id":77,"method":"blockchain.transaction.get","params":[")" + txid + R"(",false]})" "\n");
     BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), code{ server::error::electrum::daemon_error }.value());
 }
@@ -917,7 +917,7 @@ BC_AUTO_TEST_CASE(electrum__blockchain_transaction_get__pruned_verbose__daemon_e
 {
     BC_REQUIRE(handshake(electrum::version::v1_0));
 
-    const auto txid = system::encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto txid = system::encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false));
     const auto response = get(R"({"id":78,"method":"blockchain.transaction.get","params":[")" + txid + R"(",true]})" "\n");
     BC_REQUIRE_EQUAL(response.at("error").as_object().at("code").as_int64(), code{ server::error::electrum::daemon_error }.value());
 }

@@ -61,31 +61,31 @@ protected:
         network::rpc::object_t& out) const NOEXCEPT;
 
     /// Handlers.
-    bool handle_decode_script(const code& ec,
+    void handle_decode_script(const code& ec,
         rpc_interface::decode_script, const std::string& hexstring) NOEXCEPT;
-    bool handle_validate_address(const code& ec,
+    void handle_validate_address(const code& ec,
         rpc_interface::validate_address,
         const std::string& address) NOEXCEPT;
-    bool handle_create_multisig(const code& ec,
+    void handle_create_multisig(const code& ec,
         rpc_interface::create_multisig, double nrequired,
         const network::rpc::array_t& keys,
         const std::string& address_type) NOEXCEPT;
-    bool handle_derive_addresses(const code& ec,
+    void handle_derive_addresses(const code& ec,
         rpc_interface::derive_addresses, const std::string& expression,
         const std::optional<network::rpc::value_t>& range) NOEXCEPT;
-    bool handle_get_descriptor_info(const code& ec,
+    void handle_get_descriptor_info(const code& ec,
         rpc_interface::get_descriptor_info,
         const std::string& expression) NOEXCEPT;
-    bool handle_verify_message(const code& ec,
+    void handle_verify_message(const code& ec,
         rpc_interface::verify_message, const std::string& address,
         const std::string& signature, const std::string& message) NOEXCEPT;
-    bool handle_get_index_info(const code& ec,
+    void handle_get_index_info(const code& ec,
         rpc_interface::get_index_info, const std::string& index_name) NOEXCEPT;
-    bool handle_estimate_smart_fee(const code& ec,
+    void handle_estimate_smart_fee(const code& ec,
         rpc_interface::estimate_smart_fee, double conf_target,
         const std::string& estimate_mode,
         const std::optional<network::rpc::object_t>& options) NOEXCEPT;
-    bool handle_sign_message_with_priv_key(const code& ec,
+    void handle_sign_message_with_priv_key(const code& ec,
         rpc_interface::sign_message_with_priv_key) NOEXCEPT;
 
     /// Estimate completion (node strand to channel strand).

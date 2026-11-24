@@ -183,8 +183,14 @@ def pytest_addoption(parser):
     parser.addoption(
         "--stratum-v1-port",
         action="store",
-        default="3333",
-        help="Port for Stratum v1 (default: 3333)"
+        default="8880",
+        help="Port for Stratum v1 (default: 8880)"
+    )
+    parser.addoption(
+        "--stratum-v1-worker",
+        action="store",
+        default="worker",
+        help="Stratum v1 worker, an address unless the server configures payout_address (default: worker)"
     )
 
     # Stratum v2 options
@@ -287,6 +293,10 @@ def pytest_configure(config):
         "requires_current: skipped unless the node is current (the pool and "
         "address activity of the reference data are recent)"
     )
+    config.addinivalue_line(
+        "markers",
+        "requires_pool: skipped unless the node's pool is open (relay enabled)"
+    )
 
 
 def pytest_collection_modifyitems(config, items):
@@ -316,6 +326,24 @@ def _requires_height(request):
     height = marker.args[0]
     if top < height:
         pytest.skip(f"needs confirmed height {height}, node has {top}")
+
+
+@pytest.fixture(autouse=True)
+def _requires_pool(request):
+    if request.node.get_closest_marker("requires_pool") is None:
+        return
+
+    import requests
+    host = request.config.getoption("--native-host")
+    port = request.config.getoption("--native-port")
+    try:
+        status = requests.get(f"http://{host}:{port}/v1/fees?format=json",
+            timeout=10).status_code
+    except Exception:
+        status = None
+
+    if status != 200:
+        pytest.skip("needs an open pool")
 
 
 @pytest.fixture(autouse=True)
@@ -541,6 +569,7 @@ def stratum_v1_config(request):
     return {
         "host": request.config.getoption("--stratum-v1-host"),
         "port": int(request.config.getoption("--stratum-v1-port")),
+        "worker": request.config.getoption("--stratum-v1-worker"),
         "timeout": float(request.config.getoption("--timeout"))
     }
 

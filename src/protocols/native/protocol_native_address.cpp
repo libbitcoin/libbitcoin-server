@@ -33,22 +33,21 @@ BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
 // handle_get_address
 // ----------------------------------------------------------------------------
 
-bool protocol_native::handle_get_address(const code& ec, interface::address,
+void protocol_native::handle_get_address(const code& ec, interface::address,
     uint8_t, uint8_t media, const hash_cptr& hash, bool turbo) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (stopped(ec))
-        return false;
+        return;
 
     if (!archive().address_enabled())
     {
         send_not_implemented();
-        return true;
+        return;
     }
 
     PARALLEL(do_get_address, media, turbo && turbo_, hash, gate());
-    return true;
 }
 
 // private
@@ -111,23 +110,22 @@ void protocol_native::complete_get_address(const code& ec, uint8_t media,
 // handle_get_address_confirmed
 // ----------------------------------------------------------------------------
 
-bool protocol_native::handle_get_address_confirmed(const code& ec,
+void protocol_native::handle_get_address_confirmed(const code& ec,
     interface::address_confirmed, uint8_t, uint8_t media,
     const hash_cptr& hash, bool turbo) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (stopped(ec))
-        return false;
+        return;
 
     if (!archive().address_enabled())
     {
         send_not_implemented();
-        return true;
+        return;
     }
 
     PARALLEL(do_get_address_confirmed, media, turbo && turbo_, hash, gate());
-    return true;
 }
 
 // private
@@ -146,23 +144,22 @@ void protocol_native::do_get_address_confirmed(uint8_t media, bool turbo,
 // handle_get_address_unconfirmed
 // ----------------------------------------------------------------------------
 
-bool protocol_native::handle_get_address_unconfirmed(const code& ec,
+void protocol_native::handle_get_address_unconfirmed(const code& ec,
     interface::address_unconfirmed, uint8_t, uint8_t media,
     const hash_cptr& hash, bool turbo) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (stopped(ec))
-        return false;
+        return;
 
     if (!archive().address_enabled())
     {
         send_not_implemented();
-        return true;
+        return;
     }
 
     PARALLEL(do_get_address_unconfirmed, media, turbo && turbo_, hash, gate());
-    return true;
 }
 
 // private
@@ -181,24 +178,23 @@ void protocol_native::do_get_address_unconfirmed(uint8_t media, bool turbo,
 // handle_get_address_balance
 // ----------------------------------------------------------------------------
 
-bool protocol_native::handle_get_address_balance(const code& ec,
+void protocol_native::handle_get_address_balance(const code& ec,
     interface::address_balance, uint8_t, uint8_t media,
     const hash_cptr& hash, bool turbo) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     if (!query.address_enabled())
     {
         send_not_implemented();
-        return true;
+        return;
     }
 
     PARALLEL(do_get_address_balance, media, turbo && turbo_, hash, gate());
-    return true;
 }
 
 void protocol_native::do_get_address_balance(uint8_t media, bool turbo,
@@ -250,19 +246,19 @@ void protocol_native::complete_get_address_balance(const code& ec,
     send_not_found();
 }
 
-bool protocol_native::handle_get_address_subscribe(const code& ec,
+void protocol_native::handle_get_address_subscribe(const code& ec,
     interface::address_subscribe, uint8_t version, uint8_t media,
     const system::hash_cptr& hash, bool turbo, bool stop) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     // TODO: map.
     address_subscribe_.store(!stop, std::memory_order_relaxed);
     if (stop)
     {
         send_empty();
-        return true;
+        return;
     }
 
     return handle_get_address(ec, {}, version, media, hash, turbo);

@@ -89,6 +89,7 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
             native.path = "unused";
             native.inactivity_minutes = 1;
             config_.node.delay_inbound = false;
+            config_.node.pool.minimum_fee_rate = 99.0;
             config_.database.path = TEST_DIRECTORY;
             if (configure)
                 configure(config_);
@@ -109,10 +110,8 @@ native_setup_fixture::native_setup_fixture(const initializer& setup,
         test::clear(test::directory);
         auto& database_settings = config_.database;
         auto& network_settings = config_.network;
-        auto& node_settings = config_.node;
 
         database_settings.interval_depth = 2;
-        node_settings.pool.minimum_fee_rate = 99.0;
         network_settings.inbound.connections = 0;
         network_settings.outbound.connections = 0;
 
@@ -387,6 +386,18 @@ data_chunk native_setup_fixture::ws_get_data(std::string_view message)
 void native_setup_fixture::notify(node::event_value value)
 {
     server_.notify(node::error::success, value);
+}
+
+code native_setup_fixture::submit(const chain::transaction& tx)
+{
+    std::promise<code> submitted{};
+    const auto txs = to_shared(chain::transaction_cptrs{ to_shared(tx) });
+    server_.submit(txs, false, [&](const code& ec, size_t) NOEXCEPT
+    {
+        submitted.set_value(ec);
+    });
+
+    return submitted.get_future().get();
 }
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)

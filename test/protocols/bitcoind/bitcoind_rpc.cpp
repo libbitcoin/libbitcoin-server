@@ -156,7 +156,7 @@ const std::vector<method_params> scope_methods
     { "enumeratesigners", "[]" }
 };
 
-using interface_version = server::interface::bitcoind::version;
+using interface_version = server::bitcoind::version;
 
 // Methods introduced in v31, which do not exist at v30.
 const std::vector<method_params> v31_methods
@@ -5423,23 +5423,23 @@ BC_FIXTURE_TEST_SUITE(bitcoind_pruned_tests, bitcoind_pruned_setup_fixture)
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__pruned_hex__misc_error)
 {
-    BC_REQUIRE(has_code(rpc("getblock", hash_param(test::block1_hash, "0")), -1));
+    BC_REQUIRE(has_code(rpc("getblock", hash_param(test::pruned_block10.hash(), "0")), -1));
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__pruned_verbose__misc_error)
 {
-    BC_REQUIRE(has_code(rpc("getblock", hash_param(test::block9_hash, "2")), -1));
+    BC_REQUIRE(has_code(rpc("getblock", hash_param(test::pruned_block10.hash(), "2")), -1));
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getblockstats__pruned__misc_error)
 {
-    BC_REQUIRE(has_code(rpc("getblockstats", hash_param(test::block9_hash)), -1));
+    BC_REQUIRE(has_code(rpc("getblockstats", hash_param(test::pruned_block10.hash())), -1));
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getdescriptoractivity__pruned__misc_error)
 {
-    const auto hash = encode_hash(test::block1.hash());
-    const auto script = encode_base16(test::block1.transactions_ptr()->front()->outputs_ptr()->front()->script().to_data(false));
+    const auto hash = encode_hash(test::pruned_block10.hash());
+    const auto script = encode_base16(test::pruned_block10.transactions_ptr()->back()->outputs_ptr()->front()->script().to_data(false));
     BC_REQUIRE(has_code(rpc("getdescriptoractivity", "[[\"" + hash + "\"], [\"raw(" + script + ")\"]]"), -1));
 }
 
@@ -5450,14 +5450,25 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__pruned_genesis_hex__hex)
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__pruned_raw__invalid_address_or_key)
 {
-    const auto txid = test::block1.transactions_ptr()->front()->hash(false);
+    const auto txid = test::pruned_block10.transactions_ptr()->back()->hash(false);
     BC_REQUIRE(has_code(rpc("getrawtransaction", hash_param(txid, "0")), -5));
 }
 
 BC_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__pruned_verbose__invalid_address_or_key)
 {
-    const auto txid = test::block1.transactions_ptr()->front()->hash(false);
+    const auto txid = test::pruned_block10.transactions_ptr()->back()->hash(false);
     BC_REQUIRE(has_code(rpc("getrawtransaction", hash_param(txid, "1")), -5));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblock__pruned_coinbase_only_hex__hex)
+{
+    BC_REQUIRE(rpc("getblock", hash_param(test::block1_hash, "0")).at("result").is_string());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getrawtransaction__pruned_coinbase_raw__hex)
+{
+    const auto txid = test::pruned_block10.transactions_ptr()->front()->hash(false);
+    BC_REQUIRE(rpc("getrawtransaction", hash_param(txid, "0")).at("result").is_string());
 }
 
 BC_AUTO_TEST_SUITE_END()

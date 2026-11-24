@@ -19,7 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_STRATUM_V1_HPP
 #define LIBBITCOIN_SERVER_PROTOCOLS_PROTOCOL_STRATUM_V1_HPP
 
-#include <atomic>
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
@@ -51,7 +50,9 @@ public:
         p2kh_(session->server_settings().wallet.p2kh_prefix),
         p2sh_(session->server_settings().wallet.p2sh_prefix),
         witness_(session->server_settings().wallet.witness_prefix),
-        channel_(std::dynamic_pointer_cast<channel_t>(channel))
+        channel_(std::dynamic_pointer_cast<channel_t>(channel)),
+        decay_timer_(system::emplace_shared<network::deadline>(session->log,
+            channel->strand()))
     {
     }
 
@@ -74,7 +75,8 @@ protected:
     /// Handlers.
     void handle_mining_subscribe(const code& ec,
         rpc_interface::mining_subscribe, const std::string& user_agent,
-        const std::string& session_id) NOEXCEPT;
+        const std::string& session_id, const std::string& host,
+        const network::rpc::value_t& port) NOEXCEPT;
     void handle_mining_authorize(const code& ec,
         rpc_interface::mining_authorize, const std::string& username,
         const std::string& password) NOEXCEPT;
@@ -116,9 +118,11 @@ private:
         const node::block_template::cptr& held) NOEXCEPT;
     void do_template(const code& ec,
         const node::block_template::cptr& held) NOEXCEPT;
-    void send_job(job&& job, bool clean) NOEXCEPT;
+    void send_job(const job::ptr& job, bool clean) NOEXCEPT;
     void refresh() NOEXCEPT;
     void retarget() NOEXCEPT;
+    void start_decay() NOEXCEPT;
+    void handle_decay(const code& ec) NOEXCEPT;
     void suggest(double difficulty) NOEXCEPT;
 
     /// Blocks.
@@ -131,7 +135,12 @@ private:
     const uint8_t p2sh_;
     const std::string witness_;
     const channel_t::ptr channel_;
+    const network::deadline::ptr decay_timer_;
     std::atomic_bool active_{};
+
+    // These are protected by strand.
+    system::hash_digest mined_{};
+    size_t height_{};
 };
 
 } // namespace server

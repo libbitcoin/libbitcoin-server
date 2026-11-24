@@ -74,29 +74,29 @@ void protocol_zmq::stopping(const code& ec) NOEXCEPT
 
 // Subscription is topic prefix, so applies to every topic it matches, and empty
 // prefix applies to all.
-bool protocol_zmq::handle_subscribe(const code& ec,
+void protocol_zmq::handle_subscribe(const code& ec,
     const chunk_cptr& prefix, bool cancel) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (stopped(ec))
-        return false;
+        return;
 
     std::string text{ prefix->begin(), prefix->end() };
     if (cancel)
     {
         if (is_zero(prefixes_.erase(text)))
-            return true;
+            return;
     }
     else if (prefixes_.contains(text))
     {
-        return true;
+        return;
     }
     else if (prefixes_.size() >= options_.maximum_subscriptions)
     {
         // As there is no way to indicate failure the channel must be dropped.
         network::protocol::stop(server::error::subscription_limit);
-        return false;
+        return;
     }
     else
     {
@@ -116,8 +116,6 @@ bool protocol_zmq::handle_subscribe(const code& ec,
         demand_wire_tx(!cancel);
         demand_wire_block(!cancel);
     }
-
-    return true;
 }
 
 bool protocol_zmq::handle_wire_tx(const code& ec,

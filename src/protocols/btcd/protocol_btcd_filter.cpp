@@ -46,37 +46,36 @@ BC_PUSH_WARNING(NO_VALUE_OR_CONST_REF_SHARED_PTR)
 // Handlers (filters).
 // ----------------------------------------------------------------------------
 
-bool protocol_btcd::handle_load_tx_filter(const code& ec,
+void protocol_btcd::handle_load_tx_filter(const code& ec,
     btcd_interface::load_tx_filter, bool reload,
     const std::optional<value_t>& addresses,
     const std::optional<value_t>& outpoints) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     hashes keys{};
     if (btcd::filter_keys(keys, addresses, p2kh_, p2sh_, witness_))
     {
         send_error(error::btcd::invalid_parameter);
-        return true;
+        return;
     }
 
     chain::points points{};
     if (btcd::filter_points(points, outpoints))
     {
         send_error(error::btcd::invalid_parameter);
-        return true;
+        return;
     }
 
     if (!keys.empty() && !archive().address_enabled())
     {
         send_error(error::btcd::unimplemented);
-        return true;
+        return;
     }
 
     POST_NOTIFY(do_load_tx_filter, reload, std::move(keys), std::move(points),
         gate());
-    return true;
 }
 
 void protocol_btcd::do_load_tx_filter(bool reload, const hashes& keys,
@@ -170,28 +169,27 @@ void protocol_btcd::complete_load_tx_filter(const code& ec,
 // Confirmed-block matching only (no tx pool in v4), reusing loadtxfilter's
 // cursor-based history matching.
 
-bool protocol_btcd::handle_notify_received(const code& ec,
+void protocol_btcd::handle_notify_received(const code& ec,
     btcd_interface::notify_received,
     const std::optional<value_t>& addresses) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     hashes keys{};
     if (btcd::filter_keys(keys, addresses, p2kh_, p2sh_, witness_))
     {
         send_error(error::btcd::invalid_parameter);
-        return true;
+        return;
     }
 
     if (!keys.empty() && !archive().address_enabled())
     {
         send_error(error::btcd::unimplemented);
-        return true;
+        return;
     }
 
     POST_NOTIFY(do_notify_received, std::move(keys), gate());
-    return true;
 }
 
 void protocol_btcd::do_notify_received(const hashes& keys,
@@ -254,23 +252,22 @@ void protocol_btcd::complete_notify_received(const code& ec,
     send_result({});
 }
 
-bool protocol_btcd::handle_stop_notify_received(const code& ec,
+void protocol_btcd::handle_stop_notify_received(const code& ec,
     btcd_interface::stop_notify_received,
     const std::optional<value_t>& addresses) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     hashes keys{};
     if (btcd::filter_keys(keys, addresses, p2kh_, p2sh_, witness_))
     {
         send_error(error::btcd::invalid_parameter);
-        return true;
+        return;
     }
 
     POST_NOTIFY(do_stop_notify_received, std::move(keys));
     send_result({});
-    return true;
 }
 
 void protocol_btcd::do_stop_notify_received(const hashes& keys) NOEXCEPT
@@ -284,22 +281,21 @@ void protocol_btcd::do_stop_notify_received(const hashes& keys) NOEXCEPT
         watching_legacy_.store(false, relaxed);
 }
 
-bool protocol_btcd::handle_notify_spent(const code& ec,
+void protocol_btcd::handle_notify_spent(const code& ec,
     btcd_interface::notify_spent,
     const std::optional<value_t>& outpoints) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     chain::points points{};
     if (btcd::filter_points(points, outpoints))
     {
         send_error(error::btcd::invalid_parameter);
-        return true;
+        return;
     }
 
     POST_NOTIFY(do_notify_spent, std::move(points), gate());
-    return true;
 }
 
 void protocol_btcd::do_notify_spent(const chain::points& points,
@@ -345,23 +341,22 @@ void protocol_btcd::complete_notify_spent(const code& ec,
     send_result({});
 }
 
-bool protocol_btcd::handle_stop_notify_spent(const code& ec,
+void protocol_btcd::handle_stop_notify_spent(const code& ec,
     btcd_interface::stop_notify_spent,
     const std::optional<value_t>& outpoints) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     chain::points points{};
     if (btcd::filter_points(points, outpoints))
     {
         send_error(error::btcd::invalid_parameter);
-        return true;
+        return;
     }
 
     POST_NOTIFY(do_stop_notify_spent, std::move(points));
     send_result({});
-    return true;
 }
 
 void protocol_btcd::do_stop_notify_spent(const chain::points& points) NOEXCEPT
@@ -375,18 +370,18 @@ void protocol_btcd::do_stop_notify_spent(const chain::points& points) NOEXCEPT
         watching_legacy_.store(false, relaxed);
 }
 
-bool protocol_btcd::handle_rescan_blocks(const code& ec,
+void protocol_btcd::handle_rescan_blocks(const code& ec,
     btcd_interface::rescan_blocks,
     const std::optional<value_t>& blockhashes) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto list = blockhashes.value_or(array_t{});
     if (!std::holds_alternative<array_t>(list.value()))
     {
         send_error(error::btcd::invalid_params);
-        return true;
+        return;
     }
 
     hash_digest hash{};
@@ -398,7 +393,7 @@ bool protocol_btcd::handle_rescan_blocks(const code& ec,
             !decode_hash(hash, std::get<string_t>(item.value())))
         {
             send_error(error::btcd::internal_error);
-            return true;
+            return;
         }
 
         block_hashes.push_back(hash);
@@ -407,12 +402,11 @@ bool protocol_btcd::handle_rescan_blocks(const code& ec,
     if (!archive().address_enabled())
     {
         send_error(error::btcd::unimplemented);
-        return true;
+        return;
     }
 
     POST_NOTIFY(do_rescan_blocks, emplace_shared<hashes>(
         std::move(block_hashes)), gate());
-    return true;
 }
 
 // Snapshot the watch-list, so the query runs parallel (not on the strand).
@@ -555,25 +549,25 @@ void protocol_btcd::complete_rescan_blocks(const code& ec,
 // Handlers (transactions).
 // ----------------------------------------------------------------------------
 
-bool protocol_btcd::handle_search_raw_transactions(const code& ec,
+void protocol_btcd::handle_search_raw_transactions(const code& ec,
     btcd_interface::search_raw_transactions, const std::string& address,
     double verbose, double skip, double count, double prevouts, bool reverse,
     const array_t& filteraddrs) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (!archive().address_enabled())
     {
         send_error(error::btcd::misc_error);
-        return true;
+        return;
     }
 
     hashes keys{};
     if (btcd::search_keys(keys, address, p2kh_, p2sh_, witness_))
     {
         send_error(error::btcd::invalid_address_or_key);
-        return true;
+        return;
     }
 
     int64_t level{}, first{}, extra{}, requested{};
@@ -581,13 +575,13 @@ bool protocol_btcd::handle_search_raw_transactions(const code& ec,
         !to_integer(requested, count) || !to_integer(extra, prevouts))
     {
         send_error(error::btcd::invalid_params);
-        return true;
+        return;
     }
 
     if (is_zero(requested))
     {
         send_result(null_t{});
-        return true;
+        return;
     }
 
     std::set<std::string> filter{};
@@ -596,7 +590,7 @@ bool protocol_btcd::handle_search_raw_transactions(const code& ec,
         if (!std::holds_alternative<string_t>(item.value()))
         {
             send_error(error::btcd::invalid_params);
-            return true;
+            return;
         }
 
         filter.emplace(std::get<string_t>(item.value()));
@@ -606,7 +600,6 @@ bool protocol_btcd::handle_search_raw_transactions(const code& ec,
         limit<size_t>(first, zero, max_size_t),
         limit<size_t>(requested, one, max_size_t), !is_zero(extra), reverse,
         std::move(filter), gate());
-    return true;
 }
 
 void protocol_btcd::do_search_raw_transactions(const hashes& keys,

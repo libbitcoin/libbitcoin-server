@@ -88,18 +88,17 @@ static void add_zmq_notifications(array_t& notifications,
 }
 
 // The clear (NULL) and secured (CURVE) bindings are reported alike.
-bool protocol_bitcoind_notifications::handle_get_zmq_notifications(
+void protocol_bitcoind_notifications::handle_get_zmq_notifications(
     const code& ec, rpc_interface::get_zmq_notifications) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     array_t notifications{};
     const auto& zmq = server_settings().zmq;
     add_zmq_notifications(notifications, zmq.binds);
     add_zmq_notifications(notifications, zmq.safes);
     send_result(std::move(notifications));
-    return true;
 }
 
 BC_POP_WARNING()

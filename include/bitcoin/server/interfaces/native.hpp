@@ -42,6 +42,7 @@ struct native_methods
         method<"block_header_context", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<false>>{ "version", "media", "hash", "height", "candidate" },
         method<"block_details", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<false>>{ "version", "media", "hash", "height", "candidate" },
         method<"block_txs", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<false>>{ "version", "media", "hash", "height", "candidate" },
+        method<"block_txs_details", uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<false>>{ "version", "media", "hash", "height", "candidate" },
         method<"block_filter", uint8_t, uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<false>>{ "version", "media", "type", "hash", "height", "candidate" },
         method<"block_filter_hash", uint8_t, uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<false>>{ "version", "media", "type", "hash", "height", "candidate" },
         method<"block_filter_header", uint8_t, uint8_t, uint8_t, nullable<system::hash_cptr>, nullable<uint32_t>, optional<false>>{ "version", "media", "type", "hash", "height", "candidate" },
@@ -73,11 +74,14 @@ struct native_methods
         method<"address_balance", uint8_t, uint8_t, system::hash_cptr, optional<true>>{ "version", "media", "hash", "turbo" },
         method<"address_subscribe", uint8_t, uint8_t, system::hash_cptr, optional<true>, optional<false>>{ "version", "media", "hash", "turbo", "stop" },
 
+        method<"template", uint8_t, uint8_t, uint32_t>{ "version", "media", "height" },
+        method<"template_txs", uint8_t, uint8_t, uint32_t>{ "version", "media", "height" },
+        method<"template_txs_details", uint8_t, uint8_t, uint32_t>{ "version", "media", "height" },
         method<"fees", uint8_t, uint8_t>{ "version", "media" }
     };
 
     template <typename... Args>
-    using subscriber = network::unsubscriber<Args...>;
+    using subscriber = network::subscriber<Args...>;
 
     template <size_t Index>
     using at = method_at<methods, Index>;
@@ -96,38 +100,42 @@ struct native_methods
     using block_header_context = at<7>;
     using block_details = at<8>;
     using block_txs = at<9>;
-    using block_filter = at<10>;
-    using block_filter_hash = at<11>;
-    using block_filter_header = at<12>;
-    using block_tx = at<13>;
-    using block_tx_input_script = at<14>;
-    using block_tx_output_script = at<15>;
-    using block_subscribe = at<16>;
+    using block_txs_details = at<10>;
+    using block_filter = at<11>;
+    using block_filter_hash = at<12>;
+    using block_filter_header = at<13>;
+    using block_tx = at<14>;
+    using block_tx_input_script = at<15>;
+    using block_tx_output_script = at<16>;
+    using block_subscribe = at<17>;
 
-    using tx = at<17>;
-    using tx_header = at<18>;
-    using tx_details = at<19>;
-    using tx_subscribe = at<20>;
+    using tx = at<18>;
+    using tx_header = at<19>;
+    using tx_details = at<20>;
+    using tx_subscribe = at<21>;
 
-    using inputs = at<21>;
-    using input = at<22>;
-    using input_script = at<23>;
-    using input_witness = at<24>;
+    using inputs = at<22>;
+    using input = at<23>;
+    using input_script = at<24>;
+    using input_witness = at<25>;
 
-    using outputs = at<25>;
-    using output = at<26>;
-    using output_script = at<27>;
-    using output_spender = at<28>;
-    using output_spenders = at<29>;
-    using output_subscribe = at<30>;
+    using outputs = at<26>;
+    using output = at<27>;
+    using output_script = at<28>;
+    using output_spender = at<29>;
+    using output_spenders = at<30>;
+    using output_subscribe = at<31>;
 
-    using address = at<31>;
-    using address_confirmed = at<32>;
-    using address_unconfirmed = at<33>;
-    using address_balance = at<34>;
-    using address_subscribe = at<35>;
+    using address = at<32>;
+    using address_confirmed = at<33>;
+    using address_unconfirmed = at<34>;
+    using address_balance = at<35>;
+    using address_subscribe = at<36>;
 
-    using fees = at<36>;
+    using template_ = at<37>;
+    using template_txs = at<38>;
+    using template_txs_details = at<39>;
+    using fees = at<40>;
 };
 
 /// ?format=data|text|json (via query string).
@@ -173,6 +181,10 @@ struct native_methods
 /// /v1/block/confirmed/[height]/txs {all txs in the block}
 /// /v1/block/candidate/[height]/txs {all txs in the block}
 
+/// /v1/block/hash/[bkhash]/txs/details {1}
+/// /v1/block/confirmed/[height]/txs/details {1}
+/// /v1/block/candidate/[height]/txs/details {1}
+
 /// /v1/block/hash/[bkhash]/tx/[position] {1}
 /// /v1/block/confirmed/[height]/tx/[position] {1}
 /// /v1/block/candidate/[height]/tx/[position] {1}
@@ -214,6 +226,10 @@ struct native_methods
 /// /v1/address/[output-script-hash]/balance {all confirmed}
 
 /// ---------------------------------------------------------------------------
+
+/// /v1/template/[height] {1}
+/// /v1/template/[height]/txs {all txs in the template}
+/// /v1/template/[height]/txs/details {1}
 
 /// /v1/fees {1}
 

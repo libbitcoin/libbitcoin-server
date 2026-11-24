@@ -6,6 +6,28 @@ export function blocksPath() {
   return '/v1/block';
 }
 
+/** The section suffix of a block or template path (/txs or /txs/details). */
+export function sectionSuffix(pathname: string) {
+  if (pathname.endsWith('/txs/details')) return '/txs/details';
+  if (pathname.endsWith('/txs')) return '/txs';
+  return '';
+}
+
+/** The id of the page section a suffix opens at, if any. */
+export function sectionId(suffix: string) {
+  if (suffix === '/txs/details') return 'details';
+  if (suffix === '/txs') return 'transactions';
+  return undefined;
+}
+
+export function poolPath() {
+  return '/v1/template';
+}
+
+export function templatePath(height: number | string) {
+  return `/v1/template/${encodeURIComponent(String(height))}`;
+}
+
 export function investigationsPath() {
   return '/v1/investigations';
 }

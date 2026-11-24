@@ -1,12 +1,28 @@
 import { type ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useBlockHeader, useBlockStats, useBlockTransactions } from '@/lib/hooks/useBlockchainData';
-import { useBlockchainClient, type TransactionSummary } from '@/lib/api/client';
+import {
+  useBlockHeader,
+  useBlockStats,
+  useBlockTransactionDetails,
+  useBlockTransactions,
+} from '@/lib/hooks/useBlockchainData';
+import {
+  useBlockchainClient,
+  type BlockHeaderDetail,
+  type TransactionSummary,
+} from '@/lib/api/client';
 import { useNow } from '@/lib/hooks/useNow';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
 import { usePaginatedList } from '@/lib/hooks/usePaginatedList';
 import { useWindowScrollToBottom } from '@/lib/hooks/useWindowScrollToBottom';
-import { blockByHashPath, blockValidationPath, transactionPath } from '@/lib/utils/routes';
+import {
+  blockByHashPath,
+  blockValidationPath,
+  sectionId,
+  sectionSuffix,
+  templatePath,
+  transactionPath,
+} from '@/lib/utils/routes';
 import {
   formatBtc,
   formatBytes,
@@ -19,6 +35,7 @@ import {
 } from '@/lib/utils/format';
 import { HashText } from '@/components/hash-text';
 import { BlockSizeBar } from '@/components/block-size-bar';
+import { BlockViewer } from '@/components/block-viewer';
 import { MinerValue } from '@/components/miner-value';
 import { BlockValidationInspector } from '@/components/block-validation-inspector';
 import { SaveBookmarkButton } from '@/components/save-bookmark';
@@ -33,6 +50,7 @@ export function BlockPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const inspectValidation = location.pathname.endsWith('/header/context');
+  const suffix = sectionSuffix(location.pathname);
   const client = useBlockchainClient();
   const now = useNow();
   const {
@@ -51,8 +69,15 @@ export function BlockPage() {
     isLoading: initialTransactionsLoading,
     error: initialTransactionsError,
   } = useBlockTransactions(identifier, 0);
-  const previousBlockHashRef = useRef<string | null>(null);
-  const nextBlockHashRef = useRef<string | null>(null);
+  const { data: details } = useBlockTransactionDetails(block?.hash ?? '', {
+    enabled: Boolean(block?.hash),
+  });
+  const previousPathRef = useRef<string | null>(null);
+  const nextPathRef = useRef<string | null>(null);
+  const nextPath = nextBlockPath(block, suffix);
+  const previousPath = block?.previousBlockHash
+    ? `${blockByHashPath(block.previousBlockHash)}${suffix}`
+    : null;
   const {
     items: transactions,
     isFetchingMore,
@@ -73,9 +98,9 @@ export function BlockPage() {
   });
 
   useLayoutEffect(() => {
-    previousBlockHashRef.current = block?.previousBlockHash ?? null;
-    nextBlockHashRef.current = block?.nextBlockHash ?? null;
-  }, [block?.nextBlockHash, block?.previousBlockHash]);
+    previousPathRef.current = previousPath;
+    nextPathRef.current = nextPath;
+  }, [previousPath, nextPath]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -90,15 +115,15 @@ export function BlockPage() {
         if (target.isContentEditable) return;
       }
 
-      if (event.key === 'ArrowLeft' && previousBlockHashRef.current) {
+      if (event.key === 'ArrowLeft' && previousPathRef.current) {
         event.preventDefault();
-        void navigate(blockByHashPath(previousBlockHashRef.current));
+        void navigate(previousPathRef.current);
         return;
       }
 
-      if (event.key === 'ArrowRight' && nextBlockHashRef.current) {
+      if (event.key === 'ArrowRight' && nextPathRef.current) {
         event.preventDefault();
-        void navigate(blockByHashPath(nextBlockHashRef.current));
+        void navigate(nextPathRef.current);
       }
     };
 
@@ -112,11 +137,21 @@ export function BlockPage() {
     if (!block?.hash) return;
     if (hash && hash !== block.hash) {
       void navigate(
-        inspectValidation ? blockValidationPath(block.hash) : blockByHashPath(block.hash),
+        inspectValidation
+          ? blockValidationPath(block.hash)
+          : `${blockByHashPath(block.hash)}${suffix}`,
         { replace: true }
       );
     }
-  }, [block?.hash, hash, inspectValidation, navigate]);
+  }, [block?.hash, hash, inspectValidation, navigate, suffix]);
+
+  // A path ending in a section opens the page at it, once it is drawn.
+  const section = sectionId(suffix);
+  const sectionReady = section === 'details' ? Boolean(details) : Boolean(block);
+  useEffect(() => {
+    if (section === undefined || !sectionReady) return;
+    document.getElementById(section)?.scrollIntoView({ block: 'start' });
+  }, [section, sectionReady, location.key]);
 
   useWindowScrollToBottom({
     enabled: hasMore && !isFetchingMore && loadMoreError === null && transactions.length > 0,
@@ -159,17 +194,17 @@ export function BlockPage() {
               target={{ kind: 'block', hash: block.hash, height: block.height }}
             />
           )}
-          {block?.previousBlockHash ? (
+          {previousPath ? (
             <Link
-              to={blockByHashPath(block.previousBlockHash)}
+              to={previousPath}
               className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent rounded-md border px-3 py-2 text-sm"
             >
               ← Previous
             </Link>
           ) : null}
-          {block?.nextBlockHash ? (
+          {nextPath ? (
             <Link
-              to={blockByHashPath(block.nextBlockHash)}
+              to={nextPath}
               className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent rounded-md border px-3 py-2 text-sm"
             >
               Next →
@@ -230,6 +265,17 @@ export function BlockPage() {
         <BlockSizeBar weight={weight} nominal={stats?.nominal} size={size} />
       )}
 
+      {block && details && (
+        <BlockViewer
+          key={block.hash}
+          elements={details}
+          height={block.height}
+          coinbase
+          positionPath={(position) => `${blockByHashPath(block.hash)}/tx/${String(position)}`}
+          forceExpanded={suffix === '/txs/details'}
+        />
+      )}
+
       {block && (
         <BlockValidationInspector
           key={JSON.stringify([client.metadata.endpoint, block.hash, inspectValidation])}
@@ -238,7 +284,7 @@ export function BlockPage() {
         />
       )}
 
-      <section>
+      <section id="transactions" className="scroll-mt-24">
         <header className="mb-4 flex items-center justify-between">
           <h2 className="text-accent text-lg font-semibold">Transactions</h2>
           <p className="text-textMuted text-sm">Showing {transactions.length} transactions</p>
@@ -330,6 +376,13 @@ export function BlockPage() {
       </section>
     </div>
   );
+}
+
+// The next block, or the template above a block without one.
+function nextBlockPath(block: BlockHeaderDetail | undefined, suffix: string): string | null {
+  if (!block) return null;
+  if (block.nextBlockHash) return `${blockByHashPath(block.nextBlockHash)}${suffix}`;
+  return `${templatePath(block.height + 1)}${suffix}`;
 }
 
 function InfoItem({ label, value }: { label: string; value: ReactNode }) {

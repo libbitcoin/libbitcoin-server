@@ -175,26 +175,68 @@ BC_FIXTURE_TEST_SUITE(native_input_pruned_tests, native_pruned_setup_fixture)
 
 BC_AUTO_TEST_CASE(native__inputs__pruned__not_found)
 {
-    const auto hash = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto hash = encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false));
     BC_REQUIRE_EQUAL(get_status("/v1/input/" + hash + "?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__input__pruned__not_found)
 {
-    const auto hash = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto hash = encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false));
     BC_REQUIRE_EQUAL(get_status("/v1/input/" + hash + "/0?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__input_script__pruned__not_found)
 {
-    const auto hash = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto hash = encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false));
     BC_REQUIRE_EQUAL(get_status("/v1/input/" + hash + "/0/script?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__input_witness__pruned__not_found)
 {
-    const auto hash = encode_hash(test::block1.transactions_ptr()->front()->hash(false));
+    const auto hash = encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false));
     BC_REQUIRE_EQUAL(get_status("/v1/input/" + hash + "/0/witness?format=data"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__inputs__pruned_json__points)
+{
+    const auto hash = encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false));
+    const auto response = get_json("/v1/input/" + hash + "?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
+    const auto& input = response.as_array().front().as_object();
+    BC_REQUIRE(!input.contains("script"));
+    BC_REQUIRE(!input.contains("witness"));
+    BC_REQUIRE_EQUAL(input.at("point").as_object().at("hash").as_string(), encode_hash(test::block1.transactions_ptr()->front()->hash(false)));
+    BC_REQUIRE_EQUAL(input.at("point").as_object().at("index").as_int64(), 0);
+    BC_REQUIRE_EQUAL(input.at("sequence").as_int64(), int64_t{ 0xfffffffe });
+}
+
+BC_AUTO_TEST_CASE(native__input__pruned_json__point)
+{
+    const auto hash = encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false));
+    const auto response = get_json("/v1/input/" + hash + "/0?format=json");
+    BC_REQUIRE(response.is_object());
+    BC_REQUIRE(!response.as_object().contains("script"));
+    BC_REQUIRE_EQUAL(response.as_object().at("point").as_object().at("hash").as_string(), encode_hash(test::block1.transactions_ptr()->front()->hash(false)));
+    BC_REQUIRE_EQUAL(response.as_object().at("sequence").as_int64(), int64_t{ 0xfffffffe });
+}
+
+BC_AUTO_TEST_CASE(native__input__pruned_json_out_of_range__not_found)
+{
+    const auto hash = encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false));
+    BC_REQUIRE_EQUAL(get_status("/v1/input/" + hash + "/1?format=json"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__input__pruned_text__not_found)
+{
+    const auto hash = encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false));
+    BC_REQUIRE_EQUAL(get_status("/v1/input/" + hash + "/0?format=text"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(native__input__pruned_coinbase_data__ok)
+{
+    const auto hash = encode_hash(test::pruned_block10.transactions_ptr()->front()->hash(false));
+    BC_REQUIRE_EQUAL(get_status("/v1/input/" + hash + "/0?format=data"), http::status::ok);
 }
 
 BC_AUTO_TEST_SUITE_END()

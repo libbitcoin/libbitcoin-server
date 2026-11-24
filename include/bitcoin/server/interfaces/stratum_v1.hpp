@@ -31,8 +31,8 @@ struct stratum_v1_methods
     /// Methods requested by the client (notifications are sent by name).
     static constexpr std::tuple methods
     {
-        method<"mining.subscribe", optional<""_t>, optional<""_t>>{ "user_agent", "session_id" },
-        method<"mining.authorize", string_t, optional<""_t>>{ "username", "password" },
+        method<"mining.subscribe", nullopt<""_t>, nullopt<""_t>, nullopt<""_t>, nullopt<empty::value>>{ "user_agent", "session_id", "host", "port" },
+        method<"mining.authorize", string_t, nullopt<""_t>>{ "username", "password" },
         method<"mining.submit", string_t, string_t, string_t, string_t, string_t, optional<""_t>>{ "worker_name", "job_id", "extranonce2", "ntime", "nonce", "version_bits" },
         method<"mining.configure", array_t, object_t>{ "extensions", "parameters" },
         method<"mining.suggest_difficulty", number_t>{ "difficulty" },

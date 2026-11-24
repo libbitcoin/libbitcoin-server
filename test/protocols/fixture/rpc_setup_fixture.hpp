@@ -37,6 +37,9 @@ struct rpc_setup_fixture
     /// query_.set/push_confirmed) without live p2p sync.
     void notify(node::event_value value);
 
+    /// Submit the tx to the pool, as from a peer.
+    code submit(const system::chain::transaction& tx);
+
 protected:
     /// Creates and populates store, then starts (optionally) and runs server.
     /// Derived fixture connects its client on return.

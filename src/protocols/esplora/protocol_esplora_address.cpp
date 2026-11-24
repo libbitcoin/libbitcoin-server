@@ -62,36 +62,35 @@ bool protocol_esplora::to_key(hash_digest& out,
 // address
 // ----------------------------------------------------------------------------
 
-bool protocol_esplora::handle_get_address(const code& ec, interface::address,
+void protocol_esplora::handle_get_address(const code& ec, interface::address,
     uint8_t media, std::optional<hash_cptr> hash,
     std::optional<std::string> address) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     hash_digest key{};
     if (!to_key(key, hash, address))
     {
         send_bad_request();
-        return true;
+        return;
     }
 
     if (!archive().address_enabled())
     {
         send_not_implemented();
-        return true;
+        return;
     }
 
     PARALLEL(do_get_address, key, address, gate());
-    return true;
 }
 
 void protocol_esplora::do_get_address(const hash_digest& key,
@@ -168,39 +167,39 @@ void protocol_esplora::complete_get_address(const code& ec,
 // address/txs
 // ----------------------------------------------------------------------------
 
-bool protocol_esplora::handle_get_address_txs(const code& ec,
+void protocol_esplora::handle_get_address_txs(const code& ec,
     interface::address_txs, uint8_t media, std::optional<hash_cptr> hash,
     std::optional<std::string> address) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     return get_address_txs(media, hash, address, {}, true, true);
 }
 
-bool protocol_esplora::handle_get_address_txs_chain(const code& ec,
+void protocol_esplora::handle_get_address_txs_chain(const code& ec,
     interface::address_txs_chain, uint8_t media,
     std::optional<hash_cptr> hash, std::optional<std::string> address,
     std::optional<hash_cptr> last_seen) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     return get_address_txs(media, hash, address, last_seen, false, true);
 }
 
-bool protocol_esplora::handle_get_address_txs_mempool(const code& ec,
+void protocol_esplora::handle_get_address_txs_mempool(const code& ec,
     interface::address_txs_mempool, uint8_t media,
     std::optional<hash_cptr> hash, std::optional<std::string> address) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     return get_address_txs(media, hash, address, {}, true, false);
 }
 
 // common
-bool protocol_esplora::get_address_txs(uint8_t media,
+void protocol_esplora::get_address_txs(uint8_t media,
     const std::optional<hash_cptr>& hash,
     const std::optional<std::string>& address,
     const std::optional<hash_cptr>& last_seen, bool mempool,
@@ -211,24 +210,23 @@ bool protocol_esplora::get_address_txs(uint8_t media,
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     hash_digest key{};
     if (!to_key(key, hash, address))
     {
         send_bad_request();
-        return true;
+        return;
     }
 
     if (!archive().address_enabled())
     {
         send_not_implemented();
-        return true;
+        return;
     }
 
     PARALLEL(do_get_address_txs, key, last_seen, mempool, chain, gate());
-    return true;
 }
 
 void protocol_esplora::do_get_address_txs(const hash_digest& key,
@@ -345,36 +343,35 @@ void protocol_esplora::complete_get_address_txs(const code& ec,
 // address/utxo
 // ----------------------------------------------------------------------------
 
-bool protocol_esplora::handle_get_address_utxo(const code& ec,
+void protocol_esplora::handle_get_address_utxo(const code& ec,
     interface::address_utxo, uint8_t media, std::optional<hash_cptr> hash,
     std::optional<std::string> address) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     hash_digest key{};
     if (!to_key(key, hash, address))
     {
         send_bad_request();
-        return true;
+        return;
     }
 
     if (!archive().address_enabled())
     {
         send_not_implemented();
-        return true;
+        return;
     }
 
     PARALLEL(do_get_address_utxo, key, gate());
-    return true;
 }
 
 void protocol_esplora::do_get_address_utxo(const hash_digest& key,

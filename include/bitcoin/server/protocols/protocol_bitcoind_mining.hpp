@@ -64,22 +64,22 @@ protected:
     virtual void finish_template(network::rpc::object_t& out) const NOEXCEPT;
 
     /// Handlers.
-    bool handle_get_network_hash_ps(const code& ec,
+    void handle_get_network_hash_ps(const code& ec,
         rpc_interface::get_network_hash_ps, double nblocks,
         double height) NOEXCEPT;
-    bool handle_get_mining_info(const code& ec,
+    void handle_get_mining_info(const code& ec,
         rpc_interface::get_mining_info) NOEXCEPT;
-    bool handle_submit_block(const code& ec,
+    void handle_submit_block(const code& ec,
         rpc_interface::submit_block, const std::string& hexdata,
         const std::string& dummy) NOEXCEPT;
-    bool handle_submit_header(const code& ec,
+    void handle_submit_header(const code& ec,
         rpc_interface::submit_header, const std::string& hexdata) NOEXCEPT;
-    bool handle_get_block_template(const code& ec,
+    void handle_get_block_template(const code& ec,
         rpc_interface::get_block_template,
         const network::rpc::object_t& template_request) NOEXCEPT;
-    bool handle_get_prioritised_transactions(const code& ec,
+    void handle_get_prioritised_transactions(const code& ec,
         rpc_interface::get_prioritised_transactions) NOEXCEPT;
-    bool handle_prioritise_transaction(const code& ec,
+    void handle_prioritise_transaction(const code& ec,
         rpc_interface::prioritise_transaction) NOEXCEPT;
 
 private:

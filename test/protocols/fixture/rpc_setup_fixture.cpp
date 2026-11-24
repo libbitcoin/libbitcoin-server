@@ -128,4 +128,17 @@ void rpc_setup_fixture::notify(node::event_value value)
     server_.notify(system::error::success, value);
 }
 
+code rpc_setup_fixture::submit(const system::chain::transaction& tx)
+{
+    using namespace system;
+    std::promise<code> submitted{};
+    const auto txs = to_shared(chain::transaction_cptrs{ to_shared(tx) });
+    server_.submit(txs, false, [&](const code& ec, size_t) NOEXCEPT
+    {
+        submitted.set_value(ec);
+    });
+
+    return submitted.get_future().get();
+}
+
 BC_POP_WARNING()

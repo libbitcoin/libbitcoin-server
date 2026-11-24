@@ -19,7 +19,10 @@ import {
   BlockStats,
   BlockSummary,
   BlockchainEvent,
+  PoolFees,
   RecentMiners,
+  TemplateTransaction,
+  TransactionInput,
   TransactionSummary,
   TransactionOutputSpend,
   useBlockchainClient,
@@ -161,6 +164,44 @@ export function useServerConfiguration() {
   });
 }
 
+export function useFees() {
+  return useBlockchainQuery<PoolFees>({
+    queryKey: ['fees'],
+    queryFn: (client) => client.getFees(),
+    staleTime: 10_000,
+    refetchInterval: 15_000,
+  });
+}
+
+export function useTemplate(height: number) {
+  return useBlockchainQuery<TemplateTransaction[]>({
+    queryKey: ['template', { height }],
+    queryFn: (client) => client.getTemplate(height),
+    staleTime: 10_000,
+    refetchInterval: 15_000,
+    retry: false,
+  });
+}
+
+export function useBlockTransactionDetails(hash: string, options?: { enabled?: boolean }) {
+  return useBlockchainQuery<TemplateTransaction[]>({
+    queryKey: ['block', hash, 'txs', 'details'],
+    queryFn: (client) => client.getBlockTransactionDetails({ chain: 'hash', id: hash }),
+    enabled: options?.enabled,
+    staleTime: Infinity,
+  });
+}
+
+export function useTemplateTransactionHashes(height: number) {
+  return useBlockchainQuery<string[]>({
+    queryKey: ['template', { height }, 'txs'],
+    queryFn: (client) => client.getTemplateTransactionHashes(height),
+    staleTime: 10_000,
+    refetchInterval: 15_000,
+    retry: false,
+  });
+}
+
 export function useNetwork() {
   const { data } = useServerConfiguration();
   return { network: data?.network, params: data?.wallet };
@@ -245,6 +286,15 @@ export function useTransaction(txid: string, options?: { enabled?: boolean }) {
     queryFn: (client) => client.getTransaction(txid),
     enabled: options?.enabled ?? Boolean(txid.trim()),
     blockRefresh: 'while-unconfirmed',
+  });
+}
+
+export function useTransactionPrunedInputs(txid: string, options?: { enabled?: boolean }) {
+  return useBlockchainQuery<TransactionInput[]>({
+    queryKey: ['transaction', txid, 'inputs', 'pruned'],
+    queryFn: (client) => client.getPrunedInputs(txid),
+    enabled: (options?.enabled ?? true) && Boolean(txid.trim()),
+    staleTime: Infinity,
   });
 }
 

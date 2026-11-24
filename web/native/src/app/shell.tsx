@@ -6,7 +6,13 @@ import { CommandPalette } from '@/components/command-palette';
 import { RouteContent } from './route-navigation';
 import { useTurbo } from '@/lib/api/client';
 import { useServerConfiguration } from '@/lib/hooks/useBlockchainData';
-import { blocksPath, dashboardPath, investigationsPath, isAddressPath } from '@/lib/utils/routes';
+import {
+  blocksPath,
+  dashboardPath,
+  investigationsPath,
+  isAddressPath,
+  poolPath,
+} from '@/lib/utils/routes';
 
 export function AppShell() {
   const { turbo, setTurbo } = useTurbo();
@@ -68,6 +74,16 @@ export function AppShell() {
                 }
               >
                 Blocks
+              </NavLink>
+              <NavLink
+                to={poolPath()}
+                className={({ isActive }) =>
+                  `text-textMuted hover:text-accent rounded-md px-3 py-1 transition ${
+                    isActive ? 'bg-accentSecondary/20 text-accent' : ''
+                  }`
+                }
+              >
+                Pool
               </NavLink>
               <NavLink
                 to={investigationsPath()}

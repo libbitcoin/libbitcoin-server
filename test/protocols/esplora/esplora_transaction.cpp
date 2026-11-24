@@ -452,12 +452,17 @@ BC_FIXTURE_TEST_SUITE(esplora_transaction_pruned_tests, esplora_pruned_setup_fix
 
 BC_AUTO_TEST_CASE(esplora__tx__pruned__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/tx/" + encode_hash(test::block1.transactions_ptr()->front()->hash(false))), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/tx/" + encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false))), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(esplora__tx_hex__pruned__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/tx/" + encode_hash(test::block1.transactions_ptr()->front()->hash(false)) + "/hex"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/tx/" + encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false)) + "/hex"), http::status::not_found);
+}
+
+BC_AUTO_TEST_CASE(esplora__tx_hex__pruned_coinbase__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/tx/" + encode_hash(test::pruned_block10.transactions_ptr()->front()->hash(false)) + "/hex"), http::status::ok);
 }
 
 BC_AUTO_TEST_SUITE_END()

@@ -23,6 +23,8 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 
+#define BC_ELECTRUM_SERVER_NAME "Libbitcoin " LIBBITCOIN_SERVER_VERSION
+
 namespace libbitcoin {
 namespace log {
 
@@ -66,6 +68,82 @@ public:
 } // namespace log
 
 namespace server {
+namespace bitcoind
+{
+    /// Implemented interface versions, valued in bitcoind version encoding
+    /// (10'000 major, 100 minor, patch).
+    enum class version : uint32_t
+    {
+        /// Invalid version.
+        v0_0 = 0,
+
+        /// bitcoind v30.0 (minimum).
+        v30_0 = 300000,
+
+        /// bitcoind v31.0.
+        v31_0 = 310000,
+
+        /// bitcoind v32.0 (maximum).
+        v32_0 = 320000
+    };
+
+    /// The implemented versions, ascending.
+    inline constexpr std::array versions
+    {
+        version::v30_0,
+        version::v31_0,
+        version::v32_0
+    };
+    inline constexpr uint32_t minimum_version = to_value(versions.front());
+    inline constexpr uint32_t maximum_version = to_value(versions.back());
+
+    /// The greatest implemented version not exceeding value (v0_0 if none).
+    constexpr version version_floor(uint32_t value) NOEXCEPT
+    {
+        auto floor = version::v0_0;
+        for (const auto implemented: versions)
+            if (to_value(implemented) <= value)
+                floor = implemented;
+
+        return floor;
+    }
+} // namespace bitcoind
+
+namespace esplora
+{
+    /// Implemented interface versions (10'000 major, 100 minor, patch).
+    enum class version : uint32_t
+    {
+        /// Invalid version.
+        v0_0 = 0,
+
+        /// esplora v2.10 (minimum).
+        v2_10 = 21000,
+
+        /// esplora v3.0 (maximum).
+        v3_0 = 30000
+    };
+
+    /// The implemented versions, ascending.
+    inline constexpr std::array versions
+    {
+        version::v2_10,
+        version::v3_0
+    };
+    inline constexpr uint32_t minimum_version = to_value(versions.front());
+    inline constexpr uint32_t maximum_version = to_value(versions.back());
+
+    /// The greatest implemented version not exceeding value (v0_0 if none).
+    constexpr version version_floor(uint32_t value) NOEXCEPT
+    {
+        auto floor = version::v0_0;
+        for (const auto implemented: versions)
+            if (to_value(implemented) <= value)
+                floor = implemented;
+
+        return floor;
+    }
+} // namespace esplora
 
 // HACK: must cast writer to non-const.
 using span_value = network::http::span_body::value_type;
@@ -125,7 +203,7 @@ public:
         system::config::version protocol_maximum{ 1, 7, 0, 0 };
 
         /// Arbitrary name returned by server.version and server.features.
-        std::string server_name{ BC_USER_AGENT };
+        std::string server_name{ BC_ELECTRUM_SERVER_NAME };
 
         /// Arbitrary string returned by server.donation_address.
         std::string donation_address{};
@@ -169,10 +247,10 @@ public:
         std::string coinbase_tag{};
 
         /// Bytes of coinbase extranonce assigned to each channel.
-        system::config::byte extranonce1_size{ 4 };
+        uint8_t extranonce1_size{ 4 };
 
         /// Bytes of coinbase extranonce rolled by the miner.
-        system::config::byte extranonce2_size{ 4 };
+        uint8_t extranonce2_size{ 4 };
 
         /// Share difficulty assigned to a channel, and its floor.
         double minimum_difficulty{ 1.0 };
@@ -251,9 +329,9 @@ public:
         wallet_settings() NOEXCEPT;
         wallet_settings(system::chain::selection context) NOEXCEPT;
 
-        system::config::byte p2kh_prefix;
-        system::config::byte p2sh_prefix;
-        system::config::byte wif_prefix;
+        uint8_t p2kh_prefix;
+        uint8_t p2sh_prefix;
+        uint8_t wif_prefix;
         std::string witness_prefix;
         std::string silent_prefix;
         uint32_t hd_private_prefix;
@@ -281,10 +359,10 @@ public:
         using base::base;
 
         /// Minimum interface version (bitcoind version encoding).
-        uint32_t protocol_minimum{ interface::bitcoind::minimum_version };
+        uint32_t protocol_minimum{ server::bitcoind::minimum_version };
 
         /// Maximum interface version (bitcoind version encoding).
-        uint32_t protocol_maximum{ interface::bitcoind::maximum_version };
+        uint32_t protocol_maximum{ server::bitcoind::maximum_version };
 
         /// Validate the interface versions and initialize the context.
         code initialize_context() NOEXCEPT override;

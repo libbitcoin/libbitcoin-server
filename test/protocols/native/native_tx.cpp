@@ -29,6 +29,11 @@ static const chain::transaction& coinbase1() NOEXCEPT
     return *test::block1.transactions_ptr()->front();
 }
 
+static std::string spend10_hash() NOEXCEPT
+{
+    return encode_hash(test::pruned_block10.transactions_ptr()->back()->hash(false));
+}
+
 BC_FIXTURE_TEST_SUITE(native_tests, native_ten_block_setup_fixture)
 
 // tx
@@ -190,6 +195,25 @@ BC_AUTO_TEST_CASE(native__fees__data__not_acceptable)
     BC_REQUIRE_EQUAL(get_status("/v1/fees?format=data"), http::status::not_acceptable);
 }
 
+// template
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(native__template__relay_disabled__not_implemented)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/template/10?format=json"), status::not_implemented);
+}
+
+BC_AUTO_TEST_CASE(native__template__text__not_acceptable)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/template/10?format=text"), http::status::not_acceptable);
+}
+
+BC_AUTO_TEST_CASE(native__template__not_next__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/template/9?format=json"), status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/template/11?format=json"), status::not_found);
+}
+
 BC_AUTO_TEST_SUITE_END()
 
 BC_FIXTURE_TEST_SUITE(native_closed_tests, native_closed_setup_fixture)
@@ -203,6 +227,11 @@ BC_AUTO_TEST_CASE(native__ws_fees__closed_pool__service_unavailable)
 {
     BC_REQUIRE(!ws_upgrade());
     BC_REQUIRE(ws_get_text("/v1/fees").starts_with("Service Unavailable"));
+}
+
+BC_AUTO_TEST_CASE(native__template__closed_pool__service_unavailable)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/template/10?format=json"), status::service_unavailable);
 }
 
 BC_AUTO_TEST_SUITE_END()
@@ -229,6 +258,121 @@ BC_AUTO_TEST_CASE(native__ws_fees__empty_pool__json)
     const auto response = ws_get_json("/v1/fees");
     BC_REQUIRE(response.is_object());
     BC_REQUIRE_EQUAL(response.as_object().at("count").as_int64(), 0);
+}
+
+BC_AUTO_TEST_CASE(native__template__empty_pool__summary)
+{
+    const auto response = get_json("/v1/template/10?format=json");
+    BC_REQUIRE(response.is_object());
+
+    const auto& object = response.as_object();
+    BC_REQUIRE_EQUAL(object.at("height").as_int64(), 10);
+    BC_REQUIRE_EQUAL(object.at("count").as_int64(), 0);
+    BC_REQUIRE_EQUAL(object.at("virtual").as_int64(), 0);
+    BC_REQUIRE_EQUAL(object.at("weight").as_int64(), 0);
+    BC_REQUIRE_EQUAL(object.at("fees").as_int64(), 0);
+    BC_REQUIRE_EQUAL(object.at("clusters").as_int64(), 0);
+}
+
+BC_AUTO_TEST_CASE(native__template_txs__empty_pool__empty)
+{
+    const auto response = get_json("/v1/template/10/txs?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE(response.as_array().empty());
+}
+
+BC_AUTO_TEST_CASE(native__template_txs_details__empty_pool__empty)
+{
+    const auto response = get_json("/v1/template/10/txs/details?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE(response.as_array().empty());
+}
+
+BC_AUTO_TEST_CASE(native__template_txs_details__text__not_acceptable)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/template/10/txs/details?format=text"), http::status::not_acceptable);
+}
+
+BC_AUTO_TEST_CASE(native__template_txs__not_next__not_found)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/template/11/txs?format=data"), status::not_found);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(native_broadcast_tests, native_broadcast_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__template_txs_details__pooled__expected)
+{
+    BC_REQUIRE(!submit(test::tx1c));
+
+    const auto response = get_json("/v1/template/2/txs/details?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
+
+    const auto& object = response.as_array().front().as_object();
+    BC_REQUIRE(!object.at("segregated").as_bool());
+    BC_REQUIRE_EQUAL(object.at("virtual").as_int64(), to_signed(test::tx1c.virtual_size()));
+    BC_REQUIRE_EQUAL(object.at("value").as_int64(), 100);
+    BC_REQUIRE_EQUAL(object.at("spend").as_int64(), 90);
+    BC_REQUIRE_EQUAL(object.at("fee").as_int64(), 10);
+    BC_REQUIRE_EQUAL(object.at("cluster").as_int64(), 0);
+}
+
+BC_AUTO_TEST_CASE(native__template_txs_details__pooled_child__clustered)
+{
+    BC_REQUIRE(!submit(test::tx1c));
+    BC_REQUIRE(!submit(test::tx1c_child));
+
+    const auto response = get_json("/v1/template/2/txs/details?format=json");
+    BC_REQUIRE(response.is_array());
+
+    const auto& txs = response.as_array();
+    BC_REQUIRE_EQUAL(txs.size(), 2u);
+    BC_REQUIRE_EQUAL(txs.at(0).as_object().at("fee").as_int64(), 10);
+    BC_REQUIRE_EQUAL(txs.at(1).as_object().at("fee").as_int64(), 10);
+    BC_REQUIRE_EQUAL(txs.at(0).as_object().at("cluster").as_int64(), 0);
+    BC_REQUIRE_EQUAL(txs.at(1).as_object().at("cluster").as_int64(), 0);
+}
+
+BC_AUTO_TEST_CASE(native__template__pooled_child__summary)
+{
+    BC_REQUIRE(!submit(test::tx1c));
+    BC_REQUIRE(!submit(test::tx1c_child));
+
+    const auto response = get_json("/v1/template/2?format=json");
+    BC_REQUIRE(response.is_object());
+
+    const auto& object = response.as_object();
+    BC_REQUIRE_EQUAL(object.at("height").as_int64(), 2);
+    BC_REQUIRE_EQUAL(object.at("count").as_int64(), 2);
+    BC_REQUIRE_EQUAL(object.at("virtual").as_int64(), to_signed(test::tx1c.virtual_size() + test::tx1c_child.virtual_size()));
+    BC_REQUIRE_EQUAL(object.at("fees").as_int64(), 20);
+    BC_REQUIRE_EQUAL(object.at("clusters").as_int64(), 1);
+}
+
+BC_AUTO_TEST_CASE(native__template_txs__pooled_child__json_hashes)
+{
+    BC_REQUIRE(!submit(test::tx1c));
+    BC_REQUIRE(!submit(test::tx1c_child));
+
+    const auto response = get_json("/v1/template/2/txs?format=json");
+    BC_REQUIRE(response.is_array());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 2u);
+    BC_REQUIRE_EQUAL(response.as_array().at(0).as_string(), encode_hash(test::tx1c.hash(false)));
+    BC_REQUIRE_EQUAL(response.as_array().at(1).as_string(), encode_hash(test::tx1c_child.hash(false)));
+}
+
+BC_AUTO_TEST_CASE(native__template_txs__pooled__data_hashes)
+{
+    BC_REQUIRE(!submit(test::tx1c));
+    BC_REQUIRE_EQUAL(get_data("/v1/template/2/txs?format=data"), to_chunk(test::tx1c.hash(false)));
+}
+
+BC_AUTO_TEST_CASE(native__template_txs__pooled__text_hashes)
+{
+    BC_REQUIRE(!submit(test::tx1c));
+    BC_REQUIRE_EQUAL(get_text("/v1/template/2/txs?format=text"), encode_base16(test::tx1c.hash(false)));
 }
 
 BC_AUTO_TEST_SUITE_END()
@@ -297,17 +441,22 @@ BC_FIXTURE_TEST_SUITE(native_tx_pruned_tests, native_pruned_setup_fixture)
 
 BC_AUTO_TEST_CASE(native__tx__pruned_data__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/tx/" + coinbase1_hash + "?format=data"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/tx/" + spend10_hash() + "?format=data"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__tx__pruned_json__not_found)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/tx/" + coinbase1_hash + "?format=json"), http::status::not_found);
+    BC_REQUIRE_EQUAL(get_status("/v1/tx/" + spend10_hash() + "?format=json"), http::status::not_found);
 }
 
 BC_AUTO_TEST_CASE(native__tx__pruned_header__ok)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/tx/" + coinbase1_hash + "/header?format=data"), http::status::ok);
+    BC_REQUIRE_EQUAL(get_status("/v1/tx/" + spend10_hash() + "/header?format=data"), http::status::ok);
+}
+
+BC_AUTO_TEST_CASE(native__tx__pruned_coinbase_data__ok)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/tx/" + coinbase1_hash + "?format=data"), http::status::ok);
 }
 
 BC_AUTO_TEST_SUITE_END()

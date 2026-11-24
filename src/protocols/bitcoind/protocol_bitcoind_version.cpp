@@ -255,17 +255,17 @@ void protocol_bitcoind_version::handle_receive_unknown(const code& ec,
 
 // Interface version negotiation (libbitcoin extension),
 // accepted only as opener of channel.
-bool protocol_bitcoind_version::handle_negotiate_version(const code& ec,
+void protocol_bitcoind_version::handle_negotiate_version(const code& ec,
     rpc_interface::negotiate_version, const std::optional<double>& minimum,
     const std::optional<double>& maximum) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (!handler_)
     {
         send_error(error::bitcoind::invalid_request);
-        return true;
+        return;
     }
 
     uint32_t lower{}, upper{ max_uint32 };
@@ -274,24 +274,23 @@ bool protocol_bitcoind_version::handle_negotiate_version(const code& ec,
     {
         const code invalid{ error::bitcoind::invalid_parameter };
         send_error(invalid, invalid);
-        return true;
+        return;
     }
 
     lower = std::max(lower, options().protocol_minimum);
     upper = std::min(upper, options().protocol_maximum);
-    const auto floor = server::interface::bitcoind::version_floor(upper);
-    if (floor == server::interface::bitcoind::version::v0_0 ||
+    const auto floor = server::bitcoind::version_floor(upper);
+    if (floor == server::bitcoind::version::v0_0 ||
         to_value(floor) < lower)
     {
         const code invalid{ error::bitcoind::invalid_parameter };
         send_error(invalid, invalid);
-        return true;
+        return;
     }
 
     channel_->set_version(floor);
     negotiated_ = true;
     send_result(to_value(floor));
-    return true;
 }
 
 BC_POP_WARNING()

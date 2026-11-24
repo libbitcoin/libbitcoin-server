@@ -77,156 +77,137 @@ void protocol_bitcoind_test::start() NOEXCEPT
 // Test methods.
 // ----------------------------------------------------------------------------
 
-bool protocol_bitcoind_test::handle_add_connection(const code& ec,
+void protocol_bitcoind_test::handle_add_connection(const code& ec,
     rpc_interface::add_connection) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_add_peer_address(const code& ec,
+void protocol_bitcoind_test::handle_add_peer_address(const code& ec,
     rpc_interface::add_peer_address) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_echo(const code& ec,
+void protocol_bitcoind_test::handle_echo(const code& ec,
     rpc_interface::echo) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_echo_ipc(const code& ec,
+void protocol_bitcoind_test::handle_echo_ipc(const code& ec,
     rpc_interface::echo_ipc) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_echo_json(const code& ec,
+void protocol_bitcoind_test::handle_echo_json(const code& ec,
     rpc_interface::echo_json) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_estimate_raw_fee(const code& ec,
+void protocol_bitcoind_test::handle_estimate_raw_fee(const code& ec,
     rpc_interface::estimate_raw_fee) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_generate(const code& ec,
+void protocol_bitcoind_test::handle_generate(const code& ec,
     rpc_interface::generate) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_generate_block(const code& ec,
+void protocol_bitcoind_test::handle_generate_block(const code& ec,
     rpc_interface::generate_block) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_generate_to_address(const code& ec,
+void protocol_bitcoind_test::handle_generate_to_address(const code& ec,
     rpc_interface::generate_to_address) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_generate_to_descriptor(const code& ec,
+void protocol_bitcoind_test::handle_generate_to_descriptor(const code& ec,
     rpc_interface::generate_to_descriptor) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_get_mempool_fee_rate_diagram(const code& ec,
+void protocol_bitcoind_test::handle_get_mempool_fee_rate_diagram(const code& ec,
     rpc_interface::get_mempool_fee_rate_diagram) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_get_orphan_txs(const code& ec,
+void protocol_bitcoind_test::handle_get_orphan_txs(const code& ec,
     rpc_interface::get_orphan_txs) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_get_raw_addrman(const code& ec,
+void protocol_bitcoind_test::handle_get_raw_addrman(const code& ec,
     rpc_interface::get_raw_addrman) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_invalidate_block(const code& ec,
+void protocol_bitcoind_test::handle_invalidate_block(const code& ec,
     rpc_interface::invalidate_block) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_mock_scheduler(const code& ec,
+void protocol_bitcoind_test::handle_mock_scheduler(const code& ec,
     rpc_interface::mock_scheduler) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_reconsider_block(const code& ec,
+void protocol_bitcoind_test::handle_reconsider_block(const code& ec,
     rpc_interface::reconsider_block) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_send_msg_to_peer(const code& ec,
+void protocol_bitcoind_test::handle_send_msg_to_peer(const code& ec,
     rpc_interface::send_msg_to_peer) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_set_mock_time(const code& ec,
+void protocol_bitcoind_test::handle_set_mock_time(const code& ec,
     rpc_interface::set_mock_time) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
-bool protocol_bitcoind_test::handle_sync_with_validation_interface_queue(const code& ec,
+void protocol_bitcoind_test::handle_sync_with_validation_interface_queue(const code& ec,
     rpc_interface::sync_with_validation_interface_queue) NOEXCEPT
 {
-    if (stopped(ec)) return false;
+    if (stopped(ec)) return;
     send_error(error::bitcoind::method_not_found);
-    return true;
 }
 
 BC_POP_WARNING()

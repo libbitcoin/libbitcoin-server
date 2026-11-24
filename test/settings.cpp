@@ -255,6 +255,19 @@ BC_AUTO_TEST_CASE(server__bitcoind_server__initialize_context_enable_utxo__no_ti
     BC_REQUIRE_EQUAL(instance.expiration_minutes, 0u);
 }
 
+BC_AUTO_TEST_CASE(server__stratum_v1_server__initialize_context_defaults__success)
+{
+    server::settings::stratum_v1_server instance{ "stratum_v1" };
+    BC_REQUIRE(!instance.initialize_context());
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v1_server__initialize_context_small_extranonce1__invalid_configuration)
+{
+    server::settings::stratum_v1_server instance{ "stratum_v1" };
+    instance.extranonce1_size = 3;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
 BC_AUTO_TEST_CASE(server__btcd_server__initialize_context_enable_utxo__no_timeouts)
 {
     server::settings::btcd_server instance{ "btcd" };
@@ -362,7 +375,7 @@ BC_AUTO_TEST_CASE(server__electrum_server__defaults__expected)
     BC_REQUIRE_EQUAL(server.maximum_subscriptions, 1'000'000u);
     BC_REQUIRE_EQUAL(server.protocol_minimum, version(1, 0, 0, 0));
     BC_REQUIRE_EQUAL(server.protocol_maximum, version(1, 7, 0, 0));
-    BC_REQUIRE_EQUAL(server.server_name, BC_USER_AGENT);
+    BC_REQUIRE_EQUAL(server.server_name, BC_ELECTRUM_SERVER_NAME);
     BC_REQUIRE(server.donation_address.empty());
     BC_REQUIRE(server.banner_message.empty());
     BC_REQUIRE(server.self_binds.empty());
@@ -381,8 +394,8 @@ BC_AUTO_TEST_CASE(server__stratum_v1_server__defaults__expected)
     // stratum_v1_server
     BC_REQUIRE(server.payout_address.empty());
     BC_REQUIRE(server.coinbase_tag.empty());
-    BC_REQUIRE_EQUAL(uint8_t{ server.extranonce1_size }, 4u);
-    BC_REQUIRE_EQUAL(uint8_t{ server.extranonce2_size }, 4u);
+    BC_REQUIRE_EQUAL(server.extranonce1_size, 4u);
+    BC_REQUIRE_EQUAL(server.extranonce2_size, 4u);
     BC_REQUIRE_EQUAL(server.minimum_difficulty, 1.0);
     BC_REQUIRE_EQUAL(server.share_interval_seconds, 10u);
 

@@ -27,6 +27,35 @@
 
 namespace libbitcoin {
 namespace server {
+namespace esplora
+{
+    /// A method and the version that introduced it.
+    struct introduction
+    {
+        std::string_view name;
+        version since;
+    };
+
+    /// The methods introduced after the minimum version, by name.
+    inline constexpr std::array introductions
+    {
+        introduction{ "tx_merkleblock_proof", version::v3_0 },
+        introduction{ "broadcast", version::v3_0 },
+        introduction{ "broadcast_package", version::v3_0 },
+        introduction{ "block_header", version::v3_0 },
+        introduction{ "block_txid", version::v3_0 }
+    };
+
+    /// The version that introduced the method (the minimum if not listed).
+    constexpr version introduced(std::string_view name) NOEXCEPT
+    {
+        for (const auto& entry: introductions)
+            if (entry.name == name)
+                return entry.since;
+
+        return versions.front();
+    }
+} // namespace esplora
 
 class BCS_API protocol_esplora
   : public server::protocol_http,
@@ -108,74 +137,74 @@ protected:
     /// Interface handlers.
     /// -----------------------------------------------------------------------
 
-    bool handle_get_address(const code& ec, interface::address,
+    void handle_get_address(const code& ec, interface::address,
         uint8_t media, std::optional<system::hash_cptr> hash,
         std::optional<std::string> address) NOEXCEPT;
-    bool handle_get_address_txs(const code& ec, interface::address_txs,
+    void handle_get_address_txs(const code& ec, interface::address_txs,
         uint8_t media, std::optional<system::hash_cptr> hash,
         std::optional<std::string> address) NOEXCEPT;
-    bool handle_get_address_txs_chain(const code& ec,
+    void handle_get_address_txs_chain(const code& ec,
         interface::address_txs_chain, uint8_t media,
         std::optional<system::hash_cptr> hash,
         std::optional<std::string> address,
         std::optional<system::hash_cptr> last_seen) NOEXCEPT;
-    bool handle_get_address_txs_mempool(const code& ec,
+    void handle_get_address_txs_mempool(const code& ec,
         interface::address_txs_mempool, uint8_t media,
         std::optional<system::hash_cptr> hash,
         std::optional<std::string> address) NOEXCEPT;
-    bool handle_get_address_utxo(const code& ec, interface::address_utxo,
+    void handle_get_address_utxo(const code& ec, interface::address_utxo,
         uint8_t media, std::optional<system::hash_cptr> hash,
         std::optional<std::string> address) NOEXCEPT;
 
-    bool handle_get_tx(const code& ec, interface::tx,
+    void handle_get_tx(const code& ec, interface::tx,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_tx_status(const code& ec, interface::tx_status,
+    void handle_get_tx_status(const code& ec, interface::tx_status,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_tx_merkleblock_proof(const code& ec,
+    void handle_get_tx_merkleblock_proof(const code& ec,
         interface::tx_merkleblock_proof, uint8_t media,
         const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_tx_merkle_proof(const code& ec, interface::tx_merkle_proof,
+    void handle_get_tx_merkle_proof(const code& ec, interface::tx_merkle_proof,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_tx_outspend(const code& ec, interface::tx_outspend,
+    void handle_get_tx_outspend(const code& ec, interface::tx_outspend,
         uint8_t media, const system::hash_cptr& hash, uint32_t index) NOEXCEPT;
-    bool handle_get_tx_outspends(const code& ec, interface::tx_outspends,
+    void handle_get_tx_outspends(const code& ec, interface::tx_outspends,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_broadcast(const code& ec, interface::broadcast,
+    void handle_broadcast(const code& ec, interface::broadcast,
         uint8_t media, const std::string& transaction) NOEXCEPT;
-    bool handle_broadcast_package(const code& ec,
+    void handle_broadcast_package(const code& ec,
         interface::broadcast_package, uint8_t media,
         const network::rpc::array_t& transactions,
         const std::optional<double>& maxfeerate,
         const std::optional<double>& maxburnamount) NOEXCEPT;
 
-    bool handle_get_block(const code& ec, interface::block,
+    void handle_get_block(const code& ec, interface::block,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_block_txs(const code& ec, interface::block_txs,
+    void handle_get_block_txs(const code& ec, interface::block_txs,
         uint8_t media, const system::hash_cptr& hash, uint32_t start) NOEXCEPT;
-    bool handle_get_block_header(const code& ec, interface::block_header,
+    void handle_get_block_header(const code& ec, interface::block_header,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_block_status(const code& ec, interface::block_status,
+    void handle_get_block_status(const code& ec, interface::block_status,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_block_txids(const code& ec, interface::block_txids,
+    void handle_get_block_txids(const code& ec, interface::block_txids,
         uint8_t media, const system::hash_cptr& hash) NOEXCEPT;
-    bool handle_get_block_txid(const code& ec, interface::block_txid,
+    void handle_get_block_txid(const code& ec, interface::block_txid,
         uint8_t media, const system::hash_cptr& hash, uint32_t index) NOEXCEPT;
-    bool handle_get_block_height(const code& ec, interface::block_height,
+    void handle_get_block_height(const code& ec, interface::block_height,
         uint8_t media, uint32_t height) NOEXCEPT;
-    bool handle_get_blocks(const code& ec, interface::blocks,
+    void handle_get_blocks(const code& ec, interface::blocks,
         uint8_t media, std::optional<uint32_t> height) NOEXCEPT;
-    bool handle_get_tip_height(const code& ec, interface::tip_height,
+    void handle_get_tip_height(const code& ec, interface::tip_height,
         uint8_t media) NOEXCEPT;
-    bool handle_get_tip_hash(const code& ec, interface::tip_hash,
+    void handle_get_tip_hash(const code& ec, interface::tip_hash,
         uint8_t media) NOEXCEPT;
 
-    bool handle_get_mempool(const code& ec, interface::mempool,
+    void handle_get_mempool(const code& ec, interface::mempool,
         uint8_t media) NOEXCEPT;
-    bool handle_get_mempool_txids(const code& ec, interface::mempool_txids,
+    void handle_get_mempool_txids(const code& ec, interface::mempool_txids,
         uint8_t media) NOEXCEPT;
-    bool handle_get_mempool_recent(const code& ec, interface::mempool_recent,
+    void handle_get_mempool_recent(const code& ec, interface::mempool_recent,
         uint8_t media) NOEXCEPT;
-    bool handle_get_fee_estimates(const code& ec, interface::fee_estimates,
+    void handle_get_fee_estimates(const code& ec, interface::fee_estimates,
         uint8_t media) NOEXCEPT;
 
 private:
@@ -204,7 +233,7 @@ private:
     bool to_key(system::hash_digest& out,
         const std::optional<system::hash_cptr>& hash,
         const std::optional<std::string>& address) NOEXCEPT;
-    bool get_address_txs(uint8_t media,
+    void get_address_txs(uint8_t media,
         const std::optional<system::hash_cptr>& hash,
         const std::optional<std::string>& address,
         const std::optional<system::hash_cptr>& last_seen, bool mempool,

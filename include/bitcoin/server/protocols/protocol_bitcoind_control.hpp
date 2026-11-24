@@ -66,7 +66,7 @@ protected:
     /// with optional parameters parenthesized.
     template <typename Methods>
     static void find_usage(std::string& out, const std::string& command,
-        interface::bitcoind::version version) NOEXCEPT
+        server::bitcoind::version version) NOEXCEPT
     {
         std::apply([&](const auto&... entries) NOEXCEPT
         {
@@ -75,33 +75,33 @@ protected:
     }
 
     /// Handlers.
-    bool handle_help(const code& ec, rpc_interface::help,
+    void handle_help(const code& ec, rpc_interface::help,
         const std::string& command) NOEXCEPT;
-    bool handle_stop(const code& ec,
+    void handle_stop(const code& ec,
         rpc_interface::stop) NOEXCEPT;
-    bool handle_get_memory_info(const code& ec,
+    void handle_get_memory_info(const code& ec,
         rpc_interface::get_memory_info, const std::string& mode) NOEXCEPT;
-    bool handle_get_openrpc_info(const code& ec,
+    void handle_get_openrpc_info(const code& ec,
         rpc_interface::get_openrpc_info, bool show_hidden) NOEXCEPT;
-    bool handle_get_rpc_info(const code& ec,
+    void handle_get_rpc_info(const code& ec,
         rpc_interface::get_rpc_info) NOEXCEPT;
-    bool handle_logging(const code& ec, rpc_interface::logging,
+    void handle_logging(const code& ec, rpc_interface::logging,
         const network::rpc::array_t& include,
         const network::rpc::array_t& exclude) NOEXCEPT;
-    bool handle_uptime(const code& ec,
+    void handle_uptime(const code& ec,
         rpc_interface::uptime) NOEXCEPT;
-    bool handle_rpc_discover(const code& ec,
+    void handle_rpc_discover(const code& ec,
         rpc_interface::rpc_discover, bool show_hidden) NOEXCEPT;
 
 private:
     template <typename Method>
     static void append_usage(std::string& out, const Method& entry,
         const std::string& command,
-        interface::bitcoind::version version) NOEXCEPT
+        server::bitcoind::version version) NOEXCEPT
     {
         using namespace network::rpc;
         if (!entry.implemented() || entry.name != command ||
-            version < interface::bitcoind::introduced(entry.name))
+            version < server::bitcoind::introduced(entry.name))
             return;
 
         out = command;

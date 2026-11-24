@@ -28,25 +28,44 @@ using namespace system;
 BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-bool protocol_native::handle_get_inputs(const code& ec, interface::inputs,
+void protocol_native::handle_get_inputs(const code& ec, interface::inputs,
     uint8_t, uint8_t media, const hash_cptr& hash, bool witness) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto tx = query.to_tx(*hash);
-    if (tx.is_terminal() || query.is_pruned(tx))
+    if (tx.is_terminal())
     {
         send_not_found();
-        return true;
+        return;
+    }
+
+    if (query.is_pruned(tx))
+    {
+        if (media != json)
+        {
+            send_not_found();
+            return;
+        }
+
+        system::json::array out{};
+        if (!to_pruned_inputs(out, tx))
+        {
+            send_internal_server_error(database::error::integrity);
+            return;
+        }
+
+        send_json(std::move(out));
+        return;
     }
 
     const auto inputs = query.get_inputs(tx, witness);
     if (!inputs || inputs->empty())
     {
         send_internal_server_error(database::error::integrity);
-        return true;
+        return;
     }
 
     // Wire serialization of input does not include witness.
@@ -58,33 +77,41 @@ bool protocol_native::handle_get_inputs(const code& ec, interface::inputs,
     {
         case data:
             send_chunk(to_bin_ptr_array(*inputs, size));
-            return true;
+            return;
         case text:
             send_text(to_hex_ptr_array(*inputs, size));
-            return true;
+            return;
         case json:
             // Json input serialization includes witness.
             send_json(value_from(*inputs));
-            return true;
+            return;
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_input(const code& ec, interface::input,
+void protocol_native::handle_get_input(const code& ec, interface::input,
     uint8_t, uint8_t media, const hash_cptr& hash, uint32_t index,
     bool witness) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto link = query.to_tx(*hash);
     if (query.is_pruned(link))
     {
-        send_not_found();
-        return true;
+        const auto point = query.to_point(link, index);
+        system::json::value out{};
+        if (media != json || point.is_terminal() ||
+            !to_pruned_input(out, point))
+        {
+            send_not_found();
+            return;
+        }
+
+        send_json(std::move(out));
+        return;
     }
 
     if (const auto input = query.get_input(link, index, witness))
@@ -95,34 +122,33 @@ bool protocol_native::handle_get_input(const code& ec, interface::input,
         {
             case data:
                 send_chunk(to_bin(*input, size));
-                return true;
+                return;
             case text:
                 send_text(to_hex(*input, size));
-                return true;
+                return;
             case json:
                 // Json input serialization includes witness.
                 send_json(value_from(input));
-                return true;
+                return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_input_script(const code& ec,
+void protocol_native::handle_get_input_script(const code& ec,
     interface::input_script, uint8_t, uint8_t media, const hash_cptr& hash,
     uint32_t index) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto link = query.to_tx(*hash);
     if (query.is_pruned(link))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     if (const auto script = query.get_input_script(query.to_point(link, index)))
@@ -132,33 +158,32 @@ bool protocol_native::handle_get_input_script(const code& ec,
         {
             case data:
                 send_chunk(to_bin(*script, size, false));
-                return true;
+                return;
             case text:
                 send_text(to_hex(*script, size, false));
-                return true;
+                return;
             case json:
                 send_json(value_from(script));
-                return true;
+                return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
-bool protocol_native::handle_get_input_witness(const code& ec,
+void protocol_native::handle_get_input_witness(const code& ec,
     interface::input_witness, uint8_t, uint8_t media, const hash_cptr& hash,
     uint32_t index) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     const auto& query = archive();
     const auto link = query.to_tx(*hash);
     if (query.is_pruned(link))
     {
         send_not_found();
-        return true;
+        return;
     }
 
     if (const auto witness = query.get_witness(query.to_point(link, index));
@@ -169,18 +194,17 @@ bool protocol_native::handle_get_input_witness(const code& ec,
         {
             case data:
                 send_chunk(to_bin(*witness, size, false));
-                return true;
+                return;
             case text:
                 send_text(to_hex(*witness, size, false));
-                return true;
+                return;
             case json:
                 send_json(value_from(witness));
-                return true;
+                return;
         }
     }
 
     send_not_found();
-    return true;
 }
 
 BC_POP_WARNING()

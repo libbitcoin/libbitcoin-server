@@ -19,9 +19,6 @@
 #ifndef LIBBITCOIN_SERVER_CHANNELS_CHANNEL_STRATUM_V1_HPP
 #define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_STRATUM_V1_HPP
 
-#include <algorithm>
-#include <map>
-#include <unordered_set>
 #include <bitcoin/server/channels/channel_rpc.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
@@ -45,6 +42,8 @@ public:
     /// A job issued to the miner, of a held template.
     struct job
     {
+        typedef std::shared_ptr<job> ptr;
+
         node::block_template::cptr held{};
         system::data_chunk prefix{};
         system::data_chunk suffix{};
@@ -66,6 +65,32 @@ public:
         difficulty_(options.minimum_difficulty),
         window_(network::steady_clock::now())
     {
+    }
+
+    /// Authorization.
+    /// -----------------------------------------------------------------------
+
+    /// A raw tcp channel has no http headers, so it carries its credential in
+    /// mining.authorize and passes the http gate.
+    inline bool authorized() const NOEXCEPT override
+    {
+        return downgraded() || channel_rpc::authorized();
+    }
+
+    /// Before its credential a raw tcp channel is permitted only the methods
+    /// that precede mining.authorize.
+    inline bool permitted(const std::string& method) const NOEXCEPT override
+    {
+        if (downgraded() && !credentialed())
+            return std::ranges::find(handshake, method) != handshake.end();
+
+        return channel_rpc::permitted(method);
+    }
+
+    /// The credential is satisfied (not required, by header or in-band).
+    inline bool credentialed() const NOEXCEPT
+    {
+        return channel_rpc::authorized();
     }
 
     /// Properties (require strand).
@@ -101,12 +126,12 @@ public:
         workers_.insert(worker);
     }
 
-    inline bool authorized() const NOEXCEPT
+    inline bool has_payout() const NOEXCEPT
     {
         return !workers_.empty();
     }
 
-    inline bool authorized(const std::string& worker) const NOEXCEPT
+    inline bool authorized_worker(const std::string& worker) const NOEXCEPT
     {
         return workers_.contains(worker);
     }
@@ -150,7 +175,7 @@ public:
     /// -----------------------------------------------------------------------
 
     /// Retain the job, all others dropped if clean, returning its identifier.
-    inline uint32_t issue(job&& job, bool clean) NOEXCEPT
+    inline uint32_t issue(const job::ptr& job, bool clean) NOEXCEPT
     {
         if (clean)
             jobs_.clear();
@@ -159,20 +184,21 @@ public:
             jobs_.erase(jobs_.begin());
 
         const auto id = next_++;
-        jobs_.emplace(id, std::move(job));
+        jobs_.emplace(id, job);
         return id;
     }
 
-    inline job* find(uint32_t id) NOEXCEPT
+    /// The job of the identifier, empty if not retained.
+    inline job::ptr find(uint32_t id) const NOEXCEPT
     {
         const auto it = jobs_.find(id);
-        return it == jobs_.end() ? nullptr : &it->second;
+        return it == jobs_.end() ? job::ptr{} : it->second;
     }
 
-    /// The most recently issued job, null if none.
-    inline const job* current() const NOEXCEPT
+    /// The most recently issued job, empty if none.
+    inline job::ptr current() const NOEXCEPT
     {
-        return jobs_.empty() ? nullptr : &jobs_.rbegin()->second;
+        return jobs_.empty() ? job::ptr{} : jobs_.rbegin()->second;
     }
 
     /// Shares (require strand).
@@ -182,6 +208,12 @@ public:
     inline size_t count_share() NOEXCEPT
     {
         return ++shares_;
+    }
+
+    /// Shares accepted within the retarget window.
+    inline size_t shares() const NOEXCEPT
+    {
+        return shares_;
     }
 
     /// Seconds since the retarget window opened.
@@ -205,6 +237,16 @@ protected:
     }
 
 private:
+    static constexpr std::array<std::string_view, 6> handshake
+    {
+        "mining.subscribe",
+        "mining.authorize",
+        "mining.configure",
+        "mining.suggest_difficulty",
+        "mining.suggest_target",
+        "mining.extranonce.subscribe"
+    };
+
     // Extranonce of the channel identifier, little endian, zero padded.
     static inline system::data_chunk to_extranonce(uint64_t identifier,
         uint8_t size) NOEXCEPT
@@ -223,7 +265,7 @@ private:
     const system::data_chunk extranonce1_;
     std::unordered_set<std::string> workers_{};
     system::chain::script payout_{};
-    std::map<uint32_t, job> jobs_{};
+    std::map<uint32_t, job::ptr> jobs_{};
     network::steady_clock::time_point window_;
     double difficulty_;
     double notified_{};

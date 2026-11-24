@@ -30,16 +30,16 @@ using namespace std::placeholders;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
-bool protocol_native::handle_get_configuration(const code& ec,
+void protocol_native::handle_get_configuration(const code& ec,
     interface::configuration, uint8_t, uint8_t media) NOEXCEPT
 {
     if (stopped(ec))
-        return false;
+        return;
 
     if (media != json)
     {
         send_not_acceptable();
-        return true;
+        return;
     }
 
     using namespace system;
@@ -76,9 +76,9 @@ bool protocol_native::handle_get_configuration(const code& ec,
         },
         { "wallet", json::object
             {
-                { "p2kh", uint8_t{ wallet.p2kh_prefix } },
-                { "p2sh", uint8_t{ wallet.p2sh_prefix } },
-                { "wif", uint8_t{ wallet.wif_prefix } },
+                { "p2kh", wallet.p2kh_prefix },
+                { "p2sh", wallet.p2sh_prefix },
+                { "wif", wallet.wif_prefix },
                 { "witness", wallet.witness_prefix },
                 { "silent", wallet.silent_prefix },
                 { "hd_private", wallet.hd_private_prefix },
@@ -132,7 +132,6 @@ bool protocol_native::handle_get_configuration(const code& ec,
             }
         }
     });
-    return true;
 }
 
 BC_POP_WARNING()
