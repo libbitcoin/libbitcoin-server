@@ -321,8 +321,8 @@ function TransactionPanel({
         <PanelRows rows={rows} />
         <p className="border-accentSecondary/20 text-textMuted border-t pt-3 text-sm">
           {reservation
-            ? 'The space reserved for the coinbase, which pays the subsidy and the fees.'
-            : 'The coinbase, which pays the subsidy and the fees.'}
+            ? 'The space reserved for the coinbase, by which the miner claims the block reward.'
+            : 'The coinbase, by which the miner claims the block reward.'}
         </p>
       </aside>
     );
