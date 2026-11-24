@@ -313,6 +313,7 @@ private:
     // ------------------------------------------------------------------------
 
     static media_type to_media(bool stop, uint8_t media) NOEXCEPT;
+    uint64_t to_subsidy(size_t height, bool bip42) const NOEXCEPT;
     static size_t to_root(std::vector<size_t>& roots, size_t index) NOEXCEPT;
     static std::vector<size_t> to_roots(
         const database::template_txs& txs) NOEXCEPT;

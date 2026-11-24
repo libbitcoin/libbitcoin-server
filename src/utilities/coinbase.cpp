@@ -38,9 +38,6 @@ constexpr size_t fixed_size = sizeof(uint32_t) + one + point::serialized_size()
     + one + sizeof(uint32_t) + one + two * (sizeof(uint64_t) + one)
     + commitment_script + sizeof(uint32_t);
 
-// Marker and flag, witness count, reserved value size and value.
-constexpr size_t witness_size = two + one + one + hash_size;
-
 constexpr uint32_t coinbase_version = 2;
 constexpr uint8_t witness_marker = 0x00;
 constexpr uint8_t witness_flag = 0x01;
@@ -54,7 +51,7 @@ size_t coinbase_script_size(size_t tag, size_t extranonce) NOEXCEPT
 size_t coinbase_weight(size_t script, size_t payout) NOEXCEPT
 {
     const auto base = fixed_size + script + payout;
-    const auto total = base + witness_size;
+    const auto total = base + coinbase_witness_size;
     return base_size_contribution * base + total_size_contribution * total;
 }
 
@@ -121,7 +118,7 @@ data_chunk coinbase_witnessed(const data_chunk& prefix,
 
     data_chunk out{};
     out.reserve(prefix.size() + extranonce.size() + suffix.size() +
-        witness_size);
+        coinbase_witness_size);
 
     out.insert(out.end(), prefix.begin(), version);
     out.push_back(witness_marker);

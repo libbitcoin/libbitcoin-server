@@ -308,18 +308,30 @@ BC_AUTO_TEST_CASE(native__template__empty_pool__summary)
     BC_REQUIRE_EQUAL(object.at("clusters").as_int64(), 0);
 }
 
-BC_AUTO_TEST_CASE(native__template_txs__empty_pool__empty)
+BC_AUTO_TEST_CASE(native__template_txs__empty_pool__coinbase)
 {
     const auto response = get_json("/v1/template/10/txs?format=json");
     BC_REQUIRE(response.is_array());
-    BC_REQUIRE(response.as_array().empty());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
+    BC_REQUIRE_EQUAL(response.as_array().front().as_string(), encode_hash(null_hash));
 }
 
-BC_AUTO_TEST_CASE(native__template_txs_details__empty_pool__empty)
+BC_AUTO_TEST_CASE(native__template_txs_details__empty_pool__coinbase_reservation)
 {
     const auto response = get_json("/v1/template/10/txs/details?format=json");
     BC_REQUIRE(response.is_array());
-    BC_REQUIRE(response.as_array().empty());
+    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
+
+    const auto& object = response.as_array().front().as_object();
+    BC_REQUIRE(object.at("segregated").as_bool());
+    BC_REQUIRE_EQUAL(object.at("nominal").as_int64(), 444);
+    BC_REQUIRE_EQUAL(object.at("maximal").as_int64(), 527);
+    BC_REQUIRE_EQUAL(object.at("weight").as_int64(), 2000);
+    BC_REQUIRE_EQUAL(object.at("virtual").as_int64(), 500);
+    BC_REQUIRE_EQUAL(object.at("value").as_int64(), 5000000000);
+    BC_REQUIRE_EQUAL(object.at("spend").as_int64(), 5000000000);
+    BC_REQUIRE_EQUAL(object.at("fee").as_int64(), 0);
+    BC_REQUIRE_EQUAL(object.at("cluster").as_int64(), 0);
 }
 
 BC_AUTO_TEST_CASE(native__template_txs_details__text__not_acceptable)
@@ -342,15 +354,15 @@ BC_AUTO_TEST_CASE(native__template_txs_details__pooled__expected)
 
     const auto response = get_json("/v1/template/2/txs/details?format=json");
     BC_REQUIRE(response.is_array());
-    BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
+    BC_REQUIRE_EQUAL(response.as_array().size(), 2u);
 
-    const auto& object = response.as_array().front().as_object();
+    const auto& object = response.as_array().at(1).as_object();
     BC_REQUIRE(!object.at("segregated").as_bool());
     BC_REQUIRE_EQUAL(object.at("virtual").as_int64(), to_signed(test::tx1c.virtual_size()));
     BC_REQUIRE_EQUAL(object.at("value").as_int64(), 100);
     BC_REQUIRE_EQUAL(object.at("spend").as_int64(), 90);
     BC_REQUIRE_EQUAL(object.at("fee").as_int64(), 10);
-    BC_REQUIRE_EQUAL(object.at("cluster").as_int64(), 0);
+    BC_REQUIRE_EQUAL(object.at("cluster").as_int64(), 1);
 }
 
 BC_AUTO_TEST_CASE(native__template_txs_details__pooled_child__clustered)
@@ -362,11 +374,11 @@ BC_AUTO_TEST_CASE(native__template_txs_details__pooled_child__clustered)
     BC_REQUIRE(response.is_array());
 
     const auto& txs = response.as_array();
-    BC_REQUIRE_EQUAL(txs.size(), 2u);
-    BC_REQUIRE_EQUAL(txs.at(0).as_object().at("fee").as_int64(), 10);
+    BC_REQUIRE_EQUAL(txs.size(), 3u);
     BC_REQUIRE_EQUAL(txs.at(1).as_object().at("fee").as_int64(), 10);
-    BC_REQUIRE_EQUAL(txs.at(0).as_object().at("cluster").as_int64(), 0);
-    BC_REQUIRE_EQUAL(txs.at(1).as_object().at("cluster").as_int64(), 0);
+    BC_REQUIRE_EQUAL(txs.at(2).as_object().at("fee").as_int64(), 10);
+    BC_REQUIRE_EQUAL(txs.at(1).as_object().at("cluster").as_int64(), 1);
+    BC_REQUIRE_EQUAL(txs.at(2).as_object().at("cluster").as_int64(), 1);
 }
 
 BC_AUTO_TEST_CASE(native__template__pooled_child__summary)
@@ -392,21 +404,22 @@ BC_AUTO_TEST_CASE(native__template_txs__pooled_child__json_hashes)
 
     const auto response = get_json("/v1/template/2/txs?format=json");
     BC_REQUIRE(response.is_array());
-    BC_REQUIRE_EQUAL(response.as_array().size(), 2u);
-    BC_REQUIRE_EQUAL(response.as_array().at(0).as_string(), encode_hash(test::tx1c.hash(false)));
-    BC_REQUIRE_EQUAL(response.as_array().at(1).as_string(), encode_hash(test::tx1c_child.hash(false)));
+    BC_REQUIRE_EQUAL(response.as_array().size(), 3u);
+    BC_REQUIRE_EQUAL(response.as_array().at(0).as_string(), encode_hash(null_hash));
+    BC_REQUIRE_EQUAL(response.as_array().at(1).as_string(), encode_hash(test::tx1c.hash(false)));
+    BC_REQUIRE_EQUAL(response.as_array().at(2).as_string(), encode_hash(test::tx1c_child.hash(false)));
 }
 
 BC_AUTO_TEST_CASE(native__template_txs__pooled__data_hashes)
 {
     BC_REQUIRE(!submit(test::tx1c));
-    BC_REQUIRE_EQUAL(get_data("/v1/template/2/txs?format=data"), to_chunk(test::tx1c.hash(false)));
+    BC_REQUIRE_EQUAL(get_data("/v1/template/2/txs?format=data"), to_chunk(splice(null_hash, test::tx1c.hash(false))));
 }
 
 BC_AUTO_TEST_CASE(native__template_txs__pooled__text_hashes)
 {
     BC_REQUIRE(!submit(test::tx1c));
-    BC_REQUIRE_EQUAL(get_text("/v1/template/2/txs?format=text"), encode_base16(test::tx1c.hash(false)));
+    BC_REQUIRE_EQUAL(get_text("/v1/template/2/txs?format=text"), encode_base16(splice(null_hash, test::tx1c.hash(false))));
 }
 
 BC_AUTO_TEST_SUITE_END()

@@ -343,6 +343,13 @@ protocol_native::media_type protocol_native::to_media(bool stop,
     return stop ? media_type::unknown : static_cast<media_type>(media);
 }
 
+uint64_t protocol_native::to_subsidy(size_t height, bool bip42) const NOEXCEPT
+{
+    const auto& settings = system_settings();
+    return chain::block::subsidy(height, settings.subsidy_interval_blocks,
+        settings.initial_subsidy(), bip42);
+}
+
 using namespace system::json;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)

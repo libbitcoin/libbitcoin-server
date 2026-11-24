@@ -357,10 +357,8 @@ void protocol_native::handle_get_block_details(const code& ec,
     }
 
     const auto fees = floored_subtract(value, spend);
-    const auto& settings = system_settings();
     const auto bip42 = context.is_enabled(chain::flags::bip42_rule);
-    const auto subsidy = chain::block::subsidy(context.height,
-        settings.subsidy_interval_blocks, settings.initial_subsidy(), bip42);
+    const auto subsidy = to_subsidy(context.height, bip42);
 
     // sigops is not cached, so removed for now.
     system::json::object object
@@ -449,12 +447,22 @@ void protocol_native::handle_get_block_txs_details(const code& ec,
     }
 
     system::json::array out{};
+    database::context context{};
     const auto txs = query.to_transactions(link);
-    if (txs.empty() || !to_tx_details(out, txs, to_roots(txs)))
+    if (txs.empty() || !to_tx_details(out, txs, to_roots(txs)) ||
+        !query.get_context(context, link))
     {
         send_internal_server_error(database::error::integrity);
         return;
     }
+
+    uint64_t fees{};
+    for (const auto& tx: out)
+        fees = ceilinged_add(fees, tx.as_object().at("fee").to_number<uint64_t>());
+
+    const auto bip42 = context.is_enabled(chain::flags::bip42_rule);
+    out.front().as_object()["value"] = ceilinged_add(
+        to_subsidy(context.height, bip42), fees);
 
     send_json(std::move(out));
 }

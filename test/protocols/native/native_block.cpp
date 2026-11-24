@@ -719,7 +719,7 @@ BC_AUTO_TEST_CASE(native__block_txs_details__coinbase__expected)
     BC_REQUIRE_EQUAL(object.at("maximal").as_int64(), 134);
     BC_REQUIRE_EQUAL(object.at("weight").as_int64(), 536);
     BC_REQUIRE_EQUAL(object.at("virtual").as_int64(), 134);
-    BC_REQUIRE_EQUAL(object.at("value").as_int64(), 0);
+    BC_REQUIRE_EQUAL(object.at("value").as_int64(), 5000000000);
     BC_REQUIRE_EQUAL(object.at("spend").as_int64(), 5000000000);
     BC_REQUIRE_EQUAL(object.at("fee").as_int64(), 0);
     BC_REQUIRE_EQUAL(object.at("cluster").as_int64(), 0);
@@ -1342,6 +1342,7 @@ BC_AUTO_TEST_CASE(native__block_txs_details__in_block_spends__clustered)
     BC_REQUIRE_EQUAL(txs.at(0).as_object().at("fee").as_int64(), 0);
     BC_REQUIRE_EQUAL(txs.at(1).as_object().at("fee").as_int64(), 10);
     BC_REQUIRE_EQUAL(txs.at(2).as_object().at("fee").as_int64(), 10);
+    BC_REQUIRE_EQUAL(txs.at(0).as_object().at("value").as_int64(), 5000000020);
 }
 
 
