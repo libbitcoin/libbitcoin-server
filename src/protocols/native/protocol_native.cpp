@@ -105,6 +105,7 @@ void protocol_native::start() NOEXCEPT
     SUBSCRIBE_NATIVE(handle_get_template, _1, _2, _3, _4, _5);
     SUBSCRIBE_NATIVE(handle_get_template_txs, _1, _2, _3, _4, _5);
     SUBSCRIBE_NATIVE(handle_get_template_txs_details, _1, _2, _3, _4, _5);
+    SUBSCRIBE_NATIVE(handle_get_template_subscribe, _1, _2, _3, _4, _5);
     SUBSCRIBE_NATIVE(handle_get_fees, _1, _2, _3, _4);
     protocol_html::start();
 }
@@ -303,6 +304,18 @@ bool protocol_native::handle_chase(const code&,
             {
                 POST(do_transaction,
                     node::to_payload<node::chase::transaction>(value).link,
+                    media);
+            }
+
+            break;
+        }
+        case node::chase::template_:
+        {
+            const auto media = template_subscribe_.load(relaxed);
+            if (media != media_type::unknown)
+            {
+                POST(do_template,
+                    node::to_payload<node::chase::template_>(value).height,
                     media);
             }
 

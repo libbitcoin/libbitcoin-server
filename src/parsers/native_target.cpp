@@ -419,6 +419,14 @@ code native_target(request_t& out, const std::string_view& path) NOEXCEPT
         if (segment == segments.size())
             return error::missing_height;
 
+        if (segments[segment] == "subscribe")
+        {
+            ++segment;
+            method = "template_subscribe";
+            return segment == segments.size() ? error::success :
+                error::extra_segment;
+        }
+
         uint32_t height{};
         if (!to_number(height, segments[segment++]))
             return error::invalid_number;

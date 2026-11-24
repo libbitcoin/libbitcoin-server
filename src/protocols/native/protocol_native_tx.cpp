@@ -212,6 +212,38 @@ void protocol_native::do_transaction(node::transaction_t link,
     }
 }
 
+void protocol_native::handle_get_template_subscribe(const code& ec,
+    interface::template_subscribe, uint8_t, uint8_t media, bool stop) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    const auto value = stop ? media_type::unknown : (media_type)media;
+    template_subscribe_.store(value, std::memory_order_relaxed);
+    notify_empty();
+}
+
+// notify
+void protocol_native::do_template(node::height_t height,
+    media_type media) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto value = possible_narrow_cast<uint32_t>(height);
+    switch (to_value(media))
+    {
+        case data:
+            notify_chunk(to_chunk(to_little_endian(value)));
+            return;
+        case text:
+            notify_text(encode_base16(to_little_endian(value)));
+            return;
+        case json:
+            notify_json(value);
+            return;
+    }
+}
+
 void protocol_native::handle_get_template(const code& ec,
     interface::template_, uint8_t, uint8_t media, uint32_t height) NOEXCEPT
 {

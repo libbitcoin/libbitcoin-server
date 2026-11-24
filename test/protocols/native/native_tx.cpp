@@ -177,6 +177,40 @@ BC_AUTO_TEST_CASE(native__ws_tx_subscribe__stop__empty)
     BC_REQUIRE(ws_get_text("/v1/tx/subscribe?stop=true").empty());
 }
 
+// template/subscribe
+// ----------------------------------------------------------------------------
+
+BC_AUTO_TEST_CASE(native__ws_template_subscribe__notify_text__expected)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(ws_get_text("/v1/template/subscribe?format=text").empty());
+    notify(node::chases::template_{ 0x00010203 });
+    BC_REQUIRE_EQUAL(to_string(ws_receive()), "03020100");
+}
+
+BC_AUTO_TEST_CASE(native__ws_template_subscribe__notify_data__expected)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(ws_get_text("/v1/template/subscribe?format=data").empty());
+    notify(node::chases::template_{ 0x00010203 });
+    BC_REQUIRE_EQUAL(ws_receive(), data_chunk({ 0x03, 0x02, 0x01, 0x00 }));
+}
+
+BC_AUTO_TEST_CASE(native__ws_template_subscribe__notify_json__expected)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(ws_get_text("/v1/template/subscribe?format=json").empty());
+    notify(node::chases::template_{ 11 });
+    const auto response = test::parse_json(to_string(ws_receive()));
+    BC_REQUIRE_EQUAL(response.as_int64(), 11);
+}
+
+BC_AUTO_TEST_CASE(native__ws_template_subscribe__stop__empty)
+{
+    BC_REQUIRE(!ws_upgrade());
+    BC_REQUIRE(ws_get_text("/v1/template/subscribe?stop=true").empty());
+}
+
 // fees
 // ----------------------------------------------------------------------------
 

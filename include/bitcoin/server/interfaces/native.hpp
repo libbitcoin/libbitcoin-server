@@ -77,6 +77,7 @@ struct native_methods
         method<"template", uint8_t, uint8_t, uint32_t>{ "version", "media", "height" },
         method<"template_txs", uint8_t, uint8_t, uint32_t>{ "version", "media", "height" },
         method<"template_txs_details", uint8_t, uint8_t, uint32_t>{ "version", "media", "height" },
+        method<"template_subscribe", uint8_t, uint8_t, optional<false>>{ "version", "media", "stop" },
         method<"fees", uint8_t, uint8_t>{ "version", "media" }
     };
 
@@ -135,7 +136,8 @@ struct native_methods
     using template_ = at<37>;
     using template_txs = at<38>;
     using template_txs_details = at<39>;
-    using fees = at<40>;
+    using template_subscribe = at<40>;
+    using fees = at<41>;
 };
 
 /// ?format=data|text|json (via query string).
@@ -230,6 +232,7 @@ struct native_methods
 /// /v1/template/[height] {1}
 /// /v1/template/[height]/txs {all txs in the template}
 /// /v1/template/[height]/txs/details {1}
+/// /v1/template/subscribe {height of each replaced template}
 
 /// /v1/fees {1}
 
