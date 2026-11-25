@@ -192,6 +192,14 @@ def pytest_addoption(parser):
         default="worker",
         help="Stratum v1 worker, an address unless the server configures payout_address (default: worker)"
     )
+    parser.addoption(
+        "--stratum-v1-password",
+        action="store",
+        default="",
+        help="Stratum v1 credential password, when the server configures a "
+             "[stratum_v1] credential whose user is the worker account "
+             "(default: none)"
+    )
 
     # Stratum v2 options
     parser.addoption(
@@ -577,6 +585,7 @@ def stratum_v1_config(request):
         "host": request.config.getoption("--stratum-v1-host"),
         "port": int(request.config.getoption("--stratum-v1-port")),
         "worker": request.config.getoption("--stratum-v1-worker"),
+        "password": request.config.getoption("--stratum-v1-password"),
         "timeout": float(request.config.getoption("--timeout"))
     }
 
