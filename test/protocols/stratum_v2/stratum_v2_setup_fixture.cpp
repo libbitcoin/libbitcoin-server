@@ -185,6 +185,9 @@ stratum_v2_setup_fixture::standard stratum_v2_setup_fixture::start_standard()
 stratum_v2_setup_fixture::extended_share stratum_v2_setup_fixture::to_share(
     const extended& started, uint32_t nonce, uint32_t sequence)
 {
+    if (!started.channel || !started.job || !started.previous)
+        return {};
+
     const auto& channel = *started.channel;
     return
     {
@@ -197,6 +200,9 @@ stratum_v2_setup_fixture::extended_share stratum_v2_setup_fixture::to_share(
 stratum_v2_setup_fixture::standard_share stratum_v2_setup_fixture::to_share(
     const standard& started, uint32_t nonce, uint32_t sequence)
 {
+    if (!started.channel || !started.job || !started.previous)
+        return {};
+
     return
     {
         started.channel->channel_id, sequence, started.job->job_id, nonce,
@@ -238,6 +244,9 @@ static std::pair<uint32_t, hash_digest> find_nonce(uint32_t version,
 std::pair<uint32_t, hash_digest> stratum_v2_setup_fixture::mine(
     const extended& started)
 {
+    if (!started.channel || !started.job || !started.previous)
+        return {};
+
     const auto& job = *started.job;
     const auto& previous = *started.previous;
     const auto& channel = *started.channel;
@@ -255,6 +264,9 @@ std::pair<uint32_t, hash_digest> stratum_v2_setup_fixture::mine(
 std::pair<uint32_t, hash_digest> stratum_v2_setup_fixture::mine(
     const standard& started)
 {
+    if (!started.job || !started.previous)
+        return {};
+
     const auto& previous = *started.previous;
     return find_nonce(started.job->version, previous.prev_hash,
         started.job->merkle_root, previous.ntime_start, previous.nbits);
