@@ -35,6 +35,7 @@ import {
 } from '@/lib/utils/format';
 import { BlockSizeBar } from '@/components/block-size-bar';
 import { Spinner } from '@/components/spinner';
+import { CopyButton } from '@/components/copy-button';
 import { StatusPill } from '@/components/status-pill';
 import { BlockViewer } from '@/components/block-viewer';
 import { CoinbaseTextValue, MinerValue } from '@/components/miner-value';
@@ -199,7 +200,10 @@ export function BlockPage() {
           </div>
         </div>
         <div className="flex min-w-0 flex-col items-end gap-3">
-          <p className="text-textPrimary font-mono text-xs break-all">{block?.hash ?? '—'}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-textPrimary font-mono text-xs break-all">{block?.hash ?? '—'}</p>
+            {block && <CopyButton value={block.hash} label="Copy block hash" />}
+          </div>
           <div className="flex flex-wrap items-center justify-end gap-3">
           {block && (
             <SaveBookmarkButton

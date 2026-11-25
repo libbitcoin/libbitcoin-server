@@ -1,3 +1,4 @@
+import { CopyButton } from '@/components/copy-button';
 import { StatusPill } from '@/components/status-pill';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -198,7 +199,10 @@ export function TransactionPage() {
           </div>
         </div>
         <div className="flex min-w-0 flex-col items-end gap-3">
-          <p className="text-textPrimary font-mono text-xs break-all">{identifier || '—'}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-textPrimary font-mono text-xs break-all">{identifier || '—'}</p>
+            {identifier && <CopyButton value={identifier} label="Copy txid" />}
+          </div>
           <div className="flex min-h-[2.375rem] items-center">
             {tx && <SaveBookmarkButton target={{ kind: 'transaction', txid: identifier }} />}
           </div>
