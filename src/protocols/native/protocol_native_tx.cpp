@@ -176,6 +176,10 @@ void protocol_native::handle_get_tx_details(const code& ec,
             { "position", position }
         };
     }
+    else if (uint32_t time{}; query.get_pooled_time(time, link))
+    {
+        object["time"] = time;
+    }
 
     send_json(std::move(object));
 }

@@ -123,6 +123,20 @@ BC_AUTO_TEST_CASE(native__tx_details__coinbase__expected)
     BC_REQUIRE_EQUAL(confirmed.at("position").as_int64(), 0);
 }
 
+BC_AUTO_TEST_CASE(native__tx_details__coinbase__no_time)
+{
+    const auto response = get_json("/v1/tx/" + coinbase1_hash + "/details?format=json");
+    BC_REQUIRE(!response.as_object().contains("time"));
+}
+
+BC_AUTO_TEST_CASE(native__tx_details__pooled__time)
+{
+    BC_REQUIRE(!submit(test::tx1c));
+    const auto response = get_json("/v1/tx/" + encode_hash(test::tx1c.hash(false)) + "/details?format=json");
+    BC_REQUIRE(!response.as_object().contains("confirmed"));
+    BC_REQUIRE(response.as_object().at("time").as_int64() > 0);
+}
+
 BC_AUTO_TEST_CASE(native__tx_details__text__not_acceptable)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/tx/" + coinbase1_hash + "/details?format=text"), http::status::not_acceptable);
