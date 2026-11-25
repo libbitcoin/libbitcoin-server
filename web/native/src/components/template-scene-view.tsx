@@ -15,6 +15,7 @@ interface TemplateSceneViewProps {
   template: number;
   selected: number | null;
   mode: HeightMode;
+  orbit?: boolean;
   onSelect: (transaction: number) => void;
   // The camera is stored when the scene closes and restored when it opens.
   kept?: boolean;
@@ -38,6 +39,7 @@ export function TemplateSceneView({
   template,
   selected,
   mode,
+  orbit = false,
   onSelect,
   kept = false,
 }: TemplateSceneViewProps) {
@@ -86,6 +88,10 @@ export function TemplateSceneView({
   useEffect(() => {
     scene.current?.setMode(mode);
   }, [mode]);
+
+  useEffect(() => {
+    scene.current?.setOrbit(orbit);
+  }, [orbit]);
 
   useEffect(() => {
     scene.current?.setSelection(template, selected);

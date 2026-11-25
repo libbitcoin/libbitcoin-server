@@ -51,6 +51,8 @@ const GAP = 4;
 const TALLEST = 4.2;
 const LOWEST = 0.12;
 const PLINTH = 0.35;
+const TURN = 2 * Math.PI;
+const ORBIT = TURN / 60_000;
 
 interface Box {
   transaction: number;
@@ -122,6 +124,8 @@ export class TemplateScene {
   private drag: Drag | null = null;
   private touches = new Map<number, [number, number]>();
   private frame = 0;
+  private orbit = false;
+  private last = 0;
   private ratio = 1;
   private palette: ScenePalette = {
     surface: [31, 33, 28],
@@ -215,6 +219,13 @@ export class TemplateScene {
     this.request();
   }
 
+  // Turns the camera around the platform once a minute while set.
+  setOrbit(orbit: boolean): void {
+    this.orbit = orbit;
+    this.last = 0;
+    this.request();
+  }
+
   setMode(mode: HeightMode): void {
     this.mode = mode;
     if (!this.animate) this.heights = Float32Array.from(this.boxes, (box) => box.heights[mode]);
@@ -270,16 +281,26 @@ export class TemplateScene {
 
   private request(): void {
     if (this.frame) return;
-    this.frame = requestAnimationFrame(() => {
+    this.frame = requestAnimationFrame((time) => {
       this.frame = 0;
-      if (this.step()) this.request();
+      if (this.step(time)) this.request();
     });
   }
 
   // Advance animations and draw; true while anything is still moving.
-  private step(): boolean {
+  private step(time: number): boolean {
     let moving = false;
     const camera = this.camera;
+    if (this.orbit) {
+      if (this.last && !this.drag) {
+        const elapsed = Math.min(100, time - this.last);
+        camera.azimuth = (camera.azimuth - elapsed * ORBIT) % TURN;
+      }
+
+      this.last = time;
+      moving = true;
+    }
+
     if (this.goal) {
       camera.x += (this.goal.x - camera.x) * 0.14;
       camera.z += (this.goal.z - camera.z) * 0.14;

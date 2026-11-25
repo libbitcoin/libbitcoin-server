@@ -14,6 +14,7 @@ export interface PlotView {
 
 const STORAGE_KEY = 'libbitcoinTemplateDisplay';
 const HEIGHT_KEY = 'libbitcoinTemplateHeight';
+const ORBIT_KEY = 'libbitcoinTemplateOrbit';
 const CAMERA_KEY = 'libbitcoinTemplateCamera';
 const PLOT_KEY = 'libbitcoinTemplatePlot';
 const CAMERA_FIELDS = ['azimuth', 'elevation', 'distance', 'x', 'y', 'z'] as const;
@@ -128,6 +129,22 @@ export function loadHeightMode(storage: Storage | null = browserStorage()): Heig
 export function saveHeightMode(mode: HeightMode, storage: Storage | null = browserStorage()): void {
   try {
     storage?.setItem(HEIGHT_KEY, mode);
+  } catch {
+    // The in-memory selection still works when storage is unavailable.
+  }
+}
+
+export function loadOrbit(storage: Storage | null = browserStorage()): boolean {
+  try {
+    return storage?.getItem(ORBIT_KEY) === 'on';
+  } catch {
+    return false;
+  }
+}
+
+export function saveOrbit(orbit: boolean, storage: Storage | null = browserStorage()): void {
+  try {
+    storage?.setItem(ORBIT_KEY, orbit ? 'on' : 'off');
   } catch {
     // The in-memory selection still works when storage is unavailable.
   }

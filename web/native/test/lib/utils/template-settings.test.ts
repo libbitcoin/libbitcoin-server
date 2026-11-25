@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   loadCamera,
+  loadOrbit,
   loadPlotView,
   saveCamera,
+  saveOrbit,
   savePlotView,
 } from '@/lib/utils/template-settings';
 
@@ -39,5 +41,14 @@ describe('template settings', () => {
     storage.setItem('libbitcoinTemplatePlot', 'not json');
     expect(loadCamera(storage)).toBeNull();
     expect(loadPlotView(storage)).toBeNull();
+  });
+
+  it('orbits only when stored on', () => {
+    const storage = memoryStorage();
+    expect(loadOrbit(storage)).toBe(false);
+    saveOrbit(true, storage);
+    expect(loadOrbit(storage)).toBe(true);
+    saveOrbit(false, storage);
+    expect(loadOrbit(storage)).toBe(false);
   });
 });

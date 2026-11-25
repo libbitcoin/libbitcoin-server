@@ -20,9 +20,11 @@ import { toPoolTemplates, type TemplateElement } from '@/lib/utils/pool-template
 import type { HeightMode } from '@/lib/utils/template-scene';
 import {
   loadHeightMode,
+  loadOrbit,
   loadSectionExpanded,
   loadTemplateDisplay,
   saveHeightMode,
+  saveOrbit,
   saveSectionExpanded,
   saveTemplateDisplay,
   type TemplateDisplay,
@@ -39,6 +41,11 @@ const heights: Array<{ id: HeightMode; label: string; legend: string }> = [
   { id: 'chunk', label: 'Cluster rate', legend: 'cluster fee rate (log)' },
   { id: 'own', label: 'Own rate', legend: 'own fee rate (log)' },
   { id: 'fee', label: 'Fee', legend: 'absolute fee (log)' },
+];
+
+const orbits: Array<{ id: 'off' | 'on'; label: string }> = [
+  { id: 'off', label: 'Still' },
+  { id: 'on', label: 'Orbit' },
 ];
 
 const ticks = [1, 2, 5, 10, 20, 50, 100, RATE_CEILING];
@@ -76,6 +83,7 @@ export function BlockViewer({
   );
   const [display, setDisplay] = useState(loadTemplateDisplay);
   const [mode, setMode] = useState<HeightMode>(loadHeightMode);
+  const [orbit, setOrbit] = useState(loadOrbit);
   const coinbaseElement = coinbase ? elements.at(0) : undefined;
   const [selection, setSelection] = useState<Selection | null>(null);
   const valid =
@@ -115,6 +123,11 @@ export function BlockViewer({
     setMode(next);
   }
 
+  function updateOrbit(next: 'off' | 'on') {
+    saveOrbit(next === 'on');
+    setOrbit(next === 'on');
+  }
+
   return (
     <section
       id="details"
@@ -145,7 +158,15 @@ export function BlockViewer({
       <header className="flex flex-wrap items-end justify-end gap-4">
         <div className="flex flex-wrap gap-2 text-sm">
           {display === '3d' && (
-            <Toggle label="Box height" options={heights} value={mode} onChange={updateMode} />
+            <>
+              <Toggle
+                label="Motion"
+                options={orbits}
+                value={orbit ? 'on' : 'off'}
+                onChange={updateOrbit}
+              />
+              <Toggle label="Box height" options={heights} value={mode} onChange={updateMode} />
+            </>
           )}
           <Toggle label="Display" options={displays} value={display} onChange={updateDisplay} />
         </div>
@@ -165,6 +186,7 @@ export function BlockViewer({
               template={0}
               selected={viewed}
               mode={mode}
+              orbit={orbit}
               onSelect={select}
               kept
             />
