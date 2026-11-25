@@ -18,6 +18,7 @@ import { TopBlockPage } from '@/routes/top-block';
 import { InvestigationsPage } from '@/routes/investigations';
 import { ConfigurationPage } from '@/routes/configuration';
 import { FeesPage } from '@/routes/fees';
+import { TransactionsPage } from '@/routes/transactions';
 import { PoolRedirect, TemplatePage } from '@/routes/template';
 import {
   BlockTransactionRedirect,
@@ -107,6 +108,18 @@ const router = createBrowserRouter(
       <Route path="v1/template/:height/txs" element={<TemplatePage />} />
       <Route path="v1/template/:height/txs/details" element={<TemplatePage />} />
       <Route path="v1/fees" element={<FeesPage />} />
+      <Route path="v1/headers" element={<BlocksPage />} />
+      <Route path="v1/headers/top" element={<BlocksPage />} />
+      <Route path="v1/headers/confirmed" element={<BlocksPage />} />
+      <Route path="v1/headers/candidate" element={<BlocksPage />} />
+      <Route path="v1/headers/confirmed/top" element={<BlocksPage />} />
+      <Route path="v1/headers/candidate/top" element={<BlocksPage />} />
+      <Route path="v1/txs" element={<TransactionsPage />} />
+      <Route path="v1/txs/details" element={<TransactionsPage />} />
+      <Route path="v1/txs/confirmed" element={<TransactionsPage />} />
+      <Route path="v1/txs/confirmed/details" element={<TransactionsPage />} />
+      <Route path="v1/txs/unconfirmed" element={<TransactionsPage />} />
+      <Route path="v1/txs/unconfirmed/details" element={<TransactionsPage />} />
       <Route path="v1/search" element={<SearchPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Route>

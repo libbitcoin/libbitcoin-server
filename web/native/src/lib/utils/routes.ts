@@ -20,8 +20,8 @@ export function sectionId(suffix: string) {
   return undefined;
 }
 
-export function poolPath() {
-  return '/v1/template';
+export function transactionsPath() {
+  return '/v1/txs/unconfirmed';
 }
 
 export function templatePath(height: number | string) {

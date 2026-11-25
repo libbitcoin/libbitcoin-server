@@ -15,10 +15,14 @@ import {
   BlockchainEventStatusHandler,
   BlockchainEventTransport,
   BlockReference,
+  BranchHeader,
+  ChainBranch,
+  HeaderTop,
   PoolFees,
   RecentMiners,
   TemplateTransaction,
   TransactionInput,
+  TransactionSizes,
   TransactionSummary,
   TransactionOutputSpend,
 } from '../client';
@@ -51,10 +55,13 @@ const REQUEST_CONCURRENCY = 8;
 // Address queries are bounded by the server's history limit, not this deadline.
 const HTTP_REQUEST_TIMEOUT_MS = 30_000;
 const TOP_QUERY_PATH = '/v1/top?format=json';
+const BRANCH_WALK_LIMIT = 64;
 // Miners are cached by height only at this depth, below which reorganization is not expected.
 const MINER_CACHE_DEPTH = 6;
 const TOP_SUBSCRIBE_PATH = '/v1/top/subscribe?format=json';
 const TOP_UNSUBSCRIBE_PATH = '/v1/top/subscribe?format=json&stop=true';
+const TRANSACTION_SUBSCRIBE_PATH = '/v1/tx/subscribe?format=json';
+const TRANSACTION_UNSUBSCRIBE_PATH = '/v1/tx/subscribe?format=json&stop=true';
 const TEMPLATE_SUBSCRIBE_PATH = '/v1/template/subscribe?format=json';
 const TEMPLATE_UNSUBSCRIBE_PATH = '/v1/template/subscribe?format=json&stop=true';
 const WEBSOCKET_CONNECT_TIMEOUT_MS = 5_000;
@@ -177,6 +184,15 @@ const templateSchema = z.array(
 );
 
 const hashesSchema = z.array(z.string());
+
+const headerTopsSchema = z.array(
+  z.object({
+    hash: z.string(),
+    height: z.number().int().nonnegative(),
+    header: z.object({ previous: z.string(), timestamp: z.number() }),
+    chain: z.enum(['confirmed', 'candidate']).optional(),
+  })
+);
 
 const configurationSchema = z.object({
   store: z.object({
@@ -356,6 +372,68 @@ async function tryFetchJson<T>(baseUrl: string, path: string, turbo?: boolean): 
   }
 }
 
+async function fetchBytes(baseUrl: string, path: string): Promise<Uint8Array> {
+  const response = await fetch(`${baseUrl}${path}`, {
+    headers: { Accept: 'application/octet-stream' },
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new LibbitcoinApiError(
+      `Request failed ${String(response.status)}: ${text || response.statusText}`,
+      response.status
+    );
+  }
+  return new Uint8Array(await response.arrayBuffer());
+}
+
+const HASH_SIZE = 32;
+const HEX = Array.from({ length: 256 }, (_, byte) => byte.toString(16).padStart(2, '0'));
+
+// Hashes are served in their byte order and displayed reversed.
+function toHashes(bytes: Uint8Array): string[] {
+  const hashes: string[] = [];
+  for (let start = 0; start + HASH_SIZE <= bytes.length; start += HASH_SIZE) {
+    let hash = '';
+    for (let index = start + HASH_SIZE - 1; index >= start; index--) hash += HEX[bytes[index]];
+    hashes.push(hash);
+  }
+  return hashes;
+}
+
+const DETAIL_SIZE = 36;
+const TIME_SIZE = 4;
+const WORD = 2 ** 32;
+
+// The details of each tx as a fixed width record: nominal and maximal sizes
+// (4 bytes each), value, spend and fee (8 each) and cluster (4), little endian.
+// Segregation, weight and virtual size follow from the sizes. Where timed, a
+// time (4 bytes) ends each record.
+function toDetails(bytes: Uint8Array, timed = false): TemplateTransaction[] {
+  const size = timed ? DETAIL_SIZE + TIME_SIZE : DETAIL_SIZE;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const wide = (offset: number) =>
+    view.getUint32(offset, true) + view.getUint32(offset + 4, true) * WORD;
+  const details: TemplateTransaction[] = [];
+  for (let start = 0; start + size <= bytes.length; start += size) {
+    const nominal = view.getUint32(start, true);
+    const maximal = view.getUint32(start + 4, true);
+    const weight = 3 * nominal + maximal;
+    details.push({
+      segregated: maximal !== nominal,
+      nominal,
+      maximal,
+      weight,
+      virtual: Math.ceil(weight / 4),
+      value: wide(start + 8),
+      spend: wide(start + 16),
+      fee: wide(start + 24),
+      cluster: view.getUint32(start + 32, true),
+      ...(timed ? { time: view.getUint32(start + DETAIL_SIZE, true) } : {}),
+    });
+  }
+  return details;
+}
+
 async function fetchJsonOrNullOnNotFound<T>(
   baseUrl: string,
   path: string,
@@ -371,11 +449,15 @@ async function fetchJsonOrNullOnNotFound<T>(
   }
 }
 
-async function fetchTopHeight(baseUrl: string, turbo?: boolean) {
+async function fetchTop(baseUrl: string, turbo?: boolean) {
   const raw = await fetchJson<unknown>(baseUrl, '/v1/top?format=json', turbo);
   const top = parseConfirmedTop(raw);
-  if (!top) throw new Error('Invalid top height');
-  return top.height;
+  if (!top) throw new Error('Invalid top');
+  return top;
+}
+
+async function fetchTopHeight(baseUrl: string, turbo?: boolean) {
+  return (await fetchTop(baseUrl, turbo)).height;
 }
 
 function isHexHash(value: string) {
@@ -387,10 +469,11 @@ interface ChainTop {
   hash: string;
 }
 
-// Top responses and notifications carry both the confirmed and candidate tops.
+// Top responses and notifications are the strong tops, the confirmed first.
 function parseConfirmedTop(value: unknown): ChainTop | null {
-  if (!isRecord(value) || !isRecord(value.confirmed)) return null;
-  const { height, hash } = value.confirmed;
+  const top: unknown = Array.isArray(value) ? value[0] : undefined;
+  if (!isRecord(top)) return null;
+  const { height, hash } = top;
   if (typeof height !== 'number' || !Number.isInteger(height) || height < 0) return null;
   if (typeof hash !== 'string' || !isHexHash(hash)) return null;
   return { height, hash };
@@ -412,6 +495,12 @@ function parseTemplateSubscriptionMessage(text: string): number | null {
   const trimmed = text.trim();
   if (!/^\d+$/u.test(trimmed)) return null;
   return Number(trimmed);
+}
+
+// A tx notification is the id of the pooled tx, as a json string.
+function parseTransactionSubscriptionMessage(text: string): string | null {
+  const match = /^"([0-9a-f]{64})"$/u.exec(text.trim());
+  return match ? match[1] : null;
 }
 
 function parseTopSubscriptionMessage(text: string): string | null {
@@ -795,6 +884,8 @@ export function createLibbitcoinClient({
   turbo: turboAddress = false,
 }: LibbitcoinClientOptions): BlockchainClient {
   const listeners = new Set<BlockchainEventHandler>();
+  const transactionListeners = new Set<(txid: string) => void>();
+  let templateWatchers = 0;
   const statusListeners = new Set<BlockchainEventStatusHandler>();
   let poller: ReturnType<typeof setInterval> | null = null;
   let socket: WebSocket | null = null;
@@ -960,35 +1051,33 @@ export function createLibbitcoinClient({
       tryFetchJson<unknown>(baseUrl, `${path}/header/context?format=json`),
     ]);
 
-    if (lastBlockHash === header.hash || (lastHeight !== null && header.height < lastHeight)) {
-      lastHeight = Math.max(lastHeight ?? 0, header.height);
-      lastBlockHash = header.hash;
-      return;
-    }
+    if (lastBlockHash === header.hash) return;
 
+    const contiguous = lastBlockHash !== null && header.previous === lastBlockHash;
     const state = extractHeaderContextState(context);
     const summary = toBlockSummary(header, state?.count);
     const enriched: BlockSummary = {
       ...summary,
       size: getHeaderContextMaximalSize(state),
     };
-    lastHeight = Math.max(lastHeight ?? 0, header.height);
+    lastHeight = header.height;
     lastBlockHash = header.hash;
 
     for (const listener of listeners) {
-      listener({ type: 'block.new', payload: enriched });
+      listener({ type: 'block.new', payload: enriched, contiguous });
     }
   }
 
   async function checkForNewTop() {
     try {
-      const height = await observeHttp(fetchTopHeight(baseUrl));
-      if (lastHeight === null) {
-        lastHeight = height;
+      const top = await observeHttp(fetchTop(baseUrl));
+      if (lastBlockHash === null) {
+        lastHeight = top.height;
+        lastBlockHash = top.hash;
         return;
       }
-      if (height > lastHeight) {
-        await emitBlockEvent(height);
+      if (top.hash !== lastBlockHash) {
+        await emitBlockEvent(top.hash);
       }
     } catch (error) {
       console.warn('Libbitcoin poller failed', error);
@@ -1070,7 +1159,8 @@ export function createLibbitcoinClient({
     try {
       if (sendStop && socket.readyState === 1) {
         socket.send(TOP_UNSUBSCRIBE_PATH);
-        socket.send(TEMPLATE_UNSUBSCRIBE_PATH);
+        if (templateWatchers > 0) socket.send(TEMPLATE_UNSUBSCRIBE_PATH);
+        if (transactionListeners.size > 0) socket.send(TRANSACTION_UNSUBSCRIBE_PATH);
       }
       socket.close();
     } catch {
@@ -1113,7 +1203,8 @@ export function createLibbitcoinClient({
       clearSocketConnectTimer();
       try {
         activeSocket.send(TOP_SUBSCRIBE_PATH);
-        activeSocket.send(TEMPLATE_SUBSCRIBE_PATH);
+        if (templateWatchers > 0) activeSocket.send(TEMPLATE_SUBSCRIBE_PATH);
+        if (transactionListeners.size > 0) activeSocket.send(TRANSACTION_SUBSCRIBE_PATH);
         stopPolling();
         websocketUnavailable = false;
         socketHeartbeatTimer = setInterval(() => {
@@ -1154,6 +1245,11 @@ export function createLibbitcoinClient({
             for (const listener of listeners) {
               listener({ type: 'template.new', payload: { height } });
             }
+            return;
+          }
+          const txid = parseTransactionSubscriptionMessage(text);
+          if (txid !== null) {
+            for (const listener of transactionListeners) listener(txid);
             return;
           }
           const identifier = parseTopSubscriptionMessage(text);
@@ -1276,6 +1372,72 @@ export function createLibbitcoinClient({
       return summaries;
     },
 
+    async getTransactionSizes(txid: string): Promise<TransactionSizes> {
+      const path = `/v1/tx/${txid}/details?format=json`;
+      const details = await fetchJson<TxDetailsResponse>(baseUrl, path);
+      return { virtual: details.virtual, weight: details.weight, fee: details.fee };
+    },
+
+    async getHeaderTops(): Promise<HeaderTop[]> {
+      const raw = await fetchJson<unknown>(baseUrl, '/v1/headers/top?format=json');
+      return headerTopsSchema.parse(raw).map((top) => ({
+        hash: top.hash,
+        height: top.height,
+        previous: top.header.previous,
+        timestamp: top.header.timestamp,
+        chain: top.chain,
+      }));
+    },
+
+    // Each top not of the confirmed chain is walked back to the confirmed
+    // block it builds on, to a limit of headers.
+    async getBranches(): Promise<ChainBranch[]> {
+      const tops = await this.getHeaderTops();
+      const confirmed = tops.find((top) => top.chain === 'confirmed');
+      const others = tops.filter((top) => top.chain !== 'confirmed');
+      return mapWithConcurrency(others, REQUEST_CONCURRENCY, async (top) => {
+        const headers: BranchHeader[] = [];
+        let next: { hash: string; height: number; previous: string; timestamp: number } = top;
+        for (let count = 0; count < BRANCH_WALK_LIMIT; count++) {
+          headers.push({ hash: next.hash, height: next.height, timestamp: next.timestamp });
+          if (next.height === 0) return { top, headers };
+
+          const below = next.height - 1;
+          const strong =
+            confirmed !== undefined && below > confirmed.height
+              ? null
+              : await tryFetchJson<BlockHeaderResponse>(
+                  baseUrl,
+                  `/v1/block/confirmed/${String(below)}/header?format=json`
+                );
+          if (strong?.hash === next.previous) return { top, headers, fork: below };
+
+          const parent = await tryFetchJson<BlockHeaderResponse>(
+            baseUrl,
+            `/v1/block/hash/${next.previous}/header?format=json`
+          );
+          if (!parent) return { top, headers };
+          next = {
+            hash: parent.hash,
+            height: below,
+            previous: parent.previous,
+            timestamp: parent.timestamp,
+          };
+        }
+
+        return { top, headers };
+      });
+    },
+
+    async getUnconfirmedTransactionHashes(): Promise<string[]> {
+      return toHashes(await fetchBytes(baseUrl, '/v1/txs/unconfirmed?format=data'));
+    },
+
+    async getUnconfirmedTransactionDetails(): Promise<TemplateTransaction[]> {
+      const path = '/v1/txs/unconfirmed/details?format=data';
+      return toDetails(await fetchBytes(baseUrl, path), true);
+    },
+
     async getBlocksBefore(height: number, limit = 10): Promise<BlockSummary[]> {
       const heights = Array.from({ length: limit }, (_, idx) => height - idx).filter((h) => h >= 0);
       return fetchBlockSummaries(baseUrl, heights);
@@ -1298,7 +1460,8 @@ export function createLibbitcoinClient({
           baseUrl,
           `/v1/block/confirmed/${String(header.height + 1)}/header?format=json`
         );
-        nextBlockHash = nextHeader?.hash ?? null;
+        // The confirmed block above is next only where it builds on this one.
+        nextBlockHash = nextHeader?.previous === header.hash ? nextHeader.hash : null;
       }
 
       const state = extractHeaderContextState(context);
@@ -1426,8 +1589,8 @@ export function createLibbitcoinClient({
 
     async getBlockTransactionDetails(block: BlockReference): Promise<TemplateTransaction[]> {
       const id = encodeURIComponent(block.id);
-      const path = `/v1/block/${block.chain}/${id}/txs/details?format=json`;
-      return templateSchema.parse(await fetchJson<unknown>(baseUrl, path));
+      const path = `/v1/block/${block.chain}/${id}/txs/details?format=data`;
+      return toDetails(await fetchBytes(baseUrl, path));
     },
 
     async getCandidateBlockHash(height: number): Promise<string> {
@@ -1450,19 +1613,19 @@ export function createLibbitcoinClient({
     },
 
     async getTemplate(height: number): Promise<TemplateTransaction[]> {
-      const path = `/v1/template/${String(height)}/txs/details?format=json`;
-      return templateSchema.parse(await fetchJson<unknown>(baseUrl, path));
+      const path = `/v1/template/${String(height)}/txs/details?format=data`;
+      return toDetails(await fetchBytes(baseUrl, path));
     },
 
     async getBlockTransactionHashes(block: BlockReference): Promise<string[]> {
       const id = encodeURIComponent(block.id);
-      const path = `/v1/block/${block.chain}/${id}/txs?format=json`;
-      return hashesSchema.parse(await fetchJson<unknown>(baseUrl, path));
+      const path = `/v1/block/${block.chain}/${id}/txs?format=data`;
+      return toHashes(await fetchBytes(baseUrl, path));
     },
 
     async getTemplateTransactionHashes(height: number): Promise<string[]> {
-      const path = `/v1/template/${String(height)}/txs?format=json`;
-      return hashesSchema.parse(await fetchJson<unknown>(baseUrl, path));
+      const path = `/v1/template/${String(height)}/txs?format=data`;
+      return toHashes(await fetchBytes(baseUrl, path));
     },
 
     async getBlockMiner(hashOrHeight: string): Promise<Miner | null> {
@@ -1677,6 +1840,33 @@ export function createLibbitcoinClient({
       return () => {
         listeners.delete(handler);
         stopEventStreamIfIdle();
+      };
+    },
+
+    // Template notifications demand templates of the node, so are subscribed
+    // only while something watches them.
+    watchTemplates(): () => void {
+      if (templateWatchers++ === 0 && socket?.readyState === 1) {
+        socket.send(TEMPLATE_SUBSCRIBE_PATH);
+      }
+      return () => {
+        if (--templateWatchers === 0 && socket?.readyState === 1) {
+          socket.send(TEMPLATE_UNSUBSCRIBE_PATH);
+        }
+      };
+    },
+
+    // The tx stream is carried only while something listens for it.
+    subscribeToTransactions(handler: (txid: string) => void): () => void {
+      transactionListeners.add(handler);
+      if (transactionListeners.size === 1 && socket?.readyState === 1) {
+        socket.send(TRANSACTION_SUBSCRIBE_PATH);
+      }
+      return () => {
+        transactionListeners.delete(handler);
+        if (transactionListeners.size === 0 && socket?.readyState === 1) {
+          socket.send(TRANSACTION_UNSUBSCRIBE_PATH);
+        }
       };
     },
 

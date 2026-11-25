@@ -28,6 +28,8 @@ export interface TemplateTransaction {
   spend: number;
   fee: number;
   cluster: number;
+  /** When the tx was pooled, in seconds, where given. */
+  time?: number;
 }
 
 export interface RecentMiners {
@@ -45,6 +47,39 @@ export interface BlockSummary {
   weight?: number;
   difficulty?: number;
   previousBlockHash?: string | null;
+  /** Not of the strong chain, as last reconciled. */
+  weak?: boolean;
+}
+
+/** A top of the header tree, of a strong chain or of a weak branch. */
+export interface HeaderTop {
+  hash: string;
+  height: number;
+  previous: string;
+  timestamp: number;
+  chain?: 'confirmed' | 'candidate';
+}
+
+/** The sizes and fee of a tx, the fee absent where it is not known. */
+export interface TransactionSizes {
+  virtual: number;
+  weight: number;
+  fee?: number;
+}
+
+/** A header of a branch: of a weak branch, or of the candidate lead. */
+export interface BranchHeader {
+  hash: string;
+  height: number;
+  timestamp: number;
+}
+
+/** A branch off the confirmed chain, its headers from its top down. */
+export interface ChainBranch {
+  top: HeaderTop;
+  headers: BranchHeader[];
+  /** Height of the confirmed block the branch builds on, if reached. */
+  fork?: number;
 }
 
 export interface NetworkParams {
@@ -192,8 +227,10 @@ export interface AddressSummary {
   utxoCount?: number;
 }
 
+// A new top is contiguous when it extends the last top seen. Any other
+// (reorganization, regression, missed notification) is to be reconciled.
 export type BlockchainEvent =
-  | { type: 'block.new'; payload: BlockSummary }
+  | { type: 'block.new'; payload: BlockSummary; contiguous: boolean }
   | { type: 'template.new'; payload: { height: number } };
 
 export type BlockchainEventHandler = (event: BlockchainEvent) => void;
@@ -219,6 +256,11 @@ export interface BlockchainClient {
   metadata: BlockchainClientMetadata;
   getConfiguration(): Promise<BlockchainClientConfiguration>;
   getLatestBlocks(limit?: number): Promise<BlockSummary[]>;
+  getHeaderTops(): Promise<HeaderTop[]>;
+  getTransactionSizes(txid: string): Promise<TransactionSizes>;
+  getBranches(): Promise<ChainBranch[]>;
+  getUnconfirmedTransactionHashes(): Promise<string[]>;
+  getUnconfirmedTransactionDetails(): Promise<TemplateTransaction[]>;
   getBlocksBefore(height: number, limit?: number): Promise<BlockSummary[]>;
   getBlockHeader(hashOrHeight: string): Promise<BlockHeaderDetail>;
   /** Query a specific block hash so a height lookup cannot switch blocks mid-request. */
@@ -254,6 +296,10 @@ export interface BlockchainClient {
   getAddressUtxos(address: string): Promise<AddressUtxo[]>;
   getAddressTransactions(address: string, cursor?: string): Promise<AddressActivityItem[]>;
   subscribeToEvents(handler: BlockchainEventHandler): () => void;
+  /** Template events are carried only while watched. */
+  watchTemplates?(): () => void;
+  /** Each tx as it is pooled, by its id, while subscribed. */
+  subscribeToTransactions?(handler: (txid: string) => void): () => void;
   getEventStatus?(): BlockchainEventStatus;
   subscribeToEventStatus?(handler: BlockchainEventStatusHandler): () => void;
 }

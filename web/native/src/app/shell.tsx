@@ -1,4 +1,5 @@
 import { useLayoutEffect } from 'react';
+import { useIsFetching } from '@tanstack/react-query';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { SearchBar } from '@/components/search-bar';
 import { ThemeSelect } from '@/components/theme-select';
@@ -11,7 +12,7 @@ import {
   dashboardPath,
   investigationsPath,
   isAddressPath,
-  poolPath,
+  transactionsPath,
 } from '@/lib/utils/routes';
 
 export function AppShell() {
@@ -39,6 +40,8 @@ export function AppShell() {
     );
   }, [configuration, location, navigate, turboActive]);
 
+  const busy = useIsFetching() > 0;
+
   return (
     <div className="bg-background text-textPrimary min-h-screen">
       <header className="border-accent/30 bg-surface/90 border-b backdrop-blur">
@@ -55,17 +58,6 @@ export function AppShell() {
             </div>
             <nav className="text-textMuted order-3 flex w-full items-center gap-3 text-sm md:order-2 md:w-auto">
               <NavLink
-                to={dashboardPath()}
-                className={({ isActive }) =>
-                  `text-textMuted hover:text-accent rounded-md px-3 py-1 transition ${
-                    isActive ? 'bg-accentSecondary/20 text-accent' : ''
-                  }`
-                }
-                end
-              >
-                Dashboard
-              </NavLink>
-              <NavLink
                 to={blocksPath()}
                 className={({ isActive }) =>
                   `text-textMuted hover:text-accent rounded-md px-3 py-1 transition ${
@@ -76,14 +68,14 @@ export function AppShell() {
                 Blocks
               </NavLink>
               <NavLink
-                to={poolPath()}
+                to={transactionsPath()}
                 className={({ isActive }) =>
                   `text-textMuted hover:text-accent rounded-md px-3 py-1 transition ${
                     isActive ? 'bg-accentSecondary/20 text-accent' : ''
                   }`
                 }
               >
-                Pool
+                Transactions
               </NavLink>
               <NavLink
                 to={investigationsPath()}
@@ -122,6 +114,14 @@ export function AppShell() {
           </div>
         </div>
       </header>
+      <div
+        role="progressbar"
+        aria-label="Loading"
+        aria-hidden={!busy}
+        className={`bg-accent h-0.5 transition-opacity duration-300 ${
+          busy ? 'animate-pulse opacity-100' : 'opacity-0'
+        }`}
+      />
       <RouteContent />
       <CommandPalette />
     </div>
