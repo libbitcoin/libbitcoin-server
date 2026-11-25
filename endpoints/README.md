@@ -19,7 +19,7 @@ Integration tests for the client-server interfaces of libbitcoin-server
 | **Transports** | TCP downgrade, HTTP POST, websocket | `test_transports.py` | 6 |
 | **Stratum v1** | TCP/HTTP/websocket + JSON-RPC 1.0 | `test_stratum_v1.py` | 45 |
 | **Robustness** (all services) | raw TCP/HTTP/websocket, misbehaving clients | `test_robustness_*.py`, `test_longrun.py` | 145 |
-| **Stratum v2** | TCP + binary | — | planned |
+| **Stratum v2** | websocket + binary frames | `test_stratum_v2.py` | 37 |
 
 Test counts are test functions; parametrized cases run more (about 2,150 in
 all).
@@ -73,6 +73,10 @@ connections = 32
 [stratum_v1]
 bind = 127.0.0.1:8880
 connections = 32
+
+[stratum_v2]
+bind = 127.0.0.1:8980
+connections = 32
 ```
 
 ### 3. Chain data
@@ -85,8 +89,10 @@ the node does not meet the need (see [Markers](#markers)):
 - **height 481,824**: SegWit tests (first block enforcing SegWit)
 - **current** (not in initial block download): address activity, pool tests
 
-`test_smoke.py` and `test_stratum_v1.py` work on any network. The stratum
-share and block tests need regtest (see [test_stratum_v1.py](#test_stratum_v1py--stratum-v1)).
+`test_smoke.py`, `test_stratum_v1.py` and `test_stratum_v2.py` work on any
+network. The stratum share and block tests need regtest (see
+[test_stratum_v1.py](#test_stratum_v1py--stratum-v1) and
+[test_stratum_v2.py](#test_stratum_v2py--stratum-v2)).
 
 ## Quick start
 
@@ -102,6 +108,7 @@ pytest test_bitcoind_rpc.py --bitcoind-auth --bitcoind-cookie=/path/to/.cookie
 pytest test_btcd_rpc.py --btcd-username=user --btcd-password=pass
 pytest test_electrum.py
 pytest test_stratum_v1.py --stratum-v1-worker=<address>
+pytest test_stratum_v2.py --stratum-v2-user=<address>
 
 # Verbose, short tracebacks, skip and xfail reasons
 pytest -v --tb=short -rsx test_native.py
@@ -129,7 +136,9 @@ All options have localhost defaults.
 | `--stratum-v1-host`, `--stratum-v1-port` | localhost, 8880 | Stratum v1 |
 | `--stratum-v1-worker` | worker | the worker name: an address (`<address>[.<rig>]`) unless the server configures `payout_address` |
 | `--stratum-v1-password` | none | the stratum credential password, when `[stratum_v1] credential` is configured (its user is the worker account) |
-| `--stratum-v2-host`, `--stratum-v2-port` | localhost, 3336 | Stratum v2 (no tests yet) |
+| `--stratum-v2-host`, `--stratum-v2-port` | localhost, 8980 | Stratum v2 (websocket) |
+| `--stratum-v2-user` | worker | the user identity: an address (`<address>[.<rig>]`) unless the server configures `payout_address` |
+| `--stratum-v2-password` | none | the stratum credential password, when `[stratum_v2] credential` is configured (its user is the identity account) |
 | `--timeout` | 30 | request timeout in seconds |
 | `--subscription-timeout` | 60 | seconds to wait for a notification |
 | `--scan-timeout` | 1800 | seconds for whole-set scans (`gettxoutsetinfo`, `scantxoutset`) |
@@ -421,6 +430,48 @@ pytest test_stratum_v1.py --run-slow --stratum-v1-port=18880 \
 ```
 
 Each run mines blocks on the regtest chain.
+
+### test_stratum_v2.py — Stratum v2
+
+The mining protocol over websocket, one binary frame to each message (no
+Noise). The suite carries its own frame codec.
+
+- **SetupConnection:** version 2 within the offered range, the standard jobs
+  and version rolling flags accepted, work selection and other protocols
+  refused (and the connection dropped), mining before setup dropped, and a
+  GET without upgrade refused
+- **OpenExtendedMiningChannel:** result fields, a future first job followed
+  by its previous block (the confirmed top), the coinbase layout ending the
+  input script in the extranonce, distinct channels and prefixes on one
+  connection, an invalid user, a zero maximum target, a minimum extranonce
+  above the server's, and a target at or below the maximum target
+- **OpenStandardMiningChannel:** result fields, and a future first job with
+  its merkle root followed by its previous block
+- **SubmitShares:** unknown channel and job, a standard share on an extended
+  channel, a wrong extranonce size, version bits outside `1fffe000` and an
+  invalid timestamp (each dropped), low difficulty, a valid share answered
+  once (`duplicate-share`), and a mined block that becomes the top, followed
+  by its previous block, a share of the prior job then `stale-share`
+- **UpdateChannel and CloseChannel:** unknown channel, zero maximum target,
+  a lower maximum target sets the target and sends the job again, and a
+  closed channel refuses shares
+
+The share and block tests run where the targets are reachable, as for
+stratum v1. A regtest node adds to the stratum v1 configuration above:
+
+```ini
+[stratum_v2]
+bind = 127.0.0.1:18980
+connections = 16
+minimum_difficulty = 0.00001  # shares reachable in python
+# payout_address = bcrt1q...  # any user identity then opens a channel
+# credential = miner:secret   # then --stratum-v2-user=miner.rig1 --stratum-v2-password=secret
+```
+
+```bash
+pytest test_stratum_v2.py --stratum-v2-port=18980 --native-port=19181 \
+  --stratum-v2-user=bcrt1qyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zs4w3j0
+```
 
 ### test_robustness_*.py — Misbehaving clients
 
