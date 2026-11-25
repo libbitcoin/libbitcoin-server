@@ -57,8 +57,8 @@ public:
 
 protected:
     /// Answer the submitted block (bip22).
-    void handle_submitted(submission outcome,
-        const code& ec) NOEXCEPT override;
+    void handle_submitted(const system::hash_digest& hash,
+        submission outcome, const code& ec) NOEXCEPT override;
 
     /// Complete a getblocktemplate result.
     virtual void finish_template(network::rpc::object_t& out) const NOEXCEPT;
@@ -83,24 +83,55 @@ protected:
         rpc_interface::prioritise_transaction) NOEXCEPT;
 
 private:
-    /// Pool completions (bounced to the channel strand).
+    using longpoll_race = network::race_any<const code&>;
+
+    struct longpoll
+    {
+        typedef std::shared_ptr<longpoll> ptr;
+
+        uint64_t sequence;
+        gate_t::ptr gate{};
+        network::proxy::object_key stop{};
+        node::object_key events{};
+        bool done{};
+    };
+
+    // Pool completions (bounced to the channel strand).
     void handle_mining_info(const code& ec, const database::tx_links& links,
         const gate_t::ptr& gate) NOEXCEPT;
     virtual void do_mining_info(const code& ec,
         const database::tx_links& links,
         const gate_t::ptr& gate) NOEXCEPT;
 
-    /// Organize completions (bounced to the channel strand).
+    // Organize completions (bounced to the channel strand).
     void handle_organize_header(const code& ec, size_t height,
         const gate_t::ptr& gate) NOEXCEPT;
     void do_submit_header(const code& ec, const gate_t::ptr& gate) NOEXCEPT;
 
-    /// Template completions (bounced to the channel strand).
+    // Template completions (bounced to the channel strand).
     void handle_template(const code& ec,
         const node::block_template::cptr& held,
         const gate_t::ptr& gate) NOEXCEPT;
     void do_template(const code& ec, const node::block_template::cptr& held,
         const gate_t::ptr& gate) NOEXCEPT;
+
+    // Long polls.
+    bool is_current(uint64_t& sequence,
+        const network::rpc::value_t& longpollid) const NOEXCEPT;
+    void arm_longpoll(uint64_t sequence) NOEXCEPT;
+    bool handle_longpoll_event(const code& ec, node::event_value value,
+        const longpoll::ptr& poll, const longpoll_race::ptr& race) NOEXCEPT;
+    void handle_longpoll_subscribed(const code& ec, node::object_key key,
+        const longpoll::ptr& poll, const longpoll_race::ptr& race) NOEXCEPT;
+    void do_longpoll_subscribed(const code& ec, node::object_key key,
+        const longpoll::ptr& poll, const longpoll_race::ptr& race) NOEXCEPT;
+    void handle_longpoll_stop(const code& ec,
+        const longpoll_race::ptr& race) NOEXCEPT;
+    void handle_longpoll_complete(const code& ec,
+        const longpoll::ptr& poll) NOEXCEPT;
+    void do_longpoll_complete(const code& ec,
+        const longpoll::ptr& poll) NOEXCEPT;
+    bool longpoll_done(const longpoll& poll) const NOEXCEPT;
 };
 
 } // namespace server

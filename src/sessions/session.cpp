@@ -51,5 +51,10 @@ void session::demand_wire_block(bool demand) const NOEXCEPT
     node_.demand_wire_block(demand);
 }
 
+extranonces::prefix session::allocate_prefix(size_t size) const NOEXCEPT
+{
+    return node_.allocate_prefix(size);
+}
+
 } // namespace server
 } // namespace libbitcoin

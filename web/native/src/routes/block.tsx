@@ -19,7 +19,6 @@ import { useSwipeNavigation } from '@/lib/hooks/useSwipeNavigation';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
 import {
   blockByHashPath,
-  blockByHeightPath,
   blockValidationPath,
   sectionId,
   sectionSuffix,
@@ -28,6 +27,7 @@ import {
 import {
   formatBytes,
   formatHex,
+  formatInteger,
   formatNumber,
   formatRelativeTime,
   formatSats,
@@ -35,7 +35,8 @@ import {
 } from '@/lib/utils/format';
 import { BlockSizeBar } from '@/components/block-size-bar';
 import { Spinner } from '@/components/spinner';
-import { WeakBranchNotice } from '@/components/branch-notice';
+import { CopyButton } from '@/components/copy-button';
+import { StatusPill } from '@/components/status-pill';
 import { BlockViewer } from '@/components/block-viewer';
 import { CoinbaseTextValue, MinerValue } from '@/components/miner-value';
 import { TransactionTable } from '@/components/transaction-table';
@@ -59,18 +60,11 @@ export function BlockPage() {
     isError: blockIsError,
     error: blockError,
   } = useBlockHeader(identifier);
-  usePageTitle(block ? `Block #${String(block.height)}` : 'Block');
+  usePageTitle(block ? `Block ${formatInteger(block.height)}` : 'Block');
 
-  // A block at or below the confirmed top that is not confirmed is weak.
-  const { data: top } = useBlockHeader('latest');
   const { data: validation } = useBlockValidation(block?.hash ?? '', {
     enabled: Boolean(block?.hash),
   });
-  const weak =
-    block !== undefined &&
-    top !== undefined &&
-    block.height <= top.height &&
-    validation?.state?.confirmed === false;
   const statsTarget = block?.hash ?? '';
   const { data: stats, isLoading: statsLoading } = useBlockStats(statsTarget, {
     enabled: Boolean(block?.hash),
@@ -90,6 +84,8 @@ export function BlockPage() {
   const nextPathRef = useRef<string | null>(null);
   // A block off the confirmed chain steps within its own branch, to its top.
   const detached = validation?.state?.confirmed === false;
+  const settled = validation?.state?.confirmed === true;
+  const status = detached ? 'unconfirmed' : settled ? 'confirmed' : undefined;
   const { data: branches } = useBranches({ enabled: detached });
   const nextPath = nextBlockPath(block, validation?.state?.confirmed, branches, suffix);
   const previousPath =
@@ -182,11 +178,6 @@ export function BlockPage() {
 
   return (
     <div className="space-y-8">
-      {weak && block && (
-        <WeakBranchNotice to={`${blockByHeightPath(block.height)}${suffix}`} label="View strong block">
-          This block is not of the strong chain. It remains valid.
-        </WeakBranchNotice>
-      )}
       {blockIsError ? (
         <div className="border-accentSecondary/40 bg-accentSecondary/10 text-textPrimary rounded-xl border px-4 py-3 text-sm">
           <p className="text-accent font-semibold">Could not load block</p>
@@ -199,14 +190,21 @@ export function BlockPage() {
         <div>
           <p className="text-accentSecondary text-sm tracking-wide uppercase">Block</p>
           <h1 tabIndex={-1} className="text-accent text-3xl font-semibold">
-            {block ? `#${String(block.height)}` : '—'}
+            {block ? `${formatInteger(block.height)}` : '—'}
           </h1>
-          <p className="text-textPrimary mt-2 font-mono text-xs break-all">{block?.hash ?? '—'}</p>
-          <p className="text-textMuted text-sm">
+          <p className="text-textMuted mt-2 text-sm">
             {formatRelativeTime(timestamp, now)} · {formatTimestamp(timestamp)}
           </p>
+          <div className="mt-2">
+            <StatusPill status={status} />
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex min-w-0 flex-col items-end gap-3">
+          <div className="flex items-center gap-2">
+            <p className="text-textPrimary font-mono text-xs break-all">{block?.hash ?? '—'}</p>
+            {block && <CopyButton value={block.hash} label="Copy block hash" />}
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-3">
           {block && (
             <SaveBookmarkButton
               target={{ kind: 'block', hash: block.hash, height: block.height }}
@@ -242,6 +240,7 @@ export function BlockPage() {
               Next →
             </span>
           ) : null}
+          </div>
         </div>
       </header>
 

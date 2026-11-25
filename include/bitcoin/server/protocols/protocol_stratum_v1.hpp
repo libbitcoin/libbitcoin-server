@@ -23,7 +23,7 @@
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/interfaces/interfaces.hpp>
 #include <bitcoin/server/protocols/protocol_rpc.hpp>
-#include <bitcoin/server/protocols/protocol_submit.hpp>
+#include <bitcoin/server/protocols/protocol_mining.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -31,7 +31,7 @@ namespace server {
 /// Stratum v1 solo mining, a job per held template paying the channel's
 /// worker, shares checked against the channel difficulty and blocks submitted.
 class BCS_API protocol_stratum_v1
-  : public protocol_submit<protocol_rpc<interface::stratum_v1>>,
+  : public protocol_mining<protocol_rpc<interface::stratum_v1>>,
     protected network::tracker<protocol_stratum_v1>
 {
 public:
@@ -39,20 +39,24 @@ public:
     using rpc_interface = interface::stratum_v1;
     using channel_t = channel_stratum_v1;
     using options_t = channel_t::options_t;
-    using submit_t = protocol_submit<protocol_rpc<rpc_interface>>;
+    using mining_t = protocol_mining<protocol_rpc<rpc_interface>>;
 
     inline protocol_stratum_v1(const auto& session,
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
-      : submit_t(session, channel, options),
+      : mining_t(session, channel, options),
         network::tracker<protocol_stratum_v1>(session->log),
         options_(options),
         p2kh_(session->server_settings().wallet.p2kh_prefix),
         p2sh_(session->server_settings().wallet.p2sh_prefix),
         witness_(session->server_settings().wallet.witness_prefix),
         channel_(std::dynamic_pointer_cast<channel_t>(channel)),
-        decay_timer_(system::emplace_shared<network::deadline>(session->log,
-            channel->strand()))
+        prefix_(session->allocate_prefix(options.extranonce1_size)),
+        mining_(prefix_ ? system::emplace_shared<mining_channel>(prefix_,
+            options.minimum_difficulty) : mining_channel::ptr{}),
+        authorize_timer_(system::emplace_shared<network::deadline>(
+            session->log, channel->strand(),
+            network::seconds(options.authorize_timeout_seconds)))
     {
     }
 
@@ -64,13 +68,12 @@ protected:
     void handle_unclaimed(
         const network::rpc::request_t& request) NOEXCEPT override;
 
-    /// Chase events (template replacement and submitted block completion).
-    bool handle_chase(const code& ec,
-        node::event_value value) NOEXCEPT override;
+    /// Extranonce of the channel and the miner.
+    size_t extranonce_size() const NOEXCEPT override;
 
-    /// The outcome of a block mined by the channel.
-    void handle_submitted(submission outcome,
-        const code& ec) NOEXCEPT override;
+    /// Notify the job, and its difficulty if changed.
+    void send_job(mining_channel& channel, const job::cptr& job,
+        bool clean) NOEXCEPT override;
 
     /// Handlers.
     void handle_mining_subscribe(const code& ec,
@@ -104,30 +107,14 @@ protected:
         rpc_interface::mining_extranonce_subscribe) NOEXCEPT;
 
 private:
-    using job = channel_t::job;
-
-    /// Notifications require a full duplex transport.
+    // Notifications require a full duplex transport.
     inline bool is_duplex() const NOEXCEPT
     {
         return channel_->websocket() || channel_->downgraded();
     }
 
-    /// Jobs.
-    void start_jobs() NOEXCEPT;
-    void handle_template(const code& ec,
-        const node::block_template::cptr& held) NOEXCEPT;
-    void do_template(const code& ec,
-        const node::block_template::cptr& held) NOEXCEPT;
-    void send_job(const job::ptr& job, bool clean) NOEXCEPT;
-    void refresh() NOEXCEPT;
-    void retarget() NOEXCEPT;
-    void start_decay() NOEXCEPT;
-    void handle_decay(const code& ec) NOEXCEPT;
-    void suggest(double difficulty) NOEXCEPT;
-
-    /// Blocks.
-    void submit_mined(const system::chain::header& header, const job& job,
-        const system::data_chunk& extranonce) NOEXCEPT;
+    void start_mining() NOEXCEPT;
+    void handle_timeout(const code& ec) NOEXCEPT;
 
     // These are thread safe.
     const options_t& options_;
@@ -135,12 +122,9 @@ private:
     const uint8_t p2sh_;
     const std::string witness_;
     const channel_t::ptr channel_;
-    const network::deadline::ptr decay_timer_;
-    std::atomic_bool active_{};
-
-    // These are protected by strand.
-    system::hash_digest mined_{};
-    size_t height_{};
+    const extranonces::prefix prefix_;
+    const mining_channel::ptr mining_;
+    const network::deadline::ptr authorize_timer_;
 };
 
 } // namespace server

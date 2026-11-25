@@ -185,6 +185,7 @@ code settings::initialize() NOEXCEPT
     stratum_v1.bind_port = port(8880);
     stratum_v1.safe_port = port(8843);
     stratum_v2.bind_port = port(8980);
+    stratum_v2.safe_port = port(8943);
 
     // Service bindings without a port take the service's default port.
     admin.default_ports();

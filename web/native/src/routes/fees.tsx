@@ -2,7 +2,11 @@ import { errorStatus } from '@/lib/api/errors';
 import { useFees } from '@/lib/hooks/useBlockchainData';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
-const integer = new Intl.NumberFormat('en-US');
+const integer = new Intl.NumberFormat();
+const histogramRate = new Intl.NumberFormat(undefined, {
+  minimumFractionDigits: 3,
+  maximumFractionDigits: 3,
+});
 
 function unavailable(error: unknown): string {
   const status = errorStatus(error);
@@ -52,7 +56,7 @@ export function FeesPage() {
               <tbody>
                 {fees.histogram.map(([rate, size], index) => (
                   <tr key={index} className="border-accent/10 border-t">
-                    <td className="py-1">{rate.toFixed(3)}</td>
+                    <td className="py-1">{histogramRate.format(rate)}</td>
                     <td className="py-1 text-right">{integer.format(size)}</td>
                   </tr>
                 ))}

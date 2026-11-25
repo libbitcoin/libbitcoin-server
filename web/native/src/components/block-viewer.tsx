@@ -17,12 +17,14 @@ import {
   type PoolTemplates,
 } from '@/lib/utils/pool-template';
 import { toPoolTemplates, type TemplateElement } from '@/lib/utils/pool-templates';
-import type { Camera, HeightMode } from '@/lib/utils/template-scene';
+import type { HeightMode } from '@/lib/utils/template-scene';
 import {
   loadHeightMode,
+  loadOrbit,
   loadSectionExpanded,
   loadTemplateDisplay,
   saveHeightMode,
+  saveOrbit,
   saveSectionExpanded,
   saveTemplateDisplay,
   type TemplateDisplay,
@@ -41,13 +43,15 @@ const heights: Array<{ id: HeightMode; label: string; legend: string }> = [
   { id: 'fee', label: 'Fee', legend: 'absolute fee (log)' },
 ];
 
+const orbits: Array<{ id: 'off' | 'on'; label: string }> = [
+  { id: 'off', label: 'Still' },
+  { id: 'on', label: 'Orbit' },
+];
+
 const ticks = [1, 2, 5, 10, 20, 50, 100, RATE_CEILING];
 
 // A tx of the view by its index, or the coinbase, which is not of the view.
 type Selection = number | 'coinbase';
-
-// The 3D camera, kept across the blocks and templates of the session.
-const view: { current: Camera | null } = { current: null };
 
 // The txs of a block or template, the coinbase (if any) left out of the view.
 // A tx is identified by its block position, linked when a path is given.
@@ -79,6 +83,7 @@ export function BlockViewer({
   );
   const [display, setDisplay] = useState(loadTemplateDisplay);
   const [mode, setMode] = useState<HeightMode>(loadHeightMode);
+  const [orbit, setOrbit] = useState(loadOrbit);
   const coinbaseElement = coinbase ? elements.at(0) : undefined;
   const [selection, setSelection] = useState<Selection | null>(null);
   const valid =
@@ -118,6 +123,11 @@ export function BlockViewer({
     setMode(next);
   }
 
+  function updateOrbit(next: 'off' | 'on') {
+    saveOrbit(next === 'on');
+    setOrbit(next === 'on');
+  }
+
   return (
     <section
       id="details"
@@ -148,7 +158,15 @@ export function BlockViewer({
       <header className="flex flex-wrap items-end justify-end gap-4">
         <div className="flex flex-wrap gap-2 text-sm">
           {display === '3d' && (
-            <Toggle label="Box height" options={heights} value={mode} onChange={updateMode} />
+            <>
+              <Toggle
+                label="Motion"
+                options={orbits}
+                value={orbit ? 'on' : 'off'}
+                onChange={updateOrbit}
+              />
+              <Toggle label="Box height" options={heights} value={mode} onChange={updateMode} />
+            </>
           )}
           <Toggle label="Display" options={displays} value={display} onChange={updateDisplay} />
         </div>
@@ -168,8 +186,9 @@ export function BlockViewer({
               template={0}
               selected={viewed}
               mode={mode}
+              orbit={orbit}
               onSelect={select}
-              view={view}
+              kept
             />
           ) : (
             <TemplateTreemap
@@ -337,7 +356,7 @@ function TransactionPanel({
     ['Cluster rate', `${formatTemplateRate(chunkRate(chunk))} sat/vB`],
     ['Fee', `${formatInteger(transaction.fee)} sat`],
     ['Virtual size', `${formatInteger(transaction.size)} vB`],
-    ['Cluster', `${String(chunk.transactions.length)} tx · ${formatInteger(chunk.size)} vB`],
+    ['Cluster', `${formatInteger(chunk.transactions.length)} tx · ${formatInteger(chunk.size)} vB`],
   ];
 
   return (

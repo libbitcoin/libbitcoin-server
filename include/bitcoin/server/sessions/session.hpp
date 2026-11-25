@@ -22,6 +22,7 @@
 #include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/utilities/utilities.hpp>
 
 namespace libbitcoin {
 namespace server {
@@ -68,6 +69,9 @@ public:
     /// Count a channel demand for wire tx|block broadcasts (or uncount).
     void demand_wire_tx(bool demand) const NOEXCEPT;
     void demand_wire_block(bool demand) const NOEXCEPT;
+
+    /// A coinbase extranonce prefix not overlapping one in use.
+    extranonces::prefix allocate_prefix(size_t size) const NOEXCEPT;
 
 private:
     // These are thread safe.

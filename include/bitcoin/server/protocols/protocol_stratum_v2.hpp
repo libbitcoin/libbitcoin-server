@@ -26,6 +26,7 @@
 namespace libbitcoin {
 namespace server {
 
+/// Stratum v2 mining (not implemented), attached once the connection is set up.
 class BCS_API protocol_stratum_v2
   : public server::protocol,
     public network::protocol,
@@ -34,11 +35,8 @@ class BCS_API protocol_stratum_v2
 public:
     typedef std::shared_ptr<protocol_stratum_v2> ptr;
     using channel_t = channel_stratum_v2;
+    using options_t = channel_t::options_t;
 
-    // HACK: so this can use network::session_server.
-    using options_t = network::settings::tls_server;
-
-    LCOV_EXCL_START("Stratum is not implemented.")
     inline protocol_stratum_v2(const auto& session,
         const network::channel::ptr& channel, const options_t&) NOEXCEPT
       : server::protocol(session, channel),
@@ -52,7 +50,6 @@ public:
     {
         network::protocol::start();
     }
-    LCOV_EXCL_STOP()
 };
 
 } // namespace server

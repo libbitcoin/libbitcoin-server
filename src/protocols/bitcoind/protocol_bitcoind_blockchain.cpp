@@ -113,7 +113,6 @@ void protocol_bitcoind_blockchain::start() NOEXCEPT
     SUBSCRIBE_BITCOIND(handle_get_raw_mempool, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_get_tx_spending_prevout, _1, _2, _3, _4);
     SUBSCRIBE_BITCOIND(handle_import_mempool, _1, _2, _3, _4);
-    subscribe_chase(BIND(handle_chase, _1, _2));
     protocol_bitcoind_dispatch<rpc_interface>::start();
 }
 
@@ -121,8 +120,6 @@ void protocol_bitcoind_blockchain::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     stopping_.store(true);
-    unsubscribe_chase();
-    waiter_.reset();
     protocol_bitcoind_dispatch<rpc_interface>::stopping(ec);
 }
 
@@ -2049,37 +2046,14 @@ void protocol_bitcoind_blockchain::handle_import_mempool(const code& ec,
     PARALLEL(do_import_mempool, filepath, gate());
 }
 
-// Chase events.
+// Waits.
 // ----------------------------------------------------------------------------
-
-bool protocol_bitcoind_blockchain::handle_chase(const code&,
-    node::event_value value) NOEXCEPT
-{
-    // Do not pass ec to stopped, it is not a call status.
-    if (stopped())
-        return false;
-
-    switch (node::to_chase(value))
-    {
-        case node::chase::organized:
-        case node::chase::reorganized:
-        {
-            POST(do_wait_event);
-            break;
-        }
-        default:
-            break;
-    }
-
-    return true;
-}
-
-// Wait machinery (strand).
-// ----------------------------------------------------------------------------
+// A wait is raced by its chase subscription, its timer and the channel stop.
 
 void protocol_bitcoind_blockchain::arm_wait(waiter&& waiting,
     double timeout) NOEXCEPT
 {
+    BC_ASSERT(stranded());
     if (wait_done(waiting))
     {
         send_top();
@@ -2095,44 +2069,98 @@ void protocol_bitcoind_blockchain::arm_wait(waiter&& waiting,
     }
 
     waiting.gate = gate();
-    waiting.race = emplace_shared<wait_race>(BIND(complete_wait, _1));
-    waiter_ = move_shared(std::move(waiting));
+    const auto call = move_shared(std::move(waiting));
+    const auto race = emplace_shared<wait_race>(
+        BIND(handle_wait_complete, _1, call));
+
+    call->stop = subscribe_stop(BIND(handle_wait_finish, _1, race));
 
     if (!is_zero(span))
-        wait_timer_->start(BIND(handle_wait_timeout, _1, waiter_),
+    {
+        call->timer = make_timer();
+        call->timer->start(BIND(handle_wait_finish, _1, race),
             network::milliseconds(span));
+    }
+
+    subscribe_events(BIND(handle_wait_event, _1, _2, call, race),
+        BIND(handle_wait_subscribed, _1, _2, call, race));
 }
 
-void protocol_bitcoind_blockchain::do_wait_event() NOEXCEPT
+// Invoked on the node strand.
+bool protocol_bitcoind_blockchain::handle_wait_event(const code& ec,
+    node::event_value value, const waiter::ptr& waiting,
+    const wait_race::ptr& race) NOEXCEPT
+{
+    if (ec)
+    {
+        race->finish(ec);
+        return false;
+    }
+
+    if (node::to_chase(value) == node::chase::organized &&
+        wait_done(*waiting))
+    {
+        race->finish(error::success);
+        return false;
+    }
+
+    return true;
+}
+
+// Invoked on the node strand.
+void protocol_bitcoind_blockchain::handle_wait_subscribed(const code& ec,
+    node::object_key key, const waiter::ptr& waiting,
+    const wait_race::ptr& race) NOEXCEPT
+{
+    POST(do_wait_subscribed, ec, key, waiting, race);
+}
+
+// The chain may have moved before the subscription.
+void protocol_bitcoind_blockchain::do_wait_subscribed(const code& ec,
+    node::object_key key, const waiter::ptr& waiting,
+    const wait_race::ptr& race) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    if (!waiter_ || !wait_done(*waiter_))
+    if (ec)
         return;
 
-    const auto waiting = std::move(waiter_);
-    waiting->race->finish(error::success);
+    waiting->events = key;
+    if (waiting->done)
+    {
+        unsubscribe_events(key);
+        return;
+    }
+
+    if (wait_done(*waiting))
+        race->finish(error::success);
 }
 
-void protocol_bitcoind_blockchain::handle_wait_timeout(const code& ec,
+void protocol_bitcoind_blockchain::handle_wait_finish(const code& ec,
+    const wait_race::ptr& race) NOEXCEPT
+{
+    race->finish(ec);
+}
+
+void protocol_bitcoind_blockchain::handle_wait_complete(const code& ec,
+    const waiter::ptr& waiting) NOEXCEPT
+{
+    POST(do_wait_complete, ec, waiting);
+}
+
+void protocol_bitcoind_blockchain::do_wait_complete(const code& ec,
     const waiter::ptr& waiting) NOEXCEPT
 {
     BC_ASSERT(stranded());
+    waiting->done = true;
+    unsubscribe_stop(waiting->stop);
 
-    // A stale expiry or cancel follows a completed wait.
-    if (waiting != waiter_)
-        return;
+    if (waiting->timer)
+        waiting->timer->stop();
 
-    waiter_.reset();
-    waiting->race->finish(ec);
-}
+    if (!is_zero(waiting->events))
+        unsubscribe_events(waiting->events);
 
-// The race is released without a winner when the channel stops.
-void protocol_bitcoind_blockchain::complete_wait(const code& ec) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    wait_timer_->stop();
-
-    if (stopped() || ec == network::error::operation_failed)
+    if (ec || stopped())
         return;
 
     send_top();

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { BlockchainClientMetadata } from '@/lib/api/client';
 import { inferAddressType } from './address';
+import { formatInteger } from './format';
 import {
   addressPath,
   blockByHashPath,
@@ -137,7 +138,7 @@ export function bookmarkIdentifier(target: BookmarkTarget) {
 
 export function defaultBookmarkLabel(target: BookmarkTarget) {
   if (target.kind === 'block' && target.height !== undefined)
-    return `Block #${String(target.height)}`;
+    return `Block ${formatInteger(target.height)}`;
   const identifier = bookmarkIdentifier(target);
   return `${target.kind[0].toUpperCase()}${target.kind.slice(1)} ${identifier.slice(0, 12)}…${identifier.slice(-8)}`;
 }

@@ -264,8 +264,8 @@ void protocol_bitcoind_mining::handle_submit_block(const code& ec,
 }
 
 // bip22: null when accepted, otherwise duplicate, inconclusive or reject token.
-void protocol_bitcoind_mining::handle_submitted(submission outcome,
-    const code& ec) NOEXCEPT
+void protocol_bitcoind_mining::handle_submitted(const hash_digest&,
+    submission outcome, const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -364,7 +364,7 @@ void protocol_bitcoind_mining::do_submit_header(const code& ec,
         send_result(null_t{});
 }
 
-// bip22: template mode only (not bip23 proposals), without long polling.
+// bip22: template mode only (not bip23 proposals).
 // bip145: client must declare segwit rule.
 void protocol_bitcoind_mining::handle_get_block_template(const code& ec,
     rpc_interface::get_block_template,
@@ -402,6 +402,15 @@ void protocol_bitcoind_mining::handle_get_block_template(const code& ec,
     if (!segwit)
     {
         send_error(error::bitcoind::invalid_parameter);
+        return;
+    }
+
+    uint64_t sequence{};
+    const auto longpollid = template_request.find("longpollid");
+    if (longpollid != template_request.end() &&
+        is_current(sequence, longpollid->second))
+    {
+        arm_longpoll(sequence);
         return;
     }
 
@@ -568,6 +577,129 @@ void protocol_bitcoind_mining::handle_prioritise_transaction(const code& ec,
 {
     if (stopped(ec)) return;
     send_error(error::bitcoind::client_mempool_disabled);
+}
+
+// Long polls.
+// ----------------------------------------------------------------------------
+// A long poll is raced by its chase subscription and the channel stop.
+
+// The id is the previous block hash and the template sequence. Another type
+// waits on the current template, and an id not current is answered at once.
+bool protocol_bitcoind_mining::is_current(uint64_t& sequence,
+    const value_t& longpollid) const NOEXCEPT
+{
+    const auto text = std::get_if<string_t>(&longpollid.value());
+    if (is_null(text))
+    {
+        sequence = template_generation();
+        return true;
+    }
+
+    constexpr auto size = two * hash_size;
+    hash_digest previous{};
+    return text->size() > size &&
+        decode_hash(previous, text->substr(zero, size)) &&
+        deserialize(sequence, text->substr(size)) &&
+        previous == archive().get_top_confirmed_hash() &&
+        sequence == template_generation();
+}
+
+void protocol_bitcoind_mining::arm_longpoll(uint64_t sequence) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    const auto poll = emplace_shared<longpoll>(longpoll{ sequence, gate() });
+    const auto race = emplace_shared<longpoll_race>(
+        BIND(handle_longpoll_complete, _1, poll));
+
+    demand_template(true);
+    poll->stop = subscribe_stop(BIND(handle_longpoll_stop, _1, race));
+    subscribe_events(BIND(handle_longpoll_event, _1, _2, poll, race),
+        BIND(handle_longpoll_subscribed, _1, _2, poll, race));
+}
+
+// Invoked on the node strand.
+bool protocol_bitcoind_mining::handle_longpoll_event(const code& ec,
+    node::event_value value, const longpoll::ptr& poll,
+    const longpoll_race::ptr& race) NOEXCEPT
+{
+    if (ec)
+    {
+        race->finish(ec);
+        return false;
+    }
+
+    if (node::to_chase(value) == node::chase::template_ &&
+        longpoll_done(*poll))
+    {
+        race->finish(error::success);
+        return false;
+    }
+
+    return true;
+}
+
+// Invoked on the node strand.
+void protocol_bitcoind_mining::handle_longpoll_subscribed(const code& ec,
+    node::object_key key, const longpoll::ptr& poll,
+    const longpoll_race::ptr& race) NOEXCEPT
+{
+    POST(do_longpoll_subscribed, ec, key, poll, race);
+}
+
+// The template may have been replaced before the subscription.
+void protocol_bitcoind_mining::do_longpoll_subscribed(const code& ec,
+    node::object_key key, const longpoll::ptr& poll,
+    const longpoll_race::ptr& race) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (ec)
+        return;
+
+    poll->events = key;
+    if (poll->done)
+    {
+        unsubscribe_events(key);
+        return;
+    }
+
+    if (longpoll_done(*poll))
+        race->finish(error::success);
+}
+
+void protocol_bitcoind_mining::handle_longpoll_stop(const code& ec,
+    const longpoll_race::ptr& race) NOEXCEPT
+{
+    race->finish(ec);
+}
+
+void protocol_bitcoind_mining::handle_longpoll_complete(const code& ec,
+    const longpoll::ptr& poll) NOEXCEPT
+{
+    POST(do_longpoll_complete, ec, poll);
+}
+
+void protocol_bitcoind_mining::do_longpoll_complete(const code& ec,
+    const longpoll::ptr& poll) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    poll->done = true;
+    demand_template(false);
+    unsubscribe_stop(poll->stop);
+
+    if (!is_zero(poll->events))
+        unsubscribe_events(poll->events);
+
+    if (ec || stopped())
+        return;
+
+    get_template(BIND(handle_template, _1, _2, poll->gate));
+}
+
+bool protocol_bitcoind_mining::longpoll_done(
+    const longpoll& poll) const NOEXCEPT
+{
+    return template_generation() > poll.sequence;
 }
 
 BC_POP_WARNING()

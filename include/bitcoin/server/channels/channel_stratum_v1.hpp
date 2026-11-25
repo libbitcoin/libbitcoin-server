@@ -27,7 +27,7 @@ namespace libbitcoin {
 namespace server {
 
 /// Channel for stratum v1 service (universal json-rpc), carrying the state of
-/// its miner's subscription and the jobs issued to it.
+/// its miner's subscription and authorization.
 class BCS_API channel_stratum_v1
   : public channel_rpc,
     protected network::tracker<channel_stratum_v1>
@@ -36,34 +36,12 @@ public:
     typedef std::shared_ptr<channel_stratum_v1> ptr;
     using options_t = settings::stratum_v1_server;
 
-    /// Jobs retained for share submission, the oldest dropped first.
-    static constexpr size_t maximum_jobs = 16;
-
-    /// A job issued to the miner, of a held template.
-    struct job
-    {
-        typedef std::shared_ptr<job> ptr;
-
-        node::block_template::cptr held{};
-        system::data_chunk prefix{};
-        system::data_chunk suffix{};
-        system::hash_digest previous{};
-        uint32_t version{};
-        uint32_t bits{};
-        uint32_t timestamp{};
-        double difficulty{};
-        std::unordered_set<system::hash_digest> shares{};
-    };
-
     inline channel_stratum_v1(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
       : channel_rpc(log, socket, identifier, config, options),
         network::tracker<channel_stratum_v1>(log),
-        options_(options),
-        extranonce1_(to_extranonce(identifier, options.extranonce1_size)),
-        difficulty_(options.minimum_difficulty),
-        window_(network::steady_clock::now())
+        options_(options)
     {
     }
 
@@ -101,11 +79,6 @@ public:
         return options_;
     }
 
-    inline const system::data_chunk& extranonce1() const NOEXCEPT
-    {
-        return extranonce1_;
-    }
-
     inline void set_subscribed() NOEXCEPT
     {
         subscribed_ = true;
@@ -116,13 +89,8 @@ public:
         return subscribed_;
     }
 
-    /// The payout of the channel is set by its first authorized worker.
-    inline void authorize(const std::string& worker,
-        const system::chain::script& payout) NOEXCEPT
+    inline void authorize(const std::string& worker) NOEXCEPT
     {
-        if (workers_.empty())
-            payout_ = payout;
-
         workers_.insert(worker);
     }
 
@@ -136,11 +104,6 @@ public:
         return workers_.contains(worker);
     }
 
-    inline const system::chain::script& payout() const NOEXCEPT
-    {
-        return payout_;
-    }
-
     inline void set_mask(uint32_t mask) NOEXCEPT
     {
         mask_ = mask;
@@ -149,84 +112,6 @@ public:
     inline uint32_t mask() const NOEXCEPT
     {
         return mask_;
-    }
-
-    inline void set_difficulty(double difficulty) NOEXCEPT
-    {
-        difficulty_ = difficulty;
-    }
-
-    inline double difficulty() const NOEXCEPT
-    {
-        return difficulty_;
-    }
-
-    inline void set_notified(double difficulty) NOEXCEPT
-    {
-        notified_ = difficulty;
-    }
-
-    inline double notified() const NOEXCEPT
-    {
-        return notified_;
-    }
-
-    /// Jobs (require strand).
-    /// -----------------------------------------------------------------------
-
-    /// Retain the job, all others dropped if clean, returning its identifier.
-    inline uint32_t issue(const job::ptr& job, bool clean) NOEXCEPT
-    {
-        if (clean)
-            jobs_.clear();
-
-        if (jobs_.size() >= maximum_jobs)
-            jobs_.erase(jobs_.begin());
-
-        const auto id = next_++;
-        jobs_.emplace(id, job);
-        return id;
-    }
-
-    /// The job of the identifier, empty if not retained.
-    inline job::ptr find(uint32_t id) const NOEXCEPT
-    {
-        const auto it = jobs_.find(id);
-        return it == jobs_.end() ? job::ptr{} : it->second;
-    }
-
-    /// The most recently issued job, empty if none.
-    inline job::ptr current() const NOEXCEPT
-    {
-        return jobs_.empty() ? job::ptr{} : jobs_.rbegin()->second;
-    }
-
-    /// Shares (require strand).
-    /// -----------------------------------------------------------------------
-
-    /// Count an accepted share within the retarget window.
-    inline size_t count_share() NOEXCEPT
-    {
-        return ++shares_;
-    }
-
-    /// Shares accepted within the retarget window.
-    inline size_t shares() const NOEXCEPT
-    {
-        return shares_;
-    }
-
-    /// Seconds since the retarget window opened.
-    inline double elapsed() const NOEXCEPT
-    {
-        using seconds = std::chrono::duration<double>;
-        return seconds{ network::steady_clock::now() - window_ }.count();
-    }
-
-    inline void reset_window() NOEXCEPT
-    {
-        shares_ = zero;
-        window_ = network::steady_clock::now();
     }
 
 protected:
@@ -247,30 +132,11 @@ private:
         "mining.extranonce.subscribe"
     };
 
-    // Extranonce of the channel identifier, little endian, zero padded.
-    static inline system::data_chunk to_extranonce(uint64_t identifier,
-        uint8_t size) NOEXCEPT
-    {
-        system::data_chunk out(size, 0x00);
-        const auto bytes = system::to_little_endian(identifier);
-        const auto count = std::min(out.size(), bytes.size());
-        std::copy_n(bytes.begin(), count, out.begin());
-        return out;
-    }
-
     // This is thread safe.
     const options_t& options_;
 
     // These are protected by strand.
-    const system::data_chunk extranonce1_;
     std::unordered_set<std::string> workers_{};
-    system::chain::script payout_{};
-    std::map<uint32_t, job::ptr> jobs_{};
-    network::steady_clock::time_point window_;
-    double difficulty_;
-    double notified_{};
-    size_t shares_{};
-    uint32_t next_{};
     uint32_t mask_{};
     bool subscribed_{};
 };

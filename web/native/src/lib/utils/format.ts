@@ -1,12 +1,22 @@
-const integerFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+// Numbers are formatted for the locale of the browser.
+const integerFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
+const rateFormatter = new Intl.NumberFormat(undefined, {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 export function formatInteger(value: number): string {
   return integerFormatter.format(value);
 }
 
+/** A fee rate to two places, in sat/vB. */
+export function formatRate(value: number): string {
+  return `${rateFormatter.format(value)} sat/vB`;
+}
+
 export function formatNumber(value?: number | null, options: Intl.NumberFormatOptions = {}) {
   if (value === null || value === undefined) return '—';
-  const formatter = new Intl.NumberFormat('en-US', {
+  const formatter = new Intl.NumberFormat(undefined, {
     maximumFractionDigits: 2,
     ...options,
   });

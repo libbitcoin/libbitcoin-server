@@ -398,6 +398,7 @@ BC_AUTO_TEST_CASE(server__stratum_v1_server__defaults__expected)
     BC_REQUIRE_EQUAL(server.extranonce2_size, 4u);
     BC_REQUIRE_EQUAL(server.minimum_difficulty, 1.0);
     BC_REQUIRE_EQUAL(server.share_interval_seconds, 10u);
+    BC_REQUIRE_EQUAL(server.authorize_timeout_seconds, 15u);
 
     // tcp_server
     BC_REQUIRE_EQUAL(server.name, "stratum_v1");
@@ -593,6 +594,7 @@ BC_AUTO_TEST_CASE(server__settings__initialize_mainnet__service_ports)
     BC_REQUIRE_EQUAL(instance.stratum_v1.bind_port, 8880u);
     BC_REQUIRE_EQUAL(instance.stratum_v1.safe_port, 8843u);
     BC_REQUIRE_EQUAL(instance.stratum_v2.bind_port, 8980u);
+    BC_REQUIRE_EQUAL(instance.stratum_v2.safe_port, 8943u);
 }
 
 BC_AUTO_TEST_CASE(server__settings__mainnet__service_limits)
@@ -642,6 +644,7 @@ BC_AUTO_TEST_CASE(server__settings__initialize_testnet4__offset_ports_testnet_wa
     BC_REQUIRE_EQUAL(instance.stratum_v1.bind_port, 48880u);
     BC_REQUIRE_EQUAL(instance.stratum_v1.safe_port, 48843u);
     BC_REQUIRE_EQUAL(instance.stratum_v2.bind_port, 48980u);
+    BC_REQUIRE_EQUAL(instance.stratum_v2.safe_port, 48943u);
 }
 
 BC_AUTO_TEST_CASE(server__settings__initialize_testnet5__offset_ports_testnet_wallet)
@@ -670,6 +673,7 @@ BC_AUTO_TEST_CASE(server__settings__initialize_testnet5__offset_ports_testnet_wa
     BC_REQUIRE_EQUAL(instance.stratum_v1.bind_port, 58880u);
     BC_REQUIRE_EQUAL(instance.stratum_v1.safe_port, 58843u);
     BC_REQUIRE_EQUAL(instance.stratum_v2.bind_port, 58980u);
+    BC_REQUIRE_EQUAL(instance.stratum_v2.safe_port, 58943u);
 }
 
 BC_AUTO_TEST_CASE(server__settings__initialize_regtest_network__offset_ports)
@@ -697,6 +701,7 @@ BC_AUTO_TEST_CASE(server__settings__initialize_regtest_network__offset_ports)
     BC_REQUIRE_EQUAL(instance.stratum_v1.bind_port, 28880u);
     BC_REQUIRE_EQUAL(instance.stratum_v1.safe_port, 28843u);
     BC_REQUIRE_EQUAL(instance.stratum_v2.bind_port, 28980u);
+    BC_REQUIRE_EQUAL(instance.stratum_v2.safe_port, 28943u);
 }
 
 BC_AUTO_TEST_CASE(server__settings__initialize_unported_bind__default_port)

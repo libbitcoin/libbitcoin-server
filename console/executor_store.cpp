@@ -200,8 +200,14 @@ code executor::migrate_store(bool& migrated, bool details)
                 server_node::store::tables.at(table)));
     }))
     {
-        logger(std::format(BS_DATABASE_MIGRATE_FAIL, original.to_string(),
-            ec.message()));
+        const auto schema = metadata_.stored.schema.to_string();
+        if (ec == database::error::fault_lock)
+            logger(BS_DATABASE_FAULT_LOCK);
+        else if (ec == database::error::flush_lock)
+            logger(std::format(BS_RESTORE_SCHEMA, schema));
+        else
+            logger(std::format(BS_DATABASE_MIGRATE_FAIL, schema, ec.message()));
+
         return ec;
     }
 
@@ -330,6 +336,9 @@ bool executor::restore_store(bool details)
             logger(BS_RESTORE_MISSING_FLUSH_LOCK);
         else if (ec == database::error::fault_lock)
             logger(BS_DATABASE_FAULT_LOCK);
+        else if (ec == database::error::schema_version)
+            logger(std::format(BS_RESTORE_SCHEMA,
+                metadata_.stored.schema.to_string()));
         else
             logger(std::format(BS_RESTORE_FAILURE, ec.message()));
 

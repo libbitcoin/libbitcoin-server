@@ -117,7 +117,7 @@ export function BlocksPage() {
                   to={templatePath(top + 1)}
                   className="text-accent hover:text-accentSecondary px-3 text-sm"
                 >
-                  Template #{formatInteger(top + 1)}
+                  Template {formatInteger(top + 1)}
                 </Link>
                 <span className="text-textMuted truncate text-xs">
                   the next block, as the pool would fill it

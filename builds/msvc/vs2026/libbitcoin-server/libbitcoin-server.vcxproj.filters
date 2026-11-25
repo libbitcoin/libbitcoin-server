@@ -82,17 +82,20 @@
     <Filter Include="src\protocols\stratum_v1">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\protocols\zmq">
+    <Filter Include="src\protocols\stratum_v2">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-000000000010}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\serializers">
+    <Filter Include="src\protocols\zmq">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-0000000000A1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\sessions">
+    <Filter Include="src\serializers">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-0000000000B1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\utilities">
+    <Filter Include="src\sessions">
       <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-0000000000C1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utilities">
+      <UniqueIdentifier>{73CE0AC2-ECB2-4E8D-0000-0000000000D1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -306,6 +309,9 @@
     <ClCompile Include="..\..\..\..\src\protocols\stratum_v1\protocol_stratum_v1.cpp">
       <Filter>src\protocols\stratum_v1</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\stratum_v2\protocol_stratum_v2_setup.cpp">
+      <Filter>src\protocols\stratum_v2</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\zmq\protocol_zmq.cpp">
       <Filter>src\protocols\zmq</Filter>
     </ClCompile>
@@ -357,7 +363,13 @@
     <ClCompile Include="..\..\..\..\src\utilities\electrum_version.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utilities\extranonces.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\utilities\merkle.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\utilities\mining_channel.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\src\utilities\stratum_v1.cpp">
@@ -480,9 +492,6 @@
       <Filter>include\bitcoin\server\interfaces</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\stratum_v1.hpp">
-      <Filter>include\bitcoin\server\interfaces</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\stratum_v2.hpp">
       <Filter>include\bitcoin\server\interfaces</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\interfaces\types.hpp">
@@ -617,6 +626,9 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_http.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_mining.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_native.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
@@ -630,6 +642,9 @@
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2_setup.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_submit.hpp">
@@ -704,7 +719,13 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\electrum_version.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\extranonces.hpp">
+      <Filter>include\bitcoin\server\utilities</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\merkle.hpp">
+      <Filter>include\bitcoin\server\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\mining_channel.hpp">
       <Filter>include\bitcoin\server\utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\stratum_v1.hpp">
@@ -723,6 +744,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_mining.ipp">
+      <Filter>include\bitcoin\server\impl\protocols</Filter>
+    </None>
     <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_native.ipp">
       <Filter>include\bitcoin\server\impl\protocols</Filter>
     </None>

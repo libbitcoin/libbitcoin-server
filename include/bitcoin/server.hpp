@@ -58,7 +58,6 @@
 #include <bitcoin/server/interfaces/native.hpp>
 #include <bitcoin/server/interfaces/sparrow.hpp>
 #include <bitcoin/server/interfaces/stratum_v1.hpp>
-#include <bitcoin/server/interfaces/stratum_v2.hpp>
 #include <bitcoin/server/interfaces/types.hpp>
 #include <bitcoin/server/interfaces/zmq.hpp>
 #include <bitcoin/server/parsers/admin_query.hpp>
@@ -101,11 +100,13 @@
 #include <bitcoin/server/protocols/protocol_esplora.hpp>
 #include <bitcoin/server/protocols/protocol_html.hpp>
 #include <bitcoin/server/protocols/protocol_http.hpp>
+#include <bitcoin/server/protocols/protocol_mining.hpp>
 #include <bitcoin/server/protocols/protocol_native.hpp>
 #include <bitcoin/server/protocols/protocol_rpc.hpp>
 #include <bitcoin/server/protocols/protocol_sparrow.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
+#include <bitcoin/server/protocols/protocol_stratum_v2_setup.hpp>
 #include <bitcoin/server/protocols/protocol_submit.hpp>
 #include <bitcoin/server/protocols/protocol_zmq.hpp>
 #include <bitcoin/server/protocols/protocols.hpp>
@@ -128,7 +129,9 @@
 #include <bitcoin/server/utilities/chain.hpp>
 #include <bitcoin/server/utilities/coinbase.hpp>
 #include <bitcoin/server/utilities/electrum_version.hpp>
+#include <bitcoin/server/utilities/extranonces.hpp>
 #include <bitcoin/server/utilities/merkle.hpp>
+#include <bitcoin/server/utilities/mining_channel.hpp>
 #include <bitcoin/server/utilities/stratum_v1.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
 

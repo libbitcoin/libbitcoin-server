@@ -85,15 +85,21 @@ protected:
         const gate_t::ptr& gate) NOEXCEPT;
 
     /// The outcome of the submitted block, with its code if rejected.
-    virtual void handle_submitted(submission outcome,
-        const code& ec) NOEXCEPT = 0;
+    virtual void handle_submitted(const system::hash_digest& hash,
+        submission outcome, const code& ec) NOEXCEPT = 0;
 
     /// Chase events (submitted block completion).
     virtual bool handle_chase(const code& ec,
         node::event_value value) NOEXCEPT;
 
 private:
-    /// Submit block completions (bounced to the channel strand).
+    struct pending
+    {
+        system::hash_digest hash;
+        gate_t::ptr gate;
+    };
+
+    // Submit block completions (bounced to the channel strand).
     void handle_organize_block(const code& ec, size_t height,
         const block_cptr& block, const gate_t::ptr& gate) NOEXCEPT;
     void do_organize_block(const code& ec, const block_cptr& block,
@@ -101,14 +107,15 @@ private:
     void accept_block(const block_cptr& block,
         const database::header_link& link, const gate_t::ptr& gate) NOEXCEPT;
     void handle_archive_block(const code& ec, const system::hash_digest& hash,
-        size_t height) NOEXCEPT;
-    void do_archive_block(const code& ec) NOEXCEPT;
+        size_t height, const database::header_link& link) NOEXCEPT;
+    void do_archive_block(const code& ec,
+        const database::header_link& link) NOEXCEPT;
     void do_submitted(const code& ec, node::event_value value) NOEXCEPT;
-    void complete(submission outcome, const code& ec) NOEXCEPT;
+    void complete(const database::header_link& link, submission outcome,
+        const code& ec) NOEXCEPT;
 
-    // These are protected by strand.
-    database::header_link submitted_{};
-    gate_t::ptr submitted_gate_{};
+    // This is protected by strand.
+    std::unordered_map<database::header_link::integer, pending> submitted_{};
 };
 
 } // namespace server

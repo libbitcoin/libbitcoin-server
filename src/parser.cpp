@@ -2489,13 +2489,52 @@ options_metadata parser::load_settings() THROWS
         setting<uint32_t>(&configured.server.stratum_v1.share_interval_seconds),
         "The target seconds between shares of a channel, defaults to {} (0 fixes difficulty)."
     )
+    (
+        "stratum_v1.authorize_timeout_seconds",
+        setting<uint32_t>(&configured.server.stratum_v1.authorize_timeout_seconds),
+        "The seconds to subscribe and authorize a channel, defaults to {} (0 is unlimited)."
+    )
 
-#if defined(DISABLED)
     /* [stratum_v2] */
     (
         "stratum_v2.bind",
         setting<network::config::authorities>(&configured.server.stratum_v2.binds),
         "IP address to bind, multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "stratum_v2.safe",
+        setting<network::config::authorities>(&configured.server.stratum_v2.safes),
+        "IP address to secure bind, multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "stratum_v2.cert_auth",
+        setting<config::path>(&configured.server.stratum_v2.cert_auth),
+        "The trusted client certificate directory (*.PEM), enables client authentication."
+    )
+    (
+        "stratum_v2.cert_path",
+        setting<config::path>(&configured.server.stratum_v2.cert_path),
+        "The path to the server certificate file (.PEM), defaults to {}."
+    )
+    (
+        "stratum_v2.key_path",
+        setting<config::path>(&configured.server.stratum_v2.key_path),
+        "The path to the server private key file (.PEM), defaults to {}."
+    )
+    (
+        "stratum_v2.key_pass",
+        secret<std::string>(&configured.server.stratum_v2.key_pass),
+        "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "stratum_v2.credential",
+        secret<network::config::credentials>(&configured.server.stratum_v2.credentials),
+        "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
+    )
+    (
+        "stratum_v2.compression",
+        setting<bool>(&configured.server.stratum_v2.compression),
+        "Compress http response bodies as accepted by the request (gzip, deflate), defaults to {}."
     )
     (
         "stratum_v2.connections",
@@ -2533,12 +2572,15 @@ options_metadata parser::load_settings() THROWS
         "The maximum write backlog of a channel, defaults to {}."
     )
     (
+        "stratum_v2.maximum_buffer",
+        setting<uint32_t>(&configured.server.stratum_v2.maximum_buffer),
+        "The maximum json response buffer size, defaults to {}."
+    )
+    (
         "stratum_v2.maximum_request",
         setting<uint32_t>(&configured.server.stratum_v2.maximum_request),
         "The maximum allowed request size, defaults to {}."
     )
-
-#endif
     /* [node] */
     (
         "node.threads",
@@ -2654,6 +2696,11 @@ options_metadata parser::load_settings() THROWS
         "node.currency_window_minutes",
         setting<uint32_t>(&configured.node.currency_window_minutes),
         "Time from present that blocks are considered current, defaults to {} (0 disables)."
+    )
+    (
+        "node.fee_filter_minutes",
+        setting<uint16_t>(&configured.node.fee_filter_minutes),
+        "Minimum time between a peer's fee filter decreases, else the peer is dropped, defaults to {} (0 disables)."
     )
     ////(
     ////    "node.snapshot_bytes",

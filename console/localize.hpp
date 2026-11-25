@@ -105,6 +105,8 @@
     "Database snapshot disallowed due to corruption '{}'."
 #define BS_RESTORING_CHAIN \
     "Please wait while restoring from most recent snapshot..."
+#define BS_RESTORE_SCHEMA \
+    "Database requires recovery from snapshot using schema version {}."
 #define BS_RESTORE_MISSING_FLUSH_LOCK \
     "Database is not corrupted, flush lock file is absent."
 #define BS_RESTORE_INVALID \

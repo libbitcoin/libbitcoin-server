@@ -409,7 +409,13 @@
     <None Include="..\..\..\..\web\native\src\components\block-viewer.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\components\branch-notice.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\components\command-palette.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\components\copy-button.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\components\hash-text.tsx">
@@ -437,6 +443,12 @@
       <Filter>web\native\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\components\sort-header.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\components\spinner.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\components\status-pill.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\components\template-scene-view.tsx">
@@ -580,6 +592,9 @@
     <None Include="..\..\..\..\web\native\src\routes\transaction.tsx">
       <Filter>web\native\src\routes</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\routes\transactions.tsx">
+      <Filter>web\native\src\routes</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\themes.css">
       <Filter>web\native\src</Filter>
     </None>
@@ -620,6 +635,9 @@
       <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\template-scene.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\template-settings.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\tsconfig.json">

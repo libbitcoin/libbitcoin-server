@@ -198,6 +198,22 @@ struct stratum_v1_credential_setup_fixture
     }
 };
 
+/// As ten block, with a one second authorize timeout.
+struct stratum_v1_authorize_timeout_setup_fixture
+  : stratum_v1_setup_fixture
+{
+    inline stratum_v1_authorize_timeout_setup_fixture()
+      : stratum_v1_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](configuration& config)
+        {
+            config.server.stratum_v1.authorize_timeout_seconds = 1;
+        })
+    {
+    }
+};
+
 /// Store with a pooled transaction, so the template has a branch and fees.
 struct stratum_v1_broadcast_setup_fixture
   : stratum_v1_setup_fixture

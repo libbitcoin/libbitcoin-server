@@ -24,7 +24,9 @@
 #include <bitcoin/server/utilities/address.hpp>
 #include <bitcoin/server/utilities/chain.hpp>
 #include <bitcoin/server/utilities/coinbase.hpp>
+#include <bitcoin/server/utilities/extranonces.hpp>
 #include <bitcoin/server/utilities/merkle.hpp>
+#include <bitcoin/server/utilities/mining_channel.hpp>
 #include <bitcoin/server/utilities/stratum_v1.hpp>
 #include <bitcoin/server/utilities/bitcoind_update.hpp>
 #include <bitcoin/server/utilities/electrum_version.hpp>

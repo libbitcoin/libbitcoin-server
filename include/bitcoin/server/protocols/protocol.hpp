@@ -102,6 +102,40 @@ public:
         session_->fault(ec);
     }
 
+    /// Subscribe to channel stop, key for unsubscribe (requires strand).
+    inline network::proxy::object_key subscribe_stop(
+        network::result_handler&& handler) const NOEXCEPT
+    {
+        return channel_->subscribe_stop(std::move(handler));
+    }
+
+    /// Unsubscribe from channel stop (requires strand).
+    inline bool unsubscribe_stop(
+        network::proxy::object_key key) const NOEXCEPT
+    {
+        return channel_->unsubscribe_stop(key);
+    }
+
+    /// Subscribe to chaser events, key to completer (any number per protocol).
+    inline void subscribe_events(node::event_notifier&& handler,
+        node::event_completer&& complete) const NOEXCEPT
+    {
+        session_->subscribe_chase(std::move(handler), std::move(complete));
+    }
+
+    /// Unsubscribe from chaser events, handler invoked with service_stopped.
+    inline void unsubscribe_events(node::object_key key) const NOEXCEPT
+    {
+        session_->unsubscribe_chase(key);
+    }
+
+    /// Create a timer on the channel strand.
+    inline network::deadline::ptr make_timer() const NOEXCEPT
+    {
+        return std::make_shared<network::deadline>(channel_->log,
+            channel_->strand());
+    }
+
     /// Height at and below which blocks may be pruned, zero if none.
     size_t get_pruned_height() const NOEXCEPT;
 

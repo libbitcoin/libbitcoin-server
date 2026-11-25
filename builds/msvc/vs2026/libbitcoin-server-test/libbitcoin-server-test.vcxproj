@@ -151,6 +151,8 @@
       <ObjectFileName>$(IntDir)test_protocols_stratum_v1_stratum_v1.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\stratum_v1\stratum_v1_setup_fixture.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\stratum_v2\stratum_v2.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\stratum_v2\stratum_v2_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\zmq\zmq.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\zmq\zmq_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\serializers\bitcoind_block_stats.cpp" />
@@ -162,7 +164,9 @@
     <ClCompile Include="..\..\..\..\test\utilities\electrum_version.cpp">
       <ObjectFileName>$(IntDir)test_utilities_electrum_version.obj</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\utilities\extranonces.cpp" />
     <ClCompile Include="..\..\..\..\test\utilities\merkle.cpp" />
+    <ClCompile Include="..\..\..\..\test\utilities\mining_channel.cpp" />
     <ClCompile Include="..\..\..\..\test\utilities\stratum_v1.cpp">
       <ObjectFileName>$(IntDir)test_utilities_stratum_v1.obj</ObjectFileName>
     </ClCompile>
@@ -178,6 +182,7 @@
     <ClInclude Include="..\..\..\..\test\protocols\fixture\rpc_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\native\native_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\stratum_v1\stratum_v1_setup_fixture.hpp" />
+    <ClInclude Include="..\..\..\..\test\protocols\stratum_v2\stratum_v2_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\protocols\zmq\zmq_setup_fixture.hpp" />
     <ClInclude Include="..\..\..\..\test\test.hpp" />
   </ItemGroup>
