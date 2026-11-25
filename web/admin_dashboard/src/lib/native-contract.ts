@@ -149,15 +149,43 @@ function endpointUrl(baseUrl: string, path: string): string {
   return new URL(path, `${baseUrl.replace(/\/+$/u, '')}/`).toString();
 }
 
+const NATIVE_REQUEST_TIMEOUT_MS = 30_000;
+
 async function fetchJson(url: string, signal?: AbortSignal): Promise<unknown> {
-  const response = await fetch(url, {
-    headers: { Accept: 'application/json' },
-    signal,
+  signal?.throwIfAborted();
+  const controller = new AbortController();
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  let cancel: (() => void) | undefined;
+  const interrupted = new Promise<never>((_resolve, reject) => {
+    const abort = (reason: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- Preserve the caller's AbortSignal.reason, which can be any value.
+      reject(reason);
+      controller.abort(reason);
+    };
+    cancel = () => {
+      abort(signal?.reason);
+    };
+    signal?.addEventListener('abort', cancel, { once: true });
+    timeout = setTimeout(() => {
+      abort(new Error('Native request timed out after 30 seconds'));
+    }, NATIVE_REQUEST_TIMEOUT_MS);
   });
-  if (!response.ok) {
-    throw new Error(`HTTP ${String(response.status)}`);
+
+  try {
+    const request = (async () => {
+      const response = await fetch(url, {
+        headers: { Accept: 'application/json' },
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`HTTP ${String(response.status)}`);
+      return (await response.json()) as unknown;
+    })();
+    // Bound headers and body even if the transport is slow to react to abort.
+    return await Promise.race([request, interrupted]);
+  } finally {
+    clearTimeout(timeout);
+    if (cancel) signal?.removeEventListener('abort', cancel);
   }
-  return (await response.json()) as unknown;
 }
 
 export async function fetchNativeSnapshot(
