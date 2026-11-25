@@ -775,7 +775,7 @@ BC_AUTO_TEST_CASE(stratum_v2__submit_shares_extended__fast_shares__target_reduce
     BC_REQUIRE(submit_shares(started, 16));
     const auto target = receive_message<set_target>();
     BC_REQUIRE(target);
-    BC_REQUIRE_EQUAL(target->target, server::to_target_hash(stratum_v2_minimum_difficulty * 4.0));
+    BC_REQUIRE_EQUAL(target->target, server::to_target_hash(server::to_hash_difficulty(maximum_target) * 4.0));
     const auto job = receive_message<extended_job>();
     BC_REQUIRE(job);
     BC_REQUIRE(job->ntime_start.has_value());
