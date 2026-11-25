@@ -236,6 +236,12 @@ public:
         using base = network::settings::websocket_server;
         using base::base;
 
+        /// Validate the coinbase layout.
+        code initialize_context() NOEXCEPT override;
+
+        /// Bytes of coinbase extranonce, assigned and rolled.
+        virtual size_t coinbase_extranonce_size() const NOEXCEPT = 0;
+
         /// Address paid by the coinbase, otherwise the worker name.
         std::string payout_address{};
 
@@ -257,8 +263,11 @@ public:
         using base = mining_server;
         using base::base;
 
-        /// Validate the coinbase layout.
+        /// Validate the extranonce sizes.
         code initialize_context() NOEXCEPT override;
+
+        /// Bytes of coinbase extranonce, assigned and rolled.
+        size_t coinbase_extranonce_size() const NOEXCEPT override;
 
         /// Bytes of coinbase extranonce assigned to each channel.
         uint8_t extranonce1_size{ 4 };
@@ -268,6 +277,26 @@ public:
 
         /// Seconds to subscribe and authorize a channel, zero is unlimited.
         uint32_t authorize_timeout_seconds{ 15 };
+    };
+
+    /// Stratum v2 is served over ws/s (binary frames).
+    struct BCS_API stratum_v2_server
+      : public mining_server
+    {
+        using base = mining_server;
+        using base::base;
+
+        /// Validate the extranonce sizes.
+        code initialize_context() NOEXCEPT override;
+
+        /// Bytes of coinbase extranonce, assigned and rolled.
+        size_t coinbase_extranonce_size() const NOEXCEPT override;
+
+        /// Bytes of coinbase extranonce assigned to each channel.
+        uint8_t extranonce_prefix_size{ 4 };
+
+        /// Bytes of coinbase extranonce rolled by an extended channel miner.
+        uint8_t extranonce_size{ 8 };
     };
 
     struct BCS_API esplora_server
@@ -454,7 +483,7 @@ public:
     stratum_v1_server stratum_v1{ "stratum_v1" };
 
     /// stratum v2 interface (ws/s, binary)
-    network::settings::websocket_server stratum_v2{ "stratum_v2" };
+    stratum_v2_server stratum_v2{ "stratum_v2" };
 
     /// zmq notifications, bitcoind compatible (tcp, native zmtp publisher)
     zmq_server zmq{ "zmq" };

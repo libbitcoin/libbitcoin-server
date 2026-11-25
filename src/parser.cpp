@@ -86,40 +86,52 @@ void parser::derive_buckets() NOEXCEPT
 
 // Stratum jobs reserve the weight and sigops of their own coinbase, an
 // unconfigured or invalid payout address reserving for the largest address
-// output. A configured reservation governs (e.g. for an external miner).
+// output. The larger of the enabled stratum coinbases is reserved, and a
+// configured reservation governs (e.g. for an external miner).
 void parser::derive_coinbase() NOEXCEPT
 {
-    const auto& stratum = configured.server.stratum_v1;
-    if (!stratum.enabled())
+    const auto& v1 = configured.server.stratum_v1;
+    const auto& v2 = configured.server.stratum_v2;
+    if (!v1.enabled() && !v2.enabled())
         return;
 
-    // A p2kh output carries the only legacy sigop of an address.
-    auto payout = max_address_script;
-    auto sigops = chain::heavy_sigops_factor;
+    size_t weight{};
+    size_t sigops{};
     const auto& wallet = configured.server.wallet;
-    if (!stratum.payout_address.empty())
+    const auto reserve = [&](const settings::mining_server& stratum) NOEXCEPT
     {
-        chain::script script{};
-        const auto ec = output_script(script, stratum.payout_address,
-            wallet.p2kh_prefix, wallet.p2sh_prefix, wallet.witness_prefix);
+        if (!stratum.enabled())
+            return;
 
-        if (!ec)
+        // A p2kh output carries the only legacy sigop of an address.
+        auto payout = max_address_script;
+        auto operations = chain::heavy_sigops_factor;
+        if (!stratum.payout_address.empty())
         {
-            payout = script.serialized_size(false);
-            sigops = chain::output{ zero, script }.signature_operations(true);
+            chain::script out{};
+            const auto ec = output_script(out, stratum.payout_address,
+                wallet.p2kh_prefix, wallet.p2sh_prefix, wallet.witness_prefix);
+
+            if (!ec)
+            {
+                payout = out.serialized_size(false);
+                operations = chain::output{ zero, out }.signature_operations(true);
+            }
         }
-    }
 
-    const auto extranonce = add<size_t>(stratum.extranonce1_size,
-        stratum.extranonce2_size);
+        const auto script = coinbase_script_size(stratum.coinbase_tag.size(),
+            stratum.coinbase_extranonce_size());
 
-    const auto script = coinbase_script_size(stratum.coinbase_tag.size(),
-        extranonce);
+        weight = std::max(weight, coinbase_weight(script, payout));
+        sigops = std::max(sigops, operations);
+    };
+
+    reserve(v1);
+    reserve(v2);
 
     auto& pool = configured.node.pool;
     if (!is_configured("pool.coinbase_weight"))
-        pool.coinbase_weight = possible_narrow_cast<uint32_t>(
-            coinbase_weight(script, payout));
+        pool.coinbase_weight = possible_narrow_cast<uint32_t>(weight);
 
     if (!is_configured("pool.coinbase_sigops"))
         pool.coinbase_sigops = possible_narrow_cast<uint32_t>(sigops);
@@ -2580,6 +2592,36 @@ options_metadata parser::load_settings() THROWS
         "stratum_v2.maximum_request",
         setting<uint32_t>(&configured.server.stratum_v2.maximum_request),
         "The maximum allowed request size, defaults to {}."
+    )
+    (
+        "stratum_v2.payout_address",
+        setting<std::string>(&configured.server.stratum_v2.payout_address),
+        "The address paid by the coinbase, defaults to {} (the user identity)."
+    )
+    (
+        "stratum_v2.coinbase_tag",
+        setting<std::string>(&configured.server.stratum_v2.coinbase_tag),
+        "The text carried by the coinbase input script, defaults to {}."
+    )
+    (
+        "stratum_v2.extranonce_prefix_size",
+        setting<uint8_t>(&configured.server.stratum_v2.extranonce_prefix_size),
+        "The bytes of coinbase extranonce assigned to each channel, defaults to {}."
+    )
+    (
+        "stratum_v2.extranonce_size",
+        setting<uint8_t>(&configured.server.stratum_v2.extranonce_size),
+        "The bytes of coinbase extranonce rolled by an extended channel miner, defaults to {}."
+    )
+    (
+        "stratum_v2.minimum_difficulty",
+        setting<double>(&configured.server.stratum_v2.minimum_difficulty),
+        "The share difficulty assigned to a channel, and its floor, defaults to {}."
+    )
+    (
+        "stratum_v2.share_interval_seconds",
+        setting<uint32_t>(&configured.server.stratum_v2.share_interval_seconds),
+        "The target seconds between shares of a channel, defaults to {} (0 fixes difficulty)."
     )
     /* [node] */
     (

@@ -479,6 +479,50 @@ BC_AUTO_TEST_CASE(parser__parse__stratum_configured_coinbase__configured_values)
     BC_REQUIRE_EQUAL(instance.configured.node.pool.coinbase_sigops, 8u);
 }
 
+BC_AUTO_TEST_CASE(parser__parse__stratum_v2_enabled__largest_address_coinbase)
+{
+    const auto config = write_config("[stratum_v2]\nconnections = 1\n");
+    const char* argv[]{ "bs", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(3, argv, error));
+    BC_REQUIRE_EQUAL(instance.configured.node.pool.coinbase_weight, 672u);
+    BC_REQUIRE_EQUAL(instance.configured.node.pool.coinbase_sigops, 4u);
+}
+
+BC_AUTO_TEST_CASE(parser__parse__stratum_both_enabled__v2_larger_coinbase)
+{
+    const auto config = write_config("[stratum_v1]\nconnections = 1\n[stratum_v2]\nconnections = 1\n");
+    const char* argv[]{ "bs", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(3, argv, error));
+    BC_REQUIRE_EQUAL(instance.configured.node.pool.coinbase_weight, 672u);
+    BC_REQUIRE_EQUAL(instance.configured.node.pool.coinbase_sigops, 4u);
+}
+
+BC_AUTO_TEST_CASE(parser__parse__stratum_both_enabled__v1_larger_coinbase)
+{
+    const auto config = write_config("[stratum_v1]\nconnections = 1\ncoinbase_tag = /xyz/\n[stratum_v2]\nconnections = 1\n");
+    const char* argv[]{ "bs", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(3, argv, error));
+    BC_REQUIRE_EQUAL(instance.configured.node.pool.coinbase_weight, 680u);
+    BC_REQUIRE_EQUAL(instance.configured.node.pool.coinbase_sigops, 4u);
+}
+
+BC_AUTO_TEST_CASE(parser__parse__stratum_both_enabled__larger_weight_and_sigops)
+{
+    const auto config = write_config("[stratum_v1]\nconnections = 1\npayout_address = bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4\ncoinbase_tag = /abcdefghijklmnopqr/\n[stratum_v2]\nconnections = 1\n");
+    const char* argv[]{ "bs", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    BC_REQUIRE(instance.parse(3, argv, error));
+    BC_REQUIRE_EQUAL(instance.configured.node.pool.coinbase_weight, 692u);
+    BC_REQUIRE_EQUAL(instance.configured.node.pool.coinbase_sigops, 4u);
+}
+
 // read_envelope
 
 BC_AUTO_TEST_CASE(parser__read_envelope__no_store__unchanged)
