@@ -1,3 +1,4 @@
+import { StatusPill } from '@/components/status-pill';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useScriptExplainerPreference } from '@/app/script-explainer-preference';
@@ -161,19 +162,13 @@ export function TransactionPage() {
   const receivedLine = tx
     ? receivedTime
       ? `${formatRelativeTime(receivedTime, now)} · ${formatTimestamp(receivedTime)}`
-      : 'Pending'
+      : '—'
     : '—';
   const latestHeight = latestBlocks?.[0]?.height;
   const confirmations =
     typeof latestHeight === 'number' && typeof tx?.blockHeight === 'number'
       ? Math.max(0, latestHeight - tx.blockHeight + 1)
       : tx?.confirmations;
-  const statusStyles =
-    status === 'confirmed'
-      ? 'bg-emerald-500/20 text-emerald-300'
-      : status === 'unconfirmed'
-        ? 'bg-amber-500/20 text-amber-300'
-        : 'bg-slate-500/20 text-slate-300';
 
   return (
     <div className="space-y-8">
@@ -191,31 +186,23 @@ export function TransactionPage() {
           </Link>
         </div>
       ) : null}
-      <header className="space-y-2">
-        <p className="text-accentSecondary text-sm tracking-wide uppercase">Transaction</p>
-        <div className="flex flex-wrap items-center gap-3">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-accentSecondary text-sm tracking-wide uppercase">Transaction</p>
           <h1 tabIndex={-1} className="text-accent text-3xl font-semibold">
-            <HashText value={identifier} truncate={19} />
+            {identifier.length > 8 ? `${identifier.slice(0, 8)}…` : identifier || '—'}
           </h1>
-          <button
-            type="button"
-            onClick={() => {
-              void copyTextToClipboard(identifier);
-            }}
-            disabled={!identifier.trim()}
-            className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-medium tracking-wide uppercase"
-          >
-            Copy TxID
-          </button>
-          {tx && <SaveBookmarkButton target={{ kind: 'transaction', txid: identifier }} />}
+          <p className="text-textMuted mt-2 text-sm">{receivedLine}</p>
+          <div className="mt-2">
+            <StatusPill status={status} />
+          </div>
         </div>
-        <p className="text-textMuted text-sm">{receivedLine}</p>
-        <span
-          className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-medium tracking-wide uppercase ${statusStyles}`}
-        >
-          <span className="h-2 w-2 rounded-full bg-current" aria-hidden />
-          {status ?? '—'}
-        </span>
+        <div className="flex min-w-0 flex-col items-end gap-3">
+          <p className="text-textPrimary font-mono text-xs break-all">{identifier || '—'}</p>
+          <div className="flex min-h-[2.375rem] items-center">
+            {tx && <SaveBookmarkButton target={{ kind: 'transaction', txid: identifier }} />}
+          </div>
+        </div>
       </header>
 
       <section className="border-accent/30 bg-surface/80 grid gap-4 rounded-xl border p-6 text-sm sm:grid-cols-2 lg:grid-cols-3">

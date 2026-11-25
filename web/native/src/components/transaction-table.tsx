@@ -5,7 +5,7 @@ import { SortHeader, useSortedRows } from '@/components/sort-header';
 import { Spinner } from '@/components/spinner';
 import { useWindowScrollToBottom } from '@/lib/hooks/useWindowScrollToBottom';
 import { useNow } from '@/lib/hooks/useNow';
-import { formatInteger, formatShortRelativeTime } from '@/lib/utils/format';
+import { formatInteger, formatRate, formatShortRelativeTime } from '@/lib/utils/format';
 import { transactionPath } from '@/lib/utils/routes';
 
 export interface TransactionTableRow {
@@ -137,7 +137,7 @@ export function TransactionTable({
                 )}
                 <td className="px-4 py-2 text-right">{formatInteger(row.fee)} sat</td>
                 <td className="px-4 py-2 text-right">{formatInteger(row.virtual)} vB</td>
-                <td className="px-4 py-2 text-right">{rate(row).toFixed(2)} sat/vB</td>
+                <td className="px-4 py-2 text-right">{formatRate(rate(row))}</td>
                 <td className="px-4 py-2 text-right">{formatInteger(row.cluster)}</td>
               </tr>
             ))}

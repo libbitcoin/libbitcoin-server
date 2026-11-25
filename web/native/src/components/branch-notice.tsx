@@ -22,10 +22,7 @@ export function WeakBranchNotice({
 }) {
   return (
     <div className="border-accentSecondary/40 bg-accentSecondary/10 text-textPrimary flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm">
-      <p className="flex flex-wrap items-center gap-2">
-        <WeakBranchBadge />
-        <span className="text-textMuted">{children}</span>
-      </p>
+      <p className="text-textMuted">{children}</p>
       <Link to={to} className="text-accent hover:text-accentSecondary font-medium">
         {label} →
       </Link>

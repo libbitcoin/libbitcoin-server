@@ -15,6 +15,7 @@ import {
   formatBytes,
   formatNumber,
   formatRelativeTime,
+  formatRate,
   formatSats,
   formatShortRelativeTime,
   formatTimestamp,
@@ -109,7 +110,7 @@ export function DashboardPage() {
                 to={blockByHashPath(latestBlock.hash)}
                 className="text-accent hover:text-accentSecondary"
               >
-                #{formatNumber(latestBlock.height, { maximumFractionDigits: 0 })}
+                {formatNumber(latestBlock.height, { maximumFractionDigits: 0 })}
               </Link>
             ) : blocksLoading ? (
               'Loading…'
@@ -159,7 +160,7 @@ export function DashboardPage() {
               <p className="text-accentSecondary text-xs tracking-wide uppercase">Latest Block</p>
               <h2 className="text-accent text-2xl font-semibold">
                 {latestBlock
-                  ? `#${formatNumber(latestBlock.height, { maximumFractionDigits: 0 })}`
+                  ? `${formatNumber(latestBlock.height, { maximumFractionDigits: 0 })}`
                   : blocksLoading
                     ? 'Loading…'
                     : '—'}
@@ -569,7 +570,7 @@ function RecentTransactionRow({
         {sizes ? `${formatNumber(sizes.virtual, { maximumFractionDigits: 0 })} vB` : '…'}
       </td>
       <td className="text-textPrimary hidden px-4 py-3 text-right tabular-nums sm:table-cell">
-        {rate === undefined ? '…' : `${rate.toFixed(2)} sat/vB`}
+        {rate === undefined ? '…' : formatRate(rate)}
       </td>
     </tr>
   );

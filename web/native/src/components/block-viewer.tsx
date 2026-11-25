@@ -17,7 +17,7 @@ import {
   type PoolTemplates,
 } from '@/lib/utils/pool-template';
 import { toPoolTemplates, type TemplateElement } from '@/lib/utils/pool-templates';
-import type { Camera, HeightMode } from '@/lib/utils/template-scene';
+import type { HeightMode } from '@/lib/utils/template-scene';
 import {
   loadHeightMode,
   loadSectionExpanded,
@@ -45,9 +45,6 @@ const ticks = [1, 2, 5, 10, 20, 50, 100, RATE_CEILING];
 
 // A tx of the view by its index, or the coinbase, which is not of the view.
 type Selection = number | 'coinbase';
-
-// The 3D camera, kept across the blocks and templates of the session.
-const view: { current: Camera | null } = { current: null };
 
 // The txs of a block or template, the coinbase (if any) left out of the view.
 // A tx is identified by its block position, linked when a path is given.
@@ -169,7 +166,7 @@ export function BlockViewer({
               selected={viewed}
               mode={mode}
               onSelect={select}
-              view={view}
+              kept
             />
           ) : (
             <TemplateTreemap
@@ -337,7 +334,7 @@ function TransactionPanel({
     ['Cluster rate', `${formatTemplateRate(chunkRate(chunk))} sat/vB`],
     ['Fee', `${formatInteger(transaction.fee)} sat`],
     ['Virtual size', `${formatInteger(transaction.size)} vB`],
-    ['Cluster', `${String(chunk.transactions.length)} tx · ${formatInteger(chunk.size)} vB`],
+    ['Cluster', `${formatInteger(chunk.transactions.length)} tx · ${formatInteger(chunk.size)} vB`],
   ];
 
   return (

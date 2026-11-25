@@ -128,7 +128,7 @@ function deriveRecentFromPath(pathname: string): { kind: RecentKind; id: string 
 function labelForRecent(item: RecentItem) {
   const prefix = item.kind === 'tx' ? 'Transaction' : item.kind === 'block' ? 'Block' : 'Address';
   if (item.kind === 'address') return `${prefix} ${item.id}`;
-  if (item.kind === 'block' && /^\d+$/u.test(item.id)) return `${prefix} #${item.id}`;
+  if (item.kind === 'block' && /^\d+$/u.test(item.id)) return `${prefix} ${item.id}`;
   return `${prefix} ${formatHash(item.id, 12)}`;
 }
 
@@ -854,7 +854,7 @@ export function CommandPalette() {
             {
               id: 'goto.blockHeight',
               section: 'Go To',
-              label: `Go to block #${value}`,
+              label: `Go to block ${value}`,
               keywords: ['go', 'goto', 'block', 'height'],
               onSelect: () => {
                 dismissPalette();

@@ -17,6 +17,7 @@ import {
   type TemplateTile,
 } from '@/lib/utils/pool-template';
 import { formatInteger } from '@/lib/utils/format';
+import { loadPlotView, savePlotView, type PlotView } from '@/lib/utils/template-settings';
 
 interface TemplateTreemapProps {
   pool: PoolTemplates;
@@ -29,17 +30,10 @@ interface TemplateTreemapProps {
 const WIDTH = 1.6;
 const HEIGHT = 1;
 
-// The view is the plot scaled about its top left and offset, the offsets in
-// shares of the plot's extent. It is kept across blocks.
-interface View {
-  scale: number;
-  x: number;
-  y: number;
-}
+type View = PlotView;
 
 const HOME: View = { scale: 1, x: 0, y: 0 };
 const MAXIMUM_SCALE = 32;
-let kept: View = HOME;
 
 const clamp = (value: number, low: number, high: number) => Math.max(low, Math.min(high, value));
 
@@ -84,11 +78,23 @@ export function TemplateTreemap({
   const frame = useRef<HTMLDivElement>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const moved = useRef(false);
-  const [view, setView] = useState<View>(kept);
+  const [view, setView] = useState<View>(() => bound(loadPlotView() ?? HOME));
+  const latest = useRef(view);
 
   useEffect(() => {
-    kept = view;
+    latest.current = view;
   }, [view]);
+
+  useEffect(() => {
+    const keep = () => {
+      savePlotView(latest.current);
+    };
+    globalThis.addEventListener('pagehide', keep);
+    return () => {
+      globalThis.removeEventListener('pagehide', keep);
+      keep();
+    };
+  }, []);
 
   useEffect(() => {
     const element = frame.current;

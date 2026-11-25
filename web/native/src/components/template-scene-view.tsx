@@ -1,13 +1,13 @@
-import { useEffect, useRef, type MutableRefObject } from 'react';
+import { useEffect, useRef } from 'react';
 import type { PoolTemplates } from '@/lib/utils/pool-template';
 import {
   parseHexColor,
   TemplateScene,
-  type Camera,
   type HeightMode,
   type ScenePalette,
 } from '@/lib/utils/template-scene';
 import { useTheme } from '@/lib/theme';
+import { loadCamera, saveCamera } from '@/lib/utils/template-settings';
 import { ViewFrame } from '@/components/view-frame';
 
 interface TemplateSceneViewProps {
@@ -16,8 +16,8 @@ interface TemplateSceneViewProps {
   selected: number | null;
   mode: HeightMode;
   onSelect: (transaction: number) => void;
-  // The camera kept while the scene is closed, restored when it reopens.
-  view?: MutableRefObject<Camera | null>;
+  // The camera is stored when the scene closes and restored when it opens.
+  kept?: boolean;
 }
 
 function readPalette(): ScenePalette {
@@ -39,7 +39,7 @@ export function TemplateSceneView({
   selected,
   mode,
   onSelect,
-  view,
+  kept = false,
 }: TemplateSceneViewProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const scene = useRef<TemplateScene | null>(null);
@@ -60,14 +60,20 @@ export function TemplateSceneView({
       },
       animate
     );
-    if (view?.current) created.setView(view.current);
+    const camera = kept ? loadCamera() : null;
+    if (camera) created.setView(camera);
     scene.current = created;
+    const keep = () => {
+      if (kept) saveCamera(created.getView());
+    };
+    globalThis.addEventListener('pagehide', keep);
     return () => {
-      if (view) view.current = created.getView();
+      globalThis.removeEventListener('pagehide', keep);
+      keep();
       created.destroy();
       scene.current = null;
     };
-  }, [view]);
+  }, [kept]);
 
   useEffect(() => {
     scene.current?.setPool(pool);

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BlockViewer } from '@/components/block-viewer';
 import { Spinner } from '@/components/spinner';
 import { WeakBranchNotice } from '@/components/branch-notice';
+import { StatusPill } from '@/components/status-pill';
 import { TransactionTable } from '@/components/transaction-table';
 import { errorStatus } from '@/lib/api/errors';
 import {
@@ -14,7 +15,13 @@ import {
 } from '@/lib/hooks/useBlockchainData';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
 import { useSwipeNavigation } from '@/lib/hooks/useSwipeNavigation';
-import { formatInteger, formatSats } from '@/lib/utils/format';
+import { useNow } from '@/lib/hooks/useNow';
+import {
+  formatInteger,
+  formatRelativeTime,
+  formatSats,
+  formatTimestamp,
+} from '@/lib/utils/format';
 import { notifyBrowser } from '@/lib/utils/notify';
 import {
   blockByHeightPath,
@@ -28,7 +35,7 @@ const REPEAT = 100;
 
 function unavailable(error: unknown): string {
   const status = errorStatus(error);
-  if (status === 404) return 'There is no template at this height. Only the next block has one.';
+  if (status === 404) return 'There is no template at this height.';
   if (status === 501) return 'Relay is disabled, so the node keeps no pool.';
   if (status === 503) return 'The pool is not open yet.';
   return error instanceof Error ? error.message : 'Unknown error';
@@ -47,9 +54,11 @@ export function TemplatePage() {
   const location = useLocation();
   const navigate = useNavigate();
   const suffix = sectionSuffix(location.pathname);
-  usePageTitle(`Template #${param}`);
+  usePageTitle(`Template ${formatInteger(height)}`);
   const { data: top } = useBlockHeader('latest');
-  const { data: txs, isLoading, isError, error } = useTemplate(height);
+  const { data: txs, isLoading, isError, error, dataUpdatedAt } = useTemplate(height);
+  const now = useNow();
+  const updated = txs ? Math.floor(dataUpdatedAt / 1000) : undefined;
   const { data: hashes } = useTemplateTransactionHashes(height);
   const previous = previousPath(height, top?.height, suffix);
   // Paging stops one past the last template, as notified or found.
@@ -127,7 +136,7 @@ export function TemplatePage() {
 
   useEffect(() => {
     if (!overtaken) return;
-    notifyBrowser(`Block #${String(height)} mined`, 'The template has been mined.', () => {
+    notifyBrowser(`Block ${formatInteger(height)} mined`, 'The template has been mined.', () => {
       void navigate(blockByHeightPath(height));
     });
   }, [height, navigate, overtaken]);
@@ -146,9 +155,14 @@ export function TemplatePage() {
         <div>
           <p className="text-accentSecondary text-sm tracking-wide uppercase">Template</p>
           <h1 tabIndex={-1} className="text-accent text-3xl font-semibold">
-            #{param}
+            {formatInteger(height)}
           </h1>
-          <p className="text-textMuted text-sm">The block as the pool would fill it, if mined next.</p>
+          <p className="text-textMuted mt-2 text-sm">
+            {updated ? `${formatRelativeTime(updated, now)} · ${formatTimestamp(updated)}` : '—'}
+          </p>
+          <div className="mt-2">
+            <StatusPill status="unconfirmed" />
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link
@@ -177,7 +191,7 @@ export function TemplatePage() {
 
       {overtaken && (
         <WeakBranchNotice to={`${blockByHeightPath(height)}${suffix}`} label="View block">
-          This template was overtaken by confirmed block #{param}. It is shown as it was.
+          This template was overtaken by confirmed block {formatInteger(height)}. It is shown as it was.
         </WeakBranchNotice>
       )}
 

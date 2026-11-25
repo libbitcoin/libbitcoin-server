@@ -137,6 +137,8 @@ interface TxDetailsResponse {
   value?: number;
   spend?: number;
   fee?: number;
+  /** When the tx was pooled, in seconds, if unconfirmed. */
+  time?: number;
   confirmed?: TxDetailsConfirmedResponse;
 }
 
@@ -1679,7 +1681,7 @@ export function createLibbitcoinClient({
           blockHeight: header?.height,
           blockHash: header?.hash,
           tipHeight: typeof tip === 'number' ? tip : undefined,
-          timestamp: header?.timestamp,
+          timestamp: header?.timestamp ?? details?.time,
         },
         typeof details?.fee === 'number' ? details.fee : undefined
       );
@@ -1726,7 +1728,7 @@ export function createLibbitcoinClient({
         confirmations,
         blockHeight: height,
         blockHash: header?.hash,
-        receivedTime: header?.timestamp,
+        receivedTime: header?.timestamp ?? details.time,
         feeSats: details.fee ?? null,
         feeRate: feeRate(details),
         size: details.maximal,
