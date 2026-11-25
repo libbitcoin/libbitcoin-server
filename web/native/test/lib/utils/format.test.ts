@@ -7,6 +7,7 @@ import {
   formatNumber,
   formatRelativeTime,
   formatSats,
+  formatShortRelativeTime,
   satsToBtc,
 } from '@/lib/utils/format';
 
@@ -91,4 +92,28 @@ test('format__format_relative_time__minute_ahead__in_minute', () => {
 
 test('format__format_hex__value__prefixed_lower_hex', () => {
   expect(formatHex(255)).toBe('0xff');
+});
+
+test('format__format_short_relative_time__missing__dash', () => {
+  expect(formatShortRelativeTime(undefined, 0)).toBe('—');
+});
+
+test('format__format_short_relative_time__seconds_past__secs_ago', () => {
+  expect(formatShortRelativeTime(1000, 1_030_000)).toBe('30 secs ago');
+});
+
+test('format__format_short_relative_time__one_minute_past__min_ago', () => {
+  expect(formatShortRelativeTime(1000, 1_060_000)).toBe('1 min ago');
+});
+
+test('format__format_short_relative_time__minutes_past__mins_ago', () => {
+  expect(formatShortRelativeTime(1000, 1000 * 1000 + 38 * 60_000)).toBe('38 mins ago');
+});
+
+test('format__format_short_relative_time__hours_future__in_hrs', () => {
+  expect(formatShortRelativeTime(1000 + 2 * 3600, 1_000_000)).toBe('in 2 hrs');
+});
+
+test('format__format_short_relative_time__days_past__days_ago', () => {
+  expect(formatShortRelativeTime(1000, 1_000_000 + 3 * 86_400_000)).toBe('3 days ago');
 });

@@ -66,10 +66,12 @@ const nativeTopSchema = z.object({
   }),
 });
 
-const nativeTopsSchema = z.object({
-  confirmed: nativeTopSchema,
-  candidate: nativeTopSchema,
-});
+// The strong tops, the confirmed first, the candidate following where distinct.
+const nativeTopsSchema = z
+  .array(nativeTopSchema)
+  .min(1)
+  .max(2)
+  .transform(([confirmed, candidate]) => ({ confirmed, candidate: candidate ?? confirmed }));
 
 export type NativeTop = z.infer<typeof nativeTopSchema>;
 export type NativeTops = z.infer<typeof nativeTopsSchema>;

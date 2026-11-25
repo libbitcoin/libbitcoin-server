@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BlockViewer } from '@/components/block-viewer';
+import { Spinner } from '@/components/spinner';
+import { WeakBranchNotice } from '@/components/branch-notice';
 import { TransactionTable } from '@/components/transaction-table';
 import { errorStatus } from '@/lib/api/errors';
 import {
   useBlockHeader,
   useLatestTemplateHeight,
+  useTemplateNotifications,
   useTemplate,
   useTemplateTransactionHashes,
 } from '@/lib/hooks/useBlockchainData';
@@ -50,6 +53,7 @@ export function TemplatePage() {
   const { data: hashes } = useTemplateTransactionHashes(height);
   const previous = previousPath(height, top?.height, suffix);
   // Paging stops one past the last template, as notified or found.
+  useTemplateNotifications();
   const latest = useLatestTemplateHeight();
   const absent = isError && errorStatus(error) === 404;
   const more = latest === undefined ? !absent : height <= latest;
@@ -172,18 +176,9 @@ export function TemplatePage() {
       </header>
 
       {overtaken && (
-        <div className="border-accent/40 bg-accent/10 text-textPrimary flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm">
-          <p>
-            <span className="text-accent font-semibold">Block #{param} has been mined.</span>{' '}
-            <span className="text-textMuted">This template is as it was.</span>
-          </p>
-          <Link
-            to={`${blockByHeightPath(height)}${suffix}`}
-            className="text-accent hover:text-accentSecondary font-medium"
-          >
-            View block →
-          </Link>
-        </div>
+        <WeakBranchNotice to={`${blockByHeightPath(height)}${suffix}`} label="View block">
+          This template was overtaken by confirmed block #{param}. It is shown as it was.
+        </WeakBranchNotice>
       )}
 
       {isError && (
@@ -192,7 +187,11 @@ export function TemplatePage() {
           <p className="text-textMuted mt-1 break-words">{unavailable(error)}</p>
         </div>
       )}
-      {isLoading && <div className="text-textMuted py-10 text-sm">Loading template...</div>}
+      {isLoading && (
+        <div className="py-10">
+          <Spinner label="Loading template…" />
+        </div>
+      )}
 
       {txs && (
         <>

@@ -71,6 +71,23 @@ export function formatRelativeTime(timestamp?: number | null, now = Date.now()) 
   return formatter.format(diffDays, 'day');
 }
 
+// The age of a timestamp in short units, as "38 mins ago" or "in 2 hrs".
+export function formatShortRelativeTime(timestamp?: number | null, now = Date.now()) {
+  if (!timestamp) return '—';
+  const seconds = Math.round((timestamp * 1000 - now) / 1000);
+  const size = Math.abs(seconds);
+  const [count, unit] =
+    size < 60
+      ? [size, 'sec']
+      : size < 3600
+        ? [Math.round(size / 60), 'min']
+        : size < 86_400
+          ? [Math.round(size / 3600), 'hr']
+          : [Math.round(size / 86_400), 'day'];
+  const text = `${String(count)} ${unit}${count === 1 ? '' : 's'}`;
+  return seconds > 0 ? `in ${text}` : `${text} ago`;
+}
+
 export function formatHex(value?: number | null) {
   if (value === null || value === undefined) return '—';
   return `0x${value.toString(16)}`;

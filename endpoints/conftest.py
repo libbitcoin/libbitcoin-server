@@ -319,7 +319,7 @@ def _requires_height(request):
     port = request.config.getoption("--native-port")
     try:
         top = requests.get(f"http://{host}:{port}/v1/top?format=json",
-            timeout=10).json()["confirmed"]["height"]
+            timeout=10).json()[0]["height"]
     except Exception:
         return
 

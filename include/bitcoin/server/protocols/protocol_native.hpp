@@ -225,6 +225,32 @@ protected:
     void handle_get_fees(const code& ec, interface::fees,
         uint8_t version, uint8_t media) NOEXCEPT;
 
+    void handle_get_headers(const code& ec, interface::headers,
+        uint8_t version, uint8_t media) NOEXCEPT;
+    void handle_get_headers_confirmed(const code& ec,
+        interface::headers_confirmed, uint8_t version,
+        uint8_t media) NOEXCEPT;
+    void handle_get_headers_candidate(const code& ec,
+        interface::headers_candidate, uint8_t version,
+        uint8_t media) NOEXCEPT;
+    void handle_get_headers_top(const code& ec, interface::headers_top,
+        uint8_t version, uint8_t media) NOEXCEPT;
+
+    void handle_get_txs(const code& ec, interface::txs,
+        uint8_t version, uint8_t media) NOEXCEPT;
+    void handle_get_txs_details(const code& ec, interface::txs_details,
+        uint8_t version, uint8_t media) NOEXCEPT;
+    void handle_get_txs_confirmed(const code& ec, interface::txs_confirmed,
+        uint8_t version, uint8_t media) NOEXCEPT;
+    void handle_get_txs_confirmed_details(const code& ec,
+        interface::txs_confirmed_details, uint8_t version,
+        uint8_t media) NOEXCEPT;
+    void handle_get_txs_unconfirmed(const code& ec,
+        interface::txs_unconfirmed, uint8_t version, uint8_t media) NOEXCEPT;
+    void handle_get_txs_unconfirmed_details(const code& ec,
+        interface::txs_unconfirmed_details, uint8_t version,
+        uint8_t media) NOEXCEPT;
+
 protected:
     using media_type = network::http::media_type;
 
@@ -239,6 +265,21 @@ private:
     static constexpr uint8_t text = to_value(media_type::text_plain);
     static constexpr uint8_t json = to_value(media_type::application_json);
     static constexpr uint8_t data = to_value(media_type::application_octet_stream);
+
+    enum class template_view : uint8_t { summary, txs, details };
+
+    struct tx_detail
+    {
+        uint32_t nominal;
+        uint32_t maximal;
+        uint64_t value;
+        uint64_t spend;
+        uint64_t fee;
+        uint32_t cluster;
+        uint32_t time;
+    };
+
+    using tx_details = std::vector<tx_detail>;
 
     ////// Post to notification strand (use POST_NOTIFY()).
     ////template <class Derived, typename Method, typename... Args>
@@ -289,7 +330,6 @@ private:
     void complete_get_address_balance(const code& ec, uint8_t media,
         const uint64_t balance, const gate_t::ptr& gate) NOEXCEPT;
 
-    enum class template_view : uint8_t { summary, txs, details };
     void get_template_view(uint32_t height, template_view view,
         uint8_t media) NOEXCEPT;
     void handle_template(const code& ec,
@@ -301,12 +341,20 @@ private:
     void send_template_summary(const node::block_template& held) NOEXCEPT;
     void send_template_txs(const node::block_template& held,
         uint8_t media) NOEXCEPT;
-    void send_template_txs_details(
-        const node::block_template& held) NOEXCEPT;
+    void send_template_txs_details(const node::block_template& held,
+        uint8_t media) NOEXCEPT;
 
     void handle_fees(const code& ec, const database::fee_rates& rates,
         const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_fees(const code& ec, const database::fee_rates& rates,
+        const gate_t::ptr& gate) NOEXCEPT;
+
+    void get_txs_unconfirmed(bool details, uint8_t media) NOEXCEPT;
+    void handle_txs_unconfirmed(const code& ec,
+        const database::tx_links& links, bool details, uint8_t media,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void complete_get_txs_unconfirmed(const code& ec,
+        const database::tx_links& links, bool details, uint8_t media,
         const gate_t::ptr& gate) NOEXCEPT;
 
     // Utilities.
@@ -321,8 +369,10 @@ private:
     void inject(system::json::value& out, std::optional<uint32_t> height,
         const database::header_link& link) const NOEXCEPT;
     std::vector<size_t> to_roots(const database::tx_links& txs) const NOEXCEPT;
-    bool to_tx_details(system::json::array& out, const database::tx_links& txs,
+    bool to_tx_details(tx_details& out, const database::tx_links& txs,
         std::vector<size_t>&& roots) const NOEXCEPT;
+    void send_tx_details(const tx_details& details, uint8_t media,
+        bool timed=false) NOEXCEPT;
     bool to_pruned_input(system::json::value& out,
         const database::ins_link& link) const NOEXCEPT;
     bool to_pruned_inputs(system::json::array& out,
@@ -334,6 +384,13 @@ private:
     system::json::value to_top_json(bool candidate) const NOEXCEPT;
     system::data_chunk to_tops() const NOEXCEPT;
     system::json::value to_tops_json() const NOEXCEPT;
+    database::header_links to_strong_tops() const NOEXCEPT;
+    system::data_chunk to_header_top(
+        const database::header_link& link) const NOEXCEPT;
+    system::json::value to_header_top_json(const database::header_link& link,
+        const std::string_view& role) const NOEXCEPT;
+    system::data_chunk to_headers_top() const NOEXCEPT;
+    system::json::value to_headers_top_json() const NOEXCEPT;
     database::header_link to_header(const std::optional<uint32_t>& height,
         const std::optional<system::hash_cptr>& hash,
         bool candidate = false) NOEXCEPT;

@@ -52,7 +52,7 @@ def top_height(svc) -> int:
     parsed, out = get(svc, "/v1/top?format=json")
     assert parsed and parsed[0] == 200, str(out)
     value = json.loads(parsed[2])
-    return value if isinstance(value, int) else value["height"]
+    return value if isinstance(value, int) else value[0]["height"]
 
 
 # ─── Hostile targets ─────────────────────────────────────────────────────────

@@ -2,17 +2,24 @@ import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState }
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   useBlockHeader,
+  useBlockValidation,
+  useBranches,
   useBlockStats,
   useBlockTransactionDetails,
   useBlockTransactionHashes,
   useBlockTransactions,
 } from '@/lib/hooks/useBlockchainData';
-import { useBlockchainClient, type BlockHeaderDetail } from '@/lib/api/client';
+import {
+  useBlockchainClient,
+  type BlockHeaderDetail,
+  type ChainBranch,
+} from '@/lib/api/client';
 import { useNow } from '@/lib/hooks/useNow';
 import { useSwipeNavigation } from '@/lib/hooks/useSwipeNavigation';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
 import {
   blockByHashPath,
+  blockByHeightPath,
   blockValidationPath,
   sectionId,
   sectionSuffix,
@@ -27,6 +34,8 @@ import {
   formatTimestamp,
 } from '@/lib/utils/format';
 import { BlockSizeBar } from '@/components/block-size-bar';
+import { Spinner } from '@/components/spinner';
+import { WeakBranchNotice } from '@/components/branch-notice';
 import { BlockViewer } from '@/components/block-viewer';
 import { CoinbaseTextValue, MinerValue } from '@/components/miner-value';
 import { TransactionTable } from '@/components/transaction-table';
@@ -51,6 +60,17 @@ export function BlockPage() {
     error: blockError,
   } = useBlockHeader(identifier);
   usePageTitle(block ? `Block #${String(block.height)}` : 'Block');
+
+  // A block at or below the confirmed top that is not confirmed is weak.
+  const { data: top } = useBlockHeader('latest');
+  const { data: validation } = useBlockValidation(block?.hash ?? '', {
+    enabled: Boolean(block?.hash),
+  });
+  const weak =
+    block !== undefined &&
+    top !== undefined &&
+    block.height <= top.height &&
+    validation?.state?.confirmed === false;
   const statsTarget = block?.hash ?? '';
   const { data: stats, isLoading: statsLoading } = useBlockStats(statsTarget, {
     enabled: Boolean(block?.hash),
@@ -68,7 +88,10 @@ export function BlockPage() {
   });
   const previousPathRef = useRef<string | null>(null);
   const nextPathRef = useRef<string | null>(null);
-  const nextPath = nextBlockPath(block, suffix);
+  // A block off the confirmed chain steps within its own branch, to its top.
+  const detached = validation?.state?.confirmed === false;
+  const { data: branches } = useBranches({ enabled: detached });
+  const nextPath = nextBlockPath(block, validation?.state?.confirmed, branches, suffix);
   const previousPath =
     block?.previousBlockHash && block.height > 0
       ? `${blockByHashPath(block.previousBlockHash)}${suffix}`
@@ -159,6 +182,11 @@ export function BlockPage() {
 
   return (
     <div className="space-y-8">
+      {weak && block && (
+        <WeakBranchNotice to={`${blockByHeightPath(block.height)}${suffix}`} label="View strong block">
+          This block is not of the strong chain. It remains valid.
+        </WeakBranchNotice>
+      )}
       {blockIsError ? (
         <div className="border-accentSecondary/40 bg-accentSecondary/10 text-textPrimary rounded-xl border px-4 py-3 text-sm">
           <p className="text-accent font-semibold">Could not load block</p>
@@ -206,6 +234,13 @@ export function BlockPage() {
             >
               Next →
             </Link>
+          ) : block ? (
+            <span
+              aria-disabled="true"
+              className="border-accent/20 text-textMuted cursor-not-allowed rounded-md border px-3 py-2 text-sm opacity-50"
+            >
+              Next →
+            </span>
           ) : null}
         </div>
       </header>
@@ -266,6 +301,12 @@ export function BlockPage() {
         <BlockSizeBar weight={weight} nominal={stats?.nominal} size={size} />
       )}
 
+      {block && !details && detailsLoading && (
+        <section className="border-accent/30 bg-surface/80 rounded-xl border px-6 py-4">
+          <Spinner label="Loading block details…" />
+        </section>
+      )}
+
       {block && details && (
         <BlockViewer
           key={block.hash}
@@ -298,10 +339,25 @@ export function BlockPage() {
 }
 
 // The next block, or the template above a block without one.
-function nextBlockPath(block: BlockHeaderDetail | undefined, suffix: string): string | null {
+// The block above on the confirmed chain, else the template above its top.
+// Off the confirmed chain it is the block above in its branch, if any.
+function nextBlockPath(
+  block: BlockHeaderDetail | undefined,
+  confirmed: boolean | undefined,
+  branches: ChainBranch[] | undefined,
+  suffix: string
+): string | null {
   if (!block) return null;
   if (block.nextBlockHash) return `${blockByHashPath(block.nextBlockHash)}${suffix}`;
-  return `${templatePath(block.height + 1)}${suffix}`;
+  if (confirmed === true) return `${templatePath(block.height + 1)}${suffix}`;
+  if (confirmed === undefined) return null;
+
+  for (const branch of branches ?? []) {
+    const index = branch.headers.findIndex((header) => header.hash === block.hash);
+    if (index > 0) return `${blockByHashPath(branch.headers[index - 1].hash)}${suffix}`;
+  }
+
+  return null;
 }
 
 function InfoItem({ label, value }: { label: string; value: ReactNode }) {

@@ -85,7 +85,8 @@ def test_configuration(native_config):
 def test_top(native_config):
     """Test /v1/top endpoint - chain top information."""
     data = get_json(native_config["base_url"], "top")
-    assert data["confirmed"]["height"] >= ReferenceData.KNOWN_HEIGHT
+    assert data[0]["chain"] == "confirmed"
+    assert data[0]["height"] >= ReferenceData.KNOWN_HEIGHT
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -187,10 +188,12 @@ def test_block_txs_details_by_hash(native_config):
     assert data == ReferenceData.FIRST_TX_BLOCK_DETAILS
 
 
-def test_block_txs_details_text_not_acceptable(native_config):
-    """Test /v1/block/confirmed/{height}/txs/details is json only"""
-    url = f"{native_config['base_url']}/block/confirmed/0/txs/details?format=text"
-    assert requests.get(url, timeout=TestConfig.DEFAULT_HTTP_TIMEOUT).status_code == 406
+def test_block_txs_details_data(native_config):
+    """Test /v1/block/confirmed/{height}/txs/details as fixed width records"""
+    url = f"{native_config['base_url']}/block/confirmed/0/txs/details?format=data"
+    response = requests.get(url, timeout=TestConfig.DEFAULT_HTTP_TIMEOUT)
+    assert response.status_code == 200
+    assert len(response.content) == 36
 
 
 def test_block_tx_by_position_hash(native_config):
@@ -565,7 +568,7 @@ def test_unsupported_format(native_config):
 
 def confirmed_top(native_config) -> int:
     """The confirmed top height."""
-    return get_json(native_config["base_url"], "top")["confirmed"]["height"]
+    return get_json(native_config["base_url"], "top")[0]["height"]
 
 
 def template_status(native_config, height: int) -> int:

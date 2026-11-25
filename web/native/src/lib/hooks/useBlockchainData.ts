@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   type Query,
   type QueryClient,
@@ -19,10 +19,13 @@ import {
   BlockStats,
   BlockSummary,
   BlockchainEvent,
+  ChainBranch,
+  HeaderTop,
   PoolFees,
   RecentMiners,
   TemplateTransaction,
   TransactionInput,
+  TransactionSizes,
   TransactionSummary,
   TransactionOutputSpend,
   useBlockchainClient,
@@ -103,6 +106,44 @@ function updateLatestBlocksCache(
   );
 }
 
+// The strong chain's latest blocks, with those it displaced kept as weak.
+function mergeLatestBlocks(strong: BlockSummary[], previous: BlockSummary[]): BlockSummary[] {
+  const hashes = new Set(strong.map((block) => block.hash));
+  const lowest = strong.at(-1)?.height ?? 0;
+  const weak = previous
+    .filter((block) => !hashes.has(block.hash) && block.height >= lowest)
+    .map((block) => ({ ...block, weak: true }));
+  return [...strong, ...weak].sort(
+    (left, right) => right.height - left.height || Number(left.weak ?? false) - Number(right.weak ?? false)
+  );
+}
+
+async function reconcileLatestBlocks(
+  queryClient: QueryClient,
+  queryScope: BlockchainQueryScope,
+  client: BlockchainClient
+) {
+  const queries = queryClient.getQueryCache().findAll({
+    predicate: (query) => {
+      const key = query.queryKey;
+      return (
+        key.length >= 4 &&
+        isMatchingQueryScope(key[0], queryScope) &&
+        key[1] === 'blocks' &&
+        key[2] === 'latest'
+      );
+    },
+  });
+
+  for (const query of queries) {
+    const limit = getQueryLimit(query.queryKey[3], DEFAULT_LIVE_BLOCK_LIMIT);
+    const strong = await client.getLatestBlocks(limit);
+    queryClient.setQueryData<BlockSummary[]>(query.queryKey, (previous) =>
+      mergeLatestBlocks(strong, previous ?? [])
+    );
+  }
+}
+
 function shouldRefreshQueryAfterBlock(query: Query, queryScope: BlockchainQueryScope) {
   if (!isMatchingQueryScope(query.queryKey[0], queryScope)) return false;
 
@@ -174,6 +215,42 @@ export function useFees() {
 }
 
 // Templates are refreshed by template notifications, kept once mined.
+export function useHeaderTops() {
+  return useBlockchainQuery<HeaderTop[]>({
+    queryKey: ['headers', 'top'],
+    queryFn: (client) => client.getHeaderTops(),
+    blockRefresh: 'always',
+  });
+}
+
+export function useBranches(options?: { enabled?: boolean }) {
+  return useBlockchainQuery<ChainBranch[]>({
+    queryKey: ['headers', 'branches'],
+    queryFn: (client) => client.getBranches(),
+    enabled: options?.enabled,
+    blockRefresh: 'always',
+  });
+}
+
+// The pool is large, so it is read again with each block, not each change.
+export function useUnconfirmedTransactionHashes() {
+  return useBlockchainQuery<string[]>({
+    queryKey: ['txs', 'unconfirmed'],
+    queryFn: (client) => client.getUnconfirmedTransactionHashes(),
+    blockRefresh: 'always',
+    retry: false,
+  });
+}
+
+export function useUnconfirmedTransactionDetails() {
+  return useBlockchainQuery<TemplateTransaction[]>({
+    queryKey: ['txs', 'unconfirmed', 'details'],
+    queryFn: (client) => client.getUnconfirmedTransactionDetails(),
+    blockRefresh: 'always',
+    retry: false,
+  });
+}
+
 export function useTemplate(height: number) {
   return useBlockchainQuery<TemplateTransaction[]>({
     queryKey: ['template', { height }],
@@ -181,6 +258,12 @@ export function useTemplate(height: number) {
     staleTime: Infinity,
     retry: false,
   });
+}
+
+// Template notifications arrive while this is mounted.
+export function useTemplateNotifications() {
+  const client = useBlockchainClient();
+  useEffect(() => client.watchTemplates?.(), [client]);
 }
 
 // The height of the latest template notified, if any.
@@ -239,6 +322,7 @@ export function useBlockHeader(
     queryFn: (client) => client.getBlockHeader(hashOrHeight),
     enabled: (options?.enabled ?? true) && Boolean(hashOrHeight.trim()),
     retry: options?.retry,
+    blockRefresh: 'always',
   });
 }
 
@@ -380,6 +464,65 @@ export function useAddressTransactions(address: string, cursor?: string) {
   });
 }
 
+export function useTransactionSizes(txid: string) {
+  return useBlockchainQuery<TransactionSizes>({
+    queryKey: ['transaction', txid, 'sizes'],
+    queryFn: (client) => client.getTransactionSizes(txid),
+    staleTime: Infinity,
+    retry: false,
+  });
+}
+
+export interface RecentTransaction {
+  txid: string;
+  /** When its notification arrived, in seconds. */
+  received: number;
+}
+
+const RECENT_TRANSACTIONS_INTERVAL_MS = 2000;
+
+// The latest pooled txs, newest first, from their notifications. Arrivals are
+// gathered and shown at intervals, as they can be many each second.
+export function useRecentTransactions(limit: number): RecentTransaction[] {
+  const client = useBlockchainClient();
+  const [recent, setRecent] = useState<RecentTransaction[]>([]);
+
+  useEffect(() => {
+    setRecent([]);
+    let arrived: RecentTransaction[] = [];
+    let unsubscribe: (() => void) | undefined;
+
+    // The stream is carried only while the page is showing.
+    const sync = () => {
+      if (document.hidden) {
+        unsubscribe?.();
+        unsubscribe = undefined;
+      } else {
+        unsubscribe ??= client.subscribeToTransactions?.((txid) => {
+          arrived.unshift({ txid, received: Math.floor(Date.now() / 1000) });
+          if (arrived.length > limit) arrived.length = limit;
+        });
+      }
+    };
+
+    sync();
+    document.addEventListener('visibilitychange', sync);
+    const timer = setInterval(() => {
+      if (arrived.length === 0) return;
+      const batch = arrived;
+      arrived = [];
+      setRecent((current) => [...batch, ...current].slice(0, limit));
+    }, RECENT_TRANSACTIONS_INTERVAL_MS);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', sync);
+      unsubscribe?.();
+    };
+  }, [client, limit]);
+
+  return recent;
+}
+
 function useBlockchainEvents(subscribe: (event: BlockchainEvent) => void) {
   const client = useBlockchainClient();
   const subscribeRef = useRef(subscribe);
@@ -477,14 +620,15 @@ export function BlockchainEventCacheUpdater() {
         return;
       }
 
-      updateLatestBlocksCache(queryClient, queryScope, event.payload);
+      if (event.contiguous) updateLatestBlocksCache(queryClient, queryScope, event.payload);
+      else void reconcileLatestBlocks(queryClient, queryScope, client);
 
       const scopeKey = queryScope.endpoint;
       if (lastBlockHashByScope.current.get(scopeKey) === event.payload.hash) return;
       lastBlockHashByScope.current.set(scopeKey, event.payload.hash);
       scheduleBlockRefresh(queryScope);
     },
-    [queryClient, queryScope, scheduleBlockRefresh]
+    [client, queryClient, queryScope, scheduleBlockRefresh]
   );
   useBlockchainEvents(handleEvent);
 

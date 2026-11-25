@@ -78,7 +78,19 @@ struct native_methods
         method<"template_txs", uint8_t, uint8_t, uint32_t>{ "version", "media", "height" },
         method<"template_txs_details", uint8_t, uint8_t, uint32_t>{ "version", "media", "height" },
         method<"template_subscribe", uint8_t, uint8_t, optional<false>>{ "version", "media", "stop" },
-        method<"fees", uint8_t, uint8_t>{ "version", "media" }
+        method<"fees", uint8_t, uint8_t>{ "version", "media" },
+
+        method<"headers", uint8_t, uint8_t>{ "version", "media" },
+        method<"headers_confirmed", uint8_t, uint8_t>{ "version", "media" },
+        method<"headers_candidate", uint8_t, uint8_t>{ "version", "media" },
+        method<"headers_top", uint8_t, uint8_t>{ "version", "media" },
+
+        method<"txs", uint8_t, uint8_t>{ "version", "media" },
+        method<"txs_details", uint8_t, uint8_t>{ "version", "media" },
+        method<"txs_confirmed", uint8_t, uint8_t>{ "version", "media" },
+        method<"txs_confirmed_details", uint8_t, uint8_t>{ "version", "media" },
+        method<"txs_unconfirmed", uint8_t, uint8_t>{ "version", "media" },
+        method<"txs_unconfirmed_details", uint8_t, uint8_t>{ "version", "media" }
     };
 
     template <typename... Args>
@@ -138,6 +150,18 @@ struct native_methods
     using template_txs_details = at<39>;
     using template_subscribe = at<40>;
     using fees = at<41>;
+
+    using headers = at<42>;
+    using headers_confirmed = at<43>;
+    using headers_candidate = at<44>;
+    using headers_top = at<45>;
+
+    using txs = at<46>;
+    using txs_details = at<47>;
+    using txs_confirmed = at<48>;
+    using txs_confirmed_details = at<49>;
+    using txs_unconfirmed = at<50>;
+    using txs_unconfirmed_details = at<51>;
 };
 
 /// ?format=data|text|json (via query string).
@@ -235,6 +259,17 @@ struct native_methods
 /// /v1/template/subscribe {height of each replaced template}
 
 /// /v1/fees {1}
+
+/// /v1/headers {all headers, not implemented}
+/// /v1/headers/confirmed {not implemented}
+/// /v1/headers/candidate {not implemented}
+/// /v1/headers/confirmed/top {1}
+/// /v1/headers/candidate/top {1}
+/// /v1/headers/top {strong tops and tops of weak branches}
+
+/// /v1/txs[/details] {all txs, not implemented}
+/// /v1/txs/confirmed[/details] {not implemented}
+/// /v1/txs/unconfirmed[/details] {confirmable pooled txs}
 
 } // namespace interface
 } // namespace server

@@ -107,6 +107,20 @@ void protocol_native::start() NOEXCEPT
     SUBSCRIBE_NATIVE(handle_get_template_txs_details, _1, _2, _3, _4, _5);
     SUBSCRIBE_NATIVE(handle_get_template_subscribe, _1, _2, _3, _4, _5);
     SUBSCRIBE_NATIVE(handle_get_fees, _1, _2, _3, _4);
+
+    // Header methods.
+    SUBSCRIBE_NATIVE(handle_get_headers, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_headers_confirmed, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_headers_candidate, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_headers_top, _1, _2, _3, _4);
+
+    // Transactions methods.
+    SUBSCRIBE_NATIVE(handle_get_txs, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_txs_details, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_txs_confirmed, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_txs_confirmed_details, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_txs_unconfirmed, _1, _2, _3, _4);
+    SUBSCRIBE_NATIVE(handle_get_txs_unconfirmed_details, _1, _2, _3, _4);
     protocol_html::start();
 }
 
@@ -417,7 +431,7 @@ std::vector<size_t> protocol_native::to_roots(
 
 // The details of each tx, with its cluster: the label, in order of first
 // appearance, of its component under spends of other txs of the set.
-bool protocol_native::to_tx_details(system::json::array& out,
+bool protocol_native::to_tx_details(tx_details& out,
     const database::tx_links& txs, std::vector<size_t>&& roots) const NOEXCEPT
 {
     const auto& query = archive();
@@ -442,21 +456,82 @@ bool protocol_native::to_tx_details(system::json::array& out,
         if (label == max_size_t)
             label = clusters++;
 
-        out.emplace_back(system::json::object
+        out.push_back(tx_detail
         {
-            { "segregated", maximal != nominal },
-            { "nominal", nominal },
-            { "maximal", maximal },
-            { "weight", chain::weighted_size(nominal, maximal) },
-            { "virtual", chain::virtual_size(nominal, maximal) },
-            { "value", value },
-            { "spend", spend },
-            { "fee", floored_subtract(value, spend) },
-            { "cluster", label }
+            possible_narrow_cast<uint32_t>(nominal),
+            possible_narrow_cast<uint32_t>(maximal),
+            value,
+            spend,
+            floored_subtract(value, spend),
+            possible_narrow_cast<uint32_t>(label),
+            0u
         });
     }
 
     return true;
+}
+
+// Data is the fixed width fields of each tx, text is that in base16, and json
+// adds what follows from the sizes. The time is included where timed.
+void protocol_native::send_tx_details(const tx_details& details,
+    uint8_t media, bool timed) NOEXCEPT
+{
+    if (media == json)
+    {
+        system::json::array out{};
+        out.reserve(details.size());
+        for (const auto& tx: details)
+        {
+            const auto nominal = size_t{ tx.nominal };
+            const auto maximal = size_t{ tx.maximal };
+            system::json::object object
+            {
+                { "segregated", maximal != nominal },
+                { "nominal", nominal },
+                { "maximal", maximal },
+                { "weight", chain::weighted_size(nominal, maximal) },
+                { "virtual", chain::virtual_size(nominal, maximal) },
+                { "value", tx.value },
+                { "spend", tx.spend },
+                { "fee", tx.fee },
+                { "cluster", tx.cluster }
+            };
+
+            if (timed)
+                object.emplace("time", tx.time);
+
+            out.emplace_back(std::move(object));
+        }
+
+        send_json(std::move(out));
+        return;
+    }
+
+    if (media != data && media != text)
+    {
+        send_not_acceptable();
+        return;
+    }
+
+    data_chunk out{};
+    write::bytes::data sink{ out };
+    for (const auto& tx: details)
+    {
+        sink.write_4_bytes_little_endian(tx.nominal);
+        sink.write_4_bytes_little_endian(tx.maximal);
+        sink.write_8_bytes_little_endian(tx.value);
+        sink.write_8_bytes_little_endian(tx.spend);
+        sink.write_8_bytes_little_endian(tx.fee);
+        sink.write_4_bytes_little_endian(tx.cluster);
+        if (timed)
+            sink.write_4_bytes_little_endian(tx.time);
+    }
+
+    sink.flush();
+    if (media == data)
+        send_chunk(std::move(out));
+    else
+        send_text(encode_base16(out));
 }
 
 bool protocol_native::to_pruned_input(system::json::value& out,
@@ -501,36 +576,104 @@ chain::header::cptr protocol_native::get_top(bool candidate,
         query.to_confirmed(height));
 }
 
-// A top is its checkpoint followed by its header.
-data_chunk protocol_native::to_top(bool candidate) const NOEXCEPT
+// The strong tops, confirmed then candidate, the candidate where distinct.
+database::header_links protocol_native::to_strong_tops() const NOEXCEPT
 {
+    const auto& query = archive();
+    const auto confirmed = query.to_confirmed(query.get_top_confirmed());
+    const auto candidate = query.to_candidate(query.get_top_candidate());
+    if (candidate == confirmed)
+        return { confirmed.value };
+
+    return { confirmed.value, candidate.value };
+}
+
+// A top is its checkpoint followed by its header.
+data_chunk protocol_native::to_header_top(
+    const database::header_link& link) const NOEXCEPT
+{
+    const auto& query = archive();
     size_t height{};
-    const auto header = get_top(candidate, height);
+    const auto header = query.get_header(link);
+    query.get_height(height, link);
     return splice(chain::checkpoint{ header->hash(), height }.to_data(),
         header->to_data());
 }
 
+value protocol_native::to_header_top_json(const database::header_link& link,
+    const std::string_view& role) const NOEXCEPT
+{
+    const auto& query = archive();
+    size_t height{};
+    const auto header = query.get_header(link);
+    query.get_height(height, link);
+    auto model = value_from(chain::checkpoint{ header->hash(), height });
+    auto& object = model.as_object();
+    object.emplace("header", value_from(header));
+    if (!role.empty())
+        object.emplace("chain", std::string{ role });
+
+    return model;
+}
+
+data_chunk protocol_native::to_top(bool candidate) const NOEXCEPT
+{
+    const auto& query = archive();
+    return to_header_top(candidate ?
+        query.to_candidate(query.get_top_candidate()) :
+        query.to_confirmed(query.get_top_confirmed()));
+}
+
 value protocol_native::to_top_json(bool candidate) const NOEXCEPT
 {
-    size_t height{};
-    const auto header = get_top(candidate, height);
-    auto model = value_from(chain::checkpoint{ header->hash(), height });
-    model.as_object().emplace("header", value_from(header));
-    return model;
+    const auto& query = archive();
+    return candidate ?
+        to_header_top_json(query.to_candidate(query.get_top_candidate()),
+            "candidate") :
+        to_header_top_json(query.to_confirmed(query.get_top_confirmed()),
+            "confirmed");
 }
 
 data_chunk protocol_native::to_tops() const NOEXCEPT
 {
-    return splice(to_top(false), to_top(true));
+    data_chunk out{};
+    for (const auto link: to_strong_tops())
+        extend(out, to_header_top(link));
+
+    return out;
 }
 
 value protocol_native::to_tops_json() const NOEXCEPT
 {
-    return
-    {
-        { "confirmed", to_top_json(false) },
-        { "candidate", to_top_json(true) }
-    };
+    const auto tops = to_strong_tops();
+    system::json::array out{};
+    out.reserve(tops.size());
+    out.push_back(to_header_top_json(tops.front(), "confirmed"));
+    if (is_one(tops.size()))
+        return out;
+
+    out.push_back(to_header_top_json(tops.back(), "candidate"));
+    return out;
+}
+
+// The strong tops, then the tops of weak branches.
+data_chunk protocol_native::to_headers_top() const NOEXCEPT
+{
+    auto out = to_tops();
+    for (const auto link: archive().get_branch_tops())
+        extend(out, to_header_top(link));
+
+    return out;
+}
+
+value protocol_native::to_headers_top_json() const NOEXCEPT
+{
+    auto out = to_tops_json();
+    auto& tops = out.as_array();
+    for (const auto link: archive().get_branch_tops())
+        tops.push_back(to_header_top_json(link, {}));
+
+    return out;
 }
 
 BC_POP_WARNING()

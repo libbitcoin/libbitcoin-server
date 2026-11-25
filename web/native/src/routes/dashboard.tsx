@@ -5,6 +5,8 @@ import {
   useBlockStats,
   useBlockchainEventStatus,
   useLatestBlocks,
+  useRecentTransactions,
+  useTransactionSizes,
   useServerConfiguration,
 } from '@/lib/hooks/useBlockchainData';
 import { useNow } from '@/lib/hooks/useNow';
@@ -14,20 +16,31 @@ import {
   formatNumber,
   formatRelativeTime,
   formatSats,
+  formatShortRelativeTime,
   formatTimestamp,
 } from '@/lib/utils/format';
 import { HashText } from '@/components/hash-text';
 import { MinerShareCard } from '@/components/miner-share';
 import { BlockMinerValue } from '@/components/miner-value';
-import { blockByHashPath, blockByHeightPath, blocksPath } from '@/lib/utils/routes';
+import { WeakBranchBadge } from '@/components/branch-notice';
+import { Spinner } from '@/components/spinner';
+import {
+  blockByHashPath,
+  blockByHeightPath,
+  blocksPath,
+  transactionPath,
+  transactionsPath,
+} from '@/lib/utils/routes';
 
 const DASHBOARD_BLOCK_SAMPLE_SIZE = 144;
 const LATEST_BLOCK_TABLE_LIMIT = 8;
+const RECENT_TRANSACTION_LIMIT = 10;
 
 export function DashboardPage() {
   usePageTitle();
   const info = useServerInfo();
   const now = useNow();
+  const recentTransactions = useRecentTransactions(RECENT_TRANSACTION_LIMIT);
   const eventStatus = useBlockchainEventStatus();
   const websocket = eventStatus.transport === 'websocket';
   const connectionUrl = websocket ? info.endpoint?.replace(/^http/u, 'ws') : info.endpoint;
@@ -84,12 +97,6 @@ export function DashboardPage() {
               Overview
             </h1>
           </div>
-          <Link
-            to={blocksPath()}
-            className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary rounded-md border px-3 py-2 text-sm font-medium"
-          >
-            View All Blocks
-          </Link>
         </div>
       </header>
 
@@ -307,9 +314,10 @@ export function DashboardPage() {
 
       <section>
         <header className="mb-4 flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-accent text-lg font-semibold">Latest Blocks</h2>
-          </div>
+          <h2 className="text-accent text-lg font-semibold">Latest Blocks</h2>
+          <Link to={blocksPath()} className="text-accent hover:text-accentSecondary text-sm">
+            All blocks →
+          </Link>
         </header>
         <div className="border-accent/30 overflow-hidden overflow-x-auto rounded-xl border">
           <table className="divide-accentSecondary/30 min-w-full divide-y text-sm">
@@ -319,7 +327,7 @@ export function DashboardPage() {
                 <th className="px-4 py-3 text-left">Hash</th>
                 <th className="px-4 py-3 text-left">Age</th>
                 <th className="px-4 py-3 text-left">Miner</th>
-                <th className="px-4 py-3 text-right">Tx</th>
+                <th className="px-4 py-3 text-right">Txs</th>
                 <th className="px-4 py-3 text-right">Size</th>
               </tr>
             </thead>
@@ -342,12 +350,17 @@ export function DashboardPage() {
                 visibleBlocks?.map((block) => (
                   <tr key={block.hash} className="hover:bg-accentSecondary/10">
                     <td className="px-4 py-3">
-                      <Link
-                        to={blockByHeightPath(block.height)}
-                        className="text-accent hover:text-accentSecondary font-medium"
-                      >
-                        {formatNumber(block.height, { maximumFractionDigits: 0 })}
-                      </Link>
+                      <span className="flex items-center gap-2">
+                        <Link
+                          to={
+                            block.weak ? blockByHashPath(block.hash) : blockByHeightPath(block.height)
+                          }
+                          className="text-accent hover:text-accentSecondary font-medium"
+                        >
+                          {formatNumber(block.height, { maximumFractionDigits: 0 })}
+                        </Link>
+                        {block.weak && <WeakBranchBadge />}
+                      </span>
                     </td>
                     <td className="text-textPrimary px-4 py-3">
                       <Link to={blockByHashPath(block.hash)} className="text-textPrimary">
@@ -368,6 +381,40 @@ export function DashboardPage() {
                     </td>
                   </tr>
                 ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <header className="mb-4 flex items-center justify-between gap-4">
+          <h2 className="text-accent text-lg font-semibold">Recent Transactions</h2>
+          <Link to={transactionsPath()} className="text-accent hover:text-accentSecondary text-sm">
+            All transactions →
+          </Link>
+        </header>
+        <div className="border-accent/30 overflow-hidden rounded-xl border">
+          <table className="divide-accentSecondary/30 min-w-full table-fixed divide-y text-sm">
+            <thead className="bg-accentSecondary/20 text-textMuted text-xs uppercase">
+              <tr>
+                <th className="px-4 py-3 text-left">TxID</th>
+                <th className="w-28 px-4 py-3 text-left">Received</th>
+                <th className="hidden w-28 px-4 py-3 text-right sm:table-cell">Fee</th>
+                <th className="hidden w-28 px-4 py-3 text-right sm:table-cell">Size</th>
+                <th className="hidden w-28 px-4 py-3 text-right sm:table-cell">Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentTransactions.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center">
+                    <Spinner label="Waiting for transactions…" />
+                  </td>
+                </tr>
+              )}
+              {recentTransactions.map((tx) => (
+                <RecentTransactionRow key={tx.txid} txid={tx.txid} received={tx.received} now={now} />
+              ))}
             </tbody>
           </table>
         </div>
@@ -490,5 +537,40 @@ function Flags({ items }: { items: ReadonlyArray<readonly [string, boolean | und
         </span>
       ))}
     </div>
+  );
+}
+
+function RecentTransactionRow({
+  txid,
+  received,
+  now,
+}: {
+  txid: string;
+  received: number;
+  now: number;
+}) {
+  const { data: sizes } = useTransactionSizes(txid);
+  const fee = sizes?.fee;
+  const rate = sizes && fee !== undefined && sizes.virtual > 0 ? fee / sizes.virtual : undefined;
+  return (
+    <tr className="hover:bg-accentSecondary/10">
+      <td className="truncate px-4 py-3">
+        <Link to={transactionPath(txid)} className="text-accent hover:text-accentSecondary font-mono">
+          {txid}
+        </Link>
+      </td>
+      <td className="text-textMuted px-4 py-3 whitespace-nowrap">
+        {received * 1000 >= now ? 'just now' : formatShortRelativeTime(received, now)}
+      </td>
+      <td className="text-textPrimary hidden px-4 py-3 text-right tabular-nums sm:table-cell">
+        {fee === undefined ? '…' : `${formatNumber(fee, { maximumFractionDigits: 0 })} sat`}
+      </td>
+      <td className="text-textPrimary hidden px-4 py-3 text-right tabular-nums sm:table-cell">
+        {sizes ? `${formatNumber(sizes.virtual, { maximumFractionDigits: 0 })} vB` : '…'}
+      </td>
+      <td className="text-textPrimary hidden px-4 py-3 text-right tabular-nums sm:table-cell">
+        {rate === undefined ? '…' : `${rate.toFixed(2)} sat/vB`}
+      </td>
+    </tr>
   );
 }

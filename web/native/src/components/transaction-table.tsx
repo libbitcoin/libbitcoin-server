@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HashText } from '@/components/hash-text';
 import { SortHeader, useSortedRows } from '@/components/sort-header';
+import { Spinner } from '@/components/spinner';
 import { useWindowScrollToBottom } from '@/lib/hooks/useWindowScrollToBottom';
-import { formatInteger } from '@/lib/utils/format';
+import { useNow } from '@/lib/hooks/useNow';
+import { formatInteger, formatShortRelativeTime } from '@/lib/utils/format';
 import { transactionPath } from '@/lib/utils/routes';
 
 export interface TransactionTableRow {
@@ -12,6 +14,8 @@ export interface TransactionTableRow {
   virtual: number;
   fee: number;
   cluster: number;
+  // When the tx was received, in seconds, where known.
+  received?: number;
 }
 
 const PAGE_SIZE = 25;
@@ -24,6 +28,7 @@ const rate = (row: TransactionTableRow) => (row.virtual === 0 ? 0 : row.fee / ro
 const values = {
   position: (row: TransactionTableRow) => row.position,
   txid: (row: TransactionTableRow) => row.hash,
+  received: (row: TransactionTableRow) => row.received,
   virtual: (row: TransactionTableRow) => row.virtual,
   fee: (row: TransactionTableRow) => row.fee,
   rate,
@@ -45,6 +50,8 @@ export function TransactionTable({
   onPosition?: (position: number) => void;
 }) {
   const { sorted, sort, toggle } = useSortedRows(rows ?? [], values);
+  const now = useNow();
+  const timed = rows?.some((row) => row.received !== undefined) ?? false;
   const [shown, setShown] = useState(PAGE_SIZE);
   const more = shown < sorted.length;
   const showMore = () => {
@@ -68,8 +75,11 @@ export function TransactionTable({
             <tr>
               <SortHeader label="Position" column="position" sort={sort} onSort={toggle} />
               <SortHeader label="TxID" column="txid" sort={sort} onSort={toggle} />
-              <SortHeader label="Virtual size" column="virtual" sort={sort} onSort={toggle} align="right" />
+              {timed && (
+                <SortHeader label="Received" column="received" sort={sort} onSort={toggle} />
+              )}
               <SortHeader label="Fee" column="fee" sort={sort} onSort={toggle} align="right" />
+              <SortHeader label="Size" column="virtual" sort={sort} onSort={toggle} align="right" />
               <SortHeader label="Rate" column="rate" sort={sort} onSort={toggle} align="right" />
               <SortHeader label="Cluster" column="cluster" sort={sort} onSort={toggle} align="right" />
             </tr>
@@ -77,12 +87,14 @@ export function TransactionTable({
           <tbody className="divide-accentSecondary/20 divide-y tabular-nums">
             {!rows && (
               <tr>
-                <td colSpan={6} className="text-textMuted px-4 py-6 text-center">
-                  {isError
-                    ? 'Could not load transactions.'
-                    : isLoading
-                      ? 'Loading transactions…'
-                      : 'No transactions available.'}
+                <td colSpan={7} className="text-textMuted px-4 py-6 text-center">
+                  {isError ? (
+                    'Could not load transactions.'
+                  ) : isLoading ? (
+                    <Spinner label="Loading transactions…" />
+                  ) : (
+                    'No transactions available.'
+                  )}
                 </td>
               </tr>
             )}
@@ -118,8 +130,13 @@ export function TransactionTable({
                     '—'
                   )}
                 </td>
-                <td className="px-4 py-2 text-right">{formatInteger(row.virtual)} vB</td>
+                {timed && (
+                  <td className="text-textMuted px-4 py-2 whitespace-nowrap">
+                    {formatShortRelativeTime(row.received, now)}
+                  </td>
+                )}
                 <td className="px-4 py-2 text-right">{formatInteger(row.fee)} sat</td>
+                <td className="px-4 py-2 text-right">{formatInteger(row.virtual)} vB</td>
                 <td className="px-4 py-2 text-right">{rate(row).toFixed(2)} sat/vB</td>
                 <td className="px-4 py-2 text-right">{formatInteger(row.cluster)}</td>
               </tr>
