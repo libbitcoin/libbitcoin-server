@@ -64,6 +64,9 @@ public:
     ////const node::settings& node_settings() const NOEXCEPT override;
     virtual const server::settings& server_settings() const NOEXCEPT;
 
+    /// A coinbase extranonce prefix not overlapping one in use (thread safe).
+    virtual extranonces::prefix allocate_prefix(size_t size) NOEXCEPT;
+
 protected:
     /// Session attachments.
     /// -----------------------------------------------------------------------
@@ -97,8 +100,9 @@ private:
     void start_stratum_v2(const code& ec, const result_handler& handler) NOEXCEPT;
     void start_zmq(const code& ec, const result_handler& handler) NOEXCEPT;
 
-    // This is thread safe.
+    // These are thread safe.
     const configuration& config_;
+    const extranonces::ptr extranonces_;
 };
 
 } // namespace server

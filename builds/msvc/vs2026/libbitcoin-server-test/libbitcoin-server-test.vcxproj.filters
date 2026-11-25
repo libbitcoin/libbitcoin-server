@@ -258,6 +258,9 @@
     <ClCompile Include="..\..\..\..\test\utilities\electrum_version.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\utilities\extranonces.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\utilities\merkle.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>

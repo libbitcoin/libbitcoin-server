@@ -57,8 +57,14 @@ void protocol_stratum_v1::start() NOEXCEPT
     if (!is_zero(options_.authorize_timeout_seconds))
         authorize_timer_->start(BIND(handle_timeout, _1));
 
-    add_channel(zero, mining_);
     mining_t::start();
+    if (!mining_)
+    {
+        stop(network::error::oversubscribed);
+        return;
+    }
+
+    add_channel(zero, mining_);
 }
 
 void protocol_stratum_v1::stopping(const code& ec) NOEXCEPT
@@ -99,7 +105,7 @@ void protocol_stratum_v1::handle_mining_subscribe(const code& ec,
             array_t{ string_t{ "mining.set_difficulty" }, id },
             array_t{ string_t{ "mining.notify" }, id }
         },
-        string_t{ encode_base16(channel_->extranonce1()) },
+        string_t{ encode_base16(mining_->extranonce()) },
         options_.extranonce2_size
     });
 
@@ -212,13 +218,11 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
         version = bit_or(bit_and(version, bit_not(mask)), bits);
     }
 
-    const auto extranonce = splice(channel_->extranonce1(), roll);
-
     // A miner that invalidates the header is dropped.
     code failed{};
     chain::header header{};
-    switch (check_share(*mining_, *job, version, timestamp, solution,
-        extranonce, header, failed))
+    switch (check_share(*mining_, *job, version, timestamp, solution, roll,
+        header, failed))
     {
         case share_outcome::invalid:
         {
@@ -239,7 +243,7 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
         {
             // A share is valid work, whatever the outcome of a block it mines.
             send_result(true);
-            accept_share(*mining_, *job, header, extranonce);
+            accept_share(*mining_, *job, header, roll);
             return;
         }
     }

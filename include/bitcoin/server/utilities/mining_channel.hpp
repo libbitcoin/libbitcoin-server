@@ -20,12 +20,13 @@
 #define LIBBITCOIN_SERVER_UTILITIES_MINING_CHANNEL_HPP
 
 #include <bitcoin/server/define.hpp>
+#include <bitcoin/server/utilities/extranonces.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// A mining channel, its payout, difficulty, the jobs issued to it and the
-/// shares it has submitted. Not thread safe.
+/// A mining channel, its extranonce prefix, payout, difficulty, the jobs
+/// issued to it and the shares it has submitted. Not thread safe.
 class BCS_API mining_channel
 {
 public:
@@ -49,7 +50,11 @@ public:
         double difficulty{};
     };
 
-    mining_channel(double difficulty) NOEXCEPT;
+    mining_channel(const extranonces::prefix& prefix,
+        double difficulty) NOEXCEPT;
+
+    /// The coinbase extranonce prefix of the channel.
+    const system::data_chunk& extranonce() const NOEXCEPT;
 
     /// The script paid by the coinbase of the channel's jobs.
     const system::chain::script& payout() const NOEXCEPT;
@@ -89,6 +94,7 @@ public:
 private:
     using entry = std::pair<uint32_t, job::cptr>;
 
+    const extranonces::prefix prefix_;
     system::chain::script payout_{};
     std::deque<entry> jobs_{};
     std::unordered_set<system::hash_digest> hashes_{};

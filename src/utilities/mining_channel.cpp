@@ -25,9 +25,17 @@ namespace server {
 
 using namespace system;
 
-mining_channel::mining_channel(double difficulty) NOEXCEPT
-  : window_(network::steady_clock::now()), difficulty_(difficulty)
+mining_channel::mining_channel(const extranonces::prefix& prefix,
+    double difficulty) NOEXCEPT
+  : prefix_(prefix), window_(network::steady_clock::now()),
+    difficulty_(difficulty)
 {
+    BC_ASSERT(prefix_);
+}
+
+const data_chunk& mining_channel::extranonce() const NOEXCEPT
+{
+    return *prefix_;
 }
 
 const chain::script& mining_channel::payout() const NOEXCEPT

@@ -23,6 +23,8 @@ BC_AUTO_TEST_SUITE(mining_channel_tests)
 using namespace system;
 using job = server::mining_channel::job;
 
+static const server::extranonces::prefix prefix{ to_shared(data_chunk{ 0x2a, 0x00, 0x00, 0x00 }) };
+
 // A job distinguished by its version.
 static job::cptr make_job(uint32_t version) NOEXCEPT
 {
@@ -47,7 +49,8 @@ static hash_digest hash_of(uint8_t value) NOEXCEPT
 
 BC_AUTO_TEST_CASE(mining_channel__construct__difficulty__expected)
 {
-    const server::mining_channel channel{ 2.5 };
+    const server::mining_channel channel{ prefix, 2.5 };
+    BC_REQUIRE_EQUAL(channel.extranonce(), *prefix);
     BC_REQUIRE_EQUAL(channel.difficulty(), 2.5);
     BC_REQUIRE_EQUAL(channel.notified(), 0.0);
     BC_REQUIRE_EQUAL(channel.accepted(), 0u);
@@ -58,7 +61,7 @@ BC_AUTO_TEST_CASE(mining_channel__construct__difficulty__expected)
 
 BC_AUTO_TEST_CASE(mining_channel__issue__sequential__identifiers_and_current)
 {
-    server::mining_channel channel{ 1.0 };
+    server::mining_channel channel{ prefix, 1.0 };
     BC_REQUIRE_EQUAL(channel.issue(make_job(10), false), 0u);
     BC_REQUIRE_EQUAL(channel.issue(make_job(11), false), 1u);
     BC_REQUIRE_EQUAL(channel.current()->version, 11u);
@@ -69,7 +72,7 @@ BC_AUTO_TEST_CASE(mining_channel__issue__sequential__identifiers_and_current)
 
 BC_AUTO_TEST_CASE(mining_channel__issue__clean__prior_jobs_dropped)
 {
-    server::mining_channel channel{ 1.0 };
+    server::mining_channel channel{ prefix, 1.0 };
     channel.issue(make_job(10), false);
     BC_REQUIRE_EQUAL(channel.issue(make_job(11), true), 1u);
     BC_REQUIRE(!channel.find(0));
@@ -78,7 +81,7 @@ BC_AUTO_TEST_CASE(mining_channel__issue__clean__prior_jobs_dropped)
 
 BC_AUTO_TEST_CASE(mining_channel__issue__above_maximum__oldest_dropped)
 {
-    server::mining_channel channel{ 1.0 };
+    server::mining_channel channel{ prefix, 1.0 };
     issue_jobs(channel, 100, add1(server::mining_channel::maximum_jobs));
     BC_REQUIRE(!channel.find(0));
     BC_REQUIRE_EQUAL(channel.find(1)->version, 101u);
@@ -87,7 +90,7 @@ BC_AUTO_TEST_CASE(mining_channel__issue__above_maximum__oldest_dropped)
 
 BC_AUTO_TEST_CASE(mining_channel__accept__distinct__counted)
 {
-    server::mining_channel channel{ 1.0 };
+    server::mining_channel channel{ prefix, 1.0 };
     BC_REQUIRE(channel.accept(hash_of(1)));
     BC_REQUIRE(channel.accept(hash_of(2)));
     BC_REQUIRE_EQUAL(channel.accepted(), 2u);
@@ -96,7 +99,7 @@ BC_AUTO_TEST_CASE(mining_channel__accept__distinct__counted)
 
 BC_AUTO_TEST_CASE(mining_channel__accept__repeated__false_not_counted)
 {
-    server::mining_channel channel{ 1.0 };
+    server::mining_channel channel{ prefix, 1.0 };
     BC_REQUIRE(channel.accept(hash_of(1)));
     BC_REQUIRE(!channel.accept(hash_of(1)));
     BC_REQUIRE_EQUAL(channel.accepted(), 1u);
@@ -105,7 +108,7 @@ BC_AUTO_TEST_CASE(mining_channel__accept__repeated__false_not_counted)
 
 BC_AUTO_TEST_CASE(mining_channel__accept__repeated_across_reissue__false)
 {
-    server::mining_channel channel{ 1.0 };
+    server::mining_channel channel{ prefix, 1.0 };
     channel.issue(make_job(10), false);
     BC_REQUIRE(channel.accept(hash_of(1)));
     channel.issue(make_job(10), false);
@@ -114,7 +117,7 @@ BC_AUTO_TEST_CASE(mining_channel__accept__repeated_across_reissue__false)
 
 BC_AUTO_TEST_CASE(mining_channel__accept__repeated_after_clean__true)
 {
-    server::mining_channel channel{ 1.0 };
+    server::mining_channel channel{ prefix, 1.0 };
     channel.issue(make_job(10), false);
     BC_REQUIRE(channel.accept(hash_of(1)));
     channel.issue(make_job(11), true);
@@ -124,7 +127,7 @@ BC_AUTO_TEST_CASE(mining_channel__accept__repeated_after_clean__true)
 
 BC_AUTO_TEST_CASE(mining_channel__reset_window__shares_cleared_accepted_retained)
 {
-    server::mining_channel channel{ 1.0 };
+    server::mining_channel channel{ prefix, 1.0 };
     BC_REQUIRE(channel.accept(hash_of(1)));
     channel.reset_window();
     BC_REQUIRE_EQUAL(channel.shares(), 0u);
@@ -133,7 +136,7 @@ BC_AUTO_TEST_CASE(mining_channel__reset_window__shares_cleared_accepted_retained
 
 BC_AUTO_TEST_CASE(mining_channel__set_difficulty__set__expected)
 {
-    server::mining_channel channel{ 1.0 };
+    server::mining_channel channel{ prefix, 1.0 };
     channel.set_difficulty(4.0);
     channel.set_notified(2.0);
     BC_REQUIRE_EQUAL(channel.difficulty(), 4.0);
@@ -142,7 +145,7 @@ BC_AUTO_TEST_CASE(mining_channel__set_difficulty__set__expected)
 
 BC_AUTO_TEST_CASE(mining_channel__set_payout__set__expected)
 {
-    server::mining_channel channel{ 1.0 };
+    server::mining_channel channel{ prefix, 1.0 };
     const chain::script payout{ chain::script::to_pay_key_hash_pattern(short_hash{ 0x42 }) };
     channel.set_payout(payout);
     BC_REQUIRE(channel.payout() == payout);

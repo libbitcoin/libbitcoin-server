@@ -189,12 +189,13 @@ void CLASS::refresh(mining_channel& channel) NOEXCEPT
 TEMPLATE
 share_outcome CLASS::check_share(mining_channel& channel, const job& job,
     uint32_t version, uint32_t timestamp, uint32_t nonce,
-    const system::data_chunk& extranonce, system::chain::header& out,
+    const system::data_chunk& rolled, system::chain::header& out,
     code& ec) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
     using namespace system;
 
+    const auto extranonce = splice(channel.extranonce(), rolled);
     const auto coinbase = splice(splice(job.prefix, extranonce), job.suffix);
     out = chain::header
     {
@@ -233,13 +234,13 @@ share_outcome CLASS::check_share(mining_channel& channel, const job& job,
 TEMPLATE
 void CLASS::accept_share(mining_channel& channel, const job& job,
     const system::chain::header& header,
-    const system::data_chunk& extranonce) NOEXCEPT
+    const system::data_chunk& rolled) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
     using namespace system;
 
     if (to_uintx(header.hash()) <= chain::compact::expand(job.bits))
-        submit_mined(header, job, extranonce);
+        submit_mined(header, job, splice(channel.extranonce(), rolled));
 
     retarget(channel);
 }

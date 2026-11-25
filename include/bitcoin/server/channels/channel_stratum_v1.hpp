@@ -41,8 +41,7 @@ public:
         const node::configuration& config, const options_t& options) NOEXCEPT
       : channel_rpc(log, socket, identifier, config, options),
         network::tracker<channel_stratum_v1>(log),
-        options_(options),
-        extranonce1_(to_extranonce(identifier, options.extranonce1_size))
+        options_(options)
     {
     }
 
@@ -78,11 +77,6 @@ public:
     inline const options_t& options() const NOEXCEPT
     {
         return options_;
-    }
-
-    inline const system::data_chunk& extranonce1() const NOEXCEPT
-    {
-        return extranonce1_;
     }
 
     inline void set_subscribed() NOEXCEPT
@@ -138,22 +132,10 @@ private:
         "mining.extranonce.subscribe"
     };
 
-    // Extranonce of the channel identifier, little endian, zero padded.
-    static inline system::data_chunk to_extranonce(uint64_t identifier,
-        uint8_t size) NOEXCEPT
-    {
-        system::data_chunk out(size, 0x00);
-        const auto bytes = system::to_little_endian(identifier);
-        const auto count = std::min(out.size(), bytes.size());
-        std::copy_n(bytes.begin(), count, out.begin());
-        return out;
-    }
-
     // This is thread safe.
     const options_t& options_;
 
     // These are protected by strand.
-    const system::data_chunk extranonce1_;
     std::unordered_set<std::string> workers_{};
     uint32_t mask_{};
     bool subscribed_{};

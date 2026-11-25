@@ -81,17 +81,18 @@ protected:
     /// Demand templates and issue jobs to the channels (requires strand).
     void start_jobs() NOEXCEPT;
 
-    /// Check the share of the job, setting its header (requires strand).
+    /// Check the share of the job, with the extranonce rolled by the miner,
+    /// setting its header (requires strand).
     share_outcome check_share(mining_channel& channel, const job& job,
         uint32_t version, uint32_t timestamp, uint32_t nonce,
-        const system::data_chunk& extranonce, system::chain::header& out,
+        const system::data_chunk& rolled, system::chain::header& out,
         code& ec) NOEXCEPT;
 
     /// Submit the block of an accepted share if it mines one, and retarget
     /// the channel (requires strand).
     void accept_share(mining_channel& channel, const job& job,
         const system::chain::header& header,
-        const system::data_chunk& extranonce) NOEXCEPT;
+        const system::data_chunk& rolled) NOEXCEPT;
 
     /// Set the difficulty of the channel, floored at the minimum.
     void suggest(mining_channel& channel, double difficulty) NOEXCEPT;

@@ -36,7 +36,8 @@ BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 server_node::server_node(query& query, const configuration& configuration,
     const logger& log) NOEXCEPT
   : full_node(query, configuration, log),
-    config_(configuration)
+    config_(configuration),
+    extranonces_(emplace_shared<extranonces>())
 {
 }
 
@@ -46,6 +47,11 @@ server_node::~server_node() NOEXCEPT
 
 // Properties.
 // ----------------------------------------------------------------------------
+
+extranonces::prefix server_node::allocate_prefix(size_t size) NOEXCEPT
+{
+    return extranonces_->allocate(size);
+}
 
 const configuration& server_node::server_config() const NOEXCEPT
 {
