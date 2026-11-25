@@ -431,7 +431,7 @@ std::vector<size_t> protocol_native::to_roots(
 
 // The details of each tx, with its cluster: the label, in order of first
 // appearance, of its component under spends of other txs of the set.
-bool protocol_native::to_tx_details(system::json::array& out,
+bool protocol_native::to_tx_details(tx_details& out,
     const database::tx_links& txs, std::vector<size_t>&& roots) const NOEXCEPT
 {
     const auto& query = archive();
@@ -456,21 +456,82 @@ bool protocol_native::to_tx_details(system::json::array& out,
         if (label == max_size_t)
             label = clusters++;
 
-        out.emplace_back(system::json::object
+        out.push_back(tx_detail
         {
-            { "segregated", maximal != nominal },
-            { "nominal", nominal },
-            { "maximal", maximal },
-            { "weight", chain::weighted_size(nominal, maximal) },
-            { "virtual", chain::virtual_size(nominal, maximal) },
-            { "value", value },
-            { "spend", spend },
-            { "fee", floored_subtract(value, spend) },
-            { "cluster", label }
+            possible_narrow_cast<uint32_t>(nominal),
+            possible_narrow_cast<uint32_t>(maximal),
+            value,
+            spend,
+            floored_subtract(value, spend),
+            possible_narrow_cast<uint32_t>(label),
+            0u
         });
     }
 
     return true;
+}
+
+// Data is the fixed width fields of each tx, text is that in base16, and json
+// adds what follows from the sizes. The time is included where timed.
+void protocol_native::send_tx_details(const tx_details& details,
+    uint8_t media, bool timed) NOEXCEPT
+{
+    if (media == json)
+    {
+        system::json::array out{};
+        out.reserve(details.size());
+        for (const auto& tx: details)
+        {
+            const auto nominal = size_t{ tx.nominal };
+            const auto maximal = size_t{ tx.maximal };
+            system::json::object object
+            {
+                { "segregated", maximal != nominal },
+                { "nominal", nominal },
+                { "maximal", maximal },
+                { "weight", chain::weighted_size(nominal, maximal) },
+                { "virtual", chain::virtual_size(nominal, maximal) },
+                { "value", tx.value },
+                { "spend", tx.spend },
+                { "fee", tx.fee },
+                { "cluster", tx.cluster }
+            };
+
+            if (timed)
+                object.emplace("time", tx.time);
+
+            out.emplace_back(std::move(object));
+        }
+
+        send_json(std::move(out));
+        return;
+    }
+
+    if (media != data && media != text)
+    {
+        send_not_acceptable();
+        return;
+    }
+
+    data_chunk out{};
+    write::bytes::data sink{ out };
+    for (const auto& tx: details)
+    {
+        sink.write_4_bytes_little_endian(tx.nominal);
+        sink.write_4_bytes_little_endian(tx.maximal);
+        sink.write_8_bytes_little_endian(tx.value);
+        sink.write_8_bytes_little_endian(tx.spend);
+        sink.write_8_bytes_little_endian(tx.fee);
+        sink.write_4_bytes_little_endian(tx.cluster);
+        if (timed)
+            sink.write_4_bytes_little_endian(tx.time);
+    }
+
+    sink.flush();
+    if (media == data)
+        send_chunk(std::move(out));
+    else
+        send_text(encode_base16(out));
 }
 
 bool protocol_native::to_pruned_input(system::json::value& out,

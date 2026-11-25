@@ -266,6 +266,21 @@ private:
     static constexpr uint8_t json = to_value(media_type::application_json);
     static constexpr uint8_t data = to_value(media_type::application_octet_stream);
 
+    enum class template_view : uint8_t { summary, txs, details };
+
+    struct tx_detail
+    {
+        uint32_t nominal;
+        uint32_t maximal;
+        uint64_t value;
+        uint64_t spend;
+        uint64_t fee;
+        uint32_t cluster;
+        uint32_t time;
+    };
+
+    using tx_details = std::vector<tx_detail>;
+
     ////// Post to notification strand (use POST_NOTIFY()).
     ////template <class Derived, typename Method, typename... Args>
     ////inline auto notify(Method&& method, Args&&... args) NOEXCEPT
@@ -315,7 +330,6 @@ private:
     void complete_get_address_balance(const code& ec, uint8_t media,
         const uint64_t balance, const gate_t::ptr& gate) NOEXCEPT;
 
-    enum class template_view : uint8_t { summary, txs, details };
     void get_template_view(uint32_t height, template_view view,
         uint8_t media) NOEXCEPT;
     void handle_template(const code& ec,
@@ -327,8 +341,8 @@ private:
     void send_template_summary(const node::block_template& held) NOEXCEPT;
     void send_template_txs(const node::block_template& held,
         uint8_t media) NOEXCEPT;
-    void send_template_txs_details(
-        const node::block_template& held) NOEXCEPT;
+    void send_template_txs_details(const node::block_template& held,
+        uint8_t media) NOEXCEPT;
 
     void handle_fees(const code& ec, const database::fee_rates& rates,
         const gate_t::ptr& gate) NOEXCEPT;
@@ -355,8 +369,10 @@ private:
     void inject(system::json::value& out, std::optional<uint32_t> height,
         const database::header_link& link) const NOEXCEPT;
     std::vector<size_t> to_roots(const database::tx_links& txs) const NOEXCEPT;
-    bool to_tx_details(system::json::array& out, const database::tx_links& txs,
+    bool to_tx_details(tx_details& out, const database::tx_links& txs,
         std::vector<size_t>&& roots) const NOEXCEPT;
+    void send_tx_details(const tx_details& details, uint8_t media,
+        bool timed=false) NOEXCEPT;
     bool to_pruned_input(system::json::value& out,
         const database::ins_link& link) const NOEXCEPT;
     bool to_pruned_inputs(system::json::array& out,

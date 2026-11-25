@@ -26,6 +26,22 @@
 #define NATIVE_TEST_CREDENTIAL "user:pass:top"
 #define NATIVE_TEST_AUTHORIZATION "Basic dXNlcjpwYXNz"
 
+// The fixed width details of a tx, as its data.
+inline system::data_chunk to_detail(uint32_t nominal, uint32_t maximal,
+    uint64_t value, uint64_t spend, uint64_t fee, uint32_t cluster)
+{
+    using namespace system;
+    return build_chunk(
+    {
+        to_little_endian(nominal),
+        to_little_endian(maximal),
+        to_little_endian(value),
+        to_little_endian(spend),
+        to_little_endian(fee),
+        to_little_endian(cluster)
+    });
+}
+
 struct native_setup_fixture
 {
     using status = network::http::status;

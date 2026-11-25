@@ -279,12 +279,6 @@ void protocol_native::handle_get_template_txs_details(const code& ec,
     if (stopped(ec))
         return;
 
-    if (media != json)
-    {
-        send_not_acceptable();
-        return;
-    }
-
     get_template_view(height, template_view::details, media);
 }
 
@@ -355,7 +349,7 @@ void protocol_native::complete_get_template(const code& ec,
             send_template_txs(*held, media);
             return;
         case template_view::details:
-            send_template_txs_details(*held);
+            send_template_txs_details(*held, media);
             return;
     }
 }
@@ -438,10 +432,10 @@ void protocol_native::send_template_txs(const node::block_template& held,
 }
 
 void protocol_native::send_template_txs_details(
-    const node::block_template& held) NOEXCEPT
+    const node::block_template& held, uint8_t media) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    system::json::array txs{};
+    tx_details txs{};
     if (!to_tx_details(txs, held.links, to_roots(held.txs)))
     {
         send_internal_server_error(database::error::integrity);
@@ -458,29 +452,26 @@ void protocol_native::send_template_txs_details(
     const auto reward = ceilinged_add(to_subsidy(held.context.height, bip42),
         held.fees);
 
-    system::json::array out{};
+    tx_details out{};
     out.reserve(add1(txs.size()));
-    out.emplace_back(system::json::object
+    out.push_back(tx_detail
     {
-        { "segregated", maximal != nominal },
-        { "nominal", nominal },
-        { "maximal", maximal },
-        { "weight", weight },
-        { "virtual", ceilinged_divide(weight, chain::light_weight_factor) },
-        { "value", reward },
-        { "spend", reward },
-        { "fee", 0 },
-        { "cluster", 0 }
+        possible_narrow_cast<uint32_t>(nominal),
+        possible_narrow_cast<uint32_t>(maximal),
+        reward,
+        reward,
+        0u,
+        0u,
+        0u
     });
 
     for (auto& tx: txs)
     {
-        auto& object = tx.as_object();
-        object["cluster"] = add1(object.at("cluster").to_number<size_t>());
-        out.push_back(std::move(tx));
+        ++tx.cluster;
+        out.push_back(tx);
     }
 
-    send_json(std::move(out));
+    send_tx_details(out, media);
 }
 
 void protocol_native::handle_get_txs(const code& ec, interface::txs,
@@ -534,12 +525,6 @@ void protocol_native::handle_get_txs_unconfirmed_details(const code& ec,
     if (stopped(ec))
         return;
 
-    if (media != json)
-    {
-        send_not_acceptable();
-        return;
-    }
-
     get_txs_unconfirmed(true, media);
 }
 
@@ -584,14 +569,18 @@ void protocol_native::complete_get_txs_unconfirmed(const code& ec,
 
     if (details)
     {
-        system::json::array out{};
+        tx_details out{};
         if (!to_tx_details(out, links, to_roots(links)))
         {
             send_internal_server_error(database::error::integrity);
             return;
         }
 
-        send_json(std::move(out));
+        const auto& query = archive();
+        for (size_t index{}; index < links.size(); ++index)
+            query.get_pooled_time(out.at(index).time, links.at(index));
+
+        send_tx_details(out, media, true);
         return;
     }
 

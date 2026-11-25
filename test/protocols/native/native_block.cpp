@@ -816,9 +816,14 @@ BC_AUTO_TEST_CASE(native__block_txs_details__hash__expected)
     BC_REQUIRE_EQUAL(response.as_array().size(), 1u);
 }
 
-BC_AUTO_TEST_CASE(native__block_txs_details__text__not_acceptable)
+BC_AUTO_TEST_CASE(native__block_txs_details__data__expected)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/1/txs/details?format=text"), http::status::not_acceptable);
+    BC_REQUIRE_EQUAL(get_data("/v1/block/confirmed/1/txs/details?format=data"), to_detail(134, 134, 5000000000, 5000000000, 0, 0));
+}
+
+BC_AUTO_TEST_CASE(native__block_txs_details__text__expected)
+{
+    BC_REQUIRE_EQUAL(get_text("/v1/block/confirmed/1/txs/details?format=text"), encode_base16(to_detail(134, 134, 5000000000, 5000000000, 0, 0)));
 }
 
 BC_AUTO_TEST_CASE(native__block_txs_details__candidate_unpushed__not_found)

@@ -188,10 +188,12 @@ def test_block_txs_details_by_hash(native_config):
     assert data == ReferenceData.FIRST_TX_BLOCK_DETAILS
 
 
-def test_block_txs_details_text_not_acceptable(native_config):
-    """Test /v1/block/confirmed/{height}/txs/details is json only"""
-    url = f"{native_config['base_url']}/block/confirmed/0/txs/details?format=text"
-    assert requests.get(url, timeout=TestConfig.DEFAULT_HTTP_TIMEOUT).status_code == 406
+def test_block_txs_details_data(native_config):
+    """Test /v1/block/confirmed/{height}/txs/details as fixed width records"""
+    url = f"{native_config['base_url']}/block/confirmed/0/txs/details?format=data"
+    response = requests.get(url, timeout=TestConfig.DEFAULT_HTTP_TIMEOUT)
+    assert response.status_code == 200
+    assert len(response.content) == 36
 
 
 def test_block_tx_by_position_hash(native_config):

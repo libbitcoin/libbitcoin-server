@@ -479,12 +479,6 @@ void protocol_native::handle_get_block_txs_details(const code& ec,
     if (stopped(ec))
         return;
 
-    if (media != json)
-    {
-        send_not_acceptable();
-        return;
-    }
-
     const auto& query = archive();
     const auto link = to_header(height, hash, candidate);
 
@@ -495,7 +489,7 @@ void protocol_native::handle_get_block_txs_details(const code& ec,
         return;
     }
 
-    system::json::array out{};
+    tx_details out{};
     database::context context{};
     const auto txs = query.to_transactions(link);
     if (txs.empty() || !to_tx_details(out, txs, to_roots(txs)) ||
@@ -507,13 +501,11 @@ void protocol_native::handle_get_block_txs_details(const code& ec,
 
     uint64_t fees{};
     for (const auto& tx: out)
-        fees = ceilinged_add(fees, tx.as_object().at("fee").to_number<uint64_t>());
+        fees = ceilinged_add(fees, tx.fee);
 
     const auto bip42 = context.is_enabled(chain::flags::bip42_rule);
-    out.front().as_object()["value"] = ceilinged_add(
-        to_subsidy(context.height, bip42), fees);
-
-    send_json(std::move(out));
+    out.front().value = ceilinged_add(to_subsidy(context.height, bip42), fees);
+    send_tx_details(out, media);
 }
 
 void protocol_native::handle_get_block_filter(const code& ec,
