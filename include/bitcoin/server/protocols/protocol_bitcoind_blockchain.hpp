@@ -46,9 +46,7 @@ public:
         const network::channel::ptr& channel,
         const options_t& options) NOEXCEPT
       : protocol_bitcoind_dispatch<rpc_interface>(session, channel, options),
-        network::tracker<protocol_bitcoind_blockchain>(session->log),
-        wait_timer_(std::make_shared<network::deadline>(session->log,
-            channel->strand()))
+        network::tracker<protocol_bitcoind_blockchain>(session->log)
     {
     }
 
@@ -183,9 +181,6 @@ protected:
         rpc_interface::import_mempool, const std::string& filepath,
         const std::optional<network::rpc::object_t>& options) NOEXCEPT;
 
-    /// Chase events (block wait long polling).
-    bool handle_chase(const code& ec, node::event_value value) NOEXCEPT;
-
 private:
     enum class wait : uint8_t { new_block, block, height };
     using wait_race = network::race_any<const code&>;
@@ -197,8 +192,11 @@ private:
         wait type;
         size_t height;
         system::hash_digest hash;
-        gate_t::ptr gate;
-        wait_race::ptr race;
+        gate_t::ptr gate{};
+        network::deadline::ptr timer{};
+        network::proxy::object_key stop{};
+        node::object_key events{};
+        bool done{};
     };
 
     void handle_prioritize(const code& ec, size_t height,
@@ -248,12 +246,20 @@ private:
         const system::chain::transactions_cptr& txs, size_t index,
         const gate_t::ptr& gate) NOEXCEPT;
 
-    // Wait machinery.
+    // Waits.
     void arm_wait(waiter&& waiting, double timeout) NOEXCEPT;
-    void do_wait_event() NOEXCEPT;
-    void handle_wait_timeout(const code& ec,
+    bool handle_wait_event(const code& ec, node::event_value value,
+        const waiter::ptr& waiting, const wait_race::ptr& race) NOEXCEPT;
+    void handle_wait_subscribed(const code& ec, node::object_key key,
+        const waiter::ptr& waiting, const wait_race::ptr& race) NOEXCEPT;
+    void do_wait_subscribed(const code& ec, node::object_key key,
+        const waiter::ptr& waiting, const wait_race::ptr& race) NOEXCEPT;
+    void handle_wait_finish(const code& ec,
+        const wait_race::ptr& race) NOEXCEPT;
+    void handle_wait_complete(const code& ec,
         const waiter::ptr& waiting) NOEXCEPT;
-    void complete_wait(const code& ec) NOEXCEPT;
+    void do_wait_complete(const code& ec,
+        const waiter::ptr& waiting) NOEXCEPT;
     bool wait_done(const waiter& waiting) const NOEXCEPT;
     void send_top() NOEXCEPT;
 
@@ -266,10 +272,6 @@ private:
 
     // This is thread safe.
     std::atomic_bool stopping_{};
-
-    // These are protected by strand.
-    network::deadline::ptr wait_timer_;
-    waiter::ptr waiter_{};
 };
 
 } // namespace server

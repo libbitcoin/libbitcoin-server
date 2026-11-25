@@ -4063,6 +4063,21 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__waitforblockheight__organized__new_top)
     BC_REQUIRE_EQUAL(as_text(result.at("hash")), encode_hash(test::mock_block10.hash()));
 }
 
+BC_AUTO_TEST_CASE(bitcoind_rpc__waitforblock__organized__new_top)
+{
+    BC_REQUIRE(!ws_upgrade());
+    ws_notify(R"({"jsonrpc":"2.0","id":0,"method":"waitforblock","params":[")" + encode_hash(test::mock_block10.hash()) + R"(", 60000]})");
+
+    BC_REQUIRE(query_.set(test::mock_block10, database::context{ 0, 10, 0 }, {}, false, false));
+    BC_REQUIRE(query_.push_confirmed(query_.to_header(test::mock_block10.hash()), true));
+    notify(node::chases::organized{ 10 });
+
+    const auto response = ws_read();
+    const auto& result = response.at("result");
+    BC_REQUIRE_EQUAL(result.at("height").as_int64(), 10);
+    BC_REQUIRE_EQUAL(as_text(result.at("hash")), encode_hash(test::mock_block10.hash()));
+}
+
 // psbt combine and join
 
 static std::string create_psbt_v0(const chain::block& block,
