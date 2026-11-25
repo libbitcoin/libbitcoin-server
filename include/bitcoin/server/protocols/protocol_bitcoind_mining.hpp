@@ -83,19 +83,19 @@ protected:
         rpc_interface::prioritise_transaction) NOEXCEPT;
 
 private:
-    /// Pool completions (bounced to the channel strand).
+    // Pool completions (bounced to the channel strand).
     void handle_mining_info(const code& ec, const database::tx_links& links,
         const gate_t::ptr& gate) NOEXCEPT;
     virtual void do_mining_info(const code& ec,
         const database::tx_links& links,
         const gate_t::ptr& gate) NOEXCEPT;
 
-    /// Organize completions (bounced to the channel strand).
+    // Organize completions (bounced to the channel strand).
     void handle_organize_header(const code& ec, size_t height,
         const gate_t::ptr& gate) NOEXCEPT;
     void do_submit_header(const code& ec, const gate_t::ptr& gate) NOEXCEPT;
 
-    /// Template completions (bounced to the channel strand).
+    // Template completions (bounced to the channel strand).
     void handle_template(const code& ec,
         const node::block_template::cptr& held,
         const gate_t::ptr& gate) NOEXCEPT;
