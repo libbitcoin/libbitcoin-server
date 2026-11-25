@@ -1606,6 +1606,13 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getnetworkinfo__default__maximum_version)
     BC_REQUIRE_EQUAL(as_text(result.at("subversion")), "/Satoshi:32.0.0/");
 }
 
+BC_AUTO_TEST_CASE(bitcoind_rpc__handshake__channel_stopped__completed_once)
+{
+    const auto codes = stop_handshake<session_bitcoind>(config_.server.bitcoind);
+    BC_REQUIRE_EQUAL(codes.size(), 1u);
+    BC_REQUIRE_EQUAL(codes.front(), network::error::peer_disconnect);
+}
+
 BC_AUTO_TEST_CASE(bitcoind_rpc__negotiateversion__no_range__maximum)
 {
     BC_REQUIRE_EQUAL(rpc("negotiateversion").at("result").as_int64(), 320000);

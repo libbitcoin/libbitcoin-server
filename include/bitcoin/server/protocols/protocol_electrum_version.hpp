@@ -52,6 +52,7 @@ public:
 
     virtual void shake(network::result_handler&& handler) NOEXCEPT;
     virtual void finished(const code& ec, const code& shake) NOEXCEPT;
+    void stopping(const code& ec) NOEXCEPT override;
 
 protected:
     void handle_unclaimed(
@@ -72,6 +73,8 @@ protected:
     }
 
 private:
+    void callback(const code& ec) NOEXCEPT;
+
     // This is thread safe.
     const options_t& options_;
 
