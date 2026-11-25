@@ -20,25 +20,27 @@
 #define LIBBITCOIN_SERVER_CHANNELS_CHANNEL_STRATUM_V2_HPP
 
 #include <bitcoin/server/channels/channel.hpp>
+#include <bitcoin/server/configuration.hpp>
 #include <bitcoin/server/define.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Channel for stratum v2 (custom protocol, not implemented).
+/// Channel for stratum v2 service, served over ws/s.
 class BCS_API channel_stratum_v2
   : public server::channel,
-    public network::channel,
+    public network::channel_sv2,
     protected network::tracker<channel_stratum_v2>
 {
 public:
     typedef std::shared_ptr<channel_stratum_v2> ptr;
+    using options_t = network::settings::websocket_server;
 
     inline channel_stratum_v2(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
       : server::channel(log, socket, identifier, config),
-        network::channel(log, socket, identifier, config.network, options),
+        network::channel_sv2(log, socket, identifier, config.network, options),
         network::tracker<channel_stratum_v2>(log)
     {
     }

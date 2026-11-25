@@ -38,11 +38,12 @@ Network provides the base for all channels as rpc, http, peer. Websocket and
 html are not fully independent subclasses (operate within http).
 
 network::channel
-├── [server::channel_stratum_v2]
 ├── channel_rpc<Interface>
 │   └── [server::channel_zmq]
 ├── channel_http
-│   └── [server::channel_http]
+│   ├── [server::channel_http]
+│   └── channel_sv2
+│       └── [server::channel_stratum_v2]
 └── channel_peer
     └── [node::channel_peer]
 
@@ -51,7 +52,7 @@ node::channel
 └── channel_peer       → network::channel_peer
 
 server::channel → node::channel
-├── channel_stratum_v2 → network::channel
+├── channel_stratum_v2 → network::channel_sv2
 ├── channel_zmq        → network::channel_rpc<interface::zmq>
 └── channel_http       → network::channel_http
     ├── channel_html

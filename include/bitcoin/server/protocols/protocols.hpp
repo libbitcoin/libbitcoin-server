@@ -52,6 +52,7 @@
 #include <bitcoin/server/protocols/protocol_submit.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
+#include <bitcoin/server/protocols/protocol_stratum_v2_setup.hpp>
 #include <bitcoin/server/protocols/protocol_zmq.hpp>
 #include <bitcoin/server/protocols/protocol_admin.hpp>
 
@@ -62,11 +63,12 @@
 Network provides the base for all protocols as rpc, http, peer. However node
 and server do not inherit directly from network. Server extends node, but
 neither inherit from network until a subclass is defined (rpc, http, peer).
-Since stratum_v2 is just a stub it doesn't yet have its own subclass. Websocket
-and html are not independent subclasses (operate within http).
+Stratum v2 protocols subscribe to its channel by message, as peer protocols do.
+Websocket and html are not independent subclasses (operate within http).
 
 network::protocol
-├── [server:protocol_stratum_v2]
+├── [server::protocol_stratum_v2_setup]
+├── [server::protocol_stratum_v2]
 ├── protocol_rpc<Channel>
 │   └── [server::protocol_zmq]
 ├── protocol_http
@@ -102,6 +104,7 @@ node::protocol
     └── protocol_transaction_out_106
 
 server::protocol → node::protocol
+├── protocol_stratum_v2_setup          → network::protocol (handshake)
 ├── protocol_stratum_v2                → network::protocol
 ├── protocol_zmq                       → network::protocol_rpc<channel_zmq>
 └── protocol_http                      → network::protocol_http

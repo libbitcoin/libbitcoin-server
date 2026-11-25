@@ -36,7 +36,6 @@
 #include <bitcoin/server/interfaces/native.hpp>
 #include <bitcoin/server/interfaces/sparrow.hpp>
 #include <bitcoin/server/interfaces/stratum_v1.hpp>
-#include <bitcoin/server/interfaces/stratum_v2.hpp>
 #include <bitcoin/server/interfaces/types.hpp>
 #include <bitcoin/server/interfaces/zmq.hpp>
 
@@ -63,7 +62,6 @@ using esplora                = publish<esplora_methods>;
 using native                 = publish<native_methods>;
 using sparrow                = publish<sparrow_methods>;
 using stratum_v1             = publish<stratum_v1_methods>;
-using stratum_v2             = publish<stratum_v2_methods>;
 using zmq                    = publish<zmq_methods>;
 
 } // namespace interface

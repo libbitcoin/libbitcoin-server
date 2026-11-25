@@ -442,9 +442,8 @@ public:
     /// stratum v1 compat interface (tcp/s, json-rpc-v1, auth handshake)
     stratum_v1_server stratum_v1{ "stratum_v1" };
 
-    /// stratum vs is not TLS, but normalized for session_server usage.
-    /// stratum v2 compat interface (tcp[/s], binary, auth/privacy handshake)
-    network::settings::tls_server stratum_v2{ "stratum_v2" };
+    /// stratum v2 interface (ws/s, binary)
+    network::settings::websocket_server stratum_v2{ "stratum_v2" };
 
     /// zmq notifications, bitcoind compatible (tcp, native zmtp publisher)
     zmq_server zmq{ "zmq" };

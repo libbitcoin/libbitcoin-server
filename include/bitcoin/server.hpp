@@ -58,7 +58,6 @@
 #include <bitcoin/server/interfaces/native.hpp>
 #include <bitcoin/server/interfaces/sparrow.hpp>
 #include <bitcoin/server/interfaces/stratum_v1.hpp>
-#include <bitcoin/server/interfaces/stratum_v2.hpp>
 #include <bitcoin/server/interfaces/types.hpp>
 #include <bitcoin/server/interfaces/zmq.hpp>
 #include <bitcoin/server/parsers/admin_query.hpp>
@@ -106,6 +105,7 @@
 #include <bitcoin/server/protocols/protocol_sparrow.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
+#include <bitcoin/server/protocols/protocol_stratum_v2_setup.hpp>
 #include <bitcoin/server/protocols/protocol_submit.hpp>
 #include <bitcoin/server/protocols/protocol_zmq.hpp>
 #include <bitcoin/server/protocols/protocols.hpp>

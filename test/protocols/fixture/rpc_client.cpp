@@ -349,6 +349,28 @@ void rpc_client::write_frame(std::string_view text)
     BC_CHECK_MESSAGE(!ec, ec.message());
 }
 
+void rpc_client::write_binary(const system::data_chunk& data)
+{
+    error_code ec{};
+    BC_CHECK(websocket_.has_value());
+
+    const auto text = system::pointer_cast<const char>(data.data());
+    ec = websocket_.value().write({ text, data.size() }, true);
+    BC_CHECK_MESSAGE(!ec, ec.message());
+}
+
+system::data_chunk rpc_client::read_binary()
+{
+    BC_CHECK(websocket_.has_value());
+
+    http::flat_buffer buffer{};
+    if (websocket_.value().read(buffer) || !websocket_.value().binary())
+        return {};
+
+    const auto data = system::pointer_cast<const uint8_t>(buffer.data().data());
+    return { data, std::next(data, buffer.size()) };
+}
+
 system::json::value rpc_client::read_frame(bool checked)
 {
     error_code ec{};

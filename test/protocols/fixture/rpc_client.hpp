@@ -89,6 +89,10 @@ public:
     system::json::value read_frame(bool checked=false);
     void write_frame(std::string_view text);
 
+    /// Binary message over the upgraded websocket (read empty if dropped).
+    void write_binary(const system::data_chunk& data);
+    system::data_chunk read_binary();
+
     /// The underlying stream (for a transport this does not cover).
     network::io::socket& stream();
 

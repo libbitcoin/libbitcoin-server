@@ -2490,12 +2490,46 @@ options_metadata parser::load_settings() THROWS
         "The target seconds between shares of a channel, defaults to {} (0 fixes difficulty)."
     )
 
-#if defined(DISABLED)
     /* [stratum_v2] */
     (
         "stratum_v2.bind",
         setting<network::config::authorities>(&configured.server.stratum_v2.binds),
         "IP address to bind, multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "stratum_v2.safe",
+        setting<network::config::authorities>(&configured.server.stratum_v2.safes),
+        "IP address to secure bind, multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "stratum_v2.cert_auth",
+        setting<config::path>(&configured.server.stratum_v2.cert_auth),
+        "The trusted client certificate directory (*.PEM), enables client authentication."
+    )
+    (
+        "stratum_v2.cert_path",
+        setting<config::path>(&configured.server.stratum_v2.cert_path),
+        "The path to the server certificate file (.PEM), defaults to {}."
+    )
+    (
+        "stratum_v2.key_path",
+        setting<config::path>(&configured.server.stratum_v2.key_path),
+        "The path to the server private key file (.PEM), defaults to {}."
+    )
+    (
+        "stratum_v2.key_pass",
+        secret<std::string>(&configured.server.stratum_v2.key_pass),
+        "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "stratum_v2.credential",
+        secret<network::config::credentials>(&configured.server.stratum_v2.credentials),
+        "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
+    )
+    (
+        "stratum_v2.compression",
+        setting<bool>(&configured.server.stratum_v2.compression),
+        "Compress http response bodies as accepted by the request (gzip, deflate), defaults to {}."
     )
     (
         "stratum_v2.connections",
@@ -2533,12 +2567,15 @@ options_metadata parser::load_settings() THROWS
         "The maximum write backlog of a channel, defaults to {}."
     )
     (
+        "stratum_v2.maximum_buffer",
+        setting<uint32_t>(&configured.server.stratum_v2.maximum_buffer),
+        "The maximum json response buffer size, defaults to {}."
+    )
+    (
         "stratum_v2.maximum_request",
         setting<uint32_t>(&configured.server.stratum_v2.maximum_request),
         "The maximum allowed request size, defaults to {}."
     )
-
-#endif
     /* [node] */
     (
         "node.threads",

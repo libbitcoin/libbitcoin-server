@@ -55,7 +55,8 @@ using session_btcd = session_handshake<protocol_bitcoind_version,
     protocol_btcd_transaction, protocol_btcd_utility,
     protocol_btcd_wallet, protocol_bitcoind>;
 using session_stratum_v1 = session_server<protocol_stratum_v1>;
-using session_stratum_v2 = session_server<protocol_stratum_v2>;
+using session_stratum_v2 = session_handshake<protocol_stratum_v2_setup,
+    protocol_stratum_v2>;
 using session_zmq = session_server<protocol_zmq>;
 using session_electrum = session_handshake<protocol_electrum_version,
     protocol_electrum>;
@@ -100,7 +101,6 @@ server::session → node::session
     ╞══ session_native     = server::session_server<protocol_native>
     ╞══ session_esplora    = server::session_server<protocol_esplora>
     ╞══ session_stratum_v1 = server::session_server<protocol_stratum_v1>
-    ╞══ session_stratum_v2 = server::session_server<protocol_stratum_v2>
     ╞══ session_zmq        = server::session_server<protocol_zmq>
     └── server::session_handshake<...Protocols>
         ╞══ session_bitcoind = server::session_handshake<
@@ -111,8 +111,10 @@ server::session → node::session
         │       protocol_bitcoind_<subgroup>..., protocol_bitcoind>
         ╞══ session_electrum = server::session_handshake<
         │       protocol_electrum_version, protocol_electrum>
-        ╘══ session_sparrow  = server::session_handshake<
-                protocol_electrum_version, protocol_sparrow>
+        ╞══ session_sparrow  = server::session_handshake<
+        │       protocol_electrum_version, protocol_sparrow>
+        ╘══ session_stratum_v2 = server::session_handshake<
+                protocol_stratum_v2_setup, protocol_stratum_v2>
 
 The bitcoind interface subgroups (blockchain, control, mining, network,
 notifications, test, transaction, utility, wallet) are independent protocols,
