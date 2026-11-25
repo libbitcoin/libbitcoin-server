@@ -202,6 +202,7 @@
     <ClCompile Include="..\..\..\..\src\utilities\coinbase.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\electrum_version.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\merkle.cpp" />
+    <ClCompile Include="..\..\..\..\src\utilities\mining_channel.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\stratum_v1.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -288,6 +289,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_esplora.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_html.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_http.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_mining.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_native.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_rpc.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_sparrow.hpp" />
@@ -319,10 +321,12 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\coinbase.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\electrum_version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\merkle.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\mining_channel.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\stratum_v1.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\utilities.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_mining.ipp" />
     <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_native.ipp" />
     <None Include="..\..\..\..\include\bitcoin\server\impl\protocols\protocol_submit.ipp" />
     <None Include="..\..\..\..\include\bitcoin\server\version.hpp.in" />

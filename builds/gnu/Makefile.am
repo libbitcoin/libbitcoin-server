@@ -143,6 +143,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/utilities/coinbase.cpp \
     ${srcdir}/../../src/utilities/electrum_version.cpp \
     ${srcdir}/../../src/utilities/merkle.cpp \
+    ${srcdir}/../../src/utilities/mining_channel.cpp \
     ${srcdir}/../../src/utilities/stratum_v1.cpp
 
 nodist_src_libbitcoin_server_la_SOURCES = \
@@ -213,6 +214,7 @@ include_bitcoin_server_impl_protocolsdir = \
     ${includedir}/bitcoin/server/impl/protocols
 
 include_bitcoin_server_impl_protocols_HEADERS = \
+    ${srcdir}/../../include/bitcoin/server/impl/protocols/protocol_mining.ipp \
     ${srcdir}/../../include/bitcoin/server/impl/protocols/protocol_native.ipp \
     ${srcdir}/../../include/bitcoin/server/impl/protocols/protocol_submit.ipp
 
@@ -290,6 +292,7 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_esplora.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_html.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_http.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_mining.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_native.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_rpc.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_sparrow.hpp \
@@ -334,6 +337,7 @@ include_bitcoin_server_utilities_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/utilities/coinbase.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/electrum_version.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/merkle.hpp \
+    ${srcdir}/../../include/bitcoin/server/utilities/mining_channel.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/stratum_v1.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/utilities.hpp
 
@@ -422,6 +426,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/utilities/coinbase.cpp \
     ${srcdir}/../../test/utilities/electrum_version.cpp \
     ${srcdir}/../../test/utilities/merkle.cpp \
+    ${srcdir}/../../test/utilities/mining_channel.cpp \
     ${srcdir}/../../test/utilities/stratum_v1.cpp
 
 TESTS = test_runner.sh

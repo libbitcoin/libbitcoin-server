@@ -50,6 +50,7 @@
 #include <bitcoin/server/protocols/protocol_rpc.hpp>
 #include <bitcoin/server/protocols/protocol_sparrow.hpp>
 #include <bitcoin/server/protocols/protocol_submit.hpp>
+#include <bitcoin/server/protocols/protocol_mining.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2_setup.hpp>
@@ -120,7 +121,8 @@ server::protocol → node::protocol
     │   │       └── protocol_sparrow (+ dispatcher<sparrow>)
     │   ╘══ protocol_rpc<stratum_v1>
     │       └── protocol_submit<Base>
-    │           └── protocol_stratum_v1
+    │           └── protocol_mining<Base>
+    │               └── protocol_stratum_v1
     └── protocol_bitcoind (common base and terminal default responder)
         ├── protocol_bitcoind_dispatch<Interface>
         │   ╞══ protocol_bitcoind_dispatch<bitcoind_blockchain>

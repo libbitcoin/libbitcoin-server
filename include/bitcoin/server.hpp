@@ -100,6 +100,7 @@
 #include <bitcoin/server/protocols/protocol_esplora.hpp>
 #include <bitcoin/server/protocols/protocol_html.hpp>
 #include <bitcoin/server/protocols/protocol_http.hpp>
+#include <bitcoin/server/protocols/protocol_mining.hpp>
 #include <bitcoin/server/protocols/protocol_native.hpp>
 #include <bitcoin/server/protocols/protocol_rpc.hpp>
 #include <bitcoin/server/protocols/protocol_sparrow.hpp>
@@ -129,6 +130,7 @@
 #include <bitcoin/server/utilities/coinbase.hpp>
 #include <bitcoin/server/utilities/electrum_version.hpp>
 #include <bitcoin/server/utilities/merkle.hpp>
+#include <bitcoin/server/utilities/mining_channel.hpp>
 #include <bitcoin/server/utilities/stratum_v1.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
 

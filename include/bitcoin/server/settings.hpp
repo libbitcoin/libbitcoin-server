@@ -229,16 +229,12 @@ public:
         using base::base;
     };
 
-    /// Stratum v1 is served over tcp/s (json-rpc downgrade), http/s and ws/s,
-    /// so http settings apply only to http/ws transports.
-    struct BCS_API stratum_v1_server
+    /// Mining settings, common to the stratum services.
+    struct BCS_API mining_server
       : public network::settings::websocket_server
     {
         using base = network::settings::websocket_server;
         using base::base;
-
-        /// Validate the coinbase layout.
-        code initialize_context() NOEXCEPT override;
 
         /// Address paid by the coinbase, otherwise the worker name.
         std::string payout_address{};
@@ -246,17 +242,29 @@ public:
         /// Text carried by the coinbase input script.
         std::string coinbase_tag{};
 
-        /// Bytes of coinbase extranonce assigned to each channel.
-        uint8_t extranonce1_size{ 4 };
-
-        /// Bytes of coinbase extranonce rolled by the miner.
-        uint8_t extranonce2_size{ 4 };
-
         /// Share difficulty assigned to a channel, and its floor.
         double minimum_difficulty{ 1.0 };
 
         /// Target seconds between shares of a channel, zero fixes difficulty.
         uint32_t share_interval_seconds{ 10 };
+    };
+
+    /// Stratum v1 is served over tcp/s (json-rpc downgrade), http/s and ws/s,
+    /// so http settings apply only to http/ws transports.
+    struct BCS_API stratum_v1_server
+      : public mining_server
+    {
+        using base = mining_server;
+        using base::base;
+
+        /// Validate the coinbase layout.
+        code initialize_context() NOEXCEPT override;
+
+        /// Bytes of coinbase extranonce assigned to each channel.
+        uint8_t extranonce1_size{ 4 };
+
+        /// Bytes of coinbase extranonce rolled by the miner.
+        uint8_t extranonce2_size{ 4 };
 
         /// Seconds to subscribe and authorize a channel, zero is unlimited.
         uint32_t authorize_timeout_seconds{ 15 };

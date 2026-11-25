@@ -30,19 +30,6 @@ namespace server {
 using namespace system;
 using namespace network::rpc;
 using namespace std::placeholders;
-constexpr auto relaxed = std::memory_order_relaxed;
-
-// Shares counted (or the share interval multiplied) before a retarget.
-constexpr size_t retarget_shares = 16;
-
-// Share intervals without a share before the difficulty decays.
-constexpr size_t decay_intervals = 4;
-
-// Retarget bounds on the ratio of target to observed share interval.
-constexpr double minimum_ratio = 0.25;
-constexpr double maximum_ratio = 4.0;
-constexpr double lower_dead_band = 0.8;
-constexpr double upper_dead_band = 1.25;
 
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 BC_PUSH_WARNING(SMART_PTR_NOT_NEEDED)
@@ -70,18 +57,15 @@ void protocol_stratum_v1::start() NOEXCEPT
     if (!is_zero(options_.authorize_timeout_seconds))
         authorize_timer_->start(BIND(handle_timeout, _1));
 
-    submit_t::start();
+    add_channel(zero, mining_);
+    mining_t::start();
 }
 
 void protocol_stratum_v1::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    if (active_.exchange(false))
-        demand_template(false);
-
-    decay_timer_->stop();
     authorize_timer_->stop();
-    submit_t::stopping(ec);
+    mining_t::stopping(ec);
 }
 
 // No attached protocol subscribes the method (terminal responder).
@@ -93,23 +77,6 @@ void protocol_stratum_v1::handle_unclaimed(const request_t&) NOEXCEPT
         .code = reserved::method_not_found,
         .message = "Method not found"
     });
-}
-
-// Events.
-// ----------------------------------------------------------------------------
-
-bool protocol_stratum_v1::handle_chase(const code& ec,
-    node::event_value value) NOEXCEPT
-{
-    // Do not pass ec to stopped, it is not a call status.
-    if (stopped())
-        return false;
-
-    if (node::to_chase(value) == node::chase::template_ &&
-        active_.load(relaxed))
-        get_template(BIND(handle_template, _1, _2));
-
-    return submit_t::handle_chase(ec, value);
 }
 
 // Handlers.
@@ -136,7 +103,7 @@ void protocol_stratum_v1::handle_mining_subscribe(const code& ec,
         options_.extranonce2_size
     });
 
-    start_jobs();
+    start_mining();
 }
 
 // The worker name up to any dot is the account, the payout address unless one
@@ -167,15 +134,19 @@ void protocol_stratum_v1::handle_mining_authorize(const code& ec,
     const auto name = address.empty() ? account : address;
 
     if (output_script(payout, name, p2kh_, p2sh_, witness_) ||
-        (channel_->has_payout() && payout != channel_->payout()))
+        (channel_->has_payout() && payout != mining_->payout()))
     {
         send_code(unauthorized_worker);
         return;
     }
 
-    channel_->authorize(username, payout);
+    // The payout of the channel is set by its first authorized worker.
+    if (!channel_->has_payout())
+        mining_->set_payout(payout);
+
+    channel_->authorize(username);
     send_result(true);
-    start_jobs();
+    start_mining();
 }
 
 void protocol_stratum_v1::handle_mining_submit(const code& ec,
@@ -207,7 +178,7 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
         return;
     }
 
-    const auto job = channel_->find(id);
+    const auto job = mining_->find(id);
     if (!job)
     {
         send_code(job_not_found);
@@ -242,56 +213,36 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
     }
 
     const auto extranonce = splice(channel_->extranonce1(), roll);
-    const auto coinbase = splice(splice(job->prefix, extranonce), job->suffix);
-    const chain::header header
-    {
-        version,
-        job->previous,
-        coinbase_root(bitcoin_hash(coinbase), job->held->branch),
-        timestamp,
-        job->bits,
-        solution
-    };
 
-    // The miner sets only header fields, so a valid header is a valid block,
-    // and a miner that invalidates the header is dropped.
-    const auto& bitcoin = system_settings();
-    const auto limit = add<uint64_t>(network::unix_time(),
-        bitcoin.timestamp_limit_seconds);
-
-    if (const auto failed = header.accept(job->held->context,
-        bitcoin.retargeting_interval()))
+    // A miner that invalidates the header is dropped.
+    code failed{};
+    chain::header header{};
+    switch (check_share(*mining_, *job, version, timestamp, solution,
+        extranonce, header, failed))
     {
-        send_code(unknown, failed);
-        return;
+        case share_outcome::invalid:
+        {
+            send_code(unknown, failed);
+            return;
+        }
+        case share_outcome::low_difficulty:
+        {
+            send_code(low_difficulty_share);
+            return;
+        }
+        case share_outcome::duplicate:
+        {
+            send_code(duplicate_share);
+            return;
+        }
+        case share_outcome::accepted:
+        {
+            // A share is valid work, whatever the outcome of a block it mines.
+            send_result(true);
+            accept_share(*mining_, *job, header, extranonce);
+            return;
+        }
     }
-
-    if (timestamp > limit)
-    {
-        send_code(unknown, system::error::futuristic_timestamp);
-        return;
-    }
-
-    const auto hash = header.hash();
-    const auto value = to_uintx(hash);
-    if (value > to_share_target(job->difficulty))
-    {
-        send_code(low_difficulty_share);
-        return;
-    }
-
-    if (!job->shares.insert(hash).second)
-    {
-        send_code(duplicate_share);
-        return;
-    }
-
-    // A share is valid work, whatever the outcome of a block it mines.
-    send_result(true);
-    if (value <= chain::compact::expand(job->bits))
-        submit_mined(header, *job, extranonce);
-
-    retarget();
 }
 
 // Version rolling (bip310) is the only extension, others are declined.
@@ -340,7 +291,7 @@ void protocol_stratum_v1::handle_mining_suggest_difficulty(const code& ec,
         return;
 
     send_result(true);
-    suggest(difficulty);
+    suggest(*mining_, difficulty);
 }
 
 void protocol_stratum_v1::handle_mining_suggest_target(const code& ec,
@@ -358,7 +309,7 @@ void protocol_stratum_v1::handle_mining_suggest_target(const code& ec,
     }
 
     send_result(true);
-    suggest(to_share_difficulty(to_uintx(hash)));
+    suggest(*mining_, to_share_difficulty(to_uintx(hash)));
 }
 
 // Unserved methods answer the stratum code, with the reason as message.
@@ -402,95 +353,41 @@ void protocol_stratum_v1::handle_mining_extranonce_subscribe(const code& ec,
 // ----------------------------------------------------------------------------
 
 // A subscribed and authorized channel demands templates and is issued jobs.
-void protocol_stratum_v1::start_jobs() NOEXCEPT
+void protocol_stratum_v1::start_mining() NOEXCEPT
 {
     BC_ASSERT(stranded());
-    if (!channel_->subscribed() || !channel_->has_payout() ||
-        active_.exchange(true))
+    if (!channel_->subscribed() || !channel_->has_payout())
         return;
 
     authorize_timer_->stop();
-    demand_template(true);
-    get_template(BIND(handle_template, _1, _2));
-    start_decay();
+    start_jobs();
 }
 
-void protocol_stratum_v1::handle_template(const code& ec,
-    const node::block_template::cptr& held) NOEXCEPT
+size_t protocol_stratum_v1::extranonce_size() const NOEXCEPT
 {
-    if (stopped())
-        return;
-
-    POST(do_template, ec, held);
-}
-
-void protocol_stratum_v1::do_template(const code& ec,
-    const node::block_template::cptr& held) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    using namespace chain;
-    if (stopped() || ec)
-        return;
-
-    const auto current = channel_->current();
-    if (current && current->held == held)
-        return;
-
-    if (held->previous != archive().get_top_confirmed_hash())
-    {
-        get_template(BIND(handle_template, _1, _2));
-        return;
-    }
-
-    const auto& ctx = held->context;
-    const auto height = ctx.height;
-    const auto minimum = add1(ctx.median_time_past);
-    const auto timestamp = std::max(network::unix_time(), minimum);
-
-    const auto& bitcoin = system_settings();
-    const auto subsidy = block::subsidy(height,
-        bitcoin.subsidy_interval_blocks,
-        bitcoin.initial_subsidy(),
-        bitcoin.forks.bip42);
-
-    const auto value = ceilinged_add(subsidy, held->fees);
-    const auto extranonce = add<size_t>(options_.extranonce1_size,
-        options_.extranonce2_size);
-
-    const auto clean = !current || current->previous != held->previous;
-    send_job(emplace_shared<job>(job
-    {
-        held,
-        coinbase_prefix(height, options_.coinbase_tag, extranonce),
-        coinbase_suffix(height, value, channel_->payout(), held->commitment),
-        held->previous,
-        chain_state::signal_version(bitcoin),
-        ctx.work_required,
-        timestamp,
-        channel_->difficulty(),
-        {}
-    }), clean);
+    return add<size_t>(options_.extranonce1_size, options_.extranonce2_size);
 }
 
 // The difficulty of a job is notified before the job, as it applies to jobs
 // that follow it.
-void protocol_stratum_v1::send_job(const job::ptr& job, bool clean) NOEXCEPT
+void protocol_stratum_v1::send_job(mining_channel& channel,
+    const job::cptr& job, bool clean) NOEXCEPT
 {
     BC_ASSERT(stranded());
     if (!is_duplex())
         return;
 
     const auto difficulty = job->difficulty;
-    if (difficulty != channel_->notified())
+    if (difficulty != channel.notified())
     {
-        channel_->set_notified(difficulty);
+        channel.set_notified(difficulty);
         send_notification(version::v1, "mining.set_difficulty", array_t
         {
             difficulty
         });
     }
 
-    const auto id = channel_->issue(job, clean);
+    const auto id = channel.issue(job, clean);
 
     array_t branch{};
     for (const auto& hash: job->held->branch)
@@ -510,94 +407,6 @@ void protocol_stratum_v1::send_job(const job::ptr& job, bool clean) NOEXCEPT
     });
 }
 
-// The current job is issued again at the channel difficulty.
-void protocol_stratum_v1::refresh() NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    const auto current = channel_->current();
-    if (!current)
-        return;
-
-    const auto copy = emplace_shared<job>(*current);
-    copy->shares.clear();
-    copy->difficulty = channel_->difficulty();
-    send_job(copy, false);
-}
-
-// The difficulty moves toward the configured share interval (vardiff).
-void protocol_stratum_v1::retarget() NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    const auto interval = options_.share_interval_seconds;
-    if (is_zero(interval))
-        return;
-
-    const auto count = channel_->count_share();
-    const auto elapsed = channel_->elapsed();
-    const auto target = to_floating(interval);
-    if (count < retarget_shares &&
-        elapsed < target * to_floating(retarget_shares))
-        return;
-
-    channel_->reset_window();
-    const auto observed = elapsed / to_floating(count);
-    const auto ratio = observed > 0.0 ?
-        std::clamp(target / observed, minimum_ratio, maximum_ratio) :
-        maximum_ratio;
-
-    if (ratio > lower_dead_band && ratio < upper_dead_band)
-        return;
-
-    const auto difficulty = std::max(options_.minimum_difficulty,
-        channel_->difficulty() * ratio);
-
-    if (difficulty == channel_->difficulty())
-        return;
-
-    channel_->set_difficulty(difficulty);
-    refresh();
-}
-
-// Without shares the difficulty cannot retarget, so it decays by the timer.
-void protocol_stratum_v1::start_decay() NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    const auto interval = options_.share_interval_seconds;
-    if (stopped() || is_zero(interval))
-        return;
-
-    const auto span = network::seconds(interval * decay_intervals);
-    decay_timer_->start(BIND(handle_decay, _1), span);
-}
-
-void protocol_stratum_v1::handle_decay(const code& ec) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    if (stopped() || ec == network::error::operation_canceled)
-        return;
-
-    if (ec)
-    {
-        stop(ec);
-        return;
-    }
-
-    if (is_zero(channel_->shares()))
-    {
-        const auto difficulty = std::max(options_.minimum_difficulty,
-            channel_->difficulty() * minimum_ratio);
-
-        if (difficulty != channel_->difficulty())
-        {
-            channel_->set_difficulty(difficulty);
-            channel_->reset_window();
-            refresh();
-        }
-    }
-
-    start_decay();
-}
-
 void protocol_stratum_v1::handle_timeout(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
@@ -605,103 +414,6 @@ void protocol_stratum_v1::handle_timeout(const code& ec) NOEXCEPT
         return;
 
     stop(ec ? ec : code{ network::error::channel_timeout });
-}
-
-// A suggested difficulty is floored at the configured minimum.
-void protocol_stratum_v1::suggest(double difficulty) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    const auto floored = std::max(options_.minimum_difficulty, difficulty);
-    if (floored == channel_->difficulty())
-        return;
-
-    channel_->set_difficulty(floored);
-    channel_->reset_window();
-    refresh();
-}
-
-// Blocks.
-// ----------------------------------------------------------------------------
-
-// The share was answered, so the block is not gated on its outcome, and each
-// outcome is reported to handle_submitted.
-void protocol_stratum_v1::submit_mined(const chain::header& header,
-    const job& job, const data_chunk& extranonce) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    const auto& query = archive();
-    const auto& links = job.held->links;
-    const auto hash = header.hash();
-    mined_.emplace(hash, job.held->context.height);
-
-    data_chunk data{};
-    write::bytes::data sink{ data };
-    header.to_data(sink);
-    sink.write_variable(add1(links.size()));
-    sink.write_bytes(coinbase_witnessed(job.prefix, extranonce, job.suffix));
-
-    for (const auto& link: links)
-    {
-        const auto tx = query.get_wire_tx(link, true);
-        if (tx.empty())
-        {
-            handle_submitted(hash, submission::failed,
-                database::error::integrity);
-            return;
-        }
-
-        sink.write_bytes(tx);
-    }
-
-    sink.flush();
-    const auto block = to_shared<chain::view::block>(std::move(data), true);
-    if (!block->is_valid())
-    {
-        handle_submitted(hash, submission::failed, database::error::integrity);
-        return;
-    }
-
-    submit_block(to_shared<chain::header>(header), block, {});
-}
-
-// The block is the template with the miner's valid header, so a block that
-// is not valid is a store integrity fault. One not confirmed is not a fault.
-void protocol_stratum_v1::handle_submitted(const hash_digest& hash,
-    submission outcome, const code& ec) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    const auto it = mined_.find(hash);
-    const auto height = it == mined_.end() ? zero : it->second;
-    if (it != mined_.end())
-        mined_.erase(it);
-
-    const auto block = "[" + encode_hash(hash) + ":" +
-        std::to_string(height) + "]";
-
-    switch (outcome)
-    {
-        case submission::accepted:
-        case submission::duplicate:
-        {
-            LOGN("Stratum block accepted " << block);
-            break;
-        }
-        case submission::inconclusive:
-        case submission::duplicate_inconclusive:
-        {
-            LOGN("Stratum block inconclusive " << block);
-            break;
-        }
-        case submission::duplicate_invalid:
-        case submission::bad_parent:
-        case submission::rejected:
-        case submission::failed:
-        {
-            LOGF("Stratum block invalid " << block << ", " << ec.message());
-            fault(database::error::integrity);
-            break;
-        }
-    }
 }
 
 BC_POP_WARNING()
