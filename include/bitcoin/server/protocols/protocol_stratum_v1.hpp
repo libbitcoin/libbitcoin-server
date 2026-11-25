@@ -52,7 +52,10 @@ public:
         witness_(session->server_settings().wallet.witness_prefix),
         channel_(std::dynamic_pointer_cast<channel_t>(channel)),
         decay_timer_(system::emplace_shared<network::deadline>(session->log,
-            channel->strand()))
+            channel->strand())),
+        authorize_timer_(system::emplace_shared<network::deadline>(
+            session->log, channel->strand(),
+            network::seconds(options.authorize_timeout_seconds)))
     {
     }
 
@@ -123,6 +126,7 @@ private:
     void retarget() NOEXCEPT;
     void start_decay() NOEXCEPT;
     void handle_decay(const code& ec) NOEXCEPT;
+    void handle_timeout(const code& ec) NOEXCEPT;
     void suggest(double difficulty) NOEXCEPT;
 
     /// Blocks.
@@ -136,6 +140,7 @@ private:
     const std::string witness_;
     const channel_t::ptr channel_;
     const network::deadline::ptr decay_timer_;
+    const network::deadline::ptr authorize_timer_;
     std::atomic_bool active_{};
 
     // These are protected by strand.

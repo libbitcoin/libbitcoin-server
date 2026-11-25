@@ -398,6 +398,7 @@ BC_AUTO_TEST_CASE(server__stratum_v1_server__defaults__expected)
     BC_REQUIRE_EQUAL(server.extranonce2_size, 4u);
     BC_REQUIRE_EQUAL(server.minimum_difficulty, 1.0);
     BC_REQUIRE_EQUAL(server.share_interval_seconds, 10u);
+    BC_REQUIRE_EQUAL(server.authorize_timeout_seconds, 15u);
 
     // tcp_server
     BC_REQUIRE_EQUAL(server.name, "stratum_v1");

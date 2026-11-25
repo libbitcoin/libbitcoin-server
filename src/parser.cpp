@@ -2489,6 +2489,11 @@ options_metadata parser::load_settings() THROWS
         setting<uint32_t>(&configured.server.stratum_v1.share_interval_seconds),
         "The target seconds between shares of a channel, defaults to {} (0 fixes difficulty)."
     )
+    (
+        "stratum_v1.authorize_timeout_seconds",
+        setting<uint32_t>(&configured.server.stratum_v1.authorize_timeout_seconds),
+        "The seconds to subscribe and authorize a channel, defaults to {} (0 is unlimited)."
+    )
 
     /* [stratum_v2] */
     (

@@ -257,6 +257,9 @@ public:
 
         /// Target seconds between shares of a channel, zero fixes difficulty.
         uint32_t share_interval_seconds{ 10 };
+
+        /// Seconds to subscribe and authorize a channel, zero is unlimited.
+        uint32_t authorize_timeout_seconds{ 15 };
     };
 
     struct BCS_API esplora_server

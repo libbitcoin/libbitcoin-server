@@ -409,6 +409,28 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_notify__configured_payout__paid_to_payout)
 
 BC_AUTO_TEST_SUITE_END()
 
+BC_FIXTURE_TEST_SUITE(stratum_v1_authorize_timeout_tests, stratum_v1_authorize_timeout_setup_fixture)
+
+BC_AUTO_TEST_CASE(stratum_v1__authorize_timeout__no_messages__dropped)
+{
+    BC_REQUIRE(receive().at("dropped").as_bool());
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__authorize_timeout__subscribed_unauthorized__dropped)
+{
+    subscribe();
+    BC_REQUIRE(receive().at("dropped").as_bool());
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__authorize_timeout__subscribed_authorized__retained)
+{
+    const auto job = start_job();
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    BC_REQUIRE(submit(job, "00000000", "00000000").at("result").as_bool());
+}
+
+BC_AUTO_TEST_SUITE_END()
+
 BC_FIXTURE_TEST_SUITE(stratum_v1_difficult_tests, stratum_v1_difficult_setup_fixture)
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__below_share_target__low_difficulty_share)

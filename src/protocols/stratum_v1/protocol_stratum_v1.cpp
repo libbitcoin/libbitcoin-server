@@ -66,6 +66,10 @@ void protocol_stratum_v1::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_mining_get_transactions, _1, _2, _3);
     SUBSCRIBE_RPC(handle_mining_multi_version, _1, _2, _3);
     SUBSCRIBE_RPC(handle_mining_extranonce_subscribe, _1, _2);
+
+    if (!is_zero(options_.authorize_timeout_seconds))
+        authorize_timer_->start(BIND(handle_timeout, _1));
+
     submit_t::start();
 }
 
@@ -76,6 +80,7 @@ void protocol_stratum_v1::stopping(const code& ec) NOEXCEPT
         demand_template(false);
 
     decay_timer_->stop();
+    authorize_timer_->stop();
     submit_t::stopping(ec);
 }
 
@@ -404,6 +409,7 @@ void protocol_stratum_v1::start_jobs() NOEXCEPT
         active_.exchange(true))
         return;
 
+    authorize_timer_->stop();
     demand_template(true);
     get_template(BIND(handle_template, _1, _2));
     start_decay();
@@ -590,6 +596,15 @@ void protocol_stratum_v1::handle_decay(const code& ec) NOEXCEPT
     }
 
     start_decay();
+}
+
+void protocol_stratum_v1::handle_timeout(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (stopped() || ec == network::error::operation_canceled)
+        return;
+
+    stop(ec ? ec : code{ network::error::channel_timeout });
 }
 
 // A suggested difficulty is floored at the configured minimum.
