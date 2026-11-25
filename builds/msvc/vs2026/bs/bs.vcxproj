@@ -203,7 +203,9 @@
     <None Include="..\..\..\..\web\native\src\components\block-size-bar.tsx" />
     <None Include="..\..\..\..\web\native\src\components\block-validation-inspector.tsx" />
     <None Include="..\..\..\..\web\native\src\components\block-viewer.tsx" />
+    <None Include="..\..\..\..\web\native\src\components\branch-notice.tsx" />
     <None Include="..\..\..\..\web\native\src\components\command-palette.tsx" />
+    <None Include="..\..\..\..\web\native\src\components\copy-button.tsx" />
     <None Include="..\..\..\..\web\native\src\components\hash-text.tsx" />
     <None Include="..\..\..\..\web\native\src\components\miner-share.tsx" />
     <None Include="..\..\..\..\web\native\src\components\miner-value.tsx" />
@@ -213,6 +215,8 @@
     <None Include="..\..\..\..\web\native\src\components\script-lookup-status.tsx" />
     <None Include="..\..\..\..\web\native\src\components\search-bar.tsx" />
     <None Include="..\..\..\..\web\native\src\components\sort-header.tsx" />
+    <None Include="..\..\..\..\web\native\src\components\spinner.tsx" />
+    <None Include="..\..\..\..\web\native\src\components\status-pill.tsx" />
     <None Include="..\..\..\..\web\native\src\components\template-scene-view.tsx" />
     <None Include="..\..\..\..\web\native\src\components\template-treemap.tsx" />
     <None Include="..\..\..\..\web\native\src\components\theme-select.tsx" />
@@ -260,6 +264,7 @@
     <None Include="..\..\..\..\web\native\src\routes\template.tsx" />
     <None Include="..\..\..\..\web\native\src\routes\top-block.tsx" />
     <None Include="..\..\..\..\web\native\src\routes\transaction.tsx" />
+    <None Include="..\..\..\..\web\native\src\routes\transactions.tsx" />
     <None Include="..\..\..\..\web\native\src\themes.css" />
     <None Include="..\..\..\..\web\native\src\vendor\mining-pools\package.json" />
     <None Include="..\..\..\..\web\native\src\vendor\mining-pools\pools.json" />
@@ -274,6 +279,7 @@
     <None Include="..\..\..\..\web\native\test\lib\utils\routes.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\search.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\template-scene.test.ts" />
+    <None Include="..\..\..\..\web\native\test\lib\utils\template-settings.test.ts" />
     <None Include="..\..\..\..\web\native\tsconfig.json" />
     <None Include="..\..\..\..\web\native\tsconfig.node.json" />
     <None Include="..\..\..\..\web\native\vite.config.ts" />
