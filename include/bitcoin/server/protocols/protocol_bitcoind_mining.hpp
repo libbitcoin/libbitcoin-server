@@ -57,8 +57,8 @@ public:
 
 protected:
     /// Answer the submitted block (bip22).
-    void handle_submitted(submission outcome,
-        const code& ec) NOEXCEPT override;
+    void handle_submitted(const system::hash_digest& hash,
+        submission outcome, const code& ec) NOEXCEPT override;
 
     /// Complete a getblocktemplate result.
     virtual void finish_template(network::rpc::object_t& out) const NOEXCEPT;

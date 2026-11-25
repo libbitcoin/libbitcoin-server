@@ -631,8 +631,8 @@ void protocol_stratum_v1::submit_mined(const chain::header& header,
     BC_ASSERT(stranded());
     const auto& query = archive();
     const auto& links = job.held->links;
-    mined_ = header.hash();
-    height_ = job.held->context.height;
+    const auto hash = header.hash();
+    mined_.emplace(hash, job.held->context.height);
 
     data_chunk data{};
     write::bytes::data sink{ data };
@@ -645,7 +645,8 @@ void protocol_stratum_v1::submit_mined(const chain::header& header,
         const auto tx = query.get_wire_tx(link, true);
         if (tx.empty())
         {
-            handle_submitted(submission::failed, database::error::integrity);
+            handle_submitted(hash, submission::failed,
+                database::error::integrity);
             return;
         }
 
@@ -656,7 +657,7 @@ void protocol_stratum_v1::submit_mined(const chain::header& header,
     const auto block = to_shared<chain::view::block>(std::move(data), true);
     if (!block->is_valid())
     {
-        handle_submitted(submission::failed, database::error::integrity);
+        handle_submitted(hash, submission::failed, database::error::integrity);
         return;
     }
 
@@ -665,12 +666,17 @@ void protocol_stratum_v1::submit_mined(const chain::header& header,
 
 // The block is the template with the miner's valid header, so a block that
 // is not valid is a store integrity fault. One not confirmed is not a fault.
-void protocol_stratum_v1::handle_submitted(submission outcome,
-    const code& ec) NOEXCEPT
+void protocol_stratum_v1::handle_submitted(const hash_digest& hash,
+    submission outcome, const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    const auto block = "[" + encode_hash(mined_) + ":" +
-        std::to_string(height_) + "]";
+    const auto it = mined_.find(hash);
+    const auto height = it == mined_.end() ? zero : it->second;
+    if (it != mined_.end())
+        mined_.erase(it);
+
+    const auto block = "[" + encode_hash(hash) + ":" +
+        std::to_string(height) + "]";
 
     switch (outcome)
     {

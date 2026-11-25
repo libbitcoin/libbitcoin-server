@@ -72,8 +72,8 @@ protected:
         node::event_value value) NOEXCEPT override;
 
     /// The outcome of a block mined by the channel.
-    void handle_submitted(submission outcome,
-        const code& ec) NOEXCEPT override;
+    void handle_submitted(const system::hash_digest& hash,
+        submission outcome, const code& ec) NOEXCEPT override;
 
     /// Handlers.
     void handle_mining_subscribe(const code& ec,
@@ -143,9 +143,8 @@ private:
     const network::deadline::ptr authorize_timer_;
     std::atomic_bool active_{};
 
-    // These are protected by strand.
-    system::hash_digest mined_{};
-    size_t height_{};
+    // This is protected by strand.
+    std::unordered_map<system::hash_digest, size_t> mined_{};
 };
 
 } // namespace server

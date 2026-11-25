@@ -264,8 +264,8 @@ void protocol_bitcoind_mining::handle_submit_block(const code& ec,
 }
 
 // bip22: null when accepted, otherwise duplicate, inconclusive or reject token.
-void protocol_bitcoind_mining::handle_submitted(submission outcome,
-    const code& ec) NOEXCEPT
+void protocol_bitcoind_mining::handle_submitted(const hash_digest&,
+    submission outcome, const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
 

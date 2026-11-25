@@ -55,7 +55,7 @@ void CLASS::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
     this->unsubscribe_chase();
-    submitted_gate_.reset();
+    submitted_.clear();
     base::stopping(ec);
 }
 
@@ -103,9 +103,10 @@ void CLASS::do_organize_block(const code& ec, const block_cptr& block,
         return;
 
     // An unknown header is unconfirmable only by its parent.
+    const auto hash = block->hash();
     if (ec == database::error::block_unconfirmable)
     {
-        handle_submitted(submission::bad_parent, ec);
+        handle_submitted(hash, submission::bad_parent, ec);
         return;
     }
 
@@ -117,14 +118,14 @@ void CLASS::do_organize_block(const code& ec, const block_cptr& block,
         const auto outcome = invalid ? submission::rejected :
             submission::failed;
 
-        handle_submitted(outcome, ec);
+        handle_submitted(hash, outcome, ec);
         return;
     }
 
-    const auto link = this->archive().to_header(block->hash());
+    const auto link = this->archive().to_header(hash);
     if (link.is_terminal())
     {
-        handle_submitted(submission::inconclusive, {});
+        handle_submitted(hash, submission::inconclusive, {});
         return;
     }
 
@@ -141,6 +142,7 @@ void CLASS::accept_block(const block_cptr& block,
     using namespace std::placeholders;
 
     const auto& query = this->archive();
+    const auto hash = block->hash();
     const auto state = query.get_block_state(link);
     if (is_associated(state))
     {
@@ -153,43 +155,46 @@ void CLASS::accept_block(const block_cptr& block,
         const auto outcome = invalid ? submission::duplicate_invalid :
             duplicate;
 
-        handle_submitted(outcome, {});
+        handle_submitted(hash, outcome, {});
         return;
     }
 
     if (is_unconfirmable(state))
     {
-        handle_submitted(submission::duplicate_invalid, {});
+        handle_submitted(hash, submission::duplicate_invalid, {});
         return;
     }
 
     system::chain::context ctx{};
     if (!query.get_context(ctx, link))
     {
-        handle_submitted(submission::failed, database::error::integrity);
+        handle_submitted(hash, submission::failed, database::error::integrity);
         return;
     }
 
     if (const auto failed = block->check_guard())
     {
-        handle_submitted(submission::rejected, failed);
+        handle_submitted(hash, submission::rejected, failed);
         return;
     }
 
     if (const auto failed = block->check_guard(ctx))
     {
-        handle_submitted(submission::rejected, failed);
+        handle_submitted(hash, submission::rejected, failed);
         return;
     }
 
     if (!query.is_candidate_header(link))
     {
-        handle_submitted(submission::inconclusive, {});
+        handle_submitted(hash, submission::inconclusive, {});
         return;
     }
 
-    submitted_ = link;
-    submitted_gate_ = gate;
+    if (!submitted_.emplace(link.value, pending{ hash, gate }).second)
+    {
+        handle_submitted(hash, submission::duplicate_inconclusive, {});
+        return;
+    }
 
     // A bypassed block of a pruned node does not store its witness.
     code stored{};
@@ -197,7 +202,6 @@ void CLASS::accept_block(const block_cptr& block,
     const auto bypass = is_bypass(state);
     const auto prune = bypass && this->node_settings().limited_blocks;
     const auto strong = is_any(state, checkpointed);
-    const auto hash = block->hash();
     if (!this->archive_block
     (
         stored,
@@ -207,17 +211,19 @@ void CLASS::accept_block(const block_cptr& block,
         bypass,
         height,
         prune,
-        this->template bind<CLASS>(&CLASS::handle_archive_block, _1, hash, height)
+        this->template bind<CLASS>(&CLASS::handle_archive_block, _1, hash,
+            height, link)
     )) return;
 
-    handle_archive_block(stored, hash, height);
+    handle_archive_block(stored, hash, height, link);
 }
 
 // Block archived meanwhile by another channel is awaited as submitted, and
 // failure to store one is a fault, whether or not channel has stopped.
 TEMPLATE
 void CLASS::handle_archive_block(const code& ec,
-    const system::hash_digest& hash, size_t height) NOEXCEPT
+    const system::hash_digest& hash, size_t height,
+    const database::header_link& link) NOEXCEPT
 {
     if (!ec)
     {
@@ -235,18 +241,19 @@ void CLASS::handle_archive_block(const code& ec,
     if (this->stopped())
         return;
 
-    POST(do_archive_block, ec);
+    POST(do_archive_block, ec, link);
 }
 
 TEMPLATE
-void CLASS::do_archive_block(const code& ec) NOEXCEPT
+void CLASS::do_archive_block(const code& ec,
+    const database::header_link& link) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
 
     if (this->stopped() || !ec || (ec == node::error::duplicate_block))
         return;
 
-    complete(submission::failed, ec);
+    complete(link, submission::failed, ec);
 }
 
 // Events.
@@ -286,36 +293,38 @@ void CLASS::do_submitted(const code& ec, node::event_value value) NOEXCEPT
     BC_ASSERT(this->stranded());
     using namespace node;
 
-    if (this->stopped() || submitted_.is_terminal())
+    if (this->stopped() || submitted_.empty())
         return;
 
     switch (to_chase(value))
     {
         case chase::confirmable:
         {
-            if (to_payload<chase::confirmable>(value).link == submitted_)
-                complete(submission::accepted, {});
-
+            const auto link = to_payload<chase::confirmable>(value).link;
+            complete(link, submission::accepted, {});
             break;
         }
         case chase::unvalid:
         {
-            if (to_payload<chase::unvalid>(value).link == submitted_)
-                complete(submission::rejected, ec);
-
+            const auto link = to_payload<chase::unvalid>(value).link;
+            complete(link, submission::rejected, ec);
             break;
         }
         case chase::unconfirmable:
         {
-            if (to_payload<chase::unconfirmable>(value).link == submitted_)
-                complete(submission::rejected, ec);
-
+            const auto link = to_payload<chase::unconfirmable>(value).link;
+            complete(link, submission::rejected, ec);
             break;
         }
         default:
         {
-            if (!this->archive().is_candidate_header(submitted_))
-                complete(submission::inconclusive, {});
+            std::vector<database::header_link> left{};
+            for (const auto& entry: submitted_)
+                if (!this->archive().is_candidate_header(entry.first))
+                    left.emplace_back(entry.first);
+
+            for (const auto& link: left)
+                complete(link, submission::inconclusive, {});
 
             break;
         }
@@ -323,12 +332,17 @@ void CLASS::do_submitted(const code& ec, node::event_value value) NOEXCEPT
 }
 
 TEMPLATE
-void CLASS::complete(submission outcome, const code& ec) NOEXCEPT
+void CLASS::complete(const database::header_link& link, submission outcome,
+    const code& ec) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
-    submitted_ = {};
-    handle_submitted(outcome, ec);
-    submitted_gate_.reset();
+    const auto it = submitted_.find(link.value);
+    if (it == submitted_.end())
+        return;
+
+    const auto entry = it->second;
+    submitted_.erase(it);
+    handle_submitted(entry.hash, outcome, ec);
 }
 
 BC_POP_WARNING()
