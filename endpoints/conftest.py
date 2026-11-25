@@ -356,9 +356,16 @@ def _requires_current(request):
     port = request.config.getoption("--bitcoind-rpc-port")
     payload = {"jsonrpc": "1.0", "id": 1, "method": "getblockchaininfo",
         "params": []}
+    auth = None
+    if request.config.getoption("--bitcoind-auth"):
+        try:
+            with open(request.config.getoption("--bitcoind-cookie")) as file:
+                auth = tuple(file.read().strip().split(":", 1))
+        except OSError:
+            auth = None
     try:
         info = requests.post(f"http://{host}:{port}/", json=payload,
-            timeout=10).json()["result"]
+            auth=auth, timeout=10).json()["result"]
     except Exception:
         return
 

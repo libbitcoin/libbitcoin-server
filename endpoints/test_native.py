@@ -82,11 +82,22 @@ def test_configuration(native_config):
 
 
 @pytest.mark.requires_height(ReferenceData.KNOWN_HEIGHT)
+def get_tops(native_config) -> list:
+    """The strong tops: confirmed, then candidate where distinct (a list)."""
+    url = f"{native_config['base_url']}/top?format=json"
+    response = requests.get(url, timeout=TestConfig.DEFAULT_HTTP_TIMEOUT)
+    response.raise_for_status()
+    return response.json()
+
+
 def test_top(native_config):
     """Test /v1/top endpoint - chain top information."""
-    data = get_json(native_config["base_url"], "top")
+    data = get_tops(native_config)
+    assert isinstance(data, list) and 1 <= len(data) <= 2
     assert data[0]["chain"] == "confirmed"
     assert data[0]["height"] >= ReferenceData.KNOWN_HEIGHT
+    if len(data) == 2:
+        assert data[1]["chain"] == "candidate"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -568,7 +579,7 @@ def test_unsupported_format(native_config):
 
 def confirmed_top(native_config) -> int:
     """The confirmed top height."""
-    return get_json(native_config["base_url"], "top")[0]["height"]
+    return get_tops(native_config)[0]["height"]
 
 
 def template_status(native_config, height: int) -> int:
