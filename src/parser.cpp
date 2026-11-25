@@ -2655,6 +2655,11 @@ options_metadata parser::load_settings() THROWS
         setting<uint32_t>(&configured.node.currency_window_minutes),
         "Time from present that blocks are considered current, defaults to {} (0 disables)."
     )
+    (
+        "node.fee_filter_minutes",
+        setting<uint16_t>(&configured.node.fee_filter_minutes),
+        "Minimum time between a peer's fee filter decreases, else the peer is dropped, defaults to {} (0 disables)."
+    )
     ////(
     ////    "node.snapshot_bytes",
     ////    setting<uint64_t>(&configured.node.snapshot_bytes),
