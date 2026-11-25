@@ -76,11 +76,12 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_subscribe__numeric_port__subscriptions)
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_subscribe__websocket__jobs_notified)
 {
-    BC_REQUIRE(!ws_upgrade());
+    const auto ec = ws_upgrade();
     const auto subscribed = ws_get(R"({"id":1,"method":"mining.subscribe","params":[]})");
     const auto authorized = ws_get(std::format(R"({{"id":2,"method":"mining.authorize","params":["{}","x"]}})", address(0x01)));
     const auto difficulty = ws_receive();
     const auto job = ws_receive();
+    BC_REQUIRE(!ec);
     BC_REQUIRE(subscribed.at("error").is_null());
     BC_REQUIRE(authorized.at("result").as_bool());
     BC_REQUIRE(difficulty.at("method").as_string() == "mining.set_difficulty");
@@ -116,14 +117,18 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__invalid_address__unauthorized_wo
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__second_payout__unauthorized_worker)
 {
-    BC_REQUIRE(authorize(address(0x01)).at("result").as_bool());
-    BC_REQUIRE_EQUAL(authorize(address(0x02)).at("error").as_array().at(0).as_int64(), unauthorized_worker.value());
+    const auto first = authorize(address(0x01));
+    const auto second = authorize(address(0x02));
+    BC_REQUIRE(first.at("result").as_bool());
+    BC_REQUIRE_EQUAL(second.at("error").as_array().at(0).as_int64(), unauthorized_worker.value());
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__second_worker_same_payout__true)
 {
-    BC_REQUIRE(authorize(address(0x01) + ".one").at("result").as_bool());
-    BC_REQUIRE(authorize(address(0x01) + ".two").at("result").as_bool());
+    const auto first = authorize(address(0x01) + ".one");
+    const auto second = authorize(address(0x01) + ".two");
+    BC_REQUIRE(first.at("result").as_bool());
+    BC_REQUIRE(second.at("result").as_bool());
 }
 
 // mining.configure
@@ -161,19 +166,21 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_configure__other_extensions__declined)
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_suggest_difficulty__before_job__job_difficulty)
 {
-    BC_REQUIRE(get(R"({"id":5,"method":"mining.suggest_difficulty","params":[2.0]})").at("result").as_bool());
+    const auto suggested = get(R"({"id":5,"method":"mining.suggest_difficulty","params":[2.0]})");
     subscribe();
     authorize(address(0x01));
     const auto difficulty = receive();
+    BC_REQUIRE(suggested.at("result").as_bool());
     BC_REQUIRE_EQUAL(difficulty.at("params").as_array().at(0).as_double(), 2.0);
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_suggest_difficulty__below_minimum__unchanged)
 {
-    BC_REQUIRE(get(R"({"id":5,"method":"mining.suggest_difficulty","params":[1.0e-20]})").at("result").as_bool());
+    const auto suggested = get(R"({"id":5,"method":"mining.suggest_difficulty","params":[1.0e-20]})");
     subscribe();
     authorize(address(0x01));
     const auto difficulty = receive();
+    BC_REQUIRE(suggested.at("result").as_bool());
     BC_REQUIRE_EQUAL(difficulty.at("params").as_array().at(0).as_double(), stratum_v1_minimum_difficulty);
 }
 
@@ -208,10 +215,11 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__share_of_reissued_job__true)
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_suggest_target__difficulty_one__job_difficulty)
 {
-    BC_REQUIRE(get(R"({"id":5,"method":"mining.suggest_target","params":["00000000ffff0000000000000000000000000000000000000000000000000000"]})").at("result").as_bool());
+    const auto suggested = get(R"({"id":5,"method":"mining.suggest_target","params":["00000000ffff0000000000000000000000000000000000000000000000000000"]})");
     subscribe();
     authorize(address(0x01));
     const auto difficulty = receive();
+    BC_REQUIRE(suggested.at("result").as_bool());
     BC_REQUIRE_EQUAL(difficulty.at("params").as_array().at(0).as_double(), 1.0);
 }
 
@@ -293,8 +301,10 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_notify__first_job__minimum_difficulty_first
 BC_AUTO_TEST_CASE(stratum_v1__mining_notify__unauthorized__no_job)
 {
     subscribe();
-    BC_REQUIRE_EQUAL(authorize("bogus").at("error").as_array().at(0).as_int64(), unauthorized_worker.value());
-    BC_REQUIRE(get(R"({"id":6,"method":"mining.extranonce.subscribe","params":[]})").at("result").as_bool());
+    const auto authorized = authorize("bogus");
+    const auto subscribed = get(R"({"id":6,"method":"mining.extranonce.subscribe","params":[]})");
+    BC_REQUIRE_EQUAL(authorized.at("error").as_array().at(0).as_int64(), unauthorized_worker.value());
+    BC_REQUIRE(subscribed.at("result").as_bool());
 }
 
 // mining.submit
@@ -310,8 +320,10 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__valid_share__true)
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__duplicate_share__duplicate_share)
 {
     const auto job = start_job();
-    BC_REQUIRE(submit(job, "00000000", "00000000").at("result").as_bool());
-    BC_REQUIRE_EQUAL(submit(job, "00000000", "00000000").at("error").as_array().at(0).as_int64(), duplicate_share.value());
+    const auto first = submit(job, "00000000", "00000000");
+    const auto second = submit(job, "00000000", "00000000");
+    BC_REQUIRE(first.at("result").as_bool());
+    BC_REQUIRE_EQUAL(second.at("error").as_array().at(0).as_int64(), duplicate_share.value());
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__distinct_shares__true)
@@ -341,68 +353,86 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__unknown_job__job_not_found)
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__job_not_word__unknown_dropped)
 {
     start_job();
-    BC_REQUIRE_EQUAL(get_error(std::format(R"({{"id":3,"method":"mining.submit","params":["{}","job","00000000","00000000","00000000"]}})", worker())), unknown.value());
-    BC_REQUIRE(receive().as_object().contains("dropped"));
+    const auto error = get_error(std::format(R"({{"id":3,"method":"mining.submit","params":["{}","job","00000000","00000000","00000000"]}})", worker()));
+    const auto dropped = receive();
+    BC_REQUIRE_EQUAL(error, unknown.value());
+    BC_REQUIRE(dropped.as_object().contains("dropped"));
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__anachronistic_ntime__unknown_dropped)
 {
     const auto job = start_job();
     const auto response = get(std::format(R"({{"id":3,"method":"mining.submit","params":["{}","{}","00000000","00000001","00000000"]}})", worker(), job.at("params").as_array().at(0).as_string()));
+    const auto dropped = receive();
     BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
-    BC_REQUIRE(receive().as_object().contains("dropped"));
+    BC_REQUIRE(dropped.as_object().contains("dropped"));
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__futuristic_ntime__unknown_dropped)
 {
     const auto job = start_job();
     const auto response = get(std::format(R"({{"id":3,"method":"mining.submit","params":["{}","{}","00000000","ffffffff","00000000"]}})", worker(), job.at("params").as_array().at(0).as_string()));
+    const auto dropped = receive();
     BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
-    BC_REQUIRE(receive().as_object().contains("dropped"));
+    BC_REQUIRE(dropped.as_object().contains("dropped"));
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__extranonce2_size__unknown_dropped)
 {
     const auto job = start_job();
-    BC_REQUIRE_EQUAL(submit(job, "000000", "00000000").at("error").as_array().at(0).as_int64(), unknown.value());
-    BC_REQUIRE(receive().as_object().contains("dropped"));
+    const auto response = submit(job, "000000", "00000000");
+    const auto dropped = receive();
+    BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
+    BC_REQUIRE(dropped.as_object().contains("dropped"));
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__nonce_not_word__unknown_dropped)
 {
     const auto job = start_job();
-    BC_REQUIRE_EQUAL(submit(job, "00000000", "zz").at("error").as_array().at(0).as_int64(), unknown.value());
-    BC_REQUIRE(receive().as_object().contains("dropped"));
+    const auto response = submit(job, "00000000", "zz");
+    const auto dropped = receive();
+    BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
+    BC_REQUIRE(dropped.as_object().contains("dropped"));
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__version_bits_without_mask__unknown_dropped)
 {
     const auto job = start_job();
-    BC_REQUIRE_EQUAL(submit(job, "00000000", "00000000", "00002000").at("error").as_array().at(0).as_int64(), unknown.value());
-    BC_REQUIRE(receive().as_object().contains("dropped"));
+    const auto response = submit(job, "00000000", "00000000", "00002000");
+    const auto dropped = receive();
+    BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
+    BC_REQUIRE(dropped.as_object().contains("dropped"));
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__version_bits_not_word__unknown_dropped)
 {
     const auto job = start_job();
-    BC_REQUIRE(get(R"({"id":4,"method":"mining.configure","params":[["version-rolling"],{}]})").at("result").as_object().at("version-rolling").as_bool());
-    BC_REQUIRE_EQUAL(submit(job, "00000000", "00000000", "zz").at("error").as_array().at(0).as_int64(), unknown.value());
-    BC_REQUIRE(receive().as_object().contains("dropped"));
+    const auto configured = get(R"({"id":4,"method":"mining.configure","params":[["version-rolling"],{}]})");
+    const auto response = submit(job, "00000000", "00000000", "zz");
+    const auto dropped = receive();
+    BC_REQUIRE(configured.at("result").as_object().at("version-rolling").as_bool());
+    BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
+    BC_REQUIRE(dropped.as_object().contains("dropped"));
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__version_bits_within_mask__true)
 {
     const auto job = start_job();
-    BC_REQUIRE(get(R"({"id":4,"method":"mining.configure","params":[["version-rolling"],{}]})").at("result").as_object().at("version-rolling").as_bool());
-    BC_REQUIRE(submit(job, "00000000", "00000000", "00002000").at("result").as_bool());
+    const auto configured = get(R"({"id":4,"method":"mining.configure","params":[["version-rolling"],{}]})");
+    const auto response = submit(job, "00000000", "00000000", "00002000");
+    BC_REQUIRE(configured.at("result").as_object().at("version-rolling").as_bool());
+    BC_REQUIRE(response.at("result").as_bool());
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__version_bits_outside_mask__unknown_dropped)
 {
     const auto job = start_job();
-    BC_REQUIRE(get(R"({"id":4,"method":"mining.configure","params":[["version-rolling"],{}]})").at("result").as_object().at("version-rolling").as_bool());
-    BC_REQUIRE_EQUAL(submit(job, "00000000", "00000000", "00000001").at("error").as_array().at(0).as_int64(), unknown.value());
-    BC_REQUIRE(receive().as_object().contains("dropped"));
+    const auto configured = get(R"({"id":4,"method":"mining.configure","params":[["version-rolling"],{}]})");
+    const auto response = submit(job, "00000000", "00000000", "00000001");
+    const auto dropped = receive();
+    BC_REQUIRE(configured.at("result").as_object().at("version-rolling").as_bool());
+    BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
+    BC_REQUIRE(dropped.as_object().contains("dropped"));
 }
 
 BC_AUTO_TEST_SUITE_END()
@@ -459,8 +489,10 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__below_share_target__low_difficulty_
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__below_share_target_repeated__low_difficulty_share)
 {
     const auto job = start_job();
-    BC_REQUIRE_EQUAL(submit(job, "00000000", "00000000").at("error").as_array().at(0).as_int64(), low_difficulty_share.value());
-    BC_REQUIRE_EQUAL(submit(job, "00000000", "00000000").at("error").as_array().at(0).as_int64(), low_difficulty_share.value());
+    const auto first = submit(job, "00000000", "00000000");
+    const auto second = submit(job, "00000000", "00000000");
+    BC_REQUIRE_EQUAL(first.at("error").as_array().at(0).as_int64(), low_difficulty_share.value());
+    BC_REQUIRE_EQUAL(second.at("error").as_array().at(0).as_int64(), low_difficulty_share.value());
 }
 
 BC_AUTO_TEST_SUITE_END()
@@ -470,9 +502,10 @@ BC_FIXTURE_TEST_SUITE(stratum_v1_vardiff_tests, stratum_v1_vardiff_setup_fixture
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__fast_shares__difficulty_raised)
 {
     const auto job = start_job();
-    BC_REQUIRE(submit_shares(job, 16));
+    const auto accepted = submit_shares(job, 16);
     const auto difficulty = receive();
     const auto reissued = receive();
+    BC_REQUIRE(accepted);
     BC_REQUIRE(difficulty.at("method").as_string() == "mining.set_difficulty");
     BC_REQUIRE_EQUAL(difficulty.at("params").as_array().at(0).as_double(), stratum_v1_minimum_difficulty * 4.0);
     BC_REQUIRE(reissued.at("method").as_string() == "mining.notify");
@@ -485,13 +518,16 @@ BC_FIXTURE_TEST_SUITE(stratum_v1_decay_tests, stratum_v1_decay_setup_fixture)
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_notify__no_shares__difficulty_decayed)
 {
-    BC_REQUIRE(get(R"({"id":5,"method":"mining.suggest_difficulty","params":[2.0]})").at("result").as_bool());
+    const auto suggested = get(R"({"id":5,"method":"mining.suggest_difficulty","params":[2.0]})");
     subscribe();
     authorize(address(0x01));
-    BC_REQUIRE_EQUAL(receive().at("params").as_array().at(0).as_double(), 2.0);
-    BC_REQUIRE(receive().at("method").as_string() == "mining.notify");
+    const auto initial = receive();
+    const auto job = receive();
     const auto difficulty = receive();
     const auto reissued = receive();
+    BC_REQUIRE(suggested.at("result").as_bool());
+    BC_REQUIRE_EQUAL(initial.at("params").as_array().at(0).as_double(), 2.0);
+    BC_REQUIRE(job.at("method").as_string() == "mining.notify");
     BC_REQUIRE(difficulty.at("method").as_string() == "mining.set_difficulty");
     BC_REQUIRE_EQUAL(difficulty.at("params").as_array().at(0).as_double(), 0.5);
     BC_REQUIRE(reissued.at("method").as_string() == "mining.notify");
@@ -520,16 +556,21 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__tcp_other_account__unauthorized_
 BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__tcp_credential__job_notified)
 {
     subscribe();
-    BC_REQUIRE(authorize(address(0x01) + ".rig", "pass").at("result").as_bool());
-    BC_REQUIRE(receive().at("method").as_string() == "mining.set_difficulty");
-    BC_REQUIRE(receive().at("method").as_string() == "mining.notify");
+    const auto authorized = authorize(address(0x01) + ".rig", "pass");
+    const auto difficulty = receive();
+    const auto job = receive();
+    BC_REQUIRE(authorized.at("result").as_bool());
+    BC_REQUIRE(difficulty.at("method").as_string() == "mining.set_difficulty");
+    BC_REQUIRE(job.at("method").as_string() == "mining.notify");
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__tcp_credential_unsatisfied__unauthorized_dropped)
 {
     subscribe();
-    BC_REQUIRE_EQUAL(get_error(R"({"id":3,"method":"mining.submit","params":["w","00000000","00000000","00000000","00000000"]})"), code{ network::error::unauthorized }.value());
-    BC_REQUIRE(receive().as_object().contains("dropped"));
+    const auto error = get_error(R"({"id":3,"method":"mining.submit","params":["w","00000000","00000000","00000000","00000000"]})");
+    const auto dropped = receive();
+    BC_REQUIRE_EQUAL(error, code{ network::error::unauthorized }.value());
+    BC_REQUIRE(dropped.as_object().contains("dropped"));
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__websocket_upgrade__without_credential__refused)
@@ -539,11 +580,16 @@ BC_AUTO_TEST_CASE(stratum_v1__websocket_upgrade__without_credential__refused)
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__websocket_credential__job_notified)
 {
-    BC_REQUIRE(!ws_upgrade(address(0x01), "pass"));
-    BC_REQUIRE(ws_get(R"({"id":1,"method":"mining.subscribe","params":[]})").at("error").is_null());
-    BC_REQUIRE(ws_get(std::format(R"({{"id":2,"method":"mining.authorize","params":["{}","x"]}})", address(0x01))).at("result").as_bool());
-    BC_REQUIRE(ws_receive().at("method").as_string() == "mining.set_difficulty");
-    BC_REQUIRE(ws_receive().at("method").as_string() == "mining.notify");
+    const auto ec = ws_upgrade(address(0x01), "pass");
+    const auto subscribed = ws_get(R"({"id":1,"method":"mining.subscribe","params":[]})");
+    const auto authorized = ws_get(std::format(R"({{"id":2,"method":"mining.authorize","params":["{}","x"]}})", address(0x01)));
+    const auto difficulty = ws_receive();
+    const auto job = ws_receive();
+    BC_REQUIRE(!ec);
+    BC_REQUIRE(subscribed.at("error").is_null());
+    BC_REQUIRE(authorized.at("result").as_bool());
+    BC_REQUIRE(difficulty.at("method").as_string() == "mining.set_difficulty");
+    BC_REQUIRE(job.at("method").as_string() == "mining.notify");
 }
 
 BC_AUTO_TEST_SUITE_END()
@@ -552,8 +598,9 @@ BC_FIXTURE_TEST_SUITE(stratum_v1_broadcast_tests, stratum_v1_broadcast_setup_fix
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_notify__pooled_transaction__branch_of_one)
 {
-    BC_REQUIRE(!submit(test::tx1c));
+    const auto ec = submit(test::tx1c);
     const auto job = start_job();
+    BC_REQUIRE(!ec);
     BC_REQUIRE_EQUAL(job.at("params").as_array().at(4).as_array().size(), 1u);
 }
 
@@ -565,10 +612,13 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__block_target__block_confirmed_and_c
 {
     const auto job = start_job();
     const auto found = mine(job, "00000001");
-    BC_REQUIRE(submit(job, "00000001", found.nonce).at("result").as_bool());
-    BC_REQUIRE(confirmed(1));
-    BC_REQUIRE_EQUAL(query_.get_top_confirmed_hash(), found.hash);
+    const auto response = submit(job, "00000001", found.nonce);
+    const auto top = confirmed(1);
+    const auto hash = query_.get_top_confirmed_hash();
     const auto next = receive_clean();
+    BC_REQUIRE(response.at("result").as_bool());
+    BC_REQUIRE(top);
+    BC_REQUIRE_EQUAL(hash, found.hash);
     BC_REQUIRE(next.at("params").as_array().at(1).as_string() == server::to_stratum_hash(found.hash));
 }
 
