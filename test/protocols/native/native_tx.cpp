@@ -129,14 +129,6 @@ BC_AUTO_TEST_CASE(native__tx_details__coinbase__no_time)
     BC_REQUIRE(!response.as_object().contains("time"));
 }
 
-BC_AUTO_TEST_CASE(native__tx_details__pooled__time)
-{
-    BC_REQUIRE(!submit(test::tx1c));
-    const auto response = get_json("/v1/tx/" + encode_hash(test::tx1c.hash(false)) + "/details?format=json");
-    BC_REQUIRE(!response.as_object().contains("confirmed"));
-    BC_REQUIRE(response.as_object().at("time").as_int64() > 0);
-}
-
 BC_AUTO_TEST_CASE(native__tx_details__text__not_acceptable)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/tx/" + coinbase1_hash + "/details?format=text"), http::status::not_acceptable);
@@ -531,6 +523,14 @@ BC_AUTO_TEST_CASE(native__template_txs__pooled__text_hashes)
 {
     BC_REQUIRE(!submit(test::tx1c));
     BC_REQUIRE_EQUAL(get_text("/v1/template/2/txs?format=text"), encode_base16(splice(null_hash, test::tx1c.hash(false))));
+}
+
+BC_AUTO_TEST_CASE(native__tx_details__pooled__time)
+{
+    BC_REQUIRE(!submit(test::tx1c));
+    const auto response = get_json("/v1/tx/" + encode_hash(test::tx1c.hash(false)) + "/details?format=json");
+    BC_REQUIRE(!response.as_object().contains("confirmed"));
+    BC_REQUIRE(response.as_object().at("time").as_int64() > 0);
 }
 
 BC_AUTO_TEST_SUITE_END()
