@@ -180,13 +180,30 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_suggest_difficulty__below_minimum__unchange
 BC_AUTO_TEST_CASE(stratum_v1__mining_suggest_difficulty__after_job__job_reissued)
 {
     const auto job = start_job();
-    BC_REQUIRE(get(R"({"id":5,"method":"mining.suggest_difficulty","params":[2.0]})").at("result").as_bool());
+    const auto suggested = get(R"({"id":5,"method":"mining.suggest_difficulty","params":[2.0]})");
     const auto difficulty = receive();
     const auto reissued = receive();
+    BC_REQUIRE(suggested.at("result").as_bool());
     BC_REQUIRE_EQUAL(difficulty.at("params").as_array().at(0).as_double(), 2.0);
     BC_REQUIRE(reissued.at("params").as_array().at(0).as_string() == "00000001");
     BC_REQUIRE(!reissued.at("params").as_array().at(8).as_bool());
     BC_REQUIRE(reissued.at("params").as_array().at(2) == job.at("params").as_array().at(2));
+    BC_REQUIRE(reissued.at("params").as_array().at(7) != job.at("params").as_array().at(7));
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__share_of_reissued_job__true)
+{
+    const auto job = start_job();
+    const auto share = submit(job, "00000000", "00000000");
+    const auto suggested = get(R"({"id":5,"method":"mining.suggest_difficulty","params":[2.0e-12]})");
+    const auto difficulty = receive();
+    const auto reissued = receive();
+    const auto response = submit(reissued, "00000000", "00000000");
+    BC_REQUIRE(share.at("result").as_bool());
+    BC_REQUIRE(suggested.at("result").as_bool());
+    BC_REQUIRE(difficulty.at("method").as_string() == "mining.set_difficulty");
+    BC_REQUIRE(response.at("result").as_bool());
+    BC_REQUIRE(response.at("error").is_null());
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_suggest_target__difficulty_one__job_difficulty)

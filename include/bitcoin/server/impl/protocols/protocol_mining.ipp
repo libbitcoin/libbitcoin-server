@@ -168,7 +168,7 @@ void CLASS::do_template(const code& ec,
     }
 }
 
-// The current job is issued again at the channel difficulty.
+// The current job is issued again at the channel difficulty and a later time.
 TEMPLATE
 void CLASS::refresh(mining_channel& channel) NOEXCEPT
 {
@@ -179,6 +179,7 @@ void CLASS::refresh(mining_channel& channel) NOEXCEPT
 
     auto copy = *current;
     copy.difficulty = channel.difficulty();
+    copy.timestamp = std::max(network::unix_time(), add1(current->timestamp));
     send_job(channel, system::to_shared(std::move(copy)), false);
 }
 
