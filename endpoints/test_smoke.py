@@ -50,8 +50,8 @@ def native_heights(native_config):
     response = requests.get(native_config["base_url"] + "/top?format=json",
         timeout=TIMEOUT)
     response.raise_for_status()
-    data = response.json()
-    return data["confirmed"]["height"], data["candidate"]["height"]
+    tops = {top["chain"]: top["height"] for top in response.json()}
+    return tops["confirmed"], tops.get("candidate", tops["confirmed"])
 
 
 def bracketed(native_config, height):
@@ -75,7 +75,7 @@ def bitcoind_height(bitcoind_rpc_config):
     payload = {"jsonrpc": "1.0", "id": 1, "method": "getblockcount",
         "params": []}
     response = requests.post(bitcoind_rpc_config["url"], json=payload,
-        timeout=TIMEOUT)
+        auth=bitcoind_rpc_config.get("auth"), timeout=TIMEOUT)
     response.raise_for_status()
     return response.json()["result"]
 

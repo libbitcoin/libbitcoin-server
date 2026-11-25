@@ -1,465 +1,65 @@
 # libbitcoin-server Endpoint Tests
 
-Comprehensive test suite for libbitcoin-server's client-server interfaces.
+Integration tests for the client-server interfaces of libbitcoin-server
+(`bs`), run with pytest against a running server.
 
 ## Overview
 
-This directory contains Python-based integration tests for all libbitcoin-server network endpoints:
+| Interface | Protocol | Test file | Tests |
+|-----------|----------|-----------|------:|
+| **Smoke** (any network) | HTTP pages, heights, node log | `test_smoke.py` | 10 |
+| **Native REST** | HTTP + JSON | `test_native.py` | 46 |
+| **Esplora REST** | HTTP + JSON, websocket | `test_esplora.py` | 49 |
+| **bitcoind REST** | HTTP + JSON/hex/binary | `test_bitcoind_rest.py` | 15 |
+| **bitcoind RPC** | HTTP + JSON-RPC | `test_bitcoind_rpc.py` | 38 |
+| **btcd** | websocket/HTTP + JSON-RPC 1.0 | `test_btcd_rpc.py` | 43 |
+| **Electrum** | TCP + JSON-RPC 2.0 | `test_electrum.py` | 34 |
+| **Electrum subscriptions** | TCP + notifications | `test_electrum_subscriptions.py` | 2 |
+| **Sparrow** | TCP + JSON-RPC 2.0 | `test_sparrow.py` | 13 |
+| **Transports** | TCP downgrade, HTTP POST, websocket | `test_transports.py` | 6 |
+| **Stratum v1** | TCP/HTTP/websocket + JSON-RPC 1.0 | `test_stratum_v1.py` | 45 |
+| **Robustness** (all services) | raw TCP/HTTP/websocket, misbehaving clients | `test_robustness_*.py`, `test_longrun.py` | 145 |
+| **Stratum v2** | TCP + binary | — | planned |
 
-| Interface | Protocol | Test File | Status |
-|-----------|----------|-----------|--------|
-| **Smoke (any network)** | HTTP + pages, heights, log | `test_smoke.py` | ✅ Active |
-| **Native REST** | HTTP/S + JSON | `test_native.py` | ✅ Active |
-| **Esplora REST** | HTTP/S + JSON | `test_esplora.py` | ✅ Active |
-| **bitcoind REST** | HTTP/S + JSON/Binary | `test_bitcoind_rest.py` | 🚧 Planned |
-| **bitcoind RPC** | HTTP/S + JSON-RPC 2.0 | `test_bitcoind_rpc.py` | ✅ Active |
-| **Electrum** | TCP + JSON-RPC 2.0 | `test_electrum.py` | ✅ Active |
-| **Electrum subscriptions** | TCP + push notifications | `test_electrum_subscriptions.py` | ✅ Active |
-| **Robustness** (all services) | raw TCP / HTTP / WS, misbehaving clients | `test_robustness_*.py`, `test_longrun.py` | ✅ Active |
-| **Stratum v1** | TCP + JSON-RPC 1.0 | `test_stratum_v1.py` | 🚧 Planned |
-| **Stratum v2** | TCP + Binary | `test_stratum_v2.py` | 🚧 Planned |
+Test counts are test functions; parametrized cases run more (about 2,150 in
+all).
 
 ## Prerequisites
 
-### 1. Install Dependencies
+### 1. Python dependencies
 
 ```bash
 pip install pytest requests websocket-client
 ```
 
-### 2. Running libbitcoin-server
+### 2. A running server
 
-Ensure libbitcoin-server is running with the desired endpoints enabled. See [configuration.md](../../docs/configuration.md) for endpoint setup.
-
-**Minimum configuration for testing:**
+Start `bs` with the endpoints under test bound. See
+[configuration.md](../docs/configuration.md) and `bs --settings` for all
+settings. A service is off unless it has a `bind` and a nonzero `connections`.
 
 ```ini
-[native]
-bind = 0.0.0.0:8181
-bind = [::]:8181
-connections = 10
-
-[bitcoind]
-bind = 0.0.0.0:8332
-bind = [::]:8332
-connections = 10
-enable_utxo = true
-
-[btcd]
-bind = 0.0.0.0:8334
-bind = [::]:8334
-connections = 10
-
-[electrum]
-bind = 0.0.0.0:50001
-bind = [::]:50001
-connections = 10
-
-[stratum_v1]
-bind = 0.0.0.0:8880
-bind = [::]:8880
-connections = 10
-```
-
-### 3. Synced Blockchain
-
-Tests use reference blocks and transactions from the Bitcoin blockchain. Your node should be synced at least to:
-- **Block height 9000** (minimum for basic tests)
-- **Block height 481,824+** (required for SegWit/witness tests — first enforced SegWit block)
-- **Block height 500,000+** (recommended for comprehensive testing)
-
-## Quick Start
-
-### Run All Tests (Default Configuration)
-
-```bash
-# From test/endpoints/ directory
-pytest
-
-# Or from project root
-pytest test/endpoints/
-```
-
-This uses default localhost endpoints:
-- Native: `http://localhost:8181`
-- bitcoind RPC: `http://localhost:8332`
-- Electrum: `localhost:50001`
-
-### Run Specific Interface Tests
-
-```bash
-# Test only native REST
-pytest test_native.py
-
-# Test only bitcoind RPC
-pytest test_bitcoind_rpc.py
-
-# Test only btcd JSON-RPC/websocket
-pytest test_btcd_rpc.py
-
-# Test only Electrum protocol
-pytest test_electrum.py
-
-# Test only Stratum v1 (worker is an address unless payout_address is set)
-pytest test_stratum_v1.py --stratum-v1-worker=<address>
-```
-
-### Run with Verbose Output
-
-```bash
-pytest -v test_native.py
-pytest -v --tb=short  # Shorter tracebacks
-pytest -vv  # Very verbose
-```
-
-## Configuration Options
-
-All tests accept command-line parameters to specify target hosts and ports.
-
-### Native / REST Options
-
-```bash
-pytest test_native.py \
-  --native-host=192.168.1.100 \
-  --native-port=8181
-```
-
-**Available options:**
-- `--native-host` — Host for native/REST (default: localhost)
-- `--native-port` — Port for native/REST (default: 8181)
-
-### bitcoind RPC Options
-
-```bash
-pytest test_bitcoind_rpc.py \
-  --bitcoind-rpc-host=localhost \
-  --bitcoind-rpc-port=8332
-```
-
-**With authentication (for bitcoind):**
-
-```bash
-pytest test_bitcoind_rpc.py \
-  --bitcoind-auth \
-  --bitcoind-cookie=/path/to/.cookie
-```
-
-**Available options:**
-- `--bitcoind-rpc-host` — Host for bitcoind RPC (default: localhost)
-- `--bitcoind-rpc-port` — Port for bitcoind RPC (default: 8332)
-- `--bitcoind-auth` — Enable authentication (cookie file)
-- `--bitcoind-cookie` — Path to cookie file (default: /mnt/core/.cookie)
-
-### btcd JSON-RPC/WebSocket Options
-
-```bash
-pytest test_btcd_rpc.py \
-  --btcd-host=localhost \
-  --btcd-port=8334
-```
-
-**With basic auth / ws `authenticate` credentials configured:**
-
-```bash
-pytest test_btcd_rpc.py \
-  --btcd-username=user \
-  --btcd-password=pass
-```
-
-**Available options:**
-- `--btcd-host` — Host for btcd JSON-RPC/websocket (default: localhost)
-- `--btcd-port` — Port for btcd JSON-RPC/websocket (default: 8334)
-- `--btcd-username` / `--btcd-password` — Credentials to test `authenticate`
-  against, if the server has `btcd.credential=username:password` configured
-  (default: none — the credential-specific tests are skipped)
-
-No extra Python dependency is required: the websocket client is a small
-stdlib-only implementation (see `WebSocketConnection` in `test_btcd_rpc.py`),
-matching this suite's existing preference for hand-rolled wire protocol over
-Electrum's raw TCP handling.
-
-### Electrum Protocol Options
-
-```bash
-pytest test_electrum.py \
-  --electrum-host=localhost \
-  --electrum-port=50001 \
-  --electrum-protocol=1.4:1.6
-```
-
-**Test against public Electrum server:**
-
-```bash
-pytest test_electrum.py \
-  --electrum-host=bitcoin.lukechilds.co \
-  --electrum-port=50001
-```
-
-**Available options:**
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--electrum-host` | localhost | Electrum server hostname |
-| `--electrum-port` | 50001 | Electrum server port |
-| `--electrum-protocol` | `1.4:1.6` | Protocol version range offered in the `server.version` handshake. Use `min:max` (e.g. `1.4:1.6`) or a single version (e.g. `1.6`). The server negotiates the highest mutually supported version. |
-| `--subscription-timeout` | 60 | Seconds to wait for a push notification (used by `test_electrum_subscriptions.py`) |
-
-### General Options
-
-```bash
-# Set custom timeout for all requests
-pytest --timeout=60
-
-# Combine multiple options
-pytest test_native.py \
-  --native-host=192.168.1.100 \
-  --native-port=8181 \
-  --timeout=30
-```
-
-- `--run-slow` — Include tests marked `@pytest.mark.slow`: these wait on a
-  real external event (e.g. `test_blockconnected_notification` waits up to
-  `--subscription-timeout` for an actual new block) and are skipped by
-  default so a normal run stays fast.
-
-```bash
-# Include slow/live-event tests, e.g. against a node expecting a block soon
-pytest test_btcd_rpc.py --run-slow --subscription-timeout=120
-```
-
-## Test Organization
-
-### test_native.py — Native REST
-
-Tests the `/v1/` HTTP REST endpoints for blockchain exploration.
-
-**Coverage:**
-- ✅ General endpoints (configuration, top)
-- ✅ Block queries (by hash/height, headers, details, transactions)
-- ✅ Block filters (BIP 158/157 bloom filters)
-- ✅ Transaction queries (by hash, details, fees)
-- ✅ Input/output queries (scripts, witness data, spenders)
-- ✅ Address queries (balance, confirmed/unconfirmed)
-- ✅ Error handling (404, invalid parameters)
-
-**Example test runs:**
-
-```bash
-pytest test_native.py
-pytest test_native.py -k "block"
-pytest test_native.py -k "tx"
-pytest test_native.py -k "not address"
-```
-
-### test_bitcoind_rpc.py — bitcoind RPC Compatibility
-
-Tests JSON-RPC 2.0 interface compatible with the bitcoind RPC interface.
-
-**Coverage:**
-- ✅ Blockchain methods (15 methods)
-  - getbestblockhash, getblock, getblockchaininfo, getblockcount
-  - getblockfilter, getblockhash, getblockheader, getblockstats
-  - getchaintxstats, gettxout, gettxoutsetinfo
-  - pruneblockchain, savemempool, scantxoutset
-  - verifychain
-- ✅ Error handling
-- ⏭️ Control methods (commented out — 6 methods)
-- ⏭️ Mining methods (commented out — 4 methods)
-- ⏭️ Network methods (commented out — 9 methods)
-- ⏭️ Raw transaction methods (commented out — 9 methods)
-
-**Example test runs:**
-
-```bash
-pytest test_bitcoind_rpc.py
-pytest test_bitcoind_rpc.py \
-  --bitcoind-rpc-port=9333 \
-  --bitcoind-auth \
-  --bitcoind-cookie=/path/to/.cookie
-pytest test_bitcoind_rpc.py -k "getblock"
-```
-
-### test_btcd_rpc.py — btcd JSON-RPC/WebSocket Compatibility
-
-Tests the btcd-compatible endpoint: JSON-RPC 1.0 over a persistent websocket
-connection (session/notification/filter/admin extension methods) plus plain
-http post (bitcoind interface methods inherited from `protocol_bitcoind_rpc`, same shape
-as `bitcoind`).
-
-Unlike the other endpoint suites, this one is explicitly split into two
-kinds of test:
-- **No `xfail` marker** — asserts real, currently-implemented behavior. A
-  failure here is a regression.
-- **`@pytest.mark.xfail(strict=False)`** — describes intended behavior that
-  isn't implemented yet (currently: only the mempool-dependent
-  `notifynewtransactions`/`stopnotifynewtransactions`, blocked on a v5
-  mempool). Expected to fail today; flips to XPASS once implemented, which
-  is the cue to tighten the assertion and remove the marker. Use
-  `pytest -m xfail -rx` to see the current development checklist.
-
-**Coverage:**
-- ✅ Session management — `authenticate` (no-op / credential match / credential
-  mismatch), `session`
-- ✅ Block subscription — `notifyblocks`/`stopnotifyblocks` (ack), a real
-  `blockconnected` push-notification test (positional `[hash, height, time]`,
-  verified against upstream btcd's actual wire format)
-- ✅ bitcoind interface methods, both over http post and over the persistent ws
-  connection (`getbestblockhash`, `getblockcount`, `getblockhash`,
-  `getblockheader`, `gettxout`, `getrawtransaction`)
-- ✅ `loadtxfilter`/`rescanblocks` (address/outpoint watch-list, filtered
-  block notifications), `getcurrentnet`, `getbestblock`, `rescan` (empty-
-  addrs/outpoints bootstrap case), `getdifficulty`, `getinfo`,
-  `getnettotals`, `getnetworkhashps`, `createrawtransaction`,
-  `decoderawtransaction`, `decodescript`, `validateaddress`, `help`
-- ✅ btcd-only methods (e.g. `getinfo`) reachable over plain http post too,
-  not only ws
-- ✅ Deprecated methods stay rejected — `notifyreceived`, `stopnotifyreceived`,
-  `notifyspent`, `stopnotifyspent`; `stop`; `rescan` with a non-empty
-  address/outpoint list (permanent, no dev-target xfail — these are guarded
-  against ever silently "working")
-- ✅ Response envelope — id echo across requests, unknown-method error
-  without dropping the connection
-- 🚧 (xfail) `notifynewtransactions`/`stopnotifynewtransactions` — blocked on
-  a v5 mempool
-
-**Example test runs:**
-
-```bash
-pytest test_btcd_rpc.py
-pytest test_btcd_rpc.py --btcd-port=8334
-pytest test_btcd_rpc.py -k "not xfail"      # only currently-real behavior
-pytest test_btcd_rpc.py -m xfail -rx        # what's left to implement
-BTCD_DEBUG=1 pytest test_btcd_rpc.py -s -k session
-
-# blockconnected waits for a real block; trigger one instead of waiting out
-# the timeout (regtest/testnet), or just let it wait on a synced mainnet node
-BTCD_TRIGGER_BLOCK="bitcoin-cli generatetoaddress 1 <address>" \
-  pytest test_btcd_rpc.py -k blockconnected --subscription-timeout=120
-```
-
-### test_electrum.py — Electrum Protocol
-
-Tests Electrum Protocol JSON-RPC over TCP. All assertions are spec-driven — they
-verify the desired protocol behavior rather than mirroring the current server
-implementation. Failing tests indicate gaps between spec and implementation.
-
-**Architecture:**
-- Single persistent TCP connection for the whole test session
-- `server.version` handshake performed once in the session fixture (the protocol requires it to be the first message sent)
-- Unique monotonic RPC IDs per request: stale delayed responses are discarded automatically
-- Push notifications from active subscriptions filtered out transparently
-- `select()`-based buffered I/O instead of `socket.makefile()` — a timeout on any individual response never corrupts the reader or breaks subsequent tests
-
-**Coverage:**
-
-| Category | Tests | Methods |
-|----------|-------|---------|
-| Server | 7 | `server.version`, `server.banner`, `server.features`, `server.ping`, `server.add_peer`, `server.donation_address`, `server.peers.subscribe` |
-| Block header | 3 | `blockchain.block.header` (plain and with cp proof, including protocol doc example) |
-| Block headers | 9 | `blockchain.block.headers` (plain, with cp, bulk, edge cases) |
-| Headers subscribe | 1 | `blockchain.headers.subscribe` (initial response only) |
-| Fee estimation | 2 | `blockchain.estimatefee`, `blockchain.relayfee` |
-| Scripthash | 6 | `blockchain.scripthash.get_balance`, `.get_history`, `.get_mempool`, `.listunspent`, `.subscribe`, `.unsubscribe` |
-| Transactions | 5 | `blockchain.transaction.broadcast`, `.get`, `.get` (verbose), `.get_merkle`, `.id_from_pos` |
-| Mempool | 1 | `mempool.get_fee_histogram` |
-| **Total** | **34** | |
-
-**Example test runs:**
-
-```bash
-# Local Electrum server (default: localhost:50001, protocol 1.4–1.6)
-pytest test_electrum.py
-
-# Negotiate a specific protocol version
-pytest test_electrum.py --electrum-protocol=1.6
-pytest test_electrum.py --electrum-protocol=1.4:1.4
-
-# Test against a public server
-pytest test_electrum.py --electrum-host=bitcoin.lukechilds.co --electrum-port=50001
-
-# Filter by method group
-pytest test_electrum.py -k "server"
-pytest test_electrum.py -k "scripthash"
-pytest test_electrum.py -k "block_header"
-
-# Debug mode (pretty-print every JSON-RPC message)
-ELECTRUM_DEBUG=1 pytest test_electrum.py -s -k "block_header"
-```
-
-### test_electrum_subscriptions.py — Push Notification Tests
-
-Tests that subscribe to server events and wait for real blockchain push notifications.
-Requires a live node with active network traffic and much longer timeouts than the
-regular request/response tests. Each test opens its own fresh TCP connection.
-
-```bash
-pytest test_electrum_subscriptions.py
-pytest test_electrum_subscriptions.py --subscription-timeout=120
-
-# Optional: trigger a block/tx event to avoid waiting the full timeout
-ELECTRUM_TRIGGER_HEADERS="bitcoin-cli generatetoaddress 1 <address>" \
-  pytest test_electrum_subscriptions.py
-```
-
-**Tests:**
-- `test_headers_notification` — subscribes to `blockchain.headers.subscribe`, waits for a block notification, validates `{method, params: [{height, hex}]}` format
-- `test_scripthash_notification` — subscribes to `blockchain.scripthash.subscribe`, waits for a status-change notification, validates `{method, params: [scripthash, status]}` format
-
-### test_robustness_*.py — Misbehaving Clients
-
-These suites act as broken, slow or hostile clients against the libbitcoin-network
-http/websocket layer and the json-rpc streaming above it. They do not check
-answers to valid requests. They check that misbehavior stays contained.
-
-| File | Layer |
-|------|-------|
-| `test_robustness_http.py` | http framing and limits, on every http service |
-| `test_robustness_ws.py` | rfc6455 frames, fragmentation, control frames, on every http service |
-| `test_robustness_native.py` | native targets, queries, large responses, ws subscriptions |
-| `test_robustness_esplora.py` | esplora targets, broadcast bodies, large responses, ws targets |
-| `test_robustness_admin.py` | admin log/event subscriptions: hostile targets and filters, unread pushes |
-| `test_robustness_electrum.py` | newline-delimited json-rpc (electrum, sparrow): malformed json, envelopes, handshake, volume |
-| `test_robustness_bitcoind.py` | bitcoind json-rpc over http/tcp, edge parameters, authorization, REST targets |
-| `test_robustness_btcd.py` | authorization abuse, json-rpc 1.0 over ws/http, filters, notifications |
-| `test_longrun.py` | heavy requests: cancellation, isolation, shutdown (`--bs-pid`, same host) |
-| `robustness.py` | raw socket/http/ws client, canaries, server-side checks |
-
-Each case passes only if the bad connection gets an error or a close within
-5 s (unless the input is legitimately incomplete). The autouse `contained`
-fixture then checks after every case:
-
-- every service in `--robust-services` still answers a fresh, valid request
-  (electrum and sparrow over tcp, btcd over ws, the others over http). The
-  default is `native,electrum,btcd`, and a service that is not listed is
-  skipped;
-- no server-side socket on a service port is left in ESTABLISHED or
-  CLOSE_WAIT (released connection slots). This check runs only on the same host;
-- with `--bs-pid`, the process is alive and no thread stays pegged over two
-  3 s windows. `--no-spin-check` turns the CPU check off.
-
-Server configuration used (mainnet, syncing, loopback only):
-
-```ini
-[node]
-delay_inbound = false      # serve electrum/btcd while syncing
-
 [native]
 bind = 127.0.0.1:8181
 connections = 32
-websocket = true
+
+[esplora]
+bind = 127.0.0.1:3000
+connections = 32
+
+[bitcoind]
+bind = 127.0.0.1:8332
+connections = 32
+enable_utxo = true          # gettxoutsetinfo, scantxoutset
+# credential = user:password
 
 [btcd]
 bind = 127.0.0.1:8334
 connections = 32
-credential = robust:robust
+# credential = user:password
 
 [electrum]
 bind = 127.0.0.1:50001
-connections = 32
-
-# For --robust-services with the other services.
-[esplora]
-bind = 127.0.0.1:3000
 connections = 32
 
 [sparrow]
@@ -470,27 +70,414 @@ connections = 32
 bind = 127.0.0.1:8080
 connections = 32
 
-[bitcoind]
-bind = 127.0.0.1:8332
+[stratum_v1]
+bind = 127.0.0.1:8880
 connections = 32
 ```
+
+### 3. Chain data
+
+The reference data (`utils.ReferenceData`) is mainnet. Tests that need a
+height, a current node or an open pool are marked and skip themselves when
+the node does not meet the need (see [Markers](#markers)):
+
+- **height 9,000**: basic block and transaction tests
+- **height 481,824**: SegWit tests (first block enforcing SegWit)
+- **current** (not in initial block download): address activity, pool tests
+
+`test_smoke.py` and `test_stratum_v1.py` work on any network. The stratum
+share and block tests need regtest (see [test_stratum_v1.py](#test_stratum_v1py--stratum-v1)).
+
+## Quick start
+
+```bash
+cd endpoints
+
+# Everything at the default localhost ports
+pytest
+
+# One interface
+pytest test_native.py
+pytest test_bitcoind_rpc.py --bitcoind-auth --bitcoind-cookie=/path/to/.cookie
+pytest test_btcd_rpc.py --btcd-username=user --btcd-password=pass
+pytest test_electrum.py
+pytest test_stratum_v1.py --stratum-v1-worker=<address>
+
+# Verbose, short tracebacks, skip and xfail reasons
+pytest -v --tb=short -rsx test_native.py
+```
+
+## Options
+
+All options have localhost defaults.
+
+| Option | Default | Use |
+|--------|---------|-----|
+| `--native-host`, `--native-port` | localhost, 8181 | native REST |
+| `--esplora-host`, `--esplora-port` | localhost, 3000 | Esplora REST |
+| `--admin-host`, `--admin-port` | localhost, 8080 | admin pages |
+| `--bitcoind-rpc-host`, `--bitcoind-rpc-port` | localhost, 8332 | bitcoind JSON-RPC |
+| `--bitcoind-rest-host`, `--bitcoind-rest-port` | localhost, 8332 | bitcoind REST |
+| `--bitcoind-auth` | off | send the credential of `--bitcoind-cookie` (bitcoind RPC, REST and smoke suites) |
+| `--bitcoind-cookie` | /mnt/core/.cookie | file holding `user:password` |
+| `--bitcoind-username`, `--bitcoind-password` | none | the bitcoind credential for the robustness suites |
+| `--btcd-host`, `--btcd-port` | localhost, 8334 | btcd |
+| `--btcd-username`, `--btcd-password` | none | the btcd credential (basic authorization and ws `authenticate`); without it the credential tests skip |
+| `--electrum-host`, `--electrum-port` | localhost, 50001 | Electrum |
+| `--electrum-protocol` | 1.4:1.6 | versions offered in `server.version` (`min:max` or one version) |
+| `--sparrow-host`, `--sparrow-port` | localhost, 50003 | Sparrow |
+| `--stratum-v1-host`, `--stratum-v1-port` | localhost, 8880 | Stratum v1 |
+| `--stratum-v1-worker` | worker | the worker name: an address (`<address>[.<rig>]`) unless the server configures `payout_address` |
+| `--stratum-v1-password` | none | the stratum credential password, when `[stratum_v1] credential` is configured (its user is the worker account) |
+| `--stratum-v2-host`, `--stratum-v2-port` | localhost, 3336 | Stratum v2 (no tests yet) |
+| `--timeout` | 30 | request timeout in seconds |
+| `--subscription-timeout` | 60 | seconds to wait for a notification |
+| `--scan-timeout` | 1800 | seconds for whole-set scans (`gettxoutsetinfo`, `scantxoutset`) |
+| `--run-slow` | off | include tests marked `slow` (they wait on a real event) |
+| `--log` | none | node log (e.g. `console.log`) the smoke suite checks for faults since startup |
+| `--robust-services` | native,electrum,btcd | services the robustness suites attack and check |
+| `--robust-connections` | 32 | the `connections` limit configured on those services |
+| `--bs-pid` | none | server process id on this host: enables the process and CPU checks |
+| `--no-spin-check` | off | skip the pegged-thread check (while the node syncs) |
+| `--run-shutdown` | off | run the `test_longrun.py` test that stops the server |
+
+### Credentials
+
+`--bitcoind-auth` reads the bitcoind credential from a file. A configured
+`[bitcoind] credential = user:password` works the same way when the file
+holds `user:password`. The robustness suites take it separately, as
+`--bitcoind-username` and `--bitcoind-password`. A server with a bitcoind
+credential therefore needs both:
+
+```bash
+echo "user:password" > bitcoind.cookie
+pytest --bitcoind-auth --bitcoind-cookie=bitcoind.cookie \
+  --bitcoind-username=user --bitcoind-password=password ...
+```
+
+Without them the bitcoind requests get `401 Unauthorized`, and every
+robustness case errors in its survival check.
+
+## Markers
+
+| Marker | Effect |
+|--------|--------|
+| `slow` | skipped unless `--run-slow` (waits on a real block or timer) |
+| `requires_height(h)` | skipped unless the native top is at least `h` |
+| `requires_current` | skipped while bitcoind `getblockchaininfo` reports initial block download |
+| `requires_pool` | skipped unless native `/v1/fees` answers (the pool is open) |
+
+```bash
+pytest -m "not slow"
+pytest --run-slow test_btcd_rpc.py --subscription-timeout=120
+```
+
+## Test files
+
+### test_smoke.py — Smoke
+
+For any running server on any network: the native and admin pages and their
+assets are served (and revalidated), a malformed native request is refused,
+the native heights are ordered, Esplora and bitcoind agree with native on the
+height, and with `--log` the node log shows no fault since startup.
+
+```bash
+pytest test_smoke.py --native-port=8181 --admin-port=8080 --log=console.log
+```
+
+### test_native.py — Native REST
+
+The `/v1/` REST interface: configuration, tops, blocks (by hash and height,
+headers, header context, details, txs, txs details, tx by position, scripts),
+block filters, transactions (header, details, inputs, outputs, scripts,
+witness, spenders), addresses (all, confirmed, unconfirmed, balance), block
+templates, and errors (unknown hash, invalid height, unsupported format).
+
+```bash
+pytest test_native.py -k "block"
+NATIVE_DEBUG=1 pytest test_native.py -s -k top
+```
+
+### test_esplora.py — Esplora REST
+
+The Esplora (Blockstream explorer) API: tip, blocks, block txs and txids,
+transactions (hex, raw, status, outspends, merkle proofs), broadcast and
+package broadcast errors, addresses and script hashes (txs, paging, pool,
+utxo), the pool (`/mempool`, `/mempool/txids`, `/mempool/recent`), fee
+estimates, invalid targets, and the websocket interface.
+
+```bash
+pytest test_esplora.py --esplora-port=3000
+```
+
+### test_bitcoind_rest.py — bitcoind REST
+
+The bitcoind REST endpoints under `/rest/`: chaininfo, block,
+block/notxdetails, spenttxouts, blockhashbyheight, headers, blockpart and the
+basic filters, as `.json`, `.hex` and `.bin`. A non-200 status degrades to
+xfail. With a bitcoind credential, pass `--bitcoind-auth`.
+
+### test_bitcoind_rpc.py — bitcoind RPC
+
+bitcoind JSON-RPC. `bs` implements 81 methods. The wallet and test groups,
+and 15 other methods (such as `pruneblockchain`, `setban`, `stop`), are
+answered with an error. The suite covers 22 of the 81:
+
+| Group | Tested | Methods not yet tested |
+|-------|-------:|------------------------|
+| Blockchain | 14/33 | `getchainstates`, `getchaintips`, `getdeploymentinfo`, `getdescriptoractivity`, `getdifficulty`, `getmempoolancestors`, `getmempooldescendants`, `getmempoolentry`, `getmempoolinfo`, `getrawmempool`, `gettxoutproof`, `gettxspendingprevout`, `importmempool`, `preciousblock`, `scanblocks`, `verifytxoutproof`, `waitforblock`, `waitforblockheight`, `waitfornewblock` |
+| Mining | 5/5 | — |
+| Raw transactions | 2/15 | `analyzepsbt`, `combinepsbt`, `combinerawtransaction`, `converttopsbt`, `createpsbt`, `createrawtransaction`, `decodepsbt`, `decoderawtransaction`, `finalizepsbt`, `joinpsbts`, `submitpackage`, `testmempoolaccept`, `utxoupdatepsbt` |
+| Network | 1/12 | `addnode`, `disconnectnode`, `exportasmap`, `getaddednodeinfo`, `getaddrmaninfo`, `getconnectioncount`, `getnettotals`, `getnodeaddresses`, `getpeerinfo`, `ping`, `setnetworkactive` |
+| Utility | 0/8 | `createmultisig`, `decodescript`, `deriveaddresses`, `estimatesmartfee`, `getdescriptorinfo`, `getindexinfo`, `validateaddress`, `verifymessage` |
+| Control | 0/6 | `getmemoryinfo`, `getopenrpcinfo`, `getrpcinfo`, `help`, `logging`, `uptime` |
+| ZMQ, version | 0/2 | `getzmqnotifications`, `negotiateversion` |
+
+Tested:
+- **Blockchain:** `getbestblockhash`, `getblock`, `getblockchaininfo`,
+  `getblockcount`, `getblockfilter`, `getblockhash`, `getblockheader`,
+  `getblockstats`, `getchaintxstats`, `gettxout`, `gettxoutsetinfo`,
+  `savemempool`, `scantxoutset`, `verifychain`, and `pruneblockchain` (an
+  error)
+- **Mining:** `getmininginfo` (top and next block work), `getnetworkhashps`
+  (default window, genesis, invalid window), `getblocktemplate` (BIP145
+  segwit rule and template mode required, BIP22 fields, BIP141 commitment,
+  transaction dependencies), `submitblock` (duplicate, undecodable, invalid
+  with a reject reason), `submitheader` (known, unknown parent,
+  undecodable), and `getprioritisedtransactions`/`prioritisetransaction`
+  (`-33`). On regtest a block is built from the template, mined and
+  submitted, and becomes the top.
+- **Raw transactions:** `getrawtransaction` (raw, verbose, coinbase, SegWit,
+  unknown), `sendrawtransaction` (invalid hex, malformed, and with
+  `BITCOIND_ALLOW_BROADCAST=1` a known transaction)
+- **Network:** `getnetworkinfo`
+
+A valid error response to `send_rpc` degrades to xfail. Error paths use
+`raw_rpc` and assert the code.
+
+`gettxoutsetinfo`, `scantxoutset` and `verifychain` scan the whole set and
+take minutes on mainnet (`--scan-timeout`). `gettxoutsetinfo` occupies the
+shared thread pool while it runs, so do not run it beside other long tests.
+
+```bash
+pytest test_bitcoind_rpc.py --bitcoind-auth --bitcoind-cookie=/path/to/.cookie
+BITCOIND_DEBUG=1 pytest test_bitcoind_rpc.py -s -k getblock
+```
+
+### test_btcd_rpc.py — btcd
+
+The btcd-compatible endpoint: JSON-RPC 1.0 over a persistent websocket (the
+session and notification methods) and over HTTP POST (the methods shared with
+bitcoind).
+
+- **Session:** `authenticate` (no credential, credential match, mismatch),
+  `session`, `getcurrentnet`
+- **Notifications:** `notifyblocks`/`stopnotifyblocks`, a real
+  `blockconnected` notification (slow), `notifynewtransactions`,
+  `notifyreceived`, `notifyspent` and their `stop*` methods, valid and
+  invalid addresses and outpoints
+- **Filters:** `loadtxfilter`, `rescanblocks`, `filteredblockconnected`
+- **`rescan`:** unknown begin block rejected, empty address and outpoint
+  lists finish at once with `rescanfinished`, addresses not implemented
+- **Methods:** `getdifficulty`, `getinfo` (also over HTTP POST),
+  `getnettotals`, `getnetworkhashps`, `createrawtransaction`/
+  `decoderawtransaction`, `decodescript`, `validateaddress`, `help`, `stop`
+  (not implemented), bitcoind methods over both transports on one websocket
+- **Envelope:** the id is echoed, and an unknown method is an error that
+  keeps the connection
+
+```bash
+pytest test_btcd_rpc.py --btcd-username=user --btcd-password=pass
+BTCD_DEBUG=1 pytest test_btcd_rpc.py -s -k session
+
+# blockconnected waits for a real block; trigger one instead (regtest)
+BTCD_TRIGGER_BLOCK="bitcoin-cli generatetoaddress 1 <address>" \
+  pytest test_btcd_rpc.py --run-slow -k blockconnected
+```
+
+### test_electrum.py — Electrum
+
+The Electrum protocol over TCP, asserting the specified behavior. The suite
+uses one connection for the session, sends `server.version` first (the
+protocol requires it), uses a new id per request, and sets notifications
+aside.
+
+| Category | Tests | Methods |
+|----------|------:|---------|
+| Server | 7 | `server.version`, `server.banner`, `server.features`, `server.ping`, `server.add_peer`, `server.donation_address`, `server.peers.subscribe` |
+| Block header | 3 | `blockchain.block.header` (with and without `cp_height`) |
+| Block headers | 9 | `blockchain.block.headers` (with and without `cp_height`, edge cases) |
+| Headers subscribe | 1 | `blockchain.headers.subscribe` |
+| Fees | 2 | `blockchain.estimatefee`, `blockchain.relayfee` |
+| Script hash | 6 | `blockchain.scripthash.get_balance`, `.get_history`, `.get_mempool`, `.listunspent`, `.subscribe`, `.unsubscribe` |
+| Transactions | 5 | `blockchain.transaction.broadcast`, `.get` (raw and verbose), `.get_merkle`, `.id_from_pos` |
+| Pool | 1 | `mempool.get_fee_histogram` |
+
+```bash
+pytest test_electrum.py --electrum-protocol=1.6
+pytest test_electrum.py --electrum-host=electrum.example --electrum-port=50001
+ELECTRUM_DEBUG=1 pytest test_electrum.py -s -k block_header
+```
+
+See [Electrum protocol versions](#electrum-protocol-versions) for the
+version-dependent assertions.
+
+### test_electrum_subscriptions.py — Electrum notifications
+
+Each test opens its own connection, subscribes, and waits up to
+`--subscription-timeout` for a real notification: a new block
+(`blockchain.headers.subscribe`) and a script hash status change
+(`blockchain.scripthash.subscribe`).
+
+```bash
+pytest test_electrum_subscriptions.py --subscription-timeout=900
+ELECTRUM_TRIGGER_HEADERS="bitcoin-cli generatetoaddress 1 <address>" \
+  pytest test_electrum_subscriptions.py
+```
+
+`ELECTRUM_TRIGGER_SCRIPTHASH` triggers the script hash event the same way.
+
+### test_sparrow.py — Sparrow
+
+The Sparrow service, on its own binding: the Electrum interface plus
+`blockchain.block.stats` and `blockchain.silentpayments.subscribe`/
+`unsubscribe`, and the `silent_payments` field of `server.features`, which
+the plain Electrum service omits. `blockchain.block.stats` is a stub, and its
+two tests are xfail until it is bound to the store. The suite skips when no
+Sparrow service is bound.
+
+### test_transports.py — Transports
+
+Each JSON-RPC service is served on one channel over three transports: raw
+TCP (a JSON request downgrades the connection from HTTP), HTTP POST, and
+websocket. These tests reach bitcoind and btcd over TCP, and Electrum over
+HTTP POST and websocket. A raw TCP request carries no HTTP authorization, so
+the downgrade tests skip where a credential is configured.
+
+### test_stratum_v1.py — Stratum v1
+
+The mining interface: JSON-RPC 1.0 replies (no `jsonrpc` member) with
+positional errors `[code, message, data]`.
+
+- **`mining.subscribe`:** result shape, a distinct extranonce1 per
+  connection, the parameters miners send (session id, host, port, nulls),
+  HTTP POST, and a websocket that is notified jobs like TCP
+- **`mining.authorize`:** invalid address, null password, a `.rig` suffix,
+  a second worker paying elsewhere rejected, and with a credential: wrong
+  password rejected, `mining.submit` refused before it (`107`), and HTTP
+  basic authorization
+- **`mining.configure`:** version rolling (BIP310) masks granted within
+  `1fffe000`, other extensions declined
+- **Unserved methods:** `mining.get_transactions` and `mining.multi_version`
+  answer `20`, `mining.extranonce.subscribe` is acknowledged
+- **Jobs:** field formats, `mining.set_difficulty` before the first
+  `mining.notify`, the previous hash is the confirmed top, and the coinbase:
+  BIP34 height, extranonce push, BIP54 sequence and locktime, payout to the
+  worker address, BIP141 commitment
+- **Difficulty:** `mining.suggest_difficulty` re-notifies the job at the new
+  difficulty, floored at the minimum, `mining.suggest_target`, and decay
+  without shares (slow, about 40 s)
+- **`mining.submit`:** not subscribed (`25`), not authorized and another
+  worker (`24`), unknown job (`21`), malformed fields and timestamps the
+  header rejects (`20`), version bits outside the mask (`20`), low difficulty
+  (`23`), a valid share answered once (`22`), and a mined block that becomes
+  the top, followed by a clean job
+
+The share and block tests build the coinbase, merkle root and header from the
+job as a miner does, and search nonces in python, so they run only where the
+targets are reachable: a small `minimum_difficulty` for shares, and regtest
+for blocks (otherwise they skip). Without a stratum service the suite skips.
+
+A regtest node for the full suite (`bs -n regtest`, one-time `-m` to make the
+store):
+
+```ini
+[outbound]
+connections = 0
+host_pool_capacity = 0
+
+[node]
+currency_window_minutes = 0   # serve while not current
+
+[native]
+bind = 127.0.0.1:19181
+connections = 16
+
+[stratum_v1]
+bind = 127.0.0.1:18880
+connections = 16
+minimum_difficulty = 0.00001  # shares reachable in python
+coinbase_tag = /libbitcoin-test/
+# payout_address = bcrt1q...  # any worker name is then authorized
+# credential = miner:secret   # then --stratum-v1-worker=miner.rig1 --stratum-v1-password=secret
+```
+
+```bash
+bs -n regtest -c regtest.cfg -m
+bs -n regtest -c regtest.cfg -a
+pytest test_stratum_v1.py --run-slow --stratum-v1-port=18880 \
+  --native-port=19181 \
+  --stratum-v1-worker=bcrt1qyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zs4w3j0
+```
+
+Each run mines blocks on the regtest chain.
+
+### test_robustness_*.py — Misbehaving clients
+
+These suites act as broken, slow or hostile clients against the
+libbitcoin-network HTTP/websocket layer and the JSON-RPC streaming above it.
+They do not check answers to valid requests. They check that misbehavior
+stays contained.
+
+| File | Layer |
+|------|-------|
+| `test_robustness_http.py` | HTTP framing and limits, on every HTTP service |
+| `test_robustness_ws.py` | RFC 6455 frames, fragmentation, control frames, on every HTTP service |
+| `test_robustness_native.py` | native targets, queries, large responses, websocket subscriptions |
+| `test_robustness_esplora.py` | Esplora targets, broadcast bodies, large responses, websocket targets |
+| `test_robustness_admin.py` | admin log and event subscriptions: hostile targets and filters, unread pushes |
+| `test_robustness_electrum.py` | newline-delimited JSON-RPC (Electrum, Sparrow): malformed JSON, envelopes, handshake, volume |
+| `test_robustness_bitcoind.py` | bitcoind JSON-RPC over HTTP/TCP, edge parameters, authorization, REST targets |
+| `test_robustness_btcd.py` | authorization abuse, JSON-RPC 1.0 over websocket/HTTP, filters, notifications |
+| `test_longrun.py` | heavy requests: cancellation, isolation, shutdown (`--bs-pid`, same host) |
+| `robustness.py` | raw socket/HTTP/websocket client, canaries, server-side checks |
+
+Each case passes only if the bad connection gets an error or a close within
+5 s (unless the input is legitimately incomplete). The autouse `contained`
+fixture then checks after every case:
+
+- every service in `--robust-services` still answers a fresh, valid request
+  (Electrum and Sparrow over TCP, btcd over websocket, the others over
+  HTTP). A service that is not listed is skipped;
+- no server-side socket on a service port is left in ESTABLISHED or
+  CLOSE_WAIT (released connection slots). This check runs only on the same
+  host;
+- with `--bs-pid`, the process is alive and no thread stays pegged over two
+  3 s windows. `--no-spin-check` turns the CPU check off.
 
 ```bash
 pytest test_robustness_*.py --btcd-username=robust --btcd-password=robust \
   --bs-pid=$(pidof bs) --robust-connections=32
-pytest test_robustness_*.py \
+
+pytest test_robustness_*.py test_longrun.py \
   --robust-services=native,esplora,admin,electrum,sparrow,bitcoind,btcd \
   --esplora-port=3000 --admin-port=8080 --sparrow-port=50003 \
-  --btcd-username=robust --btcd-password=robust
+  --btcd-username=robust --btcd-password=robust \
+  --bitcoind-username=user --bitcoind-password=password \
+  --bs-pid=$(pidof bs)
 ```
+
+The full robustness run takes about 1 h 45 min. `test_longrun.py` runs
+whole-set scans that occupy the server for minutes.
 
 ---
 
-## Electrum Protocol Version Reference
+## Electrum protocol versions
 
-The Electrum protocol has evolved across versions. This table shows which methods exist in which version and where behavior differs. The test suite uses version-conditional assertions where applicable, based on the negotiated version returned by the `server.version` handshake.
+The suite adjusts its assertions to the version negotiated by
+`server.version`.
 
-| Method / Behavior | v1.0 | v1.1 | v1.2 | v1.3 | v1.4 | v1.4.2 | v1.6 |
+| Method / behavior | v1.0 | v1.1 | v1.2 | v1.3 | v1.4 | v1.4.2 | v1.6 |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **Server** | | | | | | | |
 | `server.version` | ✅ | ✅ | ✅ | ✅ | ✅ ¹ | ✅ ¹ | ✅ ¹ |
@@ -500,25 +487,23 @@ The Electrum protocol has evolved across versions. This table shows which method
 | `server.add_peer` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `server.donation_address` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `server.peers.subscribe` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Block Header** | | | | | | | |
+| **Block header** | | | | | | | |
 | `blockchain.block.header` | — ² | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `blockchain.block.header` with `cp_height` | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| → response key: `"header"` (160-char hex) | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| → response key: `"branch"` (list of 64-char hashes) | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| → response key: `"root"` (64-char merkle root) | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Block Headers** | | | | | | | |
+| → response keys `header`, `branch`, `root` | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Block headers** | | | | | | | |
 | `blockchain.block.headers` | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| → response key: `"hex"` (concatenated hex string) | — | — | ✅ | ✅ | ✅ | ✅ | — ³ |
-| → response key: `"headers"` (array of 160-char hex) | — | — | — | — | — | — | ✅ ³ |
+| → response key `hex` (concatenated) | — | — | ✅ | ✅ | ✅ | ✅ | — ³ |
+| → response key `headers` (array) | — | — | — | — | — | — | ✅ ³ |
 | `blockchain.block.headers` with `cp_height` | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Headers Subscribe** | | | | | | | |
+| **Headers subscribe** | | | | | | | |
 | `blockchain.headers.subscribe` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| → deserialized: `{block_height, version, prev_block_hash, …}` | ✅ | ✅ | ✅ | — | — | — | — |
-| → serialized raw: `{height, hex}` (hex = 160 chars) | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| **Fee Estimation** | | | | | | | |
+| → deserialized `{block_height, version, …}` | ✅ | ✅ | ✅ | — | — | — | — |
+| → raw `{height, hex}` | — | — | — | ✅ | ✅ | ✅ | ✅ |
+| **Fees** | | | | | | | |
 | `blockchain.estimatefee` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `blockchain.relayfee` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✗ ⁴ |
-| **Scripthash** | | | | | | | |
+| **Script hash** | | | | | | | |
 | `blockchain.scripthash.get_balance` | — ⁵ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `blockchain.scripthash.get_history` | — ⁵ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `blockchain.scripthash.get_mempool` | — ⁵ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -527,211 +512,95 @@ The Electrum protocol has evolved across versions. This table shows which method
 | `blockchain.scripthash.unsubscribe` | — | — | — | — | ✅ | ✅ | ✅ |
 | **Transactions** | | | | | | | |
 | `blockchain.transaction.broadcast` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `blockchain.transaction.get` (raw hex) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `blockchain.transaction.get` (raw) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `blockchain.transaction.get` (verbose) | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `blockchain.transaction.get_merkle` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `blockchain.transaction.id_from_pos` | — | — | — | — | ✅ | ✅ | ✅ |
-| **Mempool** | | | | | | | |
+| **Pool** | | | | | | | |
 | `mempool.get_fee_histogram` | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-**Legend:** ✅ available and expected to work · — not yet introduced in this version · ✗ removed
+✅ available · — not yet introduced · ✗ removed
 
-**Footnotes:**
+¹ Since v1.4, `server.version` must be the first message. The session
+fixture sends it before any test.
+² v1.0 named it `blockchain.block.get_header`.
+³ v1.6 replaced the concatenated `hex` with the `headers` array. The suite
+accepts whichever key is present.
+⁴ `blockchain.relayfee` was removed in v1.6 (use `server.features`
+`fee_rate`). From 1.6 the suite expects any error (`bs` answers
+`wrong_version`).
+⁵ v1.0 used `blockchain.address.*`.
 
-¹ Since v1.4, `server.version` must be the **first** message sent by the client. Any other message sent first results in a protocol error. The test suite performs the handshake as the session fixture before any test runs.
+| Test | Condition | Expected |
+|------|-----------|----------|
+| `test_blockchain_headers_subscribe` | `< 1.3` | `block_height` and deserialized fields |
+| `test_blockchain_headers_subscribe` | `>= 1.3` | `height` and 160-character `hex` |
+| `test_blockchain_relayfee` | `< 1.6` | a positive float (BTC/kB) |
+| `test_blockchain_relayfee` | `>= 1.6` | an error |
+| `test_blockchain_block_headers*` | `< 1.6` | `hex` of `count × 160` characters |
+| `test_blockchain_block_headers*` | `>= 1.6` | `headers`, each 160 characters |
 
-² v1.0 used `blockchain.block.get_header` (different method name). `blockchain.block.header` was introduced in v1.1.
+### Known xfails
 
-³ In v1.6, `blockchain.block.headers` changed its data format: the `"hex"` key (a single concatenated hex string of all headers) was replaced by `"headers"` (an array of individual 160-char hex strings). The test suite accepts either key, determined by which one is present in the response.
+Expected outcomes against `bs`, listed so they are not taken for regressions:
 
-⁴ `blockchain.relayfee` was removed in v1.6. Clients should read `server.features["fee_rate"]` instead. When `negotiated_version >= "1.6"`, the test verifies that the server rejects the call with any error (libbitcoin-server returns `wrong_version`; ElectrumX returns `-32601 unknown method` — both are valid rejections).
+| Test | `bs` answers | Reason |
+|------|--------------|--------|
+| `test_electrum.py::test_server_add_peer` | `method_not_found` | peer management is not served |
+| `test_electrum.py::test_blockchain_block_headers_count_zero` | `bad_request` | `bs` refuses a count of zero, which the protocol does not prohibit |
+| `test_electrum.py::test_blockchain_block_headers_cp_target_overflow` | `bad_request` | by design: the test sends a `cp_height` below the target |
+| `test_electrum.py::test_blockchain_transaction_broadcast` | `daemon_error` | by design: the test broadcasts a 10 byte payload |
+| `test_sparrow.py::test_block_stats_*` (2) | `method_not_found` | `blockchain.block.stats` is a stub |
+| `test_btcd_rpc.py::test_authenticate_with_configured_credentials` | `107 unauthorized` | the test repeats `authenticate` on a connection the fixture authenticated, and `bs` refuses a repeated `authenticate` |
 
-⁵ v1.0 used `blockchain.address.*` (address-based methods). Scripthash-based methods (`blockchain.scripthash.*`) were introduced in v1.1.
-
-### Version-Conditional Test Assertions
-
-The following tests adjust their assertions based on `negotiated_version` from the `server.version` handshake:
-
-| Test | Condition | Expected behavior |
-|------|-----------|-------------------|
-| `test_blockchain_headers_subscribe` | `< "1.3"` | Response has `block_height` (int) and at least one of `version`, `prev_block_hash`, `merkle_root` |
-| `test_blockchain_headers_subscribe` | `>= "1.3"` | Response has `height` (int) and `hex` (160-char string) |
-| `test_blockchain_relayfee` | `< "1.6"` | Returns a positive `float` (BTC/kB) |
-| `test_blockchain_relayfee` | `>= "1.6"` | Server must reject with any error; test passes if `ValueError` is raised |
-| `test_blockchain_block_headers` (all variants) | `< "1.6"` | Result dict has `"hex"` key (concatenated string, length = `count × 160`) |
-| `test_blockchain_block_headers` (all variants) | `>= "1.6"` | Result dict has `"headers"` key (array, each element 160 chars) |
-
-### Known Deviations from Spec
-
-These are the four `⚠️ xfail` outcomes when running against libbitcoin-server. Each is documented here so the expected test result is not mistaken for a regression.
-
-| Test | Server response | Spec-correct behavior | Status |
-|------|-----------------|-----------------------|--------|
-| `test_server_add_peer` | `not_implemented` | Must return `bool` | Gap — peer list management not implemented |
-| `test_blockchain_block_headers_count_zero` | `not_found` error | Should return `{count: 0, hex: ""}` | Gap — count=0 is not prohibited by the spec |
-| `test_blockchain_block_headers_cp_target_overflow` | `target_overflow` error | Error is correct — `cp_height < target` is invalid | By design — the test triggers this deliberately |
-| `test_blockchain_transaction_broadcast` | error (invalid tx) | Error is correct — 10-byte payload is not a valid transaction | By design — the test exercises the broadcast rejection path |
-
----
-
-## Advanced Usage
-
-### Running Specific Tests
-
-```bash
-# Run a single test by name
-pytest test_native.py::test_configuration
-
-# Run multiple specific tests
-pytest test_native.py::test_block_by_hash test_native.py::test_block_by_height
-
-# Run tests matching pattern
-pytest test_native.py -k "block_filter"
-```
-
-### Pytest Markers
-
-```bash
-# Skip marked tests
-pytest test_native.py -m "not skip"
-
-# Run only slow tests
-pytest test_native.py -m "slow"
-
-# Run subscription tests
-pytest test_electrum_subscriptions.py
-```
-
-### Output Formats
-
-```bash
-# Generate JUnit XML report
-pytest --junitxml=results.xml
-
-# Generate HTML report (requires pytest-html)
-pytest --html=report.html --self-contained-html
-
-# JSON output (requires pytest-json-report)
-pytest --json-report --json-report-file=results.json
-```
-
-### Continuous Integration
-
-```bash
-# CI-friendly output with timestamps
-pytest -v --tb=short --durations=10
-
-# Fail fast (stop on first failure)
-pytest -x
-
-# Run N tests in parallel (requires pytest-xdist)
-pytest -n 4
-```
-
----
-
-## Test Data Reference
-
-All tests use shared reference data from `utils.ReferenceData`:
-
-| Constant | Value | Description |
-|----------|-------|-------------|
-| `GENESIS_HEIGHT` | 0 | Genesis block height |
-| `GENESIS_HASH` | `000000000019d668…` | Genesis block hash |
-| `KNOWN_HEIGHT` | 9000 | Test block height |
-| `KNOWN_BLOCK_HASH` | `00000000415c7a0f…` | Test block hash (height 9000) |
-| `KNOWN_TX_HASH` | `a5f71a0b4ccda01f…` | Coinbase tx at height 9000 |
-| `EXAMPLE_SCRIPTHASH` | `6e8c6c7183154cae…` | Test scripthash with confirmed activity |
-| `SEGWIT_HEIGHT` | 481824 | First SegWit-enforced block (24 Aug 2017) |
-| `SEGWIT_BLOCK_HASH` | `0000000000000000001c…` | Block hash at height 481824 |
-| `SEGWIT_TX_HASH_P2WPKH` | `dfcec48bb8491856…` | First native P2WPKH tx (witness inputs) |
-| `SEGWIT_TX_HASH_P2WPKH2` | `f91d0a8a78462bc5…` | Second native P2WPKH tx in block 481824 |
-| `SEGWIT_TX_HASH_P2WSH` | `461e8a4aa0a0e75c…` | Tx with P2WSH output in block 481824 |
-
-> **Note:** Witness data (`input/witness`) requires a SegWit transaction. Tests using `SEGWIT_TX_HASH_P2WPKH` will fail or be skipped if the node is not synced past block **481,824**.
+With `--bitcoind-auth` and a mainnet node at the top, the functional suites
+(all but robustness and stratum) give no other xfail.
 
 ---
 
 ## Troubleshooting
 
-### Common Issues
+**Connection refused.** The service is not bound or has `connections = 0`.
+Check `bs --settings`.
 
-**1. Connection refused**
-```
-RuntimeError: RPC connection error: ConnectionRefusedError
-```
-Ensure libbitcoin-server is running and the endpoint is enabled in configuration.
+**401 Unauthorized.** The service has a credential. See
+[Credentials](#credentials).
 
-**2. Timeout errors**
-```
-requests.exceptions.ReadTimeout: HTTPConnectionPool(...): Read timed out
-```
-Increase timeout with `--timeout=60` or check server performance.
+**Timeouts.** Raise `--timeout`. Whole-set scans have their own
+`--scan-timeout`.
 
-**3. Tests skip after a timeout on a previous test**
+**Cascading Electrum skips.** The suite's reader survives a timeout, so a
+run of skips means the server closed the connection. Check the server log.
+An unknown method is answered `-32601 method_not_found` and does not close
+the connection.
 
-The Electrum test suite uses `select()`-based I/O on a module-level byte buffer. A timeout on one test does **not** corrupt the socket reader — the buffer is intact and subsequent tests continue normally. If you see cascading skips, the server likely closed the connection (check server logs for `unexpected method` or `channel stop`).
+**Skips against public servers.** Some servers (electrs in particular) do not
+answer every method. The test skips.
 
-**4. `unexpected method` in server log / cascading skips**
+**`ModuleNotFoundError: No module named 'utils'`.** Run pytest from the
+`endpoints/` directory.
 
-libbitcoin-server closes the TCP connection when it receives an unknown method name. Ensure the method name is spelled exactly as in the Electrum spec — notably `blockchain.scripthash.listunspent` (no underscore between `list` and `unspent`), unlike the underscore convention used by `get_balance` / `get_history`.
+### Debug output
 
-**5. Test failures on public servers**
-```
-SKIP: No response (possibly unsupported method)
-```
-Some public servers (electrs in particular) do not implement all Electrum methods and simply do not respond. The test skips cleanly. This is not a test failure.
+| Variable | Test file | Output |
+|----------|-----------|--------|
+| `ELECTRUM_DEBUG=1` | `test_electrum.py` | each JSON-RPC request and response, with elapsed time |
+| `NATIVE_DEBUG=1` | `test_native.py` | each GET and its JSON response, with elapsed time |
+| `BITCOIND_DEBUG=1` | `test_bitcoind_rpc.py` | each JSON-RPC request and response, with elapsed time |
+| `BTCD_DEBUG=1` | `test_btcd_rpc.py` | each websocket request and response |
+| `BTCD_TRIGGER_BLOCK` | `test_btcd_rpc.py` | command run to produce a block for `blockconnected` |
+| `ELECTRUM_TRIGGER_HEADERS`, `ELECTRUM_TRIGGER_SCRIPTHASH` | `test_electrum_subscriptions.py` | command run to produce the event |
 
-**6. Authentication errors (bitcoind)**
-```
-RuntimeError: RPC connection error: 401 Unauthorized
-```
-Use `--bitcoind-auth --bitcoind-cookie=/correct/path/.cookie`
-
-**7. Import errors**
-```
-ModuleNotFoundError: No module named 'utils'
-```
-Run pytest from the `test/endpoints/` directory or install package in development mode.
-
-### Debug Output
-
-Each test module supports a debug environment variable that enables pretty-printed JSON logging of every request and response:
-
-| Test file | Variable | Output |
-|-----------|----------|--------|
-| `test_electrum.py` | `ELECTRUM_DEBUG=1` | `>>>` JSON-RPC payload / `<<<` response with elapsed time |
-| `test_native.py` | `NATIVE_DEBUG=1` | `>>> GET <url>` / `<<<` response JSON with elapsed time |
-| `test_bitcoind_rpc.py` | `BITCOIND_DEBUG=1` | `>>>` JSON-RPC payload / `<<<` response with elapsed time |
-| `test_btcd_rpc.py` | `BTCD_DEBUG=1` | `>>>` JSON-RPC payload / `<<<` response over websocket |
-
-```bash
-# Electrum — pretty-print all requests and responses
-ELECTRUM_DEBUG=1 pytest test_electrum.py -s
-
-# Combine with -k to focus on a single test
-ELECTRUM_DEBUG=1 pytest test_electrum.py -s -k "block_headers_20000"
-```
-
-> Use `-s` (or `--capture=no`) together with the debug variable so pytest does not suppress stdout.
-
-### Performance Profiling
-
-```bash
-# Show 10 slowest tests
-pytest --durations=10
-
-# Profile test execution (requires pytest-profiling)
-pytest --profile
-```
+Use `-s` with a debug variable so pytest does not capture the output.
 
 ---
 
-## Writing New Tests
+## Writing new tests
 
-### Electrum Test Structure
+### Electrum
 
-Electrum tests share a single persistent connection. Use `send_rpc()` for all calls inside tests — it handles connection errors (skip), server errors (xfail), and stale responses automatically.
+Electrum tests share one connection. Use `send_rpc()`: it skips on
+connection errors, xfails on server errors, and discards stale responses.
 
 ```python
 def test_new_electrum_method():
@@ -740,33 +609,10 @@ def test_new_electrum_method():
     assert "expected_field" in result
 ```
 
-For version-conditional assertions:
+For a version-dependent assertion, compare `negotiated_version`. For a method
+that must be rejected, call `_rpc_raw()` and expect `ValueError`.
 
-```python
-def test_version_dependent():
-    result = send_rpc("blockchain.headers.subscribe")
-    if negotiated_version is not None and negotiated_version >= "1.3":
-        assert "height" in result and "hex" in result
-    else:
-        assert "block_height" in result
-```
-
-For methods that must be rejected in a specific version, bypass `send_rpc()` and use `_rpc_raw()` directly so you can catch the `ValueError`:
-
-```python
-def test_method_removed_in_v16():
-    if negotiated_version is not None and negotiated_version >= "1.6":
-        try:
-            _rpc_raw("some.removed.method")
-            pytest.fail("Method should be rejected in v1.6+")
-        except ValueError:
-            pass
-        return
-    result = send_rpc("some.removed.method")
-    assert result > 0
-```
-
-### Native REST Test Structure
+### Native REST
 
 ```python
 def test_new_endpoint(native_config):
@@ -777,49 +623,60 @@ def test_new_endpoint(native_config):
 
 ### Fixtures
 
-| Fixture | Scope | Use for |
-|---------|-------|---------|
-| `native_config` | session | Native REST tests — provides `base_url`, `host`, `port` |
-| `bitcoind_rpc_config` | session | bitcoind RPC tests — provides `url`, `auth`, `timeout` |
-| `electrum_config` | session | Electrum tests — provides `host`, `port`, `protocol`, `timeout` |
-| `persistent_connection` | session | Electrum session socket — autouse, performs handshake |
+| Fixture | Scope | Provides |
+|---------|-------|----------|
+| `native_config` | session | `host`, `port`, `base_url` |
+| `esplora_config` | session | Esplora host, port, base URL |
+| `admin_config` | session | admin host and port |
+| `bitcoind_rpc_config`, `bitcoind_rest_config` | session | URL, `auth`, timeout |
+| `btcd_config` | session | host, port, credential |
+| `electrum_config`, `sparrow_config` | session | host, port, protocol range, timeouts |
+| `stratum_v1_config` | session | `host`, `port`, `worker`, `password`, `timeout` |
+| `robust_env` | session | services, process and limits for the robustness suites |
+| `node_log` | session | the `--log` path |
 
-### Parametrized Tests
+### Guidelines
 
-```python
-import pytest
+1. Assert the behavior the specification requires, not only what `bs`
+   returns today. A failing test is how a gap is found.
+2. Use xfail for server errors that are correct by design, and skip for
+   missing prerequisites (a service not bound, a height not reached).
+3. Mark tests that need chain data with `requires_height`,
+   `requires_current` or `requires_pool`, and tests that wait on real events
+   with `slow`.
+4. Use the shared data in `utils.ReferenceData`.
 
-@pytest.mark.parametrize("height,expected_hash", [
-    (0, ReferenceData.GENESIS_HASH),
-    (9000, ReferenceData.KNOWN_BLOCK_HASH),
-])
-def test_getblockhash(bitcoind_rpc_config, height, expected_hash):
-    response = send_rpc(bitcoind_rpc_config, "getblockhash", [height])
-    assert response["result"] == expected_hash
-```
+## Reference data
 
----
+`utils.ReferenceData` (mainnet):
 
-## Contributing
-
-When adding new tests:
-
-1. Follow existing code structure and naming conventions
-2. Use shared utilities from `utils.py`
-3. Assert the **spec-required** behavior, not just what the current server returns — failing tests are how we find implementation gaps
-4. Use `pytest.xfail` (via `send_rpc`) for errors that are correct by design; use `pytest.skip` for missing prerequisites
-5. Handle version-conditional behavior with `negotiated_version` comparisons
-6. Update the Cross-Server Compatibility table in this README after verifying against multiple servers
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `GENESIS_HEIGHT` | 0 | genesis height |
+| `GENESIS_HASH` | `000000000019d668…` | genesis hash |
+| `KNOWN_HEIGHT` | 9000 | test block height |
+| `KNOWN_BLOCK_HASH` | `00000000415c7a0f…` | block 9000 |
+| `KNOWN_TX_HASH` | `a5f71a0b4ccda01f…` | coinbase of block 9000 |
+| `FIRST_TX_BLOCK_HEIGHT` | 170 | first block with a transfer |
+| `EXAMPLE_SCRIPTHASH` | `6e8c6c7183154cae…` | script hash with confirmed activity |
+| `SEGWIT_HEIGHT` | 481824 | first block enforcing SegWit |
+| `SEGWIT_BLOCK_HASH` | `0000000000000000001c…` | block 481824 |
+| `SEGWIT_TX_HASH_P2WPKH` | `dfcec48bb8491856…` | first native P2WPKH spend |
+| `SEGWIT_TX_HASH_P2WPKH2` | `f91d0a8a78462bc5…` | second P2WPKH spend in block 481824 |
+| `SEGWIT_TX_HASH_P2WSH` | `461e8a4aa0a0e75c…` | P2WSH output in block 481824 |
 
 ## Resources
 
-- [pytest Documentation](https://docs.pytest.org/)
-- [libbitcoin-server Documentation](../../docs/)
-- [bitcoind RPC documentation](https://developer.bitcoin.org/reference/rpc/)
-- [Electrum Protocol Documentation](https://electrumx.readthedocs.io/en/latest/protocol.html)
-- [Electrum Protocol Changelog](https://electrumx.readthedocs.io/en/latest/protocol-changes.html)
-- [libbitcoin-server GitHub](https://github.com/libbitcoin/libbitcoin-server)
+- [pytest documentation](https://docs.pytest.org/)
+- [libbitcoin-server configuration](../docs/configuration.md)
+- [bitcoind RPC reference](https://developer.bitcoin.org/reference/rpc/)
+- [bitcoind REST interface](https://github.com/bitcoin/bitcoin/blob/master/doc/REST-interface.md)
+- [btcd JSON-RPC API](https://github.com/btcsuite/btcd/blob/master/docs/json_rpc_api.md)
+- [Esplora HTTP API](https://github.com/Blockstream/esplora/blob/master/API.md)
+- [Electrum protocol](https://electrum-protocol.readthedocs.io/)
+- [Stratum v1 (Braiins)](https://braiins.com/stratum-v1/docs), [BIP310](https://github.com/bitcoin/bips/blob/master/bip-0310.mediawiki)
 
 ## License
 
-These tests are part of libbitcoin-server and are licensed under the GNU Affero General Public License v3.0.
+These tests are part of libbitcoin-server and are licensed under the GNU
+Affero General Public License v3.0.

@@ -123,7 +123,8 @@ def test_frame_bytes_inside_upgrade_segment(svc):
     """The first frame arrives in the same segment as the upgrade request."""
     sock = connect(svc.host, svc.port)
     try:
-        send(sock, ws_upgrade("/", svc.authority) + ws_text(svc.ws_probe()))
+        send(sock, ws_upgrade("/", svc.authority, headers=svc.auth_headers()) +
+             ws_text(svc.ws_probe()))
         out = read(sock, REACT, lambda d: d.count(b"\r\n\r\n") >= 1 and
                    len(d.split(b"\r\n\r\n", 1)[1]) > 2)
         assert http_status(out) == 101, str(out)

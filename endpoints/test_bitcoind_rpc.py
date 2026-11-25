@@ -550,6 +550,253 @@ def test_sendrawtransaction_known(bitcoind_rpc_config):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# MINING METHODS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_MINING_INFO_KEYS = {"blocks", "bits", "difficulty", "target", "networkhashps",
+    "pooledtx", "blockmintxfee", "chain", "next", "warnings"}
+
+_TEMPLATE_KEYS = {"capabilities", "version", "rules", "vbavailable",
+    "vbrequired", "previousblockhash", "transactions", "coinbaseaux",
+    "coinbasevalue", "longpollid", "target", "mintime", "mutable", "noncerange",
+    "sigoplimit", "sizelimit", "curtime", "bits", "height"}
+
+# A nonce search beyond this many hashes is not attempted in python.
+_MAXIMUM_TRIES = 1 << 20
+
+
+def _sha256d(data: bytes) -> bytes:
+    import hashlib
+    return hashlib.sha256(hashlib.sha256(data).digest()).digest()
+
+
+def _expand(bits: str) -> int:
+    value = int(bits, 16)
+    return (value & 0x007fffff) << (8 * ((value >> 24) - 3))
+
+
+def _template(config: dict) -> dict:
+    data = raw_rpc(config, "getblocktemplate", [{"rules": ["segwit"]}])
+    if data.get("error") is not None:
+        pytest.skip(f"no template: {data['error']}")
+    return data["result"]
+
+
+def _known_block(config: dict) -> tuple:
+    """The hash and raw block of the confirmed top."""
+    best = send_rpc(config, "getbestblockhash")["result"]
+    raw = send_rpc(config, "getblock", [best, 0])["result"]
+    return best, raw
+
+
+def test_getmininginfo(bitcoind_rpc_config):
+    """getmininginfo reports the top and the work required of the next block."""
+    count = send_rpc(bitcoind_rpc_config, "getblockcount")["result"]
+    result = send_rpc(bitcoind_rpc_config, "getmininginfo")["result"]
+    assert _MINING_INFO_KEYS <= set(result)
+    assert result["blocks"] in (count, count + 1)
+    assert int(result["target"], 16) == _expand(result["bits"])
+    assert result["difficulty"] > 0
+    assert result["networkhashps"] > 0
+    assert result["pooledtx"] >= 0
+    assert result["chain"] in ("main", "test", "testnet4", "signet", "regtest")
+    assert result["next"]["height"] == result["blocks"] + 1
+    assert int(result["next"]["target"], 16) == _expand(result["next"]["bits"])
+
+
+def test_getnetworkhashps(bitcoind_rpc_config):
+    """getnetworkhashps defaults to the last 120 blocks at the top."""
+    result = send_rpc(bitcoind_rpc_config, "getnetworkhashps")["result"]
+    assert isinstance(result, (int, float)) and result > 0
+
+
+def test_getnetworkhashps_genesis_is_zero(bitcoind_rpc_config):
+    """No block precedes genesis, so its window has no work."""
+    result = send_rpc(bitcoind_rpc_config, "getnetworkhashps", [120, 0])
+    assert result["result"] == 0
+
+
+def test_getnetworkhashps_fractional_window_rejected(bitcoind_rpc_config):
+    data = raw_rpc(bitcoind_rpc_config, "getnetworkhashps", [1.5])
+    assert data["error"]["code"] == -8
+
+
+@pytest.mark.parametrize("request_", [
+    {},
+    {"rules": []},
+    {"rules": ["segwit"], "mode": "proposal"},
+])
+def test_getblocktemplate_rejected(bitcoind_rpc_config, request_):
+    """The client must declare segwit (bip145), and only template mode is served."""
+    data = raw_rpc(bitcoind_rpc_config, "getblocktemplate", [request_])
+    assert data["error"]["code"] == -8
+
+
+@pytest.mark.requires_pool
+def test_getblocktemplate(bitcoind_rpc_config):
+    """A bip22 template over the confirmed top (bip141 commitment, bip9 rules)."""
+    template = _template(bitcoind_rpc_config)
+    count = send_rpc(bitcoind_rpc_config, "getblockcount")["result"]
+    assert _TEMPLATE_KEYS <= set(template)
+    assert template["height"] in (count + 1, count + 2)
+    best = send_rpc(bitcoind_rpc_config, "getblockhash",
+                    [template["height"] - 1])["result"]
+    assert template["previousblockhash"] == best
+    assert int(template["target"], 16) == _expand(template["bits"])
+    assert template["mintime"] <= template["curtime"]
+    assert template["coinbasevalue"] > 0
+    assert template["noncerange"] == "00000000ffffffff"
+    assert template["mutable"] == ["time", "transactions", "prevblock"]
+    assert "!segwit" in template["rules"]
+    assert template["weightlimit"] == template["sizelimit"] == 4000000
+    assert template["sigoplimit"] == 80000
+    assert template["default_witness_commitment"].startswith("6a24aa21a9ed")
+    assert template["longpollid"].startswith(template["previousblockhash"])
+
+    fees = 0
+    for position, tx in enumerate(template["transactions"], start=1):
+        assert {"data", "txid", "hash", "depends", "fee", "sigops",
+                "weight"} <= set(tx)
+        assert reverse_hex(double_sha256(tx["data"])) == tx["hash"]
+        assert all(0 < parent < position for parent in tx["depends"])
+        fees += tx["fee"]
+    assert template["coinbasevalue"] >= fees
+
+
+def test_submitblock_duplicate(bitcoind_rpc_config):
+    """bip22: a block the node has is a duplicate."""
+    _, raw = _known_block(bitcoind_rpc_config)
+    data = raw_rpc(bitcoind_rpc_config, "submitblock", [raw])
+    assert data.get("error") is None
+    assert data["result"] == "duplicate"
+
+
+@pytest.mark.parametrize("hexdata", ["not hex", "00", "0000000000"])
+def test_submitblock_undecodable(bitcoind_rpc_config, hexdata):
+    data = raw_rpc(bitcoind_rpc_config, "submitblock", [hexdata])
+    assert data["error"]["code"] == -22
+
+
+@pytest.mark.parametrize("offset", [4, 36])
+def test_submitblock_invalid_answered_with_reason(bitcoind_rpc_config, offset):
+    """bip22: an invalid block is answered with a reject reason, not an error.
+
+    The previous block (offset 4) or merkle root (offset 36) is changed, so the
+    block has an unknown parent, a merkle mismatch, or insufficient work.
+    """
+    _, raw = _known_block(bitcoind_rpc_config)
+    block = bytearray(bytes.fromhex(raw))
+    block[offset] ^= 0x01
+    data = raw_rpc(bitcoind_rpc_config, "submitblock", [block.hex()])
+    assert data.get("error") is None
+    assert isinstance(data["result"], str)
+    assert data["result"] not in ("", "duplicate")
+
+
+def test_submitheader_known(bitcoind_rpc_config):
+    best = send_rpc(bitcoind_rpc_config, "getbestblockhash")["result"]
+    header = send_rpc(bitcoind_rpc_config, "getblockheader",
+                      [best, False])["result"]
+    data = raw_rpc(bitcoind_rpc_config, "submitheader", [header])
+    assert data.get("error") is None
+    assert data["result"] is None
+
+
+def test_submitheader_unknown_parent_rejected(bitcoind_rpc_config):
+    best = send_rpc(bitcoind_rpc_config, "getbestblockhash")["result"]
+    header = bytearray(bytes.fromhex(send_rpc(
+        bitcoind_rpc_config, "getblockheader", [best, False])["result"]))
+    header[4] ^= 0x01
+    data = raw_rpc(bitcoind_rpc_config, "submitheader", [header.hex()])
+    assert data["error"]["code"] == -25
+
+
+@pytest.mark.parametrize("hexdata", ["not hex", "00"])
+def test_submitheader_undecodable(bitcoind_rpc_config, hexdata):
+    data = raw_rpc(bitcoind_rpc_config, "submitheader", [hexdata])
+    assert data["error"]["code"] == -22
+
+
+@pytest.mark.parametrize("method,params", [
+    ("getprioritisedtransactions", []),
+    ("prioritisetransaction", [ReferenceData.FIRST_TX_HASH, None, 1000]),
+])
+def test_prioritisation_unimplemented(bitcoind_rpc_config, method, params):
+    """Fee deltas are not served (client_mempool_disabled)."""
+    data = raw_rpc(bitcoind_rpc_config, method, params)
+    assert data["error"]["code"] == -33
+
+
+@pytest.mark.requires_pool
+def test_submitblock_mines_template(bitcoind_rpc_config):
+    """
+    A block built from the template is accepted and becomes the top, and is a
+    duplicate when submitted again.
+
+    The coinbase pays an anyone-can-spend output and follows bip34 (height)
+    and bip54 (sequence, locktime). Runs only where the target is reachable in
+    python and the template has no transactions (an empty regtest pool), as
+    it extends the chain.
+    """
+    import struct
+
+    template = _template(bitcoind_rpc_config)
+    target = int(template["target"], 16)
+    if (1 << 256) // (target + 1) > _MAXIMUM_TRIES:
+        pytest.skip("target not reachable in python (not regtest)")
+    if template["transactions"]:
+        pytest.skip("template has transactions")
+
+    # The height is a minimal push (bip34): op_1..op_16, else little endian.
+    height = template["height"]
+    if 1 <= height <= 16:
+        script = bytes([0x50 + height])
+    else:
+        size = (height.bit_length() + 8) // 8
+        script = bytes([size]) + height.to_bytes(size, "little")
+    script += b"\x08libbitcn"
+    payout = b"\x51"
+    commitment = bytes.fromhex(template["default_witness_commitment"])
+
+    def var(n: int) -> bytes:
+        assert n < 0xfd
+        return bytes([n])
+
+    body = (var(1) + bytes(32) + b"\xff\xff\xff\xff" + var(len(script)) +
+            script + struct.pack("<I", 0xfffffffe) + var(2) +
+            struct.pack("<q", template["coinbasevalue"]) + var(len(payout)) +
+            payout + struct.pack("<q", 0) + var(len(commitment)) + commitment)
+    locktime = struct.pack("<I", height - 1)
+    version = struct.pack("<i", 2)
+    stripped = version + body + locktime
+    witnessed = version + b"\x00\x01" + body + b"\x01\x20" + bytes(32) + \
+        locktime
+
+    root = _sha256d(stripped)
+    previous = bytes.fromhex(template["previousblockhash"])[::-1]
+    for nonce in range(_MAXIMUM_TRIES):
+        header = (struct.pack("<I", template["version"]) + previous + root +
+                  struct.pack("<II", template["curtime"],
+                              int(template["bits"], 16)) +
+                  struct.pack("<I", nonce))
+        digest = _sha256d(header)
+        if int.from_bytes(digest, "little") <= target:
+            break
+    else:
+        pytest.fail("no nonce meets the target")
+
+    block = header + var(1) + witnessed
+    data = raw_rpc(bitcoind_rpc_config, "submitblock", [block.hex()])
+    assert data.get("error") is None
+    assert data["result"] is None
+
+    mined = digest[::-1].hex()
+    assert send_rpc(bitcoind_rpc_config, "getbestblockhash")["result"] == mined
+    again = raw_rpc(bitcoind_rpc_config, "submitblock", [block.hex()])
+    assert again["result"] == "duplicate"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # NETWORK METHODS
 # ═══════════════════════════════════════════════════════════════════════════════
 

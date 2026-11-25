@@ -192,6 +192,14 @@ def pytest_addoption(parser):
         default="worker",
         help="Stratum v1 worker, an address unless the server configures payout_address (default: worker)"
     )
+    parser.addoption(
+        "--stratum-v1-password",
+        action="store",
+        default="",
+        help="Stratum v1 credential password, when the server configures a "
+             "[stratum_v1] credential whose user is the worker account "
+             "(default: none)"
+    )
 
     # Stratum v2 options
     parser.addoption(
@@ -356,9 +364,16 @@ def _requires_current(request):
     port = request.config.getoption("--bitcoind-rpc-port")
     payload = {"jsonrpc": "1.0", "id": 1, "method": "getblockchaininfo",
         "params": []}
+    auth = None
+    if request.config.getoption("--bitcoind-auth"):
+        try:
+            with open(request.config.getoption("--bitcoind-cookie")) as file:
+                auth = tuple(file.read().strip().split(":", 1))
+        except OSError:
+            auth = None
     try:
         info = requests.post(f"http://{host}:{port}/", json=payload,
-            timeout=10).json()["result"]
+            auth=auth, timeout=10).json()["result"]
     except Exception:
         return
 
@@ -570,6 +585,7 @@ def stratum_v1_config(request):
         "host": request.config.getoption("--stratum-v1-host"),
         "port": int(request.config.getoption("--stratum-v1-port")),
         "worker": request.config.getoption("--stratum-v1-worker"),
+        "password": request.config.getoption("--stratum-v1-password"),
         "timeout": float(request.config.getoption("--timeout"))
     }
 
