@@ -351,8 +351,6 @@ void CLASS::suggest(mining_channel& channel, double difficulty) NOEXCEPT
 // Blocks.
 // ----------------------------------------------------------------------------
 
-// The share was answered, so the block is not gated on its outcome, and each
-// outcome is reported to handle_submitted.
 TEMPLATE
 void CLASS::submit_mined(const system::chain::header& header, const job& job,
     const system::data_chunk& extranonce) NOEXCEPT
@@ -392,7 +390,7 @@ void CLASS::submit_mined(const system::chain::header& header, const job& job,
         return;
     }
 
-    this->submit_block(to_shared<chain::header>(header), block, {});
+    this->submit_block(to_shared<chain::header>(header), block, this->gate());
 }
 
 // The block is the template with the miner's valid header, so a block that
