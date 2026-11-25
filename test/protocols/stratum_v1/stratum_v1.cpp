@@ -417,6 +417,13 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__below_share_target__low_difficulty_
     BC_REQUIRE_EQUAL(submit(job, "00000000", "00000000").at("error").as_array().at(0).as_int64(), low_difficulty_share.value());
 }
 
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__below_share_target_repeated__low_difficulty_share)
+{
+    const auto job = start_job();
+    BC_REQUIRE_EQUAL(submit(job, "00000000", "00000000").at("error").as_array().at(0).as_int64(), low_difficulty_share.value());
+    BC_REQUIRE_EQUAL(submit(job, "00000000", "00000000").at("error").as_array().at(0).as_int64(), low_difficulty_share.value());
+}
+
 BC_AUTO_TEST_SUITE_END()
 
 BC_FIXTURE_TEST_SUITE(stratum_v1_vardiff_tests, stratum_v1_vardiff_setup_fixture)

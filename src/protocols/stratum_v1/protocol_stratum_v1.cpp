@@ -268,16 +268,16 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
     }
 
     const auto hash = header.hash();
-    if (!job->shares.insert(hash).second)
-    {
-        send_code(duplicate_share);
-        return;
-    }
-
     const auto value = to_uintx(hash);
     if (value > to_share_target(job->difficulty))
     {
         send_code(low_difficulty_share);
+        return;
+    }
+
+    if (!job->shares.insert(hash).second)
+    {
+        send_code(duplicate_share);
         return;
     }
 
