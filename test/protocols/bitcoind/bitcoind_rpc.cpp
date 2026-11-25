@@ -5337,6 +5337,55 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__batch__two_broadcasts__two_ordered_responses)
 
 BC_AUTO_TEST_SUITE_END()
 
+// long poll
+// ----------------------------------------------------------------------------
+
+BC_FIXTURE_TEST_SUITE(bitcoind_longpoll_tests, bitcoind_longpoll_setup_fixture)
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__stale_longpollid__immediate_template)
+{
+    const auto response = rpc("getblocktemplate", R"([{"rules":["segwit"],"longpollid":"00000000000000000000000000000000000000000000000000000000000000001"}])");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE(response.at("result").at("transactions").as_array().empty());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__malformed_longpollid__immediate_template)
+{
+    const auto response = rpc("getblocktemplate", R"([{"rules":["segwit"],"longpollid":"bogus"}])");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE(response.at("result").at("transactions").as_array().empty());
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__current_longpollid__replaced_template)
+{
+    BC_REQUIRE(!ws_upgrade());
+    const auto first = ws_rpc("getblocktemplate", R"([{"rules":["segwit"]}])");
+    BC_REQUIRE_MESSAGE(first.is_object() && first.as_object().contains("result"), serialize(first));
+    const auto longpollid = as_text(first.at("result").at("longpollid"));
+
+    ws_notify(R"({"jsonrpc":"2.0","id":0,"method":"getblocktemplate","params":[{"rules":["segwit"],"longpollid":")" + longpollid + R"("}]})");
+    BC_REQUIRE(!submit(test::tx1c));
+
+    const auto response = ws_read();
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    const auto& result = response.at("result");
+    BC_REQUIRE_EQUAL(result.at("transactions").as_array().size(), 1u);
+    BC_REQUIRE_NE(as_text(result.at("longpollid")), longpollid);
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__numeric_longpollid__replaced_template)
+{
+    BC_REQUIRE(!ws_upgrade());
+    ws_notify(R"({"jsonrpc":"2.0","id":0,"method":"getblocktemplate","params":[{"rules":["segwit"],"longpollid":42}]})");
+    BC_REQUIRE(!submit(test::tx1c));
+
+    const auto response = ws_read();
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(response.at("result").at("transactions").as_array().size(), 1u);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
 // closed tx pool
 // ----------------------------------------------------------------------------
 // Tx chaser refuses submission and testing while pool closed.

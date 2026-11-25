@@ -442,6 +442,23 @@ struct bitcoind_broadcast_setup_fixture
     }
 };
 
+// Templates replaced by a one second interval while demanded.
+struct bitcoind_longpoll_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_longpoll_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_broadcast_store(query);
+        }, [](configuration& config)
+        {
+            config.node.currency_window_minutes = 0;
+            config.node.pool.template_interval_seconds = 1;
+        }, true)
+    {
+    }
+};
+
 // Configured with no block filter tables.
 struct bitcoind_unfiltered_setup_fixture
   : bitcoind_setup_fixture
