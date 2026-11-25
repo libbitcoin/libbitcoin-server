@@ -48,7 +48,10 @@ public:
     static constexpr uint32_t requires_version_rolling{ 0x00000004 };
 
     /// The client flags served.
-    static constexpr uint32_t supported{ requires_version_rolling };
+    static constexpr uint32_t supported
+    {
+        requires_standard_jobs | requires_version_rolling
+    };
 
     inline protocol_stratum_v2_setup(const auto& session,
         const network::channel::ptr& channel, const options_t&) NOEXCEPT

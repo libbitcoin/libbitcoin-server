@@ -34,7 +34,7 @@ class BCS_API channel_stratum_v2
 {
 public:
     typedef std::shared_ptr<channel_stratum_v2> ptr;
-    using options_t = network::settings::websocket_server;
+    using options_t = settings::stratum_v2_server;
 
     inline channel_stratum_v2(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,

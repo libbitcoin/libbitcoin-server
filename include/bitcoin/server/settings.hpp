@@ -248,8 +248,11 @@ public:
         /// Text carried by the coinbase input script.
         std::string coinbase_tag{};
 
-        /// Share difficulty assigned to a channel, and its floor.
+        /// Share difficulty floor of a channel.
         double minimum_difficulty{ 1.0 };
+
+        /// Share difficulty of a new channel, zero is automatic.
+        double start_difficulty{ 0.0 };
 
         /// Target seconds between shares of a channel, zero fixes difficulty.
         uint32_t share_interval_seconds{ 10 };
@@ -297,6 +300,9 @@ public:
 
         /// Bytes of coinbase extranonce rolled by an extended channel miner.
         uint8_t extranonce_size{ 8 };
+
+        /// Mining channels open on a connection.
+        uint32_t maximum_channels{ 1024 };
     };
 
     struct BCS_API esplora_server

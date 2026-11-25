@@ -2494,7 +2494,12 @@ options_metadata parser::load_settings() THROWS
     (
         "stratum_v1.minimum_difficulty",
         setting<double>(&configured.server.stratum_v1.minimum_difficulty),
-        "The share difficulty assigned to a channel, and its floor, defaults to {}."
+        "The share difficulty floor of a channel, defaults to {}."
+    )
+    (
+        "stratum_v1.start_difficulty",
+        setting<double>(&configured.server.stratum_v1.start_difficulty),
+        "The share difficulty of a new channel, defaults to {} (automatic)."
     )
     (
         "stratum_v1.share_interval_seconds",
@@ -2614,9 +2619,19 @@ options_metadata parser::load_settings() THROWS
         "The bytes of coinbase extranonce rolled by an extended channel miner, defaults to {}."
     )
     (
+        "stratum_v2.maximum_channels",
+        setting<uint32_t>(&configured.server.stratum_v2.maximum_channels),
+        "The mining channels open on a connection, defaults to {}."
+    )
+    (
         "stratum_v2.minimum_difficulty",
         setting<double>(&configured.server.stratum_v2.minimum_difficulty),
-        "The share difficulty assigned to a channel, and its floor, defaults to {}."
+        "The share difficulty floor of a channel, defaults to {}."
+    )
+    (
+        "stratum_v2.start_difficulty",
+        setting<double>(&configured.server.stratum_v2.start_difficulty),
+        "The share difficulty of a new channel, defaults to {} (automatic)."
     )
     (
         "stratum_v2.share_interval_seconds",

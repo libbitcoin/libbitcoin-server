@@ -368,7 +368,8 @@ code settings::mining_server::initialize_context() NOEXCEPT
     const auto script = coinbase_script_size(coinbase_tag.size(), extranonce);
     if (coinbase_tag.size() > max_direct_push ||
         extranonce > max_direct_push || script > max_coinbase_size ||
-        minimum_difficulty <= 0.0)
+        !(minimum_difficulty > 0.0) || !(start_difficulty >= 0.0) ||
+        std::isinf(minimum_difficulty) || std::isinf(start_difficulty))
         return network::error::invalid_configuration;
 
     return network::error::success;
@@ -390,14 +391,15 @@ size_t settings::stratum_v1_server::coinbase_extranonce_size() const NOEXCEPT
     return add<size_t>(extranonce1_size, extranonce2_size);
 }
 
-// The extranonce prefix is carried as a B0_32 field.
+// The prefix of a standard channel is the whole extranonce, a B0_32 field.
 code settings::stratum_v2_server::initialize_context() NOEXCEPT
 {
     if (const auto ec = base::initialize_context())
         return ec;
 
     if (extranonce_prefix_size < sizeof(uint32_t) ||
-        extranonce_prefix_size > system::hash_size || is_zero(extranonce_size))
+        is_zero(extranonce_size) || is_zero(maximum_channels) ||
+        coinbase_extranonce_size() > system::hash_size)
         return network::error::invalid_configuration;
 
     return network::error::success;

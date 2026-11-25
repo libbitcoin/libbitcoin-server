@@ -64,6 +64,10 @@ public:
     double difficulty() const NOEXCEPT;
     void set_difficulty(double difficulty) NOEXCEPT;
 
+    /// The difficulty floor of the channel, requested by the miner.
+    double floor() const NOEXCEPT;
+    void set_floor(double difficulty) NOEXCEPT;
+
     /// The difficulty last notified to the miner.
     double notified() const NOEXCEPT;
     void set_notified(double difficulty) NOEXCEPT;
@@ -74,6 +78,9 @@ public:
 
     /// The job of the identifier, empty if not retained.
     job::cptr find(uint32_t id) const NOEXCEPT;
+
+    /// The identifier was issued, whether or not retained.
+    bool issued(uint32_t id) const NOEXCEPT;
 
     /// The most recently issued job, empty if none.
     job::cptr current() const NOEXCEPT;
@@ -100,6 +107,7 @@ private:
     std::unordered_set<system::hash_digest> hashes_{};
     network::steady_clock::time_point window_;
     double difficulty_;
+    double floor_{};
     double notified_{};
     uint64_t accepted_{};
     size_t shares_{};

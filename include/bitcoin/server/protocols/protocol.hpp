@@ -129,6 +129,12 @@ public:
         session_->unsubscribe_chase(key);
     }
 
+    /// Allocate a coinbase extranonce prefix, empty if exhausted.
+    inline extranonces::prefix allocate_prefix(size_t size) const NOEXCEPT
+    {
+        return session_->allocate_prefix(size);
+    }
+
     /// Create a timer on the channel strand.
     inline network::deadline::ptr make_timer() const NOEXCEPT
     {

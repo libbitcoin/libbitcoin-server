@@ -108,6 +108,7 @@
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2_setup.hpp>
 #include <bitcoin/server/protocols/protocol_submit.hpp>
+#include <bitcoin/server/protocols/protocol_sv2.hpp>
 #include <bitcoin/server/protocols/protocol_zmq.hpp>
 #include <bitcoin/server/protocols/protocols.hpp>
 #include <bitcoin/server/serializers/bitcoind_block_stats.hpp>
@@ -133,6 +134,7 @@
 #include <bitcoin/server/utilities/merkle.hpp>
 #include <bitcoin/server/utilities/mining_channel.hpp>
 #include <bitcoin/server/utilities/stratum_v1.hpp>
+#include <bitcoin/server/utilities/stratum_v2.hpp>
 #include <bitcoin/server/utilities/utilities.hpp>
 
 #endif

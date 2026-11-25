@@ -183,6 +183,7 @@
     <ClCompile Include="..\..\..\..\src\protocols\protocol_http.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\sparrow\protocol_sparrow.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\stratum_v1\protocol_stratum_v1.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\stratum_v2\protocol_stratum_v2.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\stratum_v2\protocol_stratum_v2_setup.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\zmq\protocol_zmq.cpp" />
     <ClCompile Include="..\..\..\..\src\serializers\bitcoind_block_stats.cpp" />
@@ -205,6 +206,7 @@
     <ClCompile Include="..\..\..\..\src\utilities\merkle.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\mining_channel.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\stratum_v1.cpp" />
+    <ClCompile Include="..\..\..\..\src\utilities\stratum_v2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\include\bitcoin\server.hpp" />
@@ -298,6 +300,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2_setup.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_submit.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_sv2.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_zmq.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocols.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\serializers\bitcoind_block_stats.hpp" />
@@ -325,6 +328,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\merkle.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\mining_channel.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\stratum_v1.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\stratum_v2.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\utilities.hpp" />
   </ItemGroup>
   <ItemGroup>

@@ -78,7 +78,17 @@ protected:
     void add_channel(uint32_t id, const mining_channel::ptr& channel) NOEXCEPT;
     void remove_channel(uint32_t id) NOEXCEPT;
 
-    /// Demand templates and issue jobs to the channels (requires strand).
+    /// The mining channel of the identifier, empty if none (requires strand).
+    mining_channel::ptr find_channel(uint32_t id) const NOEXCEPT;
+
+    /// The mining channels of the connection (requires strand).
+    size_t channel_count() const NOEXCEPT;
+
+    /// The difficulty of a new channel, of the hash rate if automatic.
+    double start_difficulty(double hash_rate) const NOEXCEPT;
+
+    /// Demand templates and issue jobs to channels without one (requires
+    /// strand).
     void start_jobs() NOEXCEPT;
 
     /// Check the share of the job, with the extranonce rolled by the miner,
@@ -94,7 +104,7 @@ protected:
         const system::chain::header& header,
         const system::data_chunk& rolled) NOEXCEPT;
 
-    /// Set the difficulty of the channel, floored at the minimum.
+    /// Set the difficulty of the channel, at or above its floor.
     void suggest(mining_channel& channel, double difficulty) NOEXCEPT;
 
     /// Chase events (template replacement and submitted block completion).
@@ -122,6 +132,7 @@ private:
         const node::block_template::cptr& held) NOEXCEPT;
     void do_template(const code& ec,
         const node::block_template::cptr& held) NOEXCEPT;
+    double floor(const mining_channel& channel) const NOEXCEPT;
     void refresh(mining_channel& channel) NOEXCEPT;
     void retarget(mining_channel& channel) NOEXCEPT;
     void start_decay() NOEXCEPT;

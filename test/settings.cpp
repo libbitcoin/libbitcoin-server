@@ -301,17 +301,17 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_small_prefix__in
     BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
 
-BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_maximum_prefix__success)
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_maximum_extranonce__success)
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
-    instance.extranonce_prefix_size = 32;
+    instance.extranonce_prefix_size = 24;
     BC_REQUIRE(!instance.initialize_context());
 }
 
-BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_large_prefix__invalid_configuration)
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_extranonce_above_maximum__invalid_configuration)
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
-    instance.extranonce_prefix_size = 33;
+    instance.extranonce_prefix_size = 25;
     BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
 
@@ -333,6 +333,41 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_zero_difficulty_
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
     instance.minimum_difficulty = 0.0;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_nan_difficulty__invalid_configuration)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.minimum_difficulty = std::numeric_limits<double>::quiet_NaN();
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_start_difficulty__success)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.start_difficulty = 42.0;
+    BC_REQUIRE(!instance.initialize_context());
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_negative_start_difficulty__invalid_configuration)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.start_difficulty = -1.0;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_infinite_start_difficulty__invalid_configuration)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.start_difficulty = std::numeric_limits<double>::infinity();
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_zero_channels__invalid_configuration)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.maximum_channels = 0;
     BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
 
@@ -471,6 +506,7 @@ BC_AUTO_TEST_CASE(server__stratum_v1_server__defaults__expected)
     BC_REQUIRE_EQUAL(server.extranonce1_size, 4u);
     BC_REQUIRE_EQUAL(server.extranonce2_size, 4u);
     BC_REQUIRE_EQUAL(server.minimum_difficulty, 1.0);
+    BC_REQUIRE_EQUAL(server.start_difficulty, 0.0);
     BC_REQUIRE_EQUAL(server.share_interval_seconds, 10u);
     BC_REQUIRE_EQUAL(server.authorize_timeout_seconds, 15u);
 
@@ -505,7 +541,9 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__defaults__expected)
     BC_REQUIRE(server.coinbase_tag.empty());
     BC_REQUIRE_EQUAL(server.extranonce_prefix_size, 4u);
     BC_REQUIRE_EQUAL(server.extranonce_size, 8u);
+    BC_REQUIRE_EQUAL(server.maximum_channels, 1024u);
     BC_REQUIRE_EQUAL(server.minimum_difficulty, 1.0);
+    BC_REQUIRE_EQUAL(server.start_difficulty, 0.0);
     BC_REQUIRE_EQUAL(server.share_interval_seconds, 10u);
 
     // tcp_server

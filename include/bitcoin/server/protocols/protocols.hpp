@@ -52,6 +52,7 @@
 #include <bitcoin/server/protocols/protocol_submit.hpp>
 #include <bitcoin/server/protocols/protocol_mining.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
+#include <bitcoin/server/protocols/protocol_sv2.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2_setup.hpp>
 #include <bitcoin/server/protocols/protocol_zmq.hpp>
@@ -69,7 +70,7 @@ Websocket and html are not independent subclasses (operate within http).
 
 network::protocol
 ├── [server::protocol_stratum_v2_setup]
-├── [server::protocol_stratum_v2]
+├── [server::protocol_sv2]
 ├── protocol_rpc<Channel>
 │   └── [server::protocol_zmq]
 ├── protocol_http
@@ -106,7 +107,10 @@ node::protocol
 
 server::protocol → node::protocol
 ├── protocol_stratum_v2_setup          → network::protocol (handshake)
-├── protocol_stratum_v2                → network::protocol
+├── protocol_sv2                       → network::protocol
+│   └── protocol_submit<Base>
+│       └── protocol_mining<Base>
+│           └── protocol_stratum_v2
 ├── protocol_zmq                       → network::protocol_rpc<channel_zmq>
 └── protocol_http                      → network::protocol_http
     ├── protocol_esplora
