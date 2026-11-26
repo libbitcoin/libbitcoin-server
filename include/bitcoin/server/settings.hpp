@@ -236,14 +236,23 @@ public:
         using base = network::settings::websocket_server;
         using base::base;
 
+        /// Validate the coinbase layout.
+        code initialize_context() NOEXCEPT override;
+
+        /// Bytes of coinbase extranonce, assigned and rolled.
+        virtual size_t coinbase_extranonce_size() const NOEXCEPT = 0;
+
         /// Address paid by the coinbase, otherwise the worker name.
         std::string payout_address{};
 
         /// Text carried by the coinbase input script.
         std::string coinbase_tag{};
 
-        /// Share difficulty assigned to a channel, and its floor.
+        /// Share difficulty floor of a channel.
         double minimum_difficulty{ 1.0 };
+
+        /// Share difficulty of a new channel, zero is automatic.
+        double start_difficulty{ 0.0 };
 
         /// Target seconds between shares of a channel, zero fixes difficulty.
         uint32_t share_interval_seconds{ 10 };
@@ -257,8 +266,11 @@ public:
         using base = mining_server;
         using base::base;
 
-        /// Validate the coinbase layout.
+        /// Validate the extranonce sizes.
         code initialize_context() NOEXCEPT override;
+
+        /// Bytes of coinbase extranonce, assigned and rolled.
+        size_t coinbase_extranonce_size() const NOEXCEPT override;
 
         /// Bytes of coinbase extranonce assigned to each channel.
         uint8_t extranonce1_size{ 4 };
@@ -268,6 +280,29 @@ public:
 
         /// Seconds to subscribe and authorize a channel, zero is unlimited.
         uint32_t authorize_timeout_seconds{ 15 };
+    };
+
+    /// Stratum v2 is served over ws/s (binary frames).
+    struct BCS_API stratum_v2_server
+      : public mining_server
+    {
+        using base = mining_server;
+        using base::base;
+
+        /// Validate the extranonce sizes.
+        code initialize_context() NOEXCEPT override;
+
+        /// Bytes of coinbase extranonce, assigned and rolled.
+        size_t coinbase_extranonce_size() const NOEXCEPT override;
+
+        /// Bytes of coinbase extranonce assigned to each channel.
+        uint8_t extranonce_prefix_size{ 4 };
+
+        /// Bytes of coinbase extranonce rolled by an extended channel miner.
+        uint8_t extranonce_size{ 8 };
+
+        /// Mining channels open on a connection.
+        uint32_t maximum_channels{ 1024 };
     };
 
     struct BCS_API esplora_server
@@ -454,7 +489,7 @@ public:
     stratum_v1_server stratum_v1{ "stratum_v1" };
 
     /// stratum v2 interface (ws/s, binary)
-    network::settings::websocket_server stratum_v2{ "stratum_v2" };
+    stratum_v2_server stratum_v2{ "stratum_v2" };
 
     /// zmq notifications, bitcoind compatible (tcp, native zmtp publisher)
     zmq_server zmq{ "zmq" };

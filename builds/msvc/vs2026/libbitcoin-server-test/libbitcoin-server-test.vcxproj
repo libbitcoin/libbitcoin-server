@@ -151,7 +151,9 @@
       <ObjectFileName>$(IntDir)test_protocols_stratum_v1_stratum_v1.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\stratum_v1\stratum_v1_setup_fixture.cpp" />
-    <ClCompile Include="..\..\..\..\test\protocols\stratum_v2\stratum_v2.cpp" />
+    <ClCompile Include="..\..\..\..\test\protocols\stratum_v2\stratum_v2.cpp">
+      <ObjectFileName>$(IntDir)test_protocols_stratum_v2_stratum_v2.obj</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\protocols\stratum_v2\stratum_v2_setup_fixture.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\zmq\zmq.cpp" />
     <ClCompile Include="..\..\..\..\test\protocols\zmq\zmq_setup_fixture.cpp" />
@@ -169,6 +171,9 @@
     <ClCompile Include="..\..\..\..\test\utilities\mining_channel.cpp" />
     <ClCompile Include="..\..\..\..\test\utilities\stratum_v1.cpp">
       <ObjectFileName>$(IntDir)test_utilities_stratum_v1.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\utilities\stratum_v2.cpp">
+      <ObjectFileName>$(IntDir)test_utilities_stratum_v2.obj</ObjectFileName>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

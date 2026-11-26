@@ -357,23 +357,57 @@ code settings::bitcoind_server::initialize_context() NOEXCEPT
     return network::error::success;
 }
 
-// Tag and extranonce are each a single push within the coinbase script, and
-// the extranonce1 of channels is distinct below 2^32 channel identifiers.
-code settings::stratum_v1_server::initialize_context() NOEXCEPT
+// Tag and extranonce are each a single push within the coinbase script.
+code settings::mining_server::initialize_context() NOEXCEPT
 {
     using namespace system::chain;
     if (const auto ec = base::initialize_context())
         return ec;
 
-    const auto extranonce = add<size_t>(extranonce1_size, extranonce2_size);
+    const auto extranonce = coinbase_extranonce_size();
     const auto script = coinbase_script_size(coinbase_tag.size(), extranonce);
-    if (extranonce1_size < sizeof(uint32_t) || is_zero(extranonce2_size) ||
-        coinbase_tag.size() > max_direct_push ||
+    if (coinbase_tag.size() > max_direct_push ||
         extranonce > max_direct_push || script > max_coinbase_size ||
-        minimum_difficulty <= 0.0)
+        !(minimum_difficulty > 0.0) || !(start_difficulty >= 0.0) ||
+        std::isinf(minimum_difficulty) || std::isinf(start_difficulty))
         return network::error::invalid_configuration;
 
     return network::error::success;
+}
+
+code settings::stratum_v1_server::initialize_context() NOEXCEPT
+{
+    if (const auto ec = base::initialize_context())
+        return ec;
+
+    if (extranonce1_size < sizeof(uint32_t) || is_zero(extranonce2_size))
+        return network::error::invalid_configuration;
+
+    return network::error::success;
+}
+
+size_t settings::stratum_v1_server::coinbase_extranonce_size() const NOEXCEPT
+{
+    return add<size_t>(extranonce1_size, extranonce2_size);
+}
+
+// The prefix of a standard channel is the whole extranonce, a B0_32 field.
+code settings::stratum_v2_server::initialize_context() NOEXCEPT
+{
+    if (const auto ec = base::initialize_context())
+        return ec;
+
+    if (extranonce_prefix_size < sizeof(uint32_t) ||
+        is_zero(extranonce_size) || is_zero(maximum_channels) ||
+        coinbase_extranonce_size() > system::hash_size)
+        return network::error::invalid_configuration;
+
+    return network::error::success;
+}
+
+size_t settings::stratum_v2_server::coinbase_extranonce_size() const NOEXCEPT
+{
+    return add<size_t>(extranonce_prefix_size, extranonce_size);
 }
 
 code settings::esplora_server::initialize_context() NOEXCEPT

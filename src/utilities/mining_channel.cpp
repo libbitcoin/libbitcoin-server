@@ -58,6 +58,16 @@ void mining_channel::set_difficulty(double difficulty) NOEXCEPT
     difficulty_ = difficulty;
 }
 
+double mining_channel::floor() const NOEXCEPT
+{
+    return floor_;
+}
+
+void mining_channel::set_floor(double difficulty) NOEXCEPT
+{
+    floor_ = difficulty;
+}
+
 double mining_channel::notified() const NOEXCEPT
 {
     return notified_;
@@ -88,6 +98,11 @@ mining_channel::job::cptr mining_channel::find(uint32_t id) const NOEXCEPT
 {
     const auto it = std::ranges::find(jobs_, id, &entry::first);
     return it == jobs_.end() ? job::cptr{} : it->second;
+}
+
+bool mining_channel::issued(uint32_t id) const NOEXCEPT
+{
+    return id < next_;
 }
 
 mining_channel::job::cptr mining_channel::current() const NOEXCEPT

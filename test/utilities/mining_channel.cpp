@@ -53,6 +53,7 @@ BC_AUTO_TEST_CASE(mining_channel__construct__difficulty__expected)
     BC_REQUIRE_EQUAL(channel.extranonce(), *prefix);
     BC_REQUIRE_EQUAL(channel.difficulty(), 2.5);
     BC_REQUIRE_EQUAL(channel.notified(), 0.0);
+    BC_REQUIRE_EQUAL(channel.floor(), 0.0);
     BC_REQUIRE_EQUAL(channel.accepted(), 0u);
     BC_REQUIRE_EQUAL(channel.shares(), 0u);
     BC_REQUIRE(!channel.current());
@@ -160,6 +161,31 @@ BC_AUTO_TEST_CASE(mining_channel__set_payout__set__expected)
     const chain::script payout{ chain::script::to_pay_key_hash_pattern(short_hash{ 0x42 }) };
     channel.set_payout(payout);
     BC_REQUIRE(channel.payout() == payout);
+}
+
+BC_AUTO_TEST_CASE(mining_channel__set_floor__set__expected)
+{
+    server::mining_channel channel{ prefix, 1.0 };
+    channel.set_floor(4.0);
+    BC_REQUIRE_EQUAL(channel.floor(), 4.0);
+    BC_REQUIRE_EQUAL(channel.difficulty(), 1.0);
+}
+
+BC_AUTO_TEST_CASE(mining_channel__issued__none__false)
+{
+    const server::mining_channel channel{ prefix, 1.0 };
+    BC_REQUIRE(!channel.issued(0));
+}
+
+BC_AUTO_TEST_CASE(mining_channel__issued__dropped_by_clean__true)
+{
+    server::mining_channel channel{ prefix, 1.0 };
+    channel.issue(make_job(10), false);
+    channel.issue(make_job(11), true);
+    BC_REQUIRE(!channel.find(0));
+    BC_REQUIRE(channel.issued(0));
+    BC_REQUIRE(channel.issued(1));
+    BC_REQUIRE(!channel.issued(2));
 }
 
 BC_AUTO_TEST_SUITE_END()

@@ -53,7 +53,7 @@ public:
         channel_(std::dynamic_pointer_cast<channel_t>(channel)),
         prefix_(session->allocate_prefix(options.extranonce1_size)),
         mining_(prefix_ ? system::emplace_shared<mining_channel>(prefix_,
-            options.minimum_difficulty) : mining_channel::ptr{}),
+            start_difficulty(0.0)) : mining_channel::ptr{}),
         authorize_timer_(system::emplace_shared<network::deadline>(
             session->log, channel->strand(),
             network::seconds(options.authorize_timeout_seconds)))

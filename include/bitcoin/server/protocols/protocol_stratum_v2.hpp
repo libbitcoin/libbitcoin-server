@@ -21,35 +21,124 @@
 
 #include <bitcoin/server/channels/channels.hpp>
 #include <bitcoin/server/define.hpp>
-#include <bitcoin/server/protocols/protocol.hpp>
+#include <bitcoin/server/protocols/protocol_mining.hpp>
+#include <bitcoin/server/protocols/protocol_sv2.hpp>
 
 namespace libbitcoin {
 namespace server {
 
-/// Stratum v2 mining (not implemented), attached once the connection is set up.
+/// Stratum v2 solo mining, a job per held template paying the channel's
+/// user, shares checked against the channel target and blocks submitted.
 class BCS_API protocol_stratum_v2
-  : public server::protocol,
-    public network::protocol,
+  : public protocol_mining<protocol_sv2>,
     protected network::tracker<protocol_stratum_v2>
 {
 public:
     typedef std::shared_ptr<protocol_stratum_v2> ptr;
     using channel_t = channel_stratum_v2;
     using options_t = channel_t::options_t;
+    using mining_t = protocol_mining<protocol_sv2>;
+    using open_standard_mining_channel =
+        network::messages::sv2::open_standard_mining_channel;
+    using open_extended_mining_channel =
+        network::messages::sv2::open_extended_mining_channel;
+    using update_channel = network::messages::sv2::update_channel;
+    using close_channel = network::messages::sv2::close_channel;
+    using submit_shares_standard =
+        network::messages::sv2::submit_shares_standard;
+    using submit_shares_extended =
+        network::messages::sv2::submit_shares_extended;
 
     inline protocol_stratum_v2(const auto& session,
-        const network::channel::ptr& channel, const options_t&) NOEXCEPT
-      : server::protocol(session, channel),
-        network::protocol(session, channel),
-        network::tracker<protocol_stratum_v2>(session->log)
+        const network::channel::ptr& channel,
+        const options_t& options) NOEXCEPT
+      : mining_t(session, channel, options),
+        network::tracker<protocol_stratum_v2>(session->log),
+        options_(options),
+        p2kh_(session->server_settings().wallet.p2kh_prefix),
+        p2sh_(session->server_settings().wallet.p2sh_prefix),
+        witness_(session->server_settings().wallet.witness_prefix),
+        channel_(std::dynamic_pointer_cast<channel_t>(channel))
     {
     }
 
-    // TODO: subscribe to and handle messages.
-    inline void start() NOEXCEPT override
+    void start() NOEXCEPT override;
+
+protected:
+    DECLARE_SEND()
+    DECLARE_SUBSCRIBE_CHANNEL()
+
+    /// Extranonce of the channel and the miner.
+    size_t extranonce_size() const NOEXCEPT override;
+
+    /// Send the job, and its target if changed.
+    void send_job(mining_channel& channel, const job::cptr& job,
+        bool clean) NOEXCEPT override;
+
+    /// Handlers.
+    virtual bool handle_receive_open_standard_mining_channel(const code& ec,
+        const open_standard_mining_channel::cptr& message) NOEXCEPT;
+    virtual bool handle_receive_open_extended_mining_channel(const code& ec,
+        const open_extended_mining_channel::cptr& message) NOEXCEPT;
+    virtual bool handle_receive_update_channel(const code& ec,
+        const update_channel::cptr& message) NOEXCEPT;
+    virtual bool handle_receive_close_channel(const code& ec,
+        const close_channel::cptr& message) NOEXCEPT;
+    virtual bool handle_receive_submit_shares_standard(const code& ec,
+        const submit_shares_standard::cptr& message) NOEXCEPT;
+    virtual bool handle_receive_submit_shares_extended(const code& ec,
+        const submit_shares_extended::cptr& message) NOEXCEPT;
+
+private:
+    struct channel_state
+      : public mining_channel
     {
-        network::protocol::start();
-    }
+        typedef std::shared_ptr<channel_state> ptr;
+
+        inline channel_state(const extranonces::prefix& prefix,
+            double difficulty, uint32_t id, bool standard) NOEXCEPT
+          : mining_channel(prefix, difficulty), id(id), standard(standard)
+        {
+        }
+
+        const uint32_t id;
+        const bool standard;
+    };
+
+    // A share of a channel, the extranonce empty for a standard channel.
+    struct share
+    {
+        uint32_t channel_id;
+        uint32_t sequence_number;
+        uint32_t job_id;
+        uint32_t nonce;
+        uint32_t ntime;
+        uint32_t version;
+        const system::data_chunk& extranonce;
+    };
+
+    void open_channel(uint32_t request_id, const std::string& identity,
+        float hash_rate, const system::hash_digest& max_target,
+        bool standard) NOEXCEPT;
+    void open_failed(uint32_t request_id, const std::string& reason) NOEXCEPT;
+    void submit_share(const share& share, bool standard) NOEXCEPT;
+    void share_failed(const share& share, const std::string& reason) NOEXCEPT;
+    void share_dropped(const share& share, const std::string& reason,
+        const code& ec) NOEXCEPT;
+    void handle_dropped(const code& ec, const code& reason) NOEXCEPT;
+    bool to_payout(system::chain::script& out,
+        const std::string& identity) const NOEXCEPT;
+    channel_state::ptr find(uint32_t id) const NOEXCEPT;
+
+    // These are thread safe.
+    const options_t& options_;
+    const uint8_t p2kh_;
+    const uint8_t p2sh_;
+    const std::string witness_;
+    const channel_t::ptr channel_;
+
+    // This is protected by strand.
+    uint32_t next_{};
 };
 
 } // namespace server

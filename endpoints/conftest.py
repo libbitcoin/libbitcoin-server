@@ -211,8 +211,22 @@ def pytest_addoption(parser):
     parser.addoption(
         "--stratum-v2-port",
         action="store",
-        default="3336",
-        help="Port for Stratum v2 (default: 3336)"
+        default="8980",
+        help="Port for Stratum v2 websocket (default: 8980)"
+    )
+    parser.addoption(
+        "--stratum-v2-user",
+        action="store",
+        default="worker",
+        help="Stratum v2 user identity, an address unless the server configures payout_address (default: worker)"
+    )
+    parser.addoption(
+        "--stratum-v2-password",
+        action="store",
+        default="",
+        help="Stratum v2 credential password, when the server configures a "
+             "[stratum_v2] credential whose user is the identity account "
+             "(default: none)"
     )
 
     # Robustness options (test_robustness_*.py)
@@ -596,5 +610,7 @@ def stratum_v2_config(request):
     return {
         "host": request.config.getoption("--stratum-v2-host"),
         "port": int(request.config.getoption("--stratum-v2-port")),
+        "user": request.config.getoption("--stratum-v2-user"),
+        "password": request.config.getoption("--stratum-v2-password"),
         "timeout": float(request.config.getoption("--timeout"))
     }

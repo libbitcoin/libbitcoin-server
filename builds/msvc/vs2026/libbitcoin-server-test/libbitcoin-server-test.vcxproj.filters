@@ -270,6 +270,9 @@
     <ClCompile Include="..\..\..\..\test\utilities\stratum_v1.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\utilities\stratum_v2.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\test\mocks\blocks.hpp">

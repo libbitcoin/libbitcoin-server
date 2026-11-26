@@ -63,6 +63,21 @@ void CLASS::remove_channel(uint32_t id) NOEXCEPT
     channels_.erase(id);
 }
 
+TEMPLATE
+mining_channel::ptr CLASS::find_channel(uint32_t id) const NOEXCEPT
+{
+    BC_ASSERT(this->stranded());
+    const auto it = channels_.find(id);
+    return it == channels_.end() ? mining_channel::ptr{} : it->second;
+}
+
+TEMPLATE
+size_t CLASS::channel_count() const NOEXCEPT
+{
+    BC_ASSERT(this->stranded());
+    return channels_.size();
+}
+
 // Events.
 // ----------------------------------------------------------------------------
 
@@ -92,14 +107,14 @@ void CLASS::start_jobs() NOEXCEPT
     BC_ASSERT(this->stranded());
     using namespace std::placeholders;
 
-    if (active_.exchange(true))
-        return;
+    if (!active_.exchange(true))
+    {
+        this->demand_template(true);
+        start_decay();
+    }
 
-    this->demand_template(true);
     this->get_template(this->template bind<CLASS>(&CLASS::handle_template,
         _1, _2));
-
-    start_decay();
 }
 
 TEMPLATE
@@ -249,6 +264,22 @@ void CLASS::accept_share(mining_channel& channel, const job& job,
 // Difficulty.
 // ----------------------------------------------------------------------------
 
+TEMPLATE
+double CLASS::start_difficulty(double hash_rate) const NOEXCEPT
+{
+    const auto start = options_.start_difficulty > 0.0 ?
+        options_.start_difficulty :
+        to_rate_difficulty(hash_rate, options_.share_interval_seconds);
+
+    return std::max(options_.minimum_difficulty, start);
+}
+
+TEMPLATE
+double CLASS::floor(const mining_channel& channel) const NOEXCEPT
+{
+    return std::max(options_.minimum_difficulty, channel.floor());
+}
+
 // The difficulty moves toward the configured share interval (vardiff).
 TEMPLATE
 void CLASS::retarget(mining_channel& channel) NOEXCEPT
@@ -276,7 +307,7 @@ void CLASS::retarget(mining_channel& channel) NOEXCEPT
     if (ratio > lower_dead_band && ratio < upper_dead_band)
         return;
 
-    const auto difficulty = std::max(options_.minimum_difficulty,
+    const auto difficulty = std::max(floor(channel),
         channel.difficulty() * ratio);
 
     if (difficulty == channel.difficulty())
@@ -321,7 +352,7 @@ void CLASS::handle_decay(const code& ec) NOEXCEPT
         if (!is_zero(channel.shares()))
             continue;
 
-        const auto difficulty = std::max(options_.minimum_difficulty,
+        const auto difficulty = std::max(floor(channel),
             channel.difficulty() * minimum_ratio);
 
         if (difficulty != channel.difficulty())
@@ -335,12 +366,11 @@ void CLASS::handle_decay(const code& ec) NOEXCEPT
     start_decay();
 }
 
-// A suggested difficulty is floored at the configured minimum.
 TEMPLATE
 void CLASS::suggest(mining_channel& channel, double difficulty) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
-    const auto floored = std::max(options_.minimum_difficulty, difficulty);
+    const auto floored = std::max(floor(channel), difficulty);
     if (floored == channel.difficulty())
         return;
 
