@@ -86,6 +86,28 @@
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000010}</UniqueIdentifier>
     </Filter>
     <Filter Include="web\native\test\lib">
+    <Filter Include="web\native\src\lib\mining">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\src\lib\utils">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\src\routes">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\src\vendor">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\src\vendor\mining-pools">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\test">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000009}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\test\lib">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000010}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\test\lib\mining">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000A1}</UniqueIdentifier>
     </Filter>
     <Filter Include="web\native\test\lib\utils">
@@ -445,10 +467,16 @@
     <None Include="..\..\..\..\web\native\src\components\hash-text.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\components\hashrate-chart.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\components\miner-share.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\components\miner-value.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\components\mining-settings.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\components\qr-code.tsx">
@@ -525,6 +553,21 @@
     </None>
     <None Include="..\..\..\..\web\native\src\lib\hooks\useWindowScrollToBottom.ts">
       <Filter>web\native\src\lib\hooks</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\mining\format.ts">
+      <Filter>web\native\src\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\mining\miner.ts">
+      <Filter>web\native\src\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\mining\miner.worker.ts">
+      <Filter>web\native\src\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\mining\sha256.ts">
+      <Filter>web\native\src\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\mining\stratum.ts">
+      <Filter>web\native\src\lib\mining</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\theme.ts">
       <Filter>web\native\src\lib</Filter>
@@ -628,6 +671,9 @@
     <None Include="..\..\..\..\web\native\src\routes\transactions.tsx">
       <Filter>web\native\src\routes</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\routes\web-miner.tsx">
+      <Filter>web\native\src\routes</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\themes.css">
       <Filter>web\native\src</Filter>
     </None>
@@ -642,6 +688,15 @@
     </None>
     <None Include="..\..\..\..\web\native\tailwind.config.js">
       <Filter>web\native</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\mining\format.test.ts">
+      <Filter>web\native\test\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\mining\miner.test.ts">
+      <Filter>web\native\test\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\mining\mining.test.ts">
+      <Filter>web\native\test\lib\mining</Filter>
     </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\address.test.ts">
       <Filter>web\native\test\lib\utils</Filter>

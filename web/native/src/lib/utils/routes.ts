@@ -44,6 +44,10 @@ export function investigationsPath() {
   return '/v1/investigations';
 }
 
+export function webMinerPath() {
+  return '/v1/mining';
+}
+
 export function blockByHashPath(hash: string) {
   return `/v1/block/hash/${encodeURIComponent(hash)}`;
 }
