@@ -50,6 +50,9 @@ const orbits: Array<{ id: 'off' | 'on'; label: string }> = [
 
 const ticks = [1, 2, 5, 10, 20, 50, 100, RATE_CEILING];
 
+// The time of a move of the 3D template, out or in, in milliseconds.
+export const MOVE = 1200;
+
 // A tx of the view by its index, or the coinbase, which is not of the view.
 type Selection = number | 'coinbase';
 
@@ -63,6 +66,7 @@ export function BlockViewer({
   forceExpanded = false,
   focus,
   reservation = false,
+  departing = false,
 }: {
   elements: readonly TemplateElement[];
   height: number;
@@ -73,6 +77,9 @@ export function BlockViewer({
   focus?: { position: number; key: number };
   // The coinbase is the space reserved for it, as of a template.
   reservation?: boolean;
+  // The 3D template moves out of its scene (to the left), the next pool set
+  // moving in (from the right).
+  departing?: boolean;
 }) {
   const [expanded, setExpanded] = useState(() => forceExpanded || loadSectionExpanded('details'));
   const regionId = useId();
@@ -86,6 +93,12 @@ export function BlockViewer({
   const [orbit, setOrbit] = useState(loadOrbit);
   const coinbaseElement = coinbase ? elements.at(0) : undefined;
   const [selection, setSelection] = useState<Selection | null>(null);
+  // A new height (as followed in place) starts without a selection.
+  const [shown, setShown] = useState(height);
+  if (shown !== height) {
+    setShown(height);
+    setSelection(null);
+  }
   const valid =
     selection === 'coinbase'
       ? coinbaseElement !== undefined
@@ -189,6 +202,7 @@ export function BlockViewer({
               orbit={orbit}
               onSelect={select}
               kept
+              departing={departing ? MOVE : undefined}
             />
           ) : (
             <TemplateTreemap
@@ -308,7 +322,7 @@ function TransactionPanel({
     ],
     [coinbase, pool]
   );
-  if (selected === null) return null;
+  if (selected === null) return <EmptyPanel />;
   const order = ordered.indexOf(selected);
   const previous = order > 0 ? ordered[order - 1] : undefined;
   const next = order + 1 < ordered.length ? ordered[order + 1] : undefined;
@@ -348,7 +362,7 @@ function TransactionPanel({
   }
 
   const transaction = pool.transactions[selected];
-  if (!transaction) return null;
+  if (!transaction) return <EmptyPanel />;
   const chunk = pool.chunks[transaction.chunk];
   const own = transactionRate(transaction);
   const rows: PanelRow[] = [
@@ -416,6 +430,35 @@ function TransactionPanel({
           })}
         </ul>
       </div>
+    </aside>
+  );
+}
+
+// The panel without a tx (a template without txs), keeping the layout of one.
+function EmptyPanel() {
+  const rows: PanelRow[] = [
+    ['Fee rate', '—'],
+    ['Cluster rate', '—'],
+    ['Fee', '—'],
+    ['Virtual size', '—'],
+    ['Cluster', '—'],
+  ];
+  return (
+    <aside className="border-accent/30 bg-surface/80 min-w-0 flex-[1_1_300px] space-y-4 rounded-2xl border p-5">
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-accentSecondary text-xs tracking-wide uppercase">Transaction</p>
+          <div className="flex gap-1">
+            <StepButton label="Previous position" Icon={ChevronLeftIcon} target={undefined} onSelect={() => {}} />
+            <StepButton label="Next position" Icon={ChevronRightIcon} target={undefined} onSelect={() => {}} />
+          </div>
+        </div>
+        <p className="text-textMuted font-mono text-sm">No position</p>
+      </div>
+      <PanelRows rows={rows} />
+      <p className="border-accentSecondary/20 text-textMuted border-t pt-3 text-sm">
+        No transactions in this template yet.
+      </p>
     </aside>
   );
 }
