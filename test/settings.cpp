@@ -648,6 +648,7 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__defaults__expected)
     BC_REQUIRE_EQUAL(server.minimum_difficulty, 1.0);
     BC_REQUIRE_EQUAL(server.start_difficulty, 0.0);
     BC_REQUIRE_EQUAL(server.share_interval_seconds, 10u);
+    BC_REQUIRE_EQUAL(server.authorize_timeout_seconds, 15u);
     BC_REQUIRE_EQUAL(server.noise_validity_days, 1u);
     BC_REQUIRE(!server.noise);
 

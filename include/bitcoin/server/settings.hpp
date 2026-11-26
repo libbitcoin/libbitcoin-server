@@ -259,6 +259,9 @@ public:
 
         /// Target seconds between shares of a channel, zero fixes difficulty.
         uint32_t share_interval_seconds{ 10 };
+
+        /// Seconds to authorize a connection, zero is unlimited.
+        uint32_t authorize_timeout_seconds{ 15 };
     };
 
     /// Stratum v1 is served over tcp/s (json-rpc downgrade), http/s and ws/s,
@@ -280,9 +283,6 @@ public:
 
         /// Bytes of coinbase extranonce rolled by the miner.
         uint8_t extranonce2_size{ 4 };
-
-        /// Seconds to subscribe and authorize a channel, zero is unlimited.
-        uint32_t authorize_timeout_seconds{ 15 };
     };
 
     /// Stratum v2 is served over ws/s (binary frames).

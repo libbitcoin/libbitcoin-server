@@ -53,6 +53,9 @@ void protocol_stratum_v2_setup::shake(
 
     SUBSCRIBE_CHANNEL(setup_connection, handle_receive_setup_connection, _1, _2);
     network::protocol::start();
+
+    if (!is_zero(options_.authorize_timeout_seconds))
+        timer_->start(BIND(handle_timeout, _1));
 }
 
 void protocol_stratum_v2_setup::finished(const code& ec,
@@ -79,6 +82,7 @@ void protocol_stratum_v2_setup::stopping(const code& ec) NOEXCEPT
 void protocol_stratum_v2_setup::callback(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
+    timer_->stop();
 
     if (!handler_)
         return;
@@ -86,6 +90,16 @@ void protocol_stratum_v2_setup::callback(const code& ec) NOEXCEPT
     // Invoke handshake completion, error will result in stopped channel.
     (*handler_)(ec);
     handler_.reset();
+}
+
+// private
+void protocol_stratum_v2_setup::handle_timeout(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (stopped() || ec == network::error::operation_canceled)
+        return;
+
+    callback(ec ? ec : code{ network::error::channel_timeout });
 }
 
 // Handler.
