@@ -37,29 +37,36 @@ BC_FIXTURE_TEST_SUITE(stratum_v2_tests, stratum_v2_ten_block_setup_fixture)
 
 BC_AUTO_TEST_CASE(stratum_v2__setup_connection__version_two__success)
 {
-    BC_REQUIRE(!upgrade());
+    const auto ec = upgrade();
     send(setup_frame());
-    BC_REQUIRE_EQUAL(receive(), success_frame());
+    const auto response = receive();
+    BC_REQUIRE(!ec);
+    BC_REQUIRE_EQUAL(response, success_frame());
 }
 
 BC_AUTO_TEST_CASE(stratum_v2__setup_connection__version_range_includes_two__success)
 {
-    BC_REQUIRE(!upgrade());
+    const auto ec = upgrade();
     send(setup_frame(1, 3));
-    BC_REQUIRE_EQUAL(receive(), success_frame());
+    const auto response = receive();
+    BC_REQUIRE(!ec);
+    BC_REQUIRE_EQUAL(response, success_frame());
 }
 
 BC_AUTO_TEST_CASE(stratum_v2__setup_connection__requires_version_rolling__success)
 {
-    BC_REQUIRE(!upgrade());
+    const auto ec = upgrade();
     send(setup_frame(2, 2, 0x00000004));
-    BC_REQUIRE_EQUAL(receive(), success_frame());
+    const auto response = receive();
+    BC_REQUIRE(!ec);
+    BC_REQUIRE_EQUAL(response, success_frame());
 }
 
 BC_AUTO_TEST_CASE(stratum_v2__setup_connection__job_declaration_protocol__unsupported_protocol)
 {
-    BC_REQUIRE(!upgrade());
+    const auto ec = upgrade();
     const auto error = get_error(setup_frame(2, 2, 0, 1));
+    BC_REQUIRE(!ec);
     BC_REQUIRE(error);
     BC_REQUIRE_EQUAL(error->flags, 0u);
     BC_REQUIRE_EQUAL(error->error_code, "unsupported-protocol");
@@ -67,8 +74,9 @@ BC_AUTO_TEST_CASE(stratum_v2__setup_connection__job_declaration_protocol__unsupp
 
 BC_AUTO_TEST_CASE(stratum_v2__setup_connection__version_above_two__protocol_version_mismatch)
 {
-    BC_REQUIRE(!upgrade());
+    const auto ec = upgrade();
     const auto error = get_error(setup_frame(3, 3));
+    BC_REQUIRE(!ec);
     BC_REQUIRE(error);
     BC_REQUIRE_EQUAL(error->flags, 0u);
     BC_REQUIRE_EQUAL(error->error_code, "protocol-version-mismatch");
@@ -76,16 +84,18 @@ BC_AUTO_TEST_CASE(stratum_v2__setup_connection__version_above_two__protocol_vers
 
 BC_AUTO_TEST_CASE(stratum_v2__setup_connection__version_below_two__protocol_version_mismatch)
 {
-    BC_REQUIRE(!upgrade());
+    const auto ec = upgrade();
     const auto error = get_error(setup_frame(1, 1));
+    BC_REQUIRE(!ec);
     BC_REQUIRE(error);
     BC_REQUIRE_EQUAL(error->error_code, "protocol-version-mismatch");
 }
 
 BC_AUTO_TEST_CASE(stratum_v2__setup_connection__requires_work_selection__unsupported_feature_flags)
 {
-    BC_REQUIRE(!upgrade());
+    const auto ec = upgrade();
     const auto error = get_error(setup_frame(2, 2, 0x00000002));
+    BC_REQUIRE(!ec);
     BC_REQUIRE(error);
     BC_REQUIRE_EQUAL(error->flags, 0x00000002u);
     BC_REQUIRE_EQUAL(error->error_code, "unsupported-feature-flags");
@@ -93,48 +103,60 @@ BC_AUTO_TEST_CASE(stratum_v2__setup_connection__requires_work_selection__unsuppo
 
 BC_AUTO_TEST_CASE(stratum_v2__setup_connection__requires_standard_jobs__unsupported_feature_flags)
 {
-    BC_REQUIRE(!upgrade());
+    const auto ec = upgrade();
     const auto error = get_error(setup_frame(2, 2, 0x00000001));
+    BC_REQUIRE(!ec);
     BC_REQUIRE(error);
     BC_REQUIRE_EQUAL(error->flags, 0x00000001u);
 }
 
 BC_AUTO_TEST_CASE(stratum_v2__setup_connection__all_flags__all_unsupported_reported)
 {
-    BC_REQUIRE(!upgrade());
+    const auto ec = upgrade();
     const auto error = get_error(setup_frame(2, 2, 0xffffffff));
+    BC_REQUIRE(!ec);
     BC_REQUIRE(error);
     BC_REQUIRE_EQUAL(error->flags, 0xfffffffbu);
 }
 
 BC_AUTO_TEST_CASE(stratum_v2__setup_connection__refused__dropped)
 {
-    BC_REQUIRE(!upgrade());
-    BC_REQUIRE(get_error(setup_frame(3, 3)));
-    BC_REQUIRE(receive().empty());
+    const auto ec = upgrade();
+    const auto error = get_error(setup_frame(3, 3));
+    const auto dropped = receive();
+    BC_REQUIRE(!ec);
+    BC_REQUIRE(error);
+    BC_REQUIRE(dropped.empty());
 }
 
 BC_AUTO_TEST_CASE(stratum_v2__setup_connection__repeated__dropped)
 {
-    BC_REQUIRE(!upgrade());
+    const auto ec = upgrade();
     send(setup_frame());
-    BC_REQUIRE_EQUAL(receive(), success_frame());
+    const auto response = receive();
     send(setup_frame());
-    BC_REQUIRE(receive().empty());
+    const auto dropped = receive();
+    BC_REQUIRE(!ec);
+    BC_REQUIRE_EQUAL(response, success_frame());
+    BC_REQUIRE(dropped.empty());
 }
 
 BC_AUTO_TEST_CASE(stratum_v2__set_target__before_setup__dropped)
 {
-    BC_REQUIRE(!upgrade());
+    const auto ec = upgrade();
     send(target_frame());
-    BC_REQUIRE(receive().empty());
+    const auto dropped = receive();
+    BC_REQUIRE(!ec);
+    BC_REQUIRE(dropped.empty());
 }
 
 BC_AUTO_TEST_CASE(stratum_v2__frame__length_above_message__dropped)
 {
-    BC_REQUIRE(!upgrade());
+    const auto ec = upgrade();
     send(base16_chunk("0000010600000200000000"));
-    BC_REQUIRE(receive().empty());
+    const auto dropped = receive();
+    BC_REQUIRE(!ec);
+    BC_REQUIRE(dropped.empty());
 }
 
 BC_AUTO_TEST_CASE(stratum_v2__get__without_upgrade__upgrade_required)
@@ -158,9 +180,11 @@ BC_AUTO_TEST_CASE(stratum_v2__upgrade__wrong_credential__refused)
 
 BC_AUTO_TEST_CASE(stratum_v2__setup_connection__credential__success)
 {
-    BC_REQUIRE(!upgrade("miner", "pass"));
+    const auto ec = upgrade("miner", "pass");
     send(setup_frame());
-    BC_REQUIRE_EQUAL(receive(), success_frame());
+    const auto response = receive();
+    BC_REQUIRE(!ec);
+    BC_REQUIRE_EQUAL(response, success_frame());
 }
 
 BC_AUTO_TEST_SUITE_END()

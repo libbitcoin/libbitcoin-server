@@ -62,8 +62,10 @@ BC_AUTO_TEST_CASE(mining_channel__construct__difficulty__expected)
 BC_AUTO_TEST_CASE(mining_channel__issue__sequential__identifiers_and_current)
 {
     server::mining_channel channel{ prefix, 1.0 };
-    BC_REQUIRE_EQUAL(channel.issue(make_job(10), false), 0u);
-    BC_REQUIRE_EQUAL(channel.issue(make_job(11), false), 1u);
+    const auto first = channel.issue(make_job(10), false);
+    const auto second = channel.issue(make_job(11), false);
+    BC_REQUIRE_EQUAL(first, 0u);
+    BC_REQUIRE_EQUAL(second, 1u);
     BC_REQUIRE_EQUAL(channel.current()->version, 11u);
     BC_REQUIRE_EQUAL(channel.find(0)->version, 10u);
     BC_REQUIRE_EQUAL(channel.find(1)->version, 11u);
@@ -91,8 +93,10 @@ BC_AUTO_TEST_CASE(mining_channel__issue__above_maximum__oldest_dropped)
 BC_AUTO_TEST_CASE(mining_channel__accept__distinct__counted)
 {
     server::mining_channel channel{ prefix, 1.0 };
-    BC_REQUIRE(channel.accept(hash_of(1)));
-    BC_REQUIRE(channel.accept(hash_of(2)));
+    const auto first = channel.accept(hash_of(1));
+    const auto second = channel.accept(hash_of(2));
+    BC_REQUIRE(first);
+    BC_REQUIRE(second);
     BC_REQUIRE_EQUAL(channel.accepted(), 2u);
     BC_REQUIRE_EQUAL(channel.shares(), 2u);
 }
@@ -100,8 +104,10 @@ BC_AUTO_TEST_CASE(mining_channel__accept__distinct__counted)
 BC_AUTO_TEST_CASE(mining_channel__accept__repeated__false_not_counted)
 {
     server::mining_channel channel{ prefix, 1.0 };
-    BC_REQUIRE(channel.accept(hash_of(1)));
-    BC_REQUIRE(!channel.accept(hash_of(1)));
+    const auto first = channel.accept(hash_of(1));
+    const auto second = channel.accept(hash_of(1));
+    BC_REQUIRE(first);
+    BC_REQUIRE(!second);
     BC_REQUIRE_EQUAL(channel.accepted(), 1u);
     BC_REQUIRE_EQUAL(channel.shares(), 1u);
 }
@@ -110,26 +116,31 @@ BC_AUTO_TEST_CASE(mining_channel__accept__repeated_across_reissue__false)
 {
     server::mining_channel channel{ prefix, 1.0 };
     channel.issue(make_job(10), false);
-    BC_REQUIRE(channel.accept(hash_of(1)));
+    const auto first = channel.accept(hash_of(1));
     channel.issue(make_job(10), false);
-    BC_REQUIRE(!channel.accept(hash_of(1)));
+    const auto second = channel.accept(hash_of(1));
+    BC_REQUIRE(first);
+    BC_REQUIRE(!second);
 }
 
 BC_AUTO_TEST_CASE(mining_channel__accept__repeated_after_clean__true)
 {
     server::mining_channel channel{ prefix, 1.0 };
     channel.issue(make_job(10), false);
-    BC_REQUIRE(channel.accept(hash_of(1)));
+    const auto first = channel.accept(hash_of(1));
     channel.issue(make_job(11), true);
-    BC_REQUIRE(channel.accept(hash_of(1)));
+    const auto second = channel.accept(hash_of(1));
+    BC_REQUIRE(first);
+    BC_REQUIRE(second);
     BC_REQUIRE_EQUAL(channel.accepted(), 2u);
 }
 
 BC_AUTO_TEST_CASE(mining_channel__reset_window__shares_cleared_accepted_retained)
 {
     server::mining_channel channel{ prefix, 1.0 };
-    BC_REQUIRE(channel.accept(hash_of(1)));
+    const auto accepted = channel.accept(hash_of(1));
     channel.reset_window();
+    BC_REQUIRE(accepted);
     BC_REQUIRE_EQUAL(channel.shares(), 0u);
     BC_REQUIRE_EQUAL(channel.accepted(), 1u);
 }

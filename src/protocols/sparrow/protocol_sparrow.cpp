@@ -136,8 +136,8 @@ void protocol_sparrow::handle_blockchain_block_stats(const code& ec,
     if (stopped(ec))
         return;
 
-    // TODO: height -> { height, blockhash, feerate_percentiles, total_weight,
-    // TODO: txs, time }.
+    // TODO: height ->
+    // { height, blockhash, feerate_percentiles, total_weight, txs, time }.
     send_code(error::electrum::method_not_found);
 }
 
