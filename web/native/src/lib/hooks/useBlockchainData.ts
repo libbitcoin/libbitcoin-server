@@ -306,6 +306,31 @@ export function useTemplateTransactionHashes(height: number) {
   });
 }
 
+// Loads the template at a height (and its tx hashes) into the cache ahead of
+// its page, settling whether or not the template is found.
+export function usePrefetchTemplate() {
+  const client = useBlockchainClient();
+  const queryClient = useQueryClient();
+  return useCallback(
+    async (height: number) => {
+      const scope = getBlockchainQueryScope(client);
+      await Promise.all([
+        queryClient.prefetchQuery({
+          queryKey: [scope, 'template', { height }],
+          queryFn: () => client.getTemplate(height),
+          staleTime: Infinity,
+        }),
+        queryClient.prefetchQuery({
+          queryKey: [scope, 'template', { height }, 'txs'],
+          queryFn: () => client.getTemplateTransactionHashes(height),
+          staleTime: Infinity,
+        }),
+      ]);
+    },
+    [client, queryClient]
+  );
+}
+
 export function useNetwork() {
   const { data } = useServerConfiguration();
   return { network: data?.network, params: data?.wallet };

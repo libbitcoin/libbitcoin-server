@@ -19,6 +19,9 @@ interface TemplateSceneViewProps {
   onSelect: (transaction: number) => void;
   // The camera is stored when the scene closes and restored when it opens.
   kept?: boolean;
+  // The templates move out over this many milliseconds, the next pool set
+  // then moves in over as many.
+  departing?: number;
 }
 
 function readPalette(): ScenePalette {
@@ -42,6 +45,7 @@ export function TemplateSceneView({
   orbit = false,
   onSelect,
   kept = false,
+  departing,
 }: TemplateSceneViewProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const scene = useRef<TemplateScene | null>(null);
@@ -76,6 +80,10 @@ export function TemplateSceneView({
       scene.current = null;
     };
   }, [kept]);
+
+  useEffect(() => {
+    if (departing) scene.current?.moveOut(departing);
+  }, [departing]);
 
   useEffect(() => {
     scene.current?.setPool(pool);
