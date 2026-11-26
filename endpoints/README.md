@@ -288,7 +288,8 @@ bitcoind).
   invalid addresses and outpoints
 - **Filters:** `loadtxfilter`, `rescanblocks`, `filteredblockconnected`
 - **`rescan`:** unknown begin block rejected, empty address and outpoint
-  lists finish at once with `rescanfinished`, addresses not implemented
+  lists finish at once with `rescanfinished`, a spent outpoint reports
+  `redeemingtx` before `rescanfinished` and the response
 - **Methods:** `getdifficulty`, `getinfo` (also over HTTP POST),
   `getnettotals`, `getnetworkhashps`, `createrawtransaction`/
   `decoderawtransaction`, `decodescript`, `validateaddress`, `help`, `stop`

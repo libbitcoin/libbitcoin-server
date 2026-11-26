@@ -216,6 +216,9 @@ protected:
     using hashes_ptr = std::shared_ptr<system::hashes>;
     using array_ptr = std::shared_ptr<network::rpc::array_t>;
     using legacy_ptr = std::shared_ptr<std::vector<network::rpc::array_t>>;
+    using notification = std::pair<std::string, network::rpc::array_t>;
+    using notifications = std::vector<notification>;
+    using notifications_ptr = std::shared_ptr<notifications>;
     using history = database::history;
     using histories = database::histories;
     using cursor_t = database::height_link;
@@ -258,6 +261,12 @@ protected:
         const gate_t::ptr& gate) NOEXCEPT;
     void complete_rescan_blocks(const code& ec,
         const array_ptr& discovered, const gate_t::ptr& gate) NOEXCEPT;
+
+    void do_rescan(const system::hashes& keys,
+        const system::chain::points& points, size_t begin, size_t end,
+        const database::header_link& last, const gate_t::ptr& gate) NOEXCEPT;
+    void complete_rescan(const code& ec, const notifications_ptr& found,
+        const array_ptr& finished, const gate_t::ptr& gate) NOEXCEPT;
 
     void do_search_raw_transactions(const system::hashes& keys, bool verbose,
         size_t skip, size_t count, bool prevouts, bool reverse,
