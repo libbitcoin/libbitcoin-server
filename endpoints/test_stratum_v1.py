@@ -49,8 +49,11 @@ _ROLLING_MASK = "1fffe000"
 # The target of difficulty one (bits 0x1d00ffff).
 _DIFFICULTY_ONE = 0xffff << 208
 
-# Hashes tried for a share or block before the test skips (seconds in python).
+# Hashes tried for a share or block (seconds in python).
 _MAXIMUM_TRIES = 1 << 20
+
+# A search of the budget misses with probability e^-16 at this bound.
+_REACHABLE_TRIES = _MAXIMUM_TRIES // 16
 
 
 class StratumClient:
@@ -917,7 +920,7 @@ def test_submit_valid_share(client: StratumClient, miner: Miner):
     block target is easier than the share target (regtest), it also mines.
     """
     target = share_target(miner.difficulty)
-    if tries(target) > _MAXIMUM_TRIES:
+    if tries(target) > _REACHABLE_TRIES:
         pytest.skip(f"share difficulty {miner.difficulty} not reachable "
                     "in python, lower [stratum_v1] minimum_difficulty")
     extranonce2 = (2).to_bytes(miner.extranonce2_size, "little")
@@ -944,7 +947,7 @@ def test_submit_mines_block(client: StratumClient, miner: Miner,
     """
     block = expand(miner.bits)
     target = min(block, share_target(miner.difficulty))
-    if tries(target) > _MAXIMUM_TRIES:
+    if tries(target) > _REACHABLE_TRIES:
         pytest.skip("block target not reachable in python (not regtest)")
     try:
         before = native_top(native_config)
