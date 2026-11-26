@@ -30,6 +30,7 @@ import {
   saveTemplateDisplay,
   type TemplateDisplay,
 } from '@/lib/utils/template-settings';
+import { MOVE } from '@/lib/utils/template-follow';
 import { TemplateSceneView } from './template-scene-view';
 import { TemplateTreemap } from './template-treemap';
 
@@ -50,9 +51,6 @@ const orbits: Array<{ id: 'off' | 'on'; label: string }> = [
 ];
 
 const ticks = [1, 2, 5, 10, 20, 50, 100, RATE_CEILING];
-
-// The time of a move of the 3D template, out or in, in milliseconds.
-export const MOVE = 1200;
 
 // A tx of the view by its index, or the coinbase, which is not of the view.
 type Selection = number | 'coinbase';
@@ -287,7 +285,9 @@ function TransactionPanel({
     ],
     [coinbase, pool]
   );
-  if (selected === null) return <EmptyPanel />;
+  if (selected === null) {
+    return <EmptyPanel reservation={reservation} next={ordered.at(0)} onSelect={onSelect} />;
+  }
   const order = ordered.indexOf(selected);
   const previous = order > 0 ? ordered[order - 1] : undefined;
   const next = order + 1 < ordered.length ? ordered[order + 1] : undefined;
@@ -327,7 +327,9 @@ function TransactionPanel({
   }
 
   const transaction = pool.transactions[selected];
-  if (!transaction) return <EmptyPanel />;
+  if (!transaction) {
+    return <EmptyPanel reservation={reservation} next={ordered.at(0)} onSelect={onSelect} />;
+  }
   const chunk = pool.chunks[transaction.chunk];
   const own = transactionRate(transaction);
   const rows: PanelRow[] = [
@@ -399,8 +401,17 @@ function TransactionPanel({
   );
 }
 
-// The panel without a tx (a template without txs), keeping the layout of one.
-function EmptyPanel() {
+// The panel without a tx (a block or template holding only its coinbase),
+// keeping the layout of one. It steps to the coinbase, if any.
+function EmptyPanel({
+  reservation,
+  next,
+  onSelect,
+}: {
+  reservation: boolean;
+  next?: Selection;
+  onSelect: (transaction: Selection) => void;
+}) {
   const rows: PanelRow[] = [
     ['Fee rate', '—'],
     ['Cluster rate', '—'],
@@ -414,15 +425,17 @@ function EmptyPanel() {
         <div className="flex items-center justify-between gap-2">
           <p className="text-accentSecondary text-xs tracking-wide uppercase">Transaction</p>
           <div className="flex gap-1">
-            <StepButton label="Previous position" Icon={ChevronLeftIcon} target={undefined} onSelect={() => {}} />
-            <StepButton label="Next position" Icon={ChevronRightIcon} target={undefined} onSelect={() => {}} />
+            <StepButton label="Previous position" Icon={ChevronLeftIcon} target={undefined} onSelect={onSelect} />
+            <StepButton label="Next position" Icon={ChevronRightIcon} target={next} onSelect={onSelect} />
           </div>
         </div>
         <p className="text-textMuted font-mono text-sm">No position</p>
       </div>
       <PanelRows rows={rows} />
       <p className="border-accentSecondary/20 text-textMuted border-t pt-3 text-sm">
-        No transactions in this template yet.
+        {reservation
+          ? 'No transactions in this template yet, only the space reserved for its coinbase.'
+          : 'No transactions besides the coinbase.'}
       </p>
     </aside>
   );

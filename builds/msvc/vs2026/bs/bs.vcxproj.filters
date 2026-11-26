@@ -550,10 +550,16 @@
     <None Include="..\..\..\..\web\native\src\lib\utils\search.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\template-follow.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\template-scene.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\template-settings.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\template-slide.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\main.tsx">
@@ -640,10 +646,16 @@
     <None Include="..\..\..\..\web\native\test\lib\utils\search.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\template-follow.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\template-scene.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\template-settings.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\template-slide.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\tsconfig.json">

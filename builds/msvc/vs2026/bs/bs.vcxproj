@@ -250,8 +250,10 @@
     <None Include="..\..\..\..\web\native\src\lib\utils\script-explainer.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\script-opcodes.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\search.ts" />
+    <None Include="..\..\..\..\web\native\src\lib\utils\template-follow.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\template-scene.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\template-settings.ts" />
+    <None Include="..\..\..\..\web\native\src\lib\utils\template-slide.ts" />
     <None Include="..\..\..\..\web\native\src\main.tsx" />
     <None Include="..\..\..\..\web\native\src\routes\address.tsx" />
     <None Include="..\..\..\..\web\native\src\routes\block.tsx" />
@@ -280,8 +282,10 @@
     <None Include="..\..\..\..\web\native\test\lib\utils\pool-templates.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\routes.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\search.test.ts" />
+    <None Include="..\..\..\..\web\native\test\lib\utils\template-follow.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\template-scene.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\template-settings.test.ts" />
+    <None Include="..\..\..\..\web\native\test\lib\utils\template-slide.test.ts" />
     <None Include="..\..\..\..\web\native\tsconfig.json" />
     <None Include="..\..\..\..\web\native\tsconfig.node.json" />
     <None Include="..\..\..\..\web\native\vite.config.ts" />
