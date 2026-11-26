@@ -2,11 +2,15 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { licenses } from "../licenses.mjs";
+import { licenses, worker_licenses } from "../licenses.mjs";
 import { onwarn } from "../warnings.mjs";
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), tsconfigPaths(), licenses()],
+  worker: {
+    plugins: () => [worker_licenses()],
+    rollupOptions: { onwarn },
+  },
   publicDir: "../shared", // favicon.svg
   build: {
     assetsDir: "", // all files in dist root

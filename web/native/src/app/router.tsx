@@ -20,6 +20,7 @@ import { ConfigurationPage } from '@/routes/configuration';
 import { FeesPage } from '@/routes/fees';
 import { TransactionsPage } from '@/routes/transactions';
 import { PoolRedirect, TemplatePage } from '@/routes/template';
+import { WebMinerPage } from '@/routes/web-miner';
 import {
   BlockTransactionRedirect,
   CandidateBlockRedirect,
@@ -108,6 +109,7 @@ const router = createBrowserRouter(
       <Route path="v1/template/:height/txs" element={<TemplatePage />} />
       <Route path="v1/template/:height/txs/details" element={<TemplatePage />} />
       <Route path="v1/fees" element={<FeesPage />} />
+      <Route path="v1/mining" element={<WebMinerPage />} />
       <Route path="v1/headers" element={<BlocksPage />} />
       <Route path="v1/headers/top" element={<BlocksPage />} />
       <Route path="v1/headers/confirmed" element={<BlocksPage />} />
