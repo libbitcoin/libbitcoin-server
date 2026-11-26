@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { BlockViewer, MOVE } from '@/components/block-viewer';
+import { BlockViewer } from '@/components/block-viewer';
 import { Spinner } from '@/components/spinner';
 import { StatusPill } from '@/components/status-pill';
 import { TransactionTable } from '@/components/transaction-table';
@@ -23,6 +23,13 @@ import {
   formatTimestamp,
 } from '@/lib/utils/format';
 import { notifyBrowser } from '@/lib/utils/notify';
+import {
+  followHeight,
+  followMove,
+  followWhen,
+  isOvertaken,
+  type Opened,
+} from '@/lib/utils/template-follow';
 import { loadTemplateDisplay } from '@/lib/utils/template-settings';
 import {
   blockByHeightPath,
@@ -33,9 +40,6 @@ import {
 
 // A held arrow key pages no faster than this, in milliseconds.
 const REPEAT = 100;
-
-// The next template is awaited this long after the move out, at most.
-const LOAD = 3000;
 
 function reducedMotion(): boolean {
   return globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -78,9 +82,8 @@ export function TemplatePage() {
 
   // The top when this height was opened. A template already mined then opens
   // as its block; one mined while open gives way to the next template.
-  const [opened, setOpened] = useState<{ height: number; top: number }>();
-  const overtaken =
-    opened?.height === height && opened.top < height && top !== undefined && height <= top.height;
+  const [opened, setOpened] = useState<Opened>();
+  const overtaken = isOvertaken(opened, height, top?.height);
   const [departing, setDeparting] = useState(false);
   // The next template may not be built yet, its notification then loads it.
   const awaited = absent && top !== undefined && height === top.height + 1;
@@ -155,7 +158,7 @@ export function TemplatePage() {
   // The page follows the template of the next block. In 3D the mined template
   // moves out of its scene as the next moves in; the 2D view, a hidden page or
   // reduced motion switches without moving.
-  const following = overtaken && top ? top.height + 1 : undefined;
+  const following = followHeight(opened, height, top?.height);
   const prefetch = usePrefetchTemplate();
   useEffect(() => {
     if (following === undefined) return;
@@ -164,27 +167,19 @@ export function TemplatePage() {
       void navigate(`${templatePath(following)}${suffix}`, { replace: true });
     };
 
-    if (document.hidden || reducedMotion()) {
+    const move = followMove(loadTemplateDisplay(), document.hidden, reducedMotion());
+    if (move === null) {
       follow();
       return;
     }
 
-    const moving = loadTemplateDisplay() === '3d';
-
     // The next template is loaded while the mined one moves out, so that its
     // page opens drawn rather than loading.
     let current = true;
-    const wait = (ms: number) =>
-      new Promise<void>((resolve) => {
-        setTimeout(resolve, ms);
-      });
-    setDeparting(moving);
-    const moved = moving ? MOVE : 0;
-    void Promise.all([wait(moved), Promise.race([prefetch(following), wait(moved + LOAD)])]).then(
-      () => {
-        if (current) follow();
-      }
-    );
+    setDeparting(move > 0);
+    void followWhen(move, prefetch(following)).then(() => {
+      if (current) follow();
+    });
     return () => {
       current = false;
       setDeparting(false);

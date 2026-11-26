@@ -11,6 +11,7 @@ import {
   type RateBlend,
 } from './pool-template';
 import { formatInteger } from './format';
+import { TemplateSlide } from './template-slide';
 
 // Templates drawn in 3D on a 2D canvas: each template is a platform, each
 // transaction a box on it. The footprint is the 2D treemap tile, so area is
@@ -76,15 +77,6 @@ export interface Camera {
   z: number;
 }
 
-// A move of the templates along the horizontal of the view.
-interface Slide {
-  from: number;
-  to: number;
-  start: number;
-  duration: number;
-  done?: () => void;
-}
-
 interface Drag {
   x: number;
   y: number;
@@ -135,12 +127,8 @@ export class TemplateScene {
   private frame = 0;
   private orbit = false;
   private last = 0;
-  // Offset of the templates along the horizontal of the view, and its motion.
-  private shift = 0;
-  private sliding: Slide | null = null;
-  private moved = 0;
-  private out = false;
-  private parked: PoolTemplates | null = null;
+  // The move of the templates as they are replaced.
+  private readonly slide: TemplateSlide<PoolTemplates>;
   private ratio = 1;
   private palette: ScenePalette = {
     surface: [31, 33, 28],
@@ -155,6 +143,14 @@ export class TemplateScene {
     private readonly onSelect: (transaction: number) => void,
     private readonly animate: boolean
   ) {
+    this.slide = new TemplateSlide({
+      load: (pool) => {
+        this.load(pool);
+      },
+      // Far enough along the view for the templates to leave it.
+      travel: () => this.camera.distance * 1.4 + WIDTH,
+      animate,
+    });
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Canvas 2D context unavailable.');
     this.context = context;
@@ -185,58 +181,15 @@ export class TemplateScene {
   }
 
   setPool(pool: PoolTemplates): void {
-    // A pool set while the templates move out comes in once they are out.
-    if (this.sliding && this.sliding.to < 0) {
-      this.parked = pool;
-      return;
-    }
-
-    if (this.out) {
-      this.enter(pool);
-      return;
-    }
-
-    this.load(pool);
+    this.slide.set(pool);
+    if (this.slide.moving) this.request();
   }
 
   // Moves the templates out to the left of the view, over the duration. The
   // next pool set then moves in from the right over the same duration.
   moveOut(duration: number): void {
-    if (!this.pool || this.out || (this.sliding && this.sliding.to < 0)) return;
-    this.moved = duration;
-    if (!this.animate) {
-      this.out = true;
-      return;
-    }
-
-    this.slideTo(-this.travel(), duration, () => {
-      this.out = true;
-      const parked = this.parked;
-      this.parked = null;
-      if (parked) this.enter(parked);
-    });
-  }
-
-  private enter(pool: PoolTemplates): void {
-    this.out = false;
-    this.load(pool);
-    if (!this.animate) {
-      this.shift = 0;
-      return;
-    }
-
-    this.shift = this.travel();
-    this.slideTo(0, this.moved, undefined);
-  }
-
-  // Far enough along the view for the templates to leave it.
-  private travel(): number {
-    return this.camera.distance * 1.4 + WIDTH;
-  }
-
-  private slideTo(to: number, duration: number, done: (() => void) | undefined): void {
-    this.sliding = { from: this.shift, to, start: 0, duration: Math.max(1, duration), done };
-    this.request();
+    this.slide.moveOut(duration);
+    if (this.slide.moving) this.request();
   }
 
   private load(pool: PoolTemplates): void {
@@ -371,19 +324,7 @@ export class TemplateScene {
       moving = true;
     }
 
-    if (this.sliding) {
-      const slide = this.sliding;
-      if (!slide.start) slide.start = time;
-      const progress = Math.min(1, (time - slide.start) / slide.duration);
-      // Out accelerates away, in decelerates to rest.
-      const eased = slide.to < slide.from ? progress ** 3 : 1 - (1 - progress) ** 3;
-      this.shift = slide.from + (slide.to - slide.from) * eased;
-      if (progress >= 1) {
-        this.sliding = null;
-        slide.done?.();
-      }
-      if (this.sliding) moving = true;
-    }
+    if (this.slide.step(time)) moving = true;
 
     if (this.goal) {
       camera.x += (this.goal.x - camera.x) * 0.14;
@@ -509,8 +450,8 @@ export class TemplateScene {
 
     // The templates are drawn shifted along the view (the eye shifted against
     // them), the ground stays in place.
-    ex -= this.shift * rx;
-    ez -= this.shift * rz;
+    ex -= this.slide.shift * rx;
+    ez -= this.slide.shift * rz;
 
     const platforms = Array.from({ length: count }, (_, index) => index).sort(
       (left, right) => Math.abs(templateCenter(right) - ex) - Math.abs(templateCenter(left) - ex)
