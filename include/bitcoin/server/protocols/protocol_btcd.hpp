@@ -257,7 +257,7 @@ protected:
     void do_rescan_blocks(const hashes_ptr& hashes,
         const gate_t::ptr& gate) NOEXCEPT;
     void do_rescan_watches(const hashes_ptr& hashes,
-        const system::hashes& keys, system::chain::points& points,
+        const system::hashes& keys, const system::chain::points& points,
         const gate_t::ptr& gate) NOEXCEPT;
     void complete_rescan_blocks(const code& ec,
         const array_ptr& discovered, const gate_t::ptr& gate) NOEXCEPT;
@@ -290,7 +290,7 @@ protected:
 
     /// Utilities.
     /// -----------------------------------------------------------------------
-    using matched_txs = std::map<size_t, hash_digest>;
+    using matched_txs = std::map<size_t, database::tx_link>;
     using matches = std::map<size_t, matched_txs>;
     using sizes = std::set<size_t>;
 
@@ -310,6 +310,10 @@ protected:
     bool serialize_matches(network::rpc::array_t& out,
         const matched_txs& txs) NOEXCEPT;
 
+    // Base16 of the tx as stored, with witness.
+    bool get_tx_text(std::string& out,
+        const database::tx_link& link) const NOEXCEPT;
+
     /// Legacy (notifyreceived/notifyspent) individual notifications.
     /// -----------------------------------------------------------------------
 
@@ -321,9 +325,8 @@ protected:
     void complete_overflow(const code& ec) NOEXCEPT;
 
     // Builds [txHex, blockDetails] params for a recvtx/redeemingtx.
-    network::rpc::array_t serialize_legacy(
-        const system::chain::transaction& tx, const header_cptr& header,
-        size_t height, size_t position) NOEXCEPT;
+    network::rpc::array_t serialize_legacy(std::string&& tx,
+        const header_cptr& header, size_t height, size_t position) NOEXCEPT;
 
     // Combined DoS budget across all watch-list maps.
     size_t watch_count() const NOEXCEPT;
