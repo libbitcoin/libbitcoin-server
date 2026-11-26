@@ -28,8 +28,11 @@ test('template_follow__is_overtaken__other_height__false', () => {
   expect(isOvertaken({ height: 101, top: 100 }, 102, 102)).toBe(false);
 });
 
-test('template_follow__is_overtaken__unknown__false', () => {
+test('template_follow__is_overtaken__unknown_opened__false', () => {
   expect(isOvertaken(undefined, 101, 101)).toBe(false);
+});
+
+test('template_follow__is_overtaken__unknown_top__false', () => {
   expect(isOvertaken({ height: 101, top: 100 }, 101)).toBe(false);
 });
 
@@ -57,8 +60,11 @@ test('template_follow__follow_move__hidden__switches_at_once', () => {
   expect(followMove('3d', true, false)).toBeNull();
 });
 
-test('template_follow__follow_move__reduced_motion__switches_at_once', () => {
+test('template_follow__follow_move__3d_reduced_motion__switches_at_once', () => {
   expect(followMove('3d', false, true)).toBeNull();
+});
+
+test('template_follow__follow_move__2d_reduced_motion__switches_at_once', () => {
   expect(followMove('2d', false, true)).toBeNull();
 });
 
