@@ -98,8 +98,7 @@ bool protocol_stratum_v2::handle_receive_open_extended_mining_channel(
     return true;
 }
 
-// The maximum target of the miner floors the channel difficulty, and a
-// nominal hash rate sets it if automatic.
+// The maximum target of the miner floors the channel difficulty.
 bool protocol_stratum_v2::handle_receive_update_channel(const code& ec,
     const update_channel::cptr& message) NOEXCEPT
 {
@@ -145,8 +144,7 @@ bool protocol_stratum_v2::handle_receive_close_channel(const code& ec,
     return true;
 }
 
-// The user identity up to any dot is the account, the payout address unless
-// one is configured. Channel identifiers are not reused on a connection.
+// The identity up to any dot is the payout address, unless one is configured.
 void protocol_stratum_v2::open_channel(uint32_t request_id,
     const std::string& identity, float hash_rate,
     const hash_digest& max_target, bool standard) NOEXCEPT
@@ -399,8 +397,7 @@ size_t protocol_stratum_v2::extranonce_size() const NOEXCEPT
     return options_.coinbase_extranonce_size();
 }
 
-// The target of a job is sent before the job, as it applies to jobs that
-// follow it. A clean job is a future job, activated by its previous block.
+// A clean job is a future job, activated by its previous block.
 void protocol_stratum_v2::send_job(mining_channel& channel,
     const job::cptr& job, bool clean) NOEXCEPT
 {

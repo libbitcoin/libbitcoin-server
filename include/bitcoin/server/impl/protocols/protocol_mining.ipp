@@ -264,7 +264,6 @@ void CLASS::accept_share(mining_channel& channel, const job& job,
 // Difficulty.
 // ----------------------------------------------------------------------------
 
-// A configured start difficulty governs, otherwise that of the hash rate.
 TEMPLATE
 double CLASS::start_difficulty(double hash_rate) const NOEXCEPT
 {
@@ -275,7 +274,6 @@ double CLASS::start_difficulty(double hash_rate) const NOEXCEPT
     return std::max(options_.minimum_difficulty, start);
 }
 
-// The configured minimum and the floor requested by the miner both bound.
 TEMPLATE
 double CLASS::floor(const mining_channel& channel) const NOEXCEPT
 {

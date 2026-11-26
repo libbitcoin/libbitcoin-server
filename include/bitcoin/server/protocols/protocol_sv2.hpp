@@ -26,8 +26,7 @@
 namespace libbitcoin {
 namespace server {
 
-/// Stratum v2 service protocol, common shape of a service over
-/// channel_stratum_v2, attached once the connection is set up.
+/// Base of stratum v2 services, attached once the connection is set up.
 class protocol_sv2
   : public server::protocol,
     public network::protocol

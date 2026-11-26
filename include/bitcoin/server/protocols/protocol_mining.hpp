@@ -87,8 +87,7 @@ protected:
     /// The difficulty of a new channel, of the hash rate if automatic.
     double start_difficulty(double hash_rate) const NOEXCEPT;
 
-    /// Demand templates and issue jobs to channels without one (requires
-    /// strand).
+    /// Demand templates and issue jobs to new channels (requires strand).
     void start_jobs() NOEXCEPT;
 
     /// Check the share of the job, with the extranonce rolled by the miner,

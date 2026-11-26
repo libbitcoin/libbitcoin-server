@@ -30,8 +30,7 @@ BCS_API system::hash_digest to_target_hash(double difficulty) NOEXCEPT;
 /// Difficulty of a little endian u256 share target, zero if zero.
 BCS_API double to_hash_difficulty(const system::hash_digest& target) NOEXCEPT;
 
-/// Difficulty of a share found by the hash rate (hashes per second) once in
-/// the interval, zero if either is not positive.
+/// Difficulty of one share per interval at the hash rate, zero if invalid.
 BCS_API double to_rate_difficulty(double hash_rate, uint32_t seconds) NOEXCEPT;
 
 } // namespace server

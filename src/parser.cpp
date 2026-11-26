@@ -84,10 +84,9 @@ void parser::derive_buckets() NOEXCEPT
             database.wtxid.expected, contested, target);
 }
 
-// Stratum jobs reserve the weight and sigops of their own coinbase, an
+// Stratum reserves the weight and sigops of its larger coinbase, an
 // unconfigured or invalid payout address reserving for the largest address
-// output. The larger of the enabled stratum coinbases is reserved, and a
-// configured reservation governs (e.g. for an external miner).
+// output. A configured reservation governs (e.g. for an external miner).
 void parser::derive_coinbase() NOEXCEPT
 {
     const auto& v1 = configured.server.stratum_v1;

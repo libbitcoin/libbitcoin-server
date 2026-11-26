@@ -27,9 +27,8 @@
 namespace libbitcoin {
 namespace server {
 
-/// Stratum v2 solo mining over standard and extended channels, a job per held
-/// template paying the channel's user, shares checked against the channel
-/// target and blocks submitted.
+/// Stratum v2 solo mining, a job per held template paying the channel's
+/// user, shares checked against the channel target and blocks submitted.
 class BCS_API protocol_stratum_v2
   : public protocol_mining<protocol_sv2>,
     protected network::tracker<protocol_stratum_v2>
@@ -72,8 +71,7 @@ protected:
     /// Extranonce of the channel and the miner.
     size_t extranonce_size() const NOEXCEPT override;
 
-    /// Send the job, preceded by its target if changed and followed by its
-    /// previous block if clean.
+    /// Send the job, and its target if changed.
     void send_job(mining_channel& channel, const job::cptr& job,
         bool clean) NOEXCEPT override;
 
@@ -92,7 +90,6 @@ protected:
         const submit_shares_extended::cptr& message) NOEXCEPT;
 
 private:
-    // A mining channel of the connection, by identifier and type.
     struct channel_state
       : public mining_channel
     {

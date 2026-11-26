@@ -148,8 +148,7 @@ struct stratum_v2_setup_fixture
     // Submit a tx to the pool.
     using rpc_setup_fixture::submit;
 
-    // Find the nonce of the first job that meets the block target, and the
-    // hash of its header.
+    // The nonce of the first job that meets the block target, and its hash.
     static std::pair<uint32_t, system::hash_digest> mine(
         const extended& started);
     static std::pair<uint32_t, system::hash_digest> mine(
@@ -258,8 +257,7 @@ struct stratum_v2_vardiff_setup_fixture
     }
 };
 
-/// As ten block, a start difficulty of one decaying over a one second
-/// share interval.
+/// As ten block, a start difficulty of one decaying each second.
 struct stratum_v2_decay_setup_fixture
   : stratum_v2_setup_fixture
 {
