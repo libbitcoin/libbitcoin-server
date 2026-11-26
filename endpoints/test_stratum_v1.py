@@ -737,7 +737,10 @@ def test_notify_time_and_version(job: list):
 
 def test_suggest_difficulty_refreshes_job(client: StratumClient,
                                           stratum_v1_config: dict):
-    """A raised difficulty is notified, then the current job again."""
+    """
+    A raised difficulty is notified, then the current job again at a later
+    time.
+    """
     subscribed(client, stratum_v1_config)
     initial = client.notification("mining.set_difficulty")["params"][0]
     first = client.notification("mining.notify")["params"]
@@ -747,7 +750,8 @@ def test_suggest_difficulty_refreshes_job(client: StratumClient,
         pytest.approx(initial * 4)
     refreshed = client.notification("mining.notify")["params"]
     assert refreshed[0] != first[0]
-    assert refreshed[1:8] == first[1:8]
+    assert refreshed[1:7] == first[1:7]
+    assert int(refreshed[7], 16) > int(first[7], 16)
     assert refreshed[8] is False
 
 
