@@ -25,6 +25,15 @@ static const std::string bogus_scripthash{ "9c2c84a6cf9809e08af19557e28d38257e6f
 
 BC_FIXTURE_TEST_SUITE(electrum_tests, electrum_ten_block_setup_fixture)
 
+// handshake
+
+BC_AUTO_TEST_CASE(electrum__handshake__channel_stopped__completed_once)
+{
+    const auto codes = stop_handshake<session_electrum>(config_.server.electrum);
+    BC_REQUIRE_EQUAL(codes.size(), 1u);
+    BC_REQUIRE_EQUAL(codes.front(), network::error::peer_disconnect);
+}
+
 // server.version
 
 BC_AUTO_TEST_CASE(electrum__server_version__default__expected)

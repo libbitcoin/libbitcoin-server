@@ -75,12 +75,29 @@ void protocol_bitcoind_version::finished(const code& ec,
     if (stopped(ec))
         return;
 
+    callback(shake);
+}
+
+// Allow channel stop to terminate handshake.
+void protocol_bitcoind_version::stopping(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    callback(ec);
+    protocol_bitcoind_dispatch<rpc_interface>::stopping(ec);
+}
+
+// private
+// Idempotent on strand, first caller gets handler.
+void protocol_bitcoind_version::callback(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (!handler_)
+        return;
+
     // Invoke handshake completion, error will result in stopped channel.
-    if (handler_)
-    {
-        (*handler_)(shake);
-        handler_.reset();
-    }
+    (*handler_)(ec);
+    handler_.reset();
 }
 
 // While shaking, only send is response to a negotiateversion opener, which

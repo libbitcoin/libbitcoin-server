@@ -57,6 +57,7 @@ public:
 
     virtual void shake(network::result_handler&& handler) NOEXCEPT;
     virtual void finished(const code& ec, const code& shake) NOEXCEPT;
+    void stopping(const code& ec) NOEXCEPT override;
 
 protected:
     /// Overridden to publish no method names.
@@ -100,6 +101,7 @@ private:
         const network::rpc::request_t& message) NOEXCEPT;
     void negotiate(const network::rpc::request_t& message) NOEXCEPT;
     void pass_opener() NOEXCEPT;
+    void callback(const code& ec) NOEXCEPT;
 
     // This is mostly thread safe, and used in a thread safe manner.
     const channel_t::ptr channel_;

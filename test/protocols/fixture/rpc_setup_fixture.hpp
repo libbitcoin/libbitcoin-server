@@ -50,6 +50,46 @@ protected:
     /// The endpoint to which the service is bound.
     network::io::endpoint binding();
 
+    /// Codes with which handshake completes when channel stops before opener.
+    template <class Session>
+    std::vector<code> stop_handshake(const typename Session::options_t& options)
+    {
+        struct accessor
+          : Session
+        {
+            using Session::Session;
+            using Session::attach_handshake;
+        };
+
+        network::threadpool pool{ 1 };
+        const network::socket::parameters params{ .maximum_request = 42 };
+        const auto session = std::make_shared<accessor>(server_, 42, config_,
+            options);
+
+        const auto socket = std::make_shared<network::socket>(log_,
+            pool.service(), params);
+
+        using channel_t = typename Session::channel_t;
+        const auto channel = std::make_shared<channel_t>(log_, socket, 42,
+            config_, options);
+
+        std::vector<code> codes{};
+        network::io::post(channel->strand(), [&]() NOEXCEPT
+        {
+            session->attach_handshake(channel, [&](const code& ec) NOEXCEPT
+            {
+                codes.push_back(ec);
+            });
+
+            channel->stop(network::error::peer_disconnect);
+        });
+
+        pool.stop();
+        BC_REQUIRE(pool.join());
+
+        return codes;
+    }
+
     configuration config_;
     test::store_t store_;
     test::query_t query_;

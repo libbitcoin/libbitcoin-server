@@ -43,6 +43,13 @@ BC_FIXTURE_TEST_SUITE(stratum_v2_tests, stratum_v2_ten_block_setup_fixture)
 // setup_connection
 // ----------------------------------------------------------------------------
 
+BC_AUTO_TEST_CASE(stratum_v2__handshake__channel_stopped__completed_once)
+{
+    const auto codes = stop_handshake<session_stratum_v2>(config_.server.stratum_v2);
+    BC_REQUIRE_EQUAL(codes.size(), 1u);
+    BC_REQUIRE_EQUAL(codes.front(), network::error::peer_disconnect);
+}
+
 BC_AUTO_TEST_CASE(stratum_v2__setup_connection__version_two__success)
 {
     const auto ec = upgrade();

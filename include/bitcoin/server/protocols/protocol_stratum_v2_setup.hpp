@@ -64,6 +64,7 @@ public:
 
     /// Start the handshake, handler invoked once at its completion.
     virtual void shake(network::result_handler&& handler) NOEXCEPT;
+    void stopping(const code& ec) NOEXCEPT override;
 
 protected:
     DECLARE_SEND()
@@ -75,6 +76,7 @@ protected:
 
 private:
     void refuse(uint32_t flags, const std::string& reason) NOEXCEPT;
+    void callback(const code& ec) NOEXCEPT;
 
     // This is mostly thread safe, and used in a thread safe manner.
     const channel_t::ptr channel_;

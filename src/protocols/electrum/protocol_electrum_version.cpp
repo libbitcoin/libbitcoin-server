@@ -67,13 +67,30 @@ void protocol_electrum_version::finished(const code& ec,
     if (stopped(ec))
         return;
 
-    // Calls after handshake completion are allowed and will skip this.
-    if (handler_)
-    {
-        // Invoke handshake completion, error will result in stopped channel.
-        (*handler_)(shake);
-        handler_.reset();
-    }
+    // Calls after handshake completion are allowed.
+    callback(shake);
+}
+
+// Allow channel stop to terminate handshake.
+void protocol_electrum_version::stopping(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    callback(ec);
+    protocol_rpc<interface::electrum_handshake>::stopping(ec);
+}
+
+// private
+// Idempotent on strand, first caller gets handler.
+void protocol_electrum_version::callback(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (!handler_)
+        return;
+
+    // Invoke handshake completion, error will result in stopped channel.
+    (*handler_)(ec);
+    handler_.reset();
 }
 
 // Handler.
