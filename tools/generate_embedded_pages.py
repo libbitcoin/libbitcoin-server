@@ -113,15 +113,21 @@ def build_site(npm, site):
 # ── emit ────────────────────────────────────────────────────────────────────
 
 def text_body(data, source):
-    """Raw string literals of fixed size, line endings normalized to LF."""
+    """Raw string literals of whole utf8 characters, line endings LF."""
     content = data
     while b"\r\n" in content:
         content = content.replace(b"\r\n", b"\n")
     if CLOSE in content:
         sys.exit("{} contains the raw string delimiter.".format(source))
 
-    chunks = [OPEN + content[i:i + CHUNK] + CLOSE
-        for i in range(0, len(content), CHUNK)]
+    chunks = []
+    start = 0
+    while start < len(content):
+        end = min(start + CHUNK, len(content))
+        while end < len(content) and (content[end] & 0xc0) == 0x80:
+            end -= 1
+        chunks.append(OPEN + content[start:end] + CLOSE)
+        start = end
     return b"\n".join(chunks) + b"\n\n"
 
 
