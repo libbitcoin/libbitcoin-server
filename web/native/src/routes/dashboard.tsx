@@ -46,6 +46,13 @@ export function DashboardPage() {
   const info = useServerInfo();
   const now = useNow();
   const { data: fees } = useFees();
+  const estimate = fees?.estimates?.['1'];
+  const nextBlockRate =
+    typeof estimate === 'number'
+      ? estimate
+      : fees && fees.virtual > 0
+        ? fees.fee / fees.virtual
+        : undefined;
   const recentTransactions = useRecentTransactions(RECENT_TRANSACTION_LIMIT);
   const eventStatus = useBlockchainEventStatus();
   const websocket = eventStatus.transport === 'websocket';
@@ -119,17 +126,21 @@ export function DashboardPage() {
           detail={latestBlock ? formatRelativeTime(latestBlock.timestamp, now) : '—'}
         />
         <OverviewCard
-          label="Avg Fee Rate"
+          label="Next Block Fee"
           value={
-            fees && fees.virtual > 0 ? (
-              <Link to={feesPath()} className="text-accent hover:text-accentSecondary">
-                {`${formatNumber(fees.fee / fees.virtual, { maximumFractionDigits: 2 })} sat/vB`}
-              </Link>
-            ) : (
+            nextBlockRate === undefined ? (
               '—'
+            ) : (
+              <Link to={feesPath()} className="text-accent hover:text-accentSecondary">
+                {`${formatNumber(nextBlockRate, { maximumFractionDigits: 2 })} sat/vB`}
+              </Link>
             )
           }
-          detail={fees ? `${formatNumber(fees.count, { maximumFractionDigits: 0 })} txs in pool` : '—'}
+          detail={
+            fees
+              ? `${typeof fees.estimates?.['1'] === 'number' ? 'estimate' : 'pool average'} · ${formatNumber(fees.count, { maximumFractionDigits: 0 })} txs`
+              : '—'
+          }
         />
         <OverviewCard
           label="Avg Interval"

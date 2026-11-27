@@ -1,12 +1,48 @@
+import { useState } from 'react';
+import { FeeChart } from '@/components/fee-chart';
+import { Toggle } from '@/components/toggle';
+import type { EstimateMode } from '@/lib/api/client';
 import { errorStatus } from '@/lib/api/errors';
 import { useFees } from '@/lib/hooks/useBlockchainData';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 const integer = new Intl.NumberFormat();
-const histogramRate = new Intl.NumberFormat(undefined, {
-  minimumFractionDigits: 3,
-  maximumFractionDigits: 3,
-});
+const rate = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
+
+const STORAGE_KEY = 'libbitcoin.fees.mode';
+
+const MODES: ReadonlyArray<{ id: EstimateMode; label: string }> = [
+  { id: 'economical', label: 'Economical' },
+  { id: 'conservative', label: 'Conservative' },
+  { id: 'geometric', label: 'Geometric' },
+  { id: 'basic', label: 'Basic' },
+];
+
+// Confirmation targets (blocks) of the node's estimates.
+const TARGETS: ReadonlyArray<readonly [string, string]> = [
+  ['1', 'Next block'],
+  ['3', '~30 min'],
+  ['6', '~1 hour'],
+  ['12', '~2 hours'],
+  ['144', '~1 day'],
+];
+
+function loadMode(): EstimateMode {
+  try {
+    const saved = globalThis.localStorage.getItem(STORAGE_KEY);
+    return MODES.find((mode) => mode.id === saved)?.id ?? 'economical';
+  } catch {
+    return 'economical';
+  }
+}
+
+function saveMode(mode: EstimateMode) {
+  try {
+    globalThis.localStorage.setItem(STORAGE_KEY, mode);
+  } catch {
+    // The mode is a convenience, the page works without it.
+  }
+}
 
 function unavailable(error: unknown): string {
   const status = errorStatus(error);
@@ -17,15 +53,26 @@ function unavailable(error: unknown): string {
 
 export function FeesPage() {
   usePageTitle('Fees');
-  const { data: fees, isLoading, isError, error } = useFees();
+  const [mode, setMode] = useState<EstimateMode>(loadMode);
+  const { data: fees, isLoading, isError, error } = useFees(mode);
+
+  const onMode = (next: EstimateMode) => {
+    setMode(next);
+    saveMode(next);
+  };
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 tabIndex={-1} className="text-accent text-2xl font-semibold">
-          Fees
-        </h1>
-        <p className="text-textMuted text-sm">The fee rates of the pool.</p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 tabIndex={-1} className="text-accent text-2xl font-semibold">
+            Fees
+          </h1>
+          <p className="text-textMuted text-sm">The fee rates of the pool, and the rates it projects to confirm.</p>
+        </div>
+        <div className="text-sm">
+          <Toggle label="Estimate mode" options={MODES} value={mode} onChange={onMode} />
+        </div>
       </header>
 
       {isError && (
@@ -38,6 +85,22 @@ export function FeesPage() {
 
       {fees && (
         <>
+          <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {TARGETS.map(([target, label]) => {
+              const value = fees.estimates?.[target];
+              return (
+                <Card
+                  key={target}
+                  label={label}
+                  value={typeof value === 'number' ? `${rate.format(value)} sat/vB` : '—'}
+                />
+              );
+            })}
+          </section>
+          {fees.estimates === null && (
+            <p className="text-textMuted text-sm">The node has no estimates until its pool opens.</p>
+          )}
+
           <section className="grid gap-4 sm:grid-cols-3">
             <Card label="Transactions" value={integer.format(fees.count)} />
             <Card label="Virtual size" value={`${integer.format(fees.virtual)} vB`} />
@@ -45,23 +108,8 @@ export function FeesPage() {
           </section>
 
           <section className="border-accent/30 bg-surface/80 rounded-2xl border p-5">
-            <h2 className="text-accent mb-3 text-lg font-semibold">Rates by virtual size</h2>
-            <table className="w-full text-sm tabular-nums">
-              <thead className="text-textMuted text-left">
-                <tr>
-                  <th className="py-1 font-normal">Rate (sat/vB)</th>
-                  <th className="py-1 text-right font-normal">Virtual size (vB)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fees.histogram.map(([rate, size], index) => (
-                  <tr key={index} className="border-accent/10 border-t">
-                    <td className="py-1">{histogramRate.format(rate)}</td>
-                    <td className="py-1 text-right">{integer.format(size)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <h2 className="text-accent mb-3 text-lg font-semibold">Pool by fee rate (sat/vB)</h2>
+            <FeeChart histogram={fees.histogram} />
           </section>
         </>
       )}

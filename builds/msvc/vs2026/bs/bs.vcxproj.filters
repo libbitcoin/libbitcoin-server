@@ -418,6 +418,9 @@
     <None Include="..\..\..\..\web\native\src\components\copy-button.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\components\fee-chart.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\components\hash-text.tsx">
       <Filter>web\native\src\components</Filter>
     </None>

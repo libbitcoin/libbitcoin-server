@@ -10,11 +10,19 @@ export interface BlockReference {
 }
 
 /** Totals of the pool and its rates (sat/vB) by virtual size. */
+/** Fee estimate modes of the node. */
+export type EstimateMode = 'basic' | 'geometric' | 'economical' | 'conservative';
+
+/** Fee rates (sat/vB) by confirmation target in blocks, null if none. */
+export type FeeEstimates = { mode: EstimateMode } & Partial<Record<string, number | null>>;
+
 export interface PoolFees {
   count: number;
   virtual: number;
   fee: number;
   histogram: Array<[number, number]>;
+  /** Null while the node cannot estimate. */
+  estimates: FeeEstimates | null;
 }
 
 /** Details of a template tx, with its cluster within the template. */
@@ -278,7 +286,7 @@ export interface BlockchainClient {
   getCandidateBlockHash(height: number): Promise<string>;
   /** Hash of the tx at position in the block. */
   getBlockTransactionHash(block: BlockReference, position: number): Promise<string>;
-  getFees(): Promise<PoolFees>;
+  getFees(mode?: EstimateMode): Promise<PoolFees>;
   /** Txs of the template of the block at height, in block order (less the coinbase). */
   getTemplate(height: number): Promise<TemplateTransaction[]>;
   /** Hashes of the txs of the template of the block at height, in block order. */

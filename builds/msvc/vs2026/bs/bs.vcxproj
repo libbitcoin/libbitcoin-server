@@ -206,6 +206,7 @@
     <None Include="..\..\..\..\web\native\src\components\branch-notice.tsx" />
     <None Include="..\..\..\..\web\native\src\components\command-palette.tsx" />
     <None Include="..\..\..\..\web\native\src\components\copy-button.tsx" />
+    <None Include="..\..\..\..\web\native\src\components\fee-chart.tsx" />
     <None Include="..\..\..\..\web\native\src\components\hash-text.tsx" />
     <None Include="..\..\..\..\web\native\src\components\miner-share.tsx" />
     <None Include="..\..\..\..\web\native\src\components\miner-value.tsx" />
