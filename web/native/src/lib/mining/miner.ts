@@ -112,6 +112,14 @@ const initial: MinerState = {
   shares: [],
 };
 
+// The totals, shares and history of a run, kept by a restart of the same
+// stratum service and worker.
+export function carried(state: MinerState, settings: MinerSettings): Partial<MinerState> {
+  if (state.settings?.url !== settings.url || state.settings.worker !== settings.worker) return {};
+  const { jobs, history, hashes, accepted, rejected, blocks, shares } = state;
+  return { jobs, history, hashes, accepted, rejected, blocks, shares };
+}
+
 interface Unit {
   job: Job;
   extranonce2: string;
@@ -170,7 +178,13 @@ class Miner {
 
   start(settings: MinerSettings) {
     this.stop();
-    this.update({ ...initial, status: 'connecting', settings, started: Date.now() });
+    this.update({
+      ...initial,
+      ...carried(this.state, settings),
+      status: 'connecting',
+      settings,
+      started: Date.now(),
+    });
     this.extranonceCounter = 0;
     this.samples = [];
     this.counted = 0;
