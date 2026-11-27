@@ -159,7 +159,8 @@ void protocol_native::handle_get_tx_details(const code& ec,
         { "fee", floored_subtract(value, spend) }
     };
 
-    if (const auto block = query.find_strong(link); !block.is_terminal())
+    const auto block = query.find_strong(link);
+    if (!block.is_terminal() && query.is_confirmed_block(block))
     {
         size_t position{};
         database::context context{};
@@ -176,9 +177,13 @@ void protocol_native::handle_get_tx_details(const code& ec,
             { "position", position }
         };
     }
-    else if (uint32_t time{}; query.get_pooled_time(time, link))
+    else
     {
-        object["time"] = time;
+        if (!coinbase && query.is_confirmable_tx(link))
+            object["confirmable"] = true;
+
+        if (uint32_t time{}; query.get_pooled_time(time, link))
+            object["time"] = time;
     }
 
     send_json(std::move(object));

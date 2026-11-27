@@ -656,6 +656,7 @@ BC_AUTO_TEST_CASE(native__block_header_context__json__expected)
     BC_REQUIRE_EQUAL(state.at("count").as_int64(), 1);
     BC_REQUIRE(state.at("validated").as_bool());
     BC_REQUIRE(state.at("confirmed").as_bool());
+    BC_REQUIRE(!state.at("candidate").as_bool());
     BC_REQUIRE(state.at("confirmable").as_bool());
     BC_REQUIRE(!state.at("unconfirmable").as_bool());
 
@@ -685,6 +686,8 @@ BC_AUTO_TEST_CASE(native__block_header_context__candidate_pushed__expected)
     BC_REQUIRE(response.is_object());
     BC_REQUIRE_EQUAL(response.as_object().at("hash").as_string(), block1_hash);
     BC_REQUIRE_EQUAL(response.as_object().at("height").as_int64(), 1);
+    BC_REQUIRE(response.as_object().at("state").as_object().at("confirmed").as_bool());
+    BC_REQUIRE(!response.as_object().at("state").as_object().at("candidate").as_bool());
 }
 
 BC_AUTO_TEST_CASE(native__block_header_context__text__not_acceptable)
@@ -1522,6 +1525,30 @@ BC_AUTO_TEST_CASE(native__block__pruned_coinbase_only_data__ok)
 BC_AUTO_TEST_CASE(native__block_tx__pruned_coinbase_data__ok)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/block/confirmed/10/tx/0?format=data"), http::status::ok);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+// block/header/context (unconfirmed)
+// ----------------------------------------------------------------------------
+
+BC_FIXTURE_TEST_SUITE(native_unconfirmed_tests, native_unconfirmed_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__block_header_context__candidate__candidate)
+{
+    BC_REQUIRE(query_.push_candidate(query_.to_header(test::block1a.hash())));
+    const auto response = get_json("/v1/block/hash/" + encode_hash(test::block1a.hash()) + "/header/context?format=json");
+    const auto& state = response.as_object().at("state").as_object();
+    BC_REQUIRE(!state.at("confirmed").as_bool());
+    BC_REQUIRE(state.at("candidate").as_bool());
+}
+
+BC_AUTO_TEST_CASE(native__block_header_context__weak__unconfirmed)
+{
+    const auto response = get_json("/v1/block/hash/" + encode_hash(test::block1a.hash()) + "/header/context?format=json");
+    const auto& state = response.as_object().at("state").as_object();
+    BC_REQUIRE(!state.at("confirmed").as_bool());
+    BC_REQUIRE(!state.at("candidate").as_bool());
 }
 
 BC_AUTO_TEST_SUITE_END()

@@ -168,6 +168,19 @@ struct native_unconfirmed_setup_fixture
     }
 };
 
+struct native_unconfirmed_coinbase_setup_fixture
+  : native_setup_fixture
+{
+    inline native_unconfirmed_coinbase_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return query.initialize(test::genesis) &&
+                query.set(test::block1, database::context{ 0, 1, 0 }, {}, false, false);
+        })
+    {
+    }
+};
+
 struct native_unassociated_setup_fixture
   : native_setup_fixture
 {

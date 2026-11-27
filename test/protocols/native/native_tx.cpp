@@ -118,6 +118,8 @@ BC_AUTO_TEST_CASE(native__tx_details__coinbase__expected)
     BC_REQUIRE_EQUAL(object.at("spend").as_int64(), 5000000000);
     BC_REQUIRE_EQUAL(object.at("fee").as_int64(), 0);
 
+    BC_REQUIRE(!object.contains("confirmable"));
+
     const auto& confirmed = object.at("confirmed").as_object();
     BC_REQUIRE_EQUAL(confirmed.at("height").as_int64(), 1);
     BC_REQUIRE_EQUAL(confirmed.at("position").as_int64(), 0);
@@ -530,6 +532,7 @@ BC_AUTO_TEST_CASE(native__tx_details__pooled__time)
     BC_REQUIRE(!submit(test::tx1c));
     const auto response = get_json("/v1/tx/" + encode_hash(test::tx1c.hash(false)) + "/details?format=json");
     BC_REQUIRE(!response.as_object().contains("confirmed"));
+    BC_REQUIRE(response.as_object().at("confirmable").as_bool());
     BC_REQUIRE(response.as_object().at("time").as_int64() > 0);
 }
 
@@ -577,11 +580,31 @@ BC_AUTO_TEST_CASE(native__tx_details__unconfirmed_witness__expected)
     BC_REQUIRE(!object.contains("confirmed"));
 }
 
+BC_AUTO_TEST_CASE(native__tx_details__conflict_confirmed__unconfirmable)
+{
+    const auto response = get_json("/v1/tx/" + encode_hash(test::tx4.hash(false)) + "/details?format=json");
+    BC_REQUIRE(!response.as_object().contains("confirmed"));
+    BC_REQUIRE(!response.as_object().contains("confirmable"));
+}
+
 BC_AUTO_TEST_CASE(native__tx_details__spend_exceeds_value__internal_server_error)
 {
     const auto& tx2 = *test::block2a.transactions_ptr()->front();
     const auto hash = encode_hash(tx2.hash(false));
     BC_REQUIRE_EQUAL(get_status("/v1/tx/" + hash + "/details?format=json"), http::status::internal_server_error);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(native_unconfirmed_coinbase_tests, native_unconfirmed_coinbase_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__tx_details__unconfirmed_coinbase__unconfirmed)
+{
+    const auto& coinbase = *test::block1.transactions_ptr()->front();
+    const auto response = get_json("/v1/tx/" + encode_hash(coinbase.hash(false)) + "/details?format=json");
+    BC_REQUIRE(response.as_object().at("coinbase").as_bool());
+    BC_REQUIRE(!response.as_object().contains("confirmed"));
+    BC_REQUIRE(!response.as_object().contains("confirmable"));
 }
 
 BC_AUTO_TEST_SUITE_END()
