@@ -282,6 +282,27 @@ BC_AUTO_TEST_CASE(server__stratum_v1_server__initialize_context_oversized_tag__i
     BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
 
+BC_AUTO_TEST_CASE(server__stratum_v1_server__initialize_context_credential__success)
+{
+    server::settings::stratum_v1_server instance{ "stratum_v1" };
+    instance.credentials = { { "user:pass" } };
+    BC_REQUIRE(!instance.initialize_context());
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v1_server__initialize_context_credential_methods__invalid_configuration)
+{
+    server::settings::stratum_v1_server instance{ "stratum_v1" };
+    instance.credentials = { { "user:pass:mining.submit" } };
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_credential_methods__invalid_configuration)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.credentials = { { "user:pass:mining" } };
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
 BC_AUTO_TEST_CASE(server__stratum_v1_server__coinbase_extranonce_size__defaults__eight)
 {
     const server::settings::stratum_v1_server instance{ "stratum_v1" };

@@ -364,9 +364,15 @@ code settings::mining_server::initialize_context() NOEXCEPT
     if (const auto ec = base::initialize_context())
         return ec;
 
+    const auto restricted = [](const auto& credential) NOEXCEPT
+    {
+        return !credential.methods().empty();
+    };
+
     const auto extranonce = coinbase_extranonce_size();
     const auto script = coinbase_script_size(coinbase_tag.size(), extranonce);
-    if (coinbase_tag.size() > max_direct_push ||
+    if (std::ranges::any_of(credentials, restricted) ||
+        coinbase_tag.size() > max_direct_push ||
         extranonce > max_direct_push || script > max_coinbase_size ||
         !(minimum_difficulty > 0.0) || !(start_difficulty >= 0.0) ||
         std::isinf(minimum_difficulty) || std::isinf(start_difficulty))

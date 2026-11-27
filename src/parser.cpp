@@ -2458,7 +2458,7 @@ options_metadata parser::load_settings() THROWS
     (
         "stratum_v1.credential",
         secret<network::config::credentials>(&configured.server.stratum_v1.credentials),
-        "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
+        "The 'username:password' authorization (not secure), multiple allowed."
     )
     (
         "stratum_v1.compression",
@@ -2590,7 +2590,7 @@ options_metadata parser::load_settings() THROWS
     (
         "stratum_v2.credential",
         secret<network::config::credentials>(&configured.server.stratum_v2.credentials),
-        "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
+        "The 'username:password' authorization (not secure), multiple allowed."
     )
     (
         "stratum_v2.compression",
