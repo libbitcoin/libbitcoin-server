@@ -2669,18 +2669,23 @@ options_metadata parser::load_settings() THROWS
     )
     (
         "stratum_v2.noise_secret",
-        secret<wallet::ec_private>(&configured.server.stratum_v2.noise_secret),
-        "The WIF Noise static key, defaults to none (no Noise)."
+        secret<config::base58check>(&configured.server.stratum_v2.noise_secret),
+        "The base58check Noise static secret key, defaults to none (no Noise)."
     )
     (
         "stratum_v2.noise_authority",
-        secret<wallet::ec_private>(&configured.server.stratum_v2.noise_authority),
-        "The WIF Noise authority key that issues certificates, defaults to none."
+        secret<config::base58check>(&configured.server.stratum_v2.noise_authority),
+        "The base58check Noise authority secret key that issues certificates, defaults to none."
+    )
+    (
+        "stratum_v2.noise_authority_key",
+        setting<config::base58check>(&configured.server.stratum_v2.noise_authority_key),
+        "The base58check Noise authority public key that verifies the certificate, defaults to none."
     )
     (
         "stratum_v2.noise_certificate",
-        setting<config::base16>(&configured.server.stratum_v2.noise_certificate),
-        "The base16 Noise certificate pre-issued by the authority, defaults to none."
+        setting<config::base58check>(&configured.server.stratum_v2.noise_certificate),
+        "The base58check Noise certificate pre-issued by the authority, defaults to none."
     )
     (
         "stratum_v2.noise_validity_days",

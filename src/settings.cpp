@@ -420,36 +420,61 @@ code settings::stratum_v2_server::initialize_context() NOEXCEPT
     return initialize_noise();
 }
 
+static bool is_authorized(const network::noise::context& instance,
+    const system::ec_xonly& authority) NOEXCEPT
+{
+    using namespace network::noise;
+    const auto now = network::unix_time();
+    system::ec_xonly key{};
+    certificate::data proof{};
+    return certificate::to_xonly(key, instance.static_secret()) &&
+        instance.issue(proof, now) &&
+        certificate::verify(proof, key, authority, now);
+}
+
 // Noise requires a static secret and exactly one of authority or certificate.
 code settings::stratum_v2_server::initialize_noise() NOEXCEPT
 {
     using namespace system;
     using namespace network;
     constexpr uint32_t seconds_per_day = 86400;
+    const data_chunk& secret = noise_secret;
+    const data_chunk& authority = noise_authority;
+    const data_chunk& authority_key = noise_authority_key;
     const data_chunk& issued = noise_certificate;
-    const auto authorized = static_cast<bool>(noise_authority);
+    const auto authorized = !authority.empty();
     const auto certified = !issued.empty();
-    if (!noise_secret)
-        return authorized || certified ? network::error::invalid_configuration :
-            network::error::success;
+    const auto verified = !authority_key.empty();
+    if (secret.empty())
+        return authorized || certified || verified ?
+            network::error::invalid_configuration : network::error::success;
 
     if (noise)
         return network::error::operation_failed;
 
-    if (authorized == certified ||
-        (certified && issued.size() != noise::cipher::certificate_size))
+    ec_xonly verifier{};
+    if (secret.size() != ec_secret_size || authorized == certified ||
+        (authorized && authority.size() != ec_secret_size) ||
+        (certified && issued.size() != noise::cipher::certificate_size) ||
+        (verified && !noise::certificate::to_authority(verifier, authority_key)))
         return network::error::invalid_configuration;
 
-    const auto& key = noise_secret.secret();
+    const auto key = data_slice{ secret }.to_array<ec_secret_size>();
     if (authorized)
-        noise = to_unique<noise::context>(key, noise_authority.secret(),
+        noise = to_unique<noise::context>(key,
+            data_slice{ authority }.to_array<ec_secret_size>(),
             ceilinged_multiply<uint32_t>(noise_validity_days, seconds_per_day));
     else
         noise = to_unique<noise::context>(key,
             data_slice{ issued }.to_array<noise::cipher::certificate_size>());
 
-    return noise->valid() ? network::error::success :
-        network::error::invalid_configuration;
+    if (!noise->valid() || (verified && !is_authorized(*noise, verifier)))
+    {
+        noise.reset();
+        return network::error::invalid_configuration;
+    }
+
+    return network::error::success;
 }
 
 size_t settings::stratum_v2_server::coinbase_extranonce_size() const NOEXCEPT

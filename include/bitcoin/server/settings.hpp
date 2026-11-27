@@ -310,14 +310,17 @@ public:
         /// Mining channels open on a connection.
         uint32_t maximum_channels{ 1024 };
 
-        /// Noise static key, with which the server is known.
-        system::wallet::ec_private noise_secret{};
+        /// Noise static secret key, with which the server is known.
+        system::config::base58check noise_secret{};
 
-        /// Noise authority key, with which certificates are issued.
-        system::wallet::ec_private noise_authority{};
+        /// Noise authority secret key, with which certificates are issued.
+        system::config::base58check noise_authority{};
 
-        /// Noise certificate (base16), pre-issued by the authority.
-        system::config::base16 noise_certificate{};
+        /// Noise authority public key, with which the certificate is verified.
+        system::config::base58check noise_authority_key{};
+
+        /// Noise certificate, pre-issued by the authority.
+        system::config::base58check noise_certificate{};
 
         /// Days either side of issue that an issued certificate is valid.
         uint16_t noise_validity_days{ 1 };
