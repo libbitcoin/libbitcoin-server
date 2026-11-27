@@ -399,12 +399,30 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__coinbase_extranonce_size__defaults_
 }
 
 // The sri key vector (secret and its public key) and a sri certificate.
-const system::config::base58check noise_secret{ "zmBEmPhqo3A92FkiLVvyCz6htc3e53ph3ZbD4ASqGaLjwnFLi" };
-const system::config::base58check noise_secret_key{ "9bDuixKmZqAJnrmP746n8zU1wyAQRrus7th9dxnkPg6RzQvCnan" };
-const system::config::base58check noise_certificate{ "11Bq97W2YjA6HzQsudhPAFE93sqF6b23Uuo7gWvZY5HQH4U6f5iU7cuv5YPM2HKJgDZXZRoMR6t43aJWBRLjibkFqvHuWj8LTArMrmLSVq" };
+static system::config::base58check noise_secret()
+{
+    return { "zmBEmPhqo3A92FkiLVvyCz6htc3e53ph3ZbD4ASqGaLjwnFLi" };
+}
+
+static system::config::base58check noise_secret_key()
+{
+    return { "9bDuixKmZqAJnrmP746n8zU1wyAQRrus7th9dxnkPg6RzQvCnan" };
+}
+
+static system::config::base58check noise_certificate()
+{
+    return
+    {
+        "11Bq97W2YjA6HzQsudhPAFE93sqF6b23Uuo7gWvZY5HQH4U6f5iU7cuv5YPM2HKJ"
+        "gDZXZRoMR6t43aJWBRLjibkFqvHuWj8LTArMrmLSVq"
+    };
+}
 
 // Secret two.
-const system::config::base58check noise_authority{ "1111111111111111111111111111111Hrt6FG" };
+static system::config::base58check noise_authority()
+{
+    return { "1111111111111111111111111111111Hrt6FG" };
+}
 
 static system::ec_secret to_secret(const system::data_chunk& value)
 {
@@ -414,7 +432,7 @@ static system::ec_secret to_secret(const system::data_chunk& value)
 static system::config::base58check noise_authority_key()
 {
     system::ec_xonly key{};
-    noise::certificate::to_xonly(key, to_secret(noise_authority));
+    noise::certificate::to_xonly(key, to_secret(noise_authority()));
     return { noise::certificate::encode_authority(key) };
 }
 
@@ -422,8 +440,8 @@ static system::config::base58check noise_issued()
 {
     system::ec_xonly key{};
     noise::certificate::data out{};
-    noise::certificate::to_xonly(key, to_secret(noise_secret));
-    noise::certificate::sign(out, to_secret(noise_authority), key, 0,
+    noise::certificate::to_xonly(key, to_secret(noise_secret()));
+    noise::certificate::sign(out, to_secret(noise_authority()), key, 0,
         max_uint32);
     return { system::to_chunk(out) };
 }
@@ -431,14 +449,14 @@ static system::config::base58check noise_issued()
 BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_authority_without_secret__invalid_configuration)
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
-    instance.noise_authority = noise_authority;
+    instance.noise_authority = noise_authority();
     BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
 
 BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_certificate_without_secret__invalid_configuration)
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
-    instance.noise_certificate = noise_certificate;
+    instance.noise_certificate = noise_certificate();
     BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
 
@@ -452,15 +470,15 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_authority_key_wi
 BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_secret_alone__invalid_configuration)
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
-    instance.noise_secret = noise_secret;
+    instance.noise_secret = noise_secret();
     BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
 
 BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_secret_and_authority__issuing_context)
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
-    instance.noise_secret = noise_secret;
-    instance.noise_authority = noise_authority;
+    instance.noise_secret = noise_secret();
+    instance.noise_authority = noise_authority();
     const auto ec = instance.initialize_context();
     BC_REQUIRE(!ec);
     BC_REQUIRE(instance.noise);
@@ -472,8 +490,8 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_validity_days__i
 {
     constexpr uint32_t now = 1800000000;
     server::settings::stratum_v2_server instance{ "stratum_v2" };
-    instance.noise_secret = noise_secret;
-    instance.noise_authority = noise_authority;
+    instance.noise_secret = noise_secret();
+    instance.noise_authority = noise_authority();
     instance.noise_validity_days = 2;
     noise::certificate::data out{};
     const auto ec = instance.initialize_context();
@@ -487,8 +505,8 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_validity_days__i
 BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_secret_and_certificate__pre_issued_context)
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
-    instance.noise_secret = noise_secret;
-    instance.noise_certificate = noise_certificate;
+    instance.noise_secret = noise_secret();
+    instance.noise_certificate = noise_certificate();
     const auto ec = instance.initialize_context();
     BC_REQUIRE(!ec);
     BC_REQUIRE(instance.noise);
@@ -499,16 +517,16 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_secret_and_certi
 BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_authority_and_certificate__invalid_configuration)
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
-    instance.noise_secret = noise_secret;
-    instance.noise_authority = noise_authority;
-    instance.noise_certificate = noise_certificate;
+    instance.noise_secret = noise_secret();
+    instance.noise_authority = noise_authority();
+    instance.noise_certificate = noise_certificate();
     BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
 
 BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_short_certificate__invalid_configuration)
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
-    instance.noise_secret = noise_secret;
+    instance.noise_secret = noise_secret();
     instance.noise_certificate = system::data_chunk(73);
     BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
@@ -517,7 +535,7 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_short_secret__in
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
     instance.noise_secret = system::data_chunk(31);
-    instance.noise_authority = noise_authority;
+    instance.noise_authority = noise_authority();
     BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
 
@@ -525,7 +543,7 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_invalid_secret__
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
     instance.noise_secret = system::data_chunk(32);
-    instance.noise_authority = noise_authority;
+    instance.noise_authority = noise_authority();
     const auto ec = instance.initialize_context();
     BC_REQUIRE(ec == network::error::invalid_configuration);
     BC_REQUIRE(!instance.noise);
@@ -534,8 +552,8 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_invalid_secret__
 BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_authority_key_issuing__success)
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
-    instance.noise_secret = noise_secret;
-    instance.noise_authority = noise_authority;
+    instance.noise_secret = noise_secret();
+    instance.noise_authority = noise_authority();
     instance.noise_authority_key = noise_authority_key();
     const auto ec = instance.initialize_context();
     BC_REQUIRE(!ec);
@@ -545,7 +563,7 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_authority_key_is
 BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_authority_key_certificate__success)
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
-    instance.noise_secret = noise_secret;
+    instance.noise_secret = noise_secret();
     instance.noise_certificate = noise_issued();
     instance.noise_authority_key = noise_authority_key();
     const auto ec = instance.initialize_context();
@@ -556,9 +574,9 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_authority_key_ce
 BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_other_authority_key__invalid_configuration)
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
-    instance.noise_secret = noise_secret;
+    instance.noise_secret = noise_secret();
     instance.noise_certificate = noise_issued();
-    instance.noise_authority_key = noise_secret_key;
+    instance.noise_authority_key = noise_secret_key();
     const auto ec = instance.initialize_context();
     BC_REQUIRE(ec == network::error::invalid_configuration);
     BC_REQUIRE(!instance.noise);
@@ -567,8 +585,8 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_other_authority_
 BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_malformed_authority_key__invalid_configuration)
 {
     server::settings::stratum_v2_server instance{ "stratum_v2" };
-    instance.noise_secret = noise_secret;
-    instance.noise_authority = noise_authority;
+    instance.noise_secret = noise_secret();
+    instance.noise_authority = noise_authority();
     instance.noise_authority_key = system::data_chunk(34);
     BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
