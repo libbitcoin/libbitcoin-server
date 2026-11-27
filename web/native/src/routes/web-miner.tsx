@@ -30,6 +30,12 @@ function cores(): number {
   return Math.max(1, globalThis.navigator?.hardwareConcurrency || 2);
 }
 
+// Browsers report at most one Windows processor group (64), so threads may
+// exceed the reported cores.
+function maximumThreads(): number {
+  return 2 * cores();
+}
+
 function defaults(): PageSettings {
   return {
     url: '',
@@ -53,7 +59,7 @@ function load(): PageSettings {
       tag: typeof saved.tag === 'string' ? saved.tag : base.tag,
       threads:
         typeof saved.threads === 'number' && saved.threads >= 1
-          ? Math.min(saved.threads, cores())
+          ? Math.min(saved.threads, maximumThreads())
           : base.threads,
     };
   } catch {
@@ -157,7 +163,7 @@ export function WebMinerPage() {
         require={{ url: !advertised, address: !payout, tag: !coinbaseTag }}
         wallet={configuration?.wallet}
         network={configuration?.network}
-        cores={cores()}
+        maximum={maximumThreads()}
         onSave={onSave}
         onClose={() => {
           setEditing(false);

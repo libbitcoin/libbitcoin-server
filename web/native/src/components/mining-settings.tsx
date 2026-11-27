@@ -26,7 +26,7 @@ export function MiningSettings({
   require,
   wallet,
   network,
-  cores,
+  maximum,
   onSave,
   onClose,
 }: {
@@ -35,7 +35,7 @@ export function MiningSettings({
   require: RequiredSettings;
   wallet?: NetworkParams;
   network?: string;
-  cores: number;
+  maximum: number;
   onSave: (settings: PageSettings) => void;
   onClose: () => void;
 }) {
@@ -146,10 +146,10 @@ export function MiningSettings({
               className={INPUT}
               type="number"
               min={1}
-              max={cores}
+              max={maximum}
               value={draft.threads}
               onChange={(event) => {
-                change('threads', Math.min(cores, Math.max(1, Math.floor(Number(event.target.value) || 1))));
+                change('threads', Math.min(maximum, Math.max(1, Math.floor(Number(event.target.value) || 1))));
               }}
             />
           </Field>
