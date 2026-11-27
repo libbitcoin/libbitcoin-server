@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useBlockchainClient, type BlockReference } from '@/lib/api/client';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
 import {
@@ -96,16 +96,4 @@ export function BlockTransactionRedirect() {
 
   if (error) return <Unresolved title="Could not load block transaction" error={error} />;
   return <div className="text-textMuted py-10 text-sm">Loading transaction...</div>;
-}
-
-// An input route opens its tx at the input.
-export function InputRedirect() {
-  const { txid = '', index = '0' } = useParams();
-  return <Navigate to={transactionInputPath(txid, Number(index))} replace />;
-}
-
-// An output route opens its tx at the output.
-export function OutputRedirect() {
-  const { txid = '', index = '0' } = useParams();
-  return <Navigate to={transactionOutputPath(txid, Number(index))} replace />;
 }

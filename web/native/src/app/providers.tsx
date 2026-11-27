@@ -2,7 +2,6 @@ import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BlockchainClientProvider, TurboProvider, createBlockchainClient } from '@/lib/api/client';
 import { BlockchainEventCacheUpdater } from '@/lib/hooks/useBlockchainData';
-import { ScriptExplainerPreferenceProvider } from './script-explainer-preference';
 import { SavedInvestigationsProvider } from './saved-investigations';
 import { AddressQueriesDisabledError, errorStatus } from '@/lib/api/errors';
 
@@ -53,7 +52,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <BlockchainEventCacheUpdater />
           <SavedInvestigationsProvider>
-            <ScriptExplainerPreferenceProvider>{children}</ScriptExplainerPreferenceProvider>
+            {children}
           </SavedInvestigationsProvider>
         </QueryClientProvider>
       </BlockchainClientProvider>

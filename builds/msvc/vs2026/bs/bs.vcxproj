@@ -203,7 +203,6 @@
     <None Include="..\..\..\..\web\native\src\app\route-navigation.tsx" />
     <None Include="..\..\..\..\web\native\src\app\router.tsx" />
     <None Include="..\..\..\..\web\native\src\app\saved-investigations.tsx" />
-    <None Include="..\..\..\..\web\native\src\app\script-explainer-preference.tsx" />
     <None Include="..\..\..\..\web\native\src\app\shell.tsx" />
     <None Include="..\..\..\..\web\native\src\components\block-size-bar.tsx" />
     <None Include="..\..\..\..\web\native\src\components\block-validation-inspector.tsx" />
@@ -212,6 +211,7 @@
     <None Include="..\..\..\..\web\native\src\components\command-palette.tsx" />
     <None Include="..\..\..\..\web\native\src\components\copy-button.tsx" />
     <None Include="..\..\..\..\web\native\src\components\fee-chart.tsx" />
+    <None Include="..\..\..\..\web\native\src\components\fit-hash.tsx" />
     <None Include="..\..\..\..\web\native\src\components\hash-text.tsx" />
     <None Include="..\..\..\..\web\native\src\components\hashrate-chart.tsx" />
     <None Include="..\..\..\..\web\native\src\components\miner-share.tsx" />
@@ -219,8 +219,6 @@
     <None Include="..\..\..\..\web\native\src\components\mining-settings.tsx" />
     <None Include="..\..\..\..\web\native\src\components\qr-code.tsx" />
     <None Include="..\..\..\..\web\native\src\components\save-bookmark.tsx" />
-    <None Include="..\..\..\..\web\native\src\components\script-explainer.tsx" />
-    <None Include="..\..\..\..\web\native\src\components\script-lookup-status.tsx" />
     <None Include="..\..\..\..\web\native\src\components\search-bar.tsx" />
     <None Include="..\..\..\..\web\native\src\components\sort-header.tsx" />
     <None Include="..\..\..\..\web\native\src\components\spinner.tsx" />
@@ -261,10 +259,10 @@
     <None Include="..\..\..\..\web\native\src\lib\utils\pool-template.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\pool-templates.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\routes.ts" />
-    <None Include="..\..\..\..\web\native\src\lib\utils\script-explainer.ts" />
-    <None Include="..\..\..\..\web\native\src\lib\utils\script-opcodes.ts" />
+    <None Include="..\..\..\..\web\native\src\lib\utils\script.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\search.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\services.ts" />
+    <None Include="..\..\..\..\web\native\src\lib\utils\styles.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\template-follow.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\template-scene.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\template-settings.ts" />
@@ -302,6 +300,7 @@
     <None Include="..\..\..\..\web\native\test\lib\utils\pool-template.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\pool-templates.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\routes.test.ts" />
+    <None Include="..\..\..\..\web\native\test\lib\utils\script.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\search.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\services.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\template-follow.test.ts" />

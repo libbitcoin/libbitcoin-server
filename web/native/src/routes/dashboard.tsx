@@ -126,23 +126,6 @@ export function DashboardPage() {
           detail={latestBlock ? formatRelativeTime(latestBlock.timestamp, now) : '—'}
         />
         <OverviewCard
-          label="Next Block Fee"
-          value={
-            nextBlockRate === undefined ? (
-              '—'
-            ) : (
-              <Link to={feesPath()} className="text-accent hover:text-accentSecondary">
-                {`${formatNumber(nextBlockRate, { maximumFractionDigits: 2 })} sat/vB`}
-              </Link>
-            )
-          }
-          detail={
-            fees
-              ? `${typeof estimate === 'number' ? 'estimate' : 'pool average'} · ${formatNumber(fees.count, { maximumFractionDigits: 0 })} txs`
-              : '—'
-          }
-        />
-        <OverviewCard
           label="Avg Interval"
           value={formatInterval(summary.averageIntervalSeconds)}
           detail={formatIntervalSampleDetail(summary.intervalCount)}
@@ -161,6 +144,23 @@ export function DashboardPage() {
               : '—'
           }
         />
+        <OverviewCard
+          label="Next Block Fee"
+          value={
+            nextBlockRate === undefined ? (
+              '—'
+            ) : (
+              <Link to={feesPath()} className="text-accent hover:text-accentSecondary">
+                {`${formatNumber(nextBlockRate, { maximumFractionDigits: 2 })} sat/vB`}
+              </Link>
+            )
+          }
+          detail={
+            fees
+              ? `${typeof estimate === 'number' ? 'estimate' : 'pool average'} · ${formatNumber(fees.count, { maximumFractionDigits: 0 })} txs`
+              : '—'
+          }
+        />
         <MinerShareCard count={DASHBOARD_BLOCK_SAMPLE_SIZE} />
       </section>
 
@@ -170,14 +170,24 @@ export function DashboardPage() {
             <div className="space-y-2">
               <p className="text-accentSecondary text-xs tracking-wide uppercase">Latest Block</p>
               <h2 className="text-accent text-2xl font-semibold">
-                {latestBlock
-                  ? `${formatNumber(latestBlock.height, { maximumFractionDigits: 0 })}`
-                  : blocksLoading
-                    ? 'Loading…'
-                    : '—'}
+                {latestBlock ? (
+                  <Link to={blockByHeightPath(latestBlock.height)} className="hover:text-accentSecondary">
+                    {formatNumber(latestBlock.height, { maximumFractionDigits: 0 })}
+                  </Link>
+                ) : blocksLoading ? (
+                  'Loading…'
+                ) : (
+                  '—'
+                )}
               </h2>
               <p className="text-textPrimary font-mono text-xs break-all">
-                {latestBlock ? <HashText value={latestBlock.hash} /> : '—'}
+                {latestBlock ? (
+                  <Link to={blockByHashPath(latestBlock.hash)} className="text-accent hover:text-accentSecondary">
+                    <HashText value={latestBlock.hash} />
+                  </Link>
+                ) : (
+                  '—'
+                )}
               </p>
               <p className="text-textMuted text-sm">
                 {latestBlock
@@ -185,14 +195,6 @@ export function DashboardPage() {
                   : 'Waiting for block data'}
               </p>
             </div>
-            {latestBlock ? (
-              <Link
-                to={blockByHashPath(latestBlock.hash)}
-                className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary rounded-md border px-3 py-2 text-sm font-medium"
-              >
-                View Block
-              </Link>
-            ) : null}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -240,14 +242,12 @@ export function DashboardPage() {
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-2">
                 <p className="text-accentSecondary text-xs tracking-wide uppercase">Server</p>
-                <h2 className="text-accent text-xl font-semibold">Server Status</h2>
+                <h2 className="text-accent text-xl font-semibold">
+                  <Link to={configurationPath()} className="hover:text-accentSecondary">
+                    Server Status
+                  </Link>
+                </h2>
               </div>
-              <Link
-                to={configurationPath()}
-                className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary inline-flex items-center rounded-md border px-3 py-1 text-xs font-medium tracking-wide uppercase"
-              >
-                Configuration
-              </Link>
             </div>
 
             <div className="space-y-3">
@@ -383,7 +383,7 @@ export function DashboardPage() {
                       </span>
                     </td>
                     <td className="text-textPrimary px-4 py-3">
-                      <Link to={blockByHashPath(block.hash)} className="text-textPrimary">
+                      <Link to={blockByHashPath(block.hash)} className="text-accent hover:text-accentSecondary">
                         <HashText value={block.hash} className="font-mono" />
                       </Link>
                     </td>

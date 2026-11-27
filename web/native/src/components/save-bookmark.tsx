@@ -13,6 +13,7 @@ import {
   type BookmarkTarget,
 } from '@/lib/utils/investigations';
 import { investigationsPath } from '@/lib/utils/routes';
+import { HEADER_ACTION } from '@/lib/utils/styles';
 
 export const bookmarkFieldClass =
   'border-accent/40 bg-background text-textPrimary w-full rounded-md border px-3 py-2 text-sm';
@@ -86,13 +87,14 @@ export function SaveBookmarkButton({
     <>
       <button
         type="button"
-        className={bookmarkButtonClass}
+        className={compact ? `shrink-0 ${existing ? 'text-accent' : 'text-textMuted'} hover:text-accent` : HEADER_ACTION}
+        title={compact ? (existing ? 'Saved to investigation' : 'Save to investigation') : undefined}
         onClick={() => {
           setOpen(true);
         }}
         aria-label={`${existing ? 'Edit saved' : 'Save'} ${target.kind}${'index' in target ? ` ${String(target.index)}` : ''}`}
       >
-        {existing ? '★ Saved' : compact ? '☆ Save' : '☆ Save to investigation'}
+        {compact ? (existing ? '★' : '☆') : existing ? '★ Saved' : '☆ Save to investigation'}
       </button>
       {open && (
         <BookmarkDialog

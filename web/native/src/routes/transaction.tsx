@@ -1,8 +1,9 @@
+import { MinusIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { CopyButton } from '@/components/copy-button';
+import { copyTextToClipboard } from '@/lib/utils/clipboard';
 import { StatusPill } from '@/components/status-pill';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useScriptExplainerPreference } from '@/app/script-explainer-preference';
 import {
   useLatestBlocks,
   useNetwork,
@@ -26,11 +27,9 @@ import {
   formatTimestamp,
   satsToBtc,
 } from '@/lib/utils/format';
-import { copyTextToClipboard } from '@/lib/utils/clipboard';
-import { HashText } from '@/components/hash-text';
+import { isNullData } from '@/lib/utils/script';
+import { FitHash } from '@/components/fit-hash';
 import { MinerValue } from '@/components/miner-value';
-import { ScriptExplainer } from '@/components/script-explainer';
-import { ScriptLookupStatus } from '@/components/script-lookup-status';
 import { SaveBookmarkButton } from '@/components/save-bookmark';
 import {
   type NetworkParams,
@@ -54,7 +53,7 @@ function canonicalizeAddress(address: string, params: NetworkParams | undefined)
 }
 
 export function TransactionPage() {
-  const { txid } = useParams();
+  const { txid, index } = useParams();
   const identifier = txid?.toLowerCase() ?? '';
   const location = useLocation();
   const navigate = useNavigate();
@@ -87,9 +86,10 @@ export function TransactionPage() {
   );
   const spendsQuery = useTransactionOutputSpends(identifier, outputIndices);
   const spendsByIndex = new Map(spendsQuery.data?.map((spend) => [spend.outputIndex, spend]));
-  const targetMatch = /^#(input|output)-(\d+)$/u.exec(location.hash);
+  const targetMatch =
+    index !== undefined && /^\d+$/u.test(index) ? /^\/v1\/(input|output)\//u.exec(location.pathname) : null;
   const targetKind = targetMatch?.[1];
-  const targetIndex = targetMatch ? Number(targetMatch[2]) : undefined;
+  const targetIndex = targetMatch ? Number(index) : undefined;
   const targetAvailable = Boolean(
     tx &&
     targetKind &&
@@ -102,12 +102,12 @@ export function TransactionPage() {
   usePageTitle(identifier ? `Tx ${formatHash(identifier, 8)}` : 'Transaction');
 
   useEffect(() => {
-    if (!targetAvailable) return;
-    // eslint-disable-next-line unicorn/prefer-query-selector -- Fragment IDs are not CSS selectors.
-    const target = document.getElementById(location.hash.slice(1));
-    target?.scrollIntoView({ block: 'center' });
+    if (!targetAvailable || !targetKind || targetIndex === undefined) return;
+    // eslint-disable-next-line unicorn/prefer-query-selector -- Row ids are not CSS selectors.
+    const target = document.getElementById(`${targetKind}-${String(targetIndex)}`);
+    target?.scrollIntoView({ block: 'nearest' });
     target?.focus({ preventScroll: true });
-  }, [identifier, location.hash, location.key, targetAvailable]);
+  }, [identifier, targetKind, targetIndex, location.key, targetAvailable]);
 
   useEffect(() => {
     setExpandedInputs({});
@@ -134,11 +134,11 @@ export function TransactionPage() {
     if (!txid) return;
     const normalized = txid.toLowerCase();
     if (normalized !== txid) {
-      void navigate(`${transactionPath(normalized)}${location.search}${location.hash}`, {
+      void navigate(`${location.pathname.replace(txid, normalized)}${location.search}`, {
         replace: true,
       });
     }
-  }, [location.hash, location.search, navigate, txid]);
+  }, [location.pathname, location.search, navigate, txid]);
 
   if (!txid) {
     return (
@@ -238,12 +238,17 @@ export function TransactionPage() {
           label="Block hash"
           value={
             tx?.blockHash ? (
-              <Link
-                to={blockByHashPath(tx.blockHash)}
-                className="text-accent hover:text-accentSecondary"
-              >
-                <HashText value={tx.blockHash} />
-              </Link>
+              <span className="flex items-center gap-2">
+                <span data-fit className="min-w-0 flex-1 overflow-hidden whitespace-nowrap">
+                  <Link
+                    to={blockByHashPath(tx.blockHash)}
+                    className="text-accent hover:text-accentSecondary"
+                  >
+                    <FitHash value={tx.blockHash} />
+                  </Link>
+                </span>
+                <CopyButton value={tx.blockHash} label="Copy block hash" />
+              </span>
             ) : (
               '—'
             )
@@ -273,7 +278,7 @@ export function TransactionPage() {
       )}
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="border-accent/30 rounded-xl border">
+        <div className="border-accent/30 min-w-0 rounded-xl border">
           <header className="border-accentSecondary/30 border-b px-4 py-3">
             <h2 className="text-accent text-sm font-semibold tracking-wide uppercase">Inputs</h2>
           </header>
@@ -311,7 +316,7 @@ export function TransactionPage() {
           </div>
         </div>
 
-        <div className="border-accent/30 rounded-xl border">
+        <div className="border-accent/30 min-w-0 rounded-xl border">
           <header className="border-accentSecondary/30 flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
             <h2 className="text-accent text-sm font-semibold tracking-wide uppercase">Outputs</h2>
             {outputIndices.length > 0 && (
@@ -360,9 +365,9 @@ export function TransactionPage() {
 
 function InfoItem({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="space-y-1">
+    <div className="min-w-0 space-y-1">
       <p className="text-accentSecondary text-xs tracking-wide uppercase">{label}</p>
-      <p className="text-textPrimary text-sm">{value}</p>
+      <div className="text-textPrimary text-sm">{value}</div>
     </div>
   );
 }
@@ -382,22 +387,25 @@ function TransactionInputRow({
 }) {
   const key = inputKey(input);
   const { params: networkParams } = useNetwork();
-  const { enabled: scriptExplainerEnabled } = useScriptExplainerPreference();
-  const shouldFetchHex = isExpanded && !input.pruned && input.script?.hex === undefined;
-  const {
-    data: scriptHex,
-    isError: scriptHexIsError,
-    error: scriptHexError,
-    isFetching: scriptHexLoading,
-    refetch: refetchScriptHex,
-  } = useTransactionInputScriptHex(txid, input.index, { enabled: shouldFetchHex });
-
-  const resolvedScriptHex = input.script?.hex ?? (scriptHexIsError ? undefined : scriptHex);
-  const scriptHexErrorMessage = scriptHexIsError
-    ? scriptHexError instanceof Error
-      ? scriptHexError.message
-      : 'Failed to load script hex'
-    : null;
+  const icons = (
+    <span className="ml-auto flex items-center gap-2 text-xs">
+      <SaveBookmarkButton target={{ kind: 'input', txid, index: input.index }} compact />
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isExpanded}
+        aria-label={isExpanded ? 'Less' : 'More'}
+        title={isExpanded ? 'Less' : 'More'}
+        className="text-textMuted hover:text-accent shrink-0"
+      >
+        {isExpanded ? (
+          <MinusIcon className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <PlusIcon className="h-4 w-4" aria-hidden="true" />
+        )}
+      </button>
+    </span>
+  );
 
   return (
     <div
@@ -408,92 +416,64 @@ function TransactionInputRow({
       className={`scroll-mt-24 px-4 py-3 text-sm ${isHighlighted ? 'bg-accent/10 ring-accent ring-2 ring-inset' : ''}`}
     >
       <div className="flex items-start gap-2">
-        <p className="text-textMuted min-w-0 flex-1 font-mono text-xs">
-          {input.isCoinbase ? (
-            'Coinbase'
-          ) : input.prevTxId ? (
+        <PointIndex txid={txid} index={input.index} kind="input" />
+        <p data-fit className="text-textMuted min-w-0 flex-1 overflow-hidden text-xs whitespace-nowrap">
+          {input.address ? (
             <Link
-              to={
-                typeof input.prevOutputIndex === 'number'
-                  ? transactionOutputPath(input.prevTxId, input.prevOutputIndex)
-                  : transactionPath(input.prevTxId)
-              }
+              to={addressPath(canonicalizeAddress(input.address, networkParams))}
               className="text-accent hover:text-accentSecondary"
+              state={{ displayAddress: input.address }}
+              title="Spent output payment address"
             >
-              <HashText value={input.prevTxId} truncate={16} />
-              {typeof input.prevOutputIndex === 'number' ? `:${String(input.prevOutputIndex)}` : ''}
+              <FitHash value={input.address} className="font-mono" />
             </Link>
+          ) : input.isCoinbase ? (
+            'Coinbase'
           ) : (
-            '—'
+            'Unknown address'
           )}
         </p>
         {typeof input.valueSats === 'number' && (
           <p className="text-textPrimary shrink-0 font-medium">{formatSats(input.valueSats)}</p>
         )}
+        {input.isCoinbase && icons}
       </div>
-      <div className="text-textMuted mt-1 flex flex-wrap items-center gap-3 text-xs">
-        <span>Index {input.index}</span>
-        <SaveBookmarkButton target={{ kind: 'input', txid, index: input.index }} compact />
-        {input.scriptType && <span>{input.scriptType}</span>}
-        {input.address &&
-          (() => {
-            const canonical = canonicalizeAddress(input.address, networkParams);
-            return (
+      {!input.isCoinbase && (
+        <div className="text-textMuted mt-1 flex flex-wrap items-center gap-3 text-xs">
+          <span data-fit className="min-w-0 flex-1 overflow-hidden whitespace-nowrap">
+            {input.prevTxId && (
               <Link
-                to={addressPath(canonical)}
-                className="text-accent hover:text-accentSecondary"
-                state={{ displayAddress: input.address }}
+                to={
+                  typeof input.prevOutputIndex === 'number'
+                    ? transactionOutputPath(input.prevTxId, input.prevOutputIndex)
+                    : transactionPath(input.prevTxId)
+                }
+                className="text-accent hover:text-accentSecondary font-mono"
+                title="Spends output"
               >
-                <HashText value={input.address} truncate={12} className="font-mono" />
+                <FitHash value={input.prevTxId} />
+                {typeof input.prevOutputIndex === 'number' ? `:${String(input.prevOutputIndex)}` : ''}
               </Link>
-            );
-          })()}
-      </div>
+            )}
+          </span>
+          {icons}
+        </div>
+      )}
       <>
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={isExpanded}
-          className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary mt-3 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium tracking-wide uppercase"
-        >
-          {isExpanded ? 'Hide details' : 'Show details'}
-        </button>
         {isExpanded && (
-          <div className="border-accent/20 bg-surface/60 mt-3 space-y-3 rounded-lg border p-3 text-xs">
-            {input.pruned ? (
+          <div className="mt-3 space-y-3 text-xs">
+            {input.scriptType && <DetailRow label="Script type" value={input.scriptType} />}
+            {input.pruned && (
               <p className="text-textMuted">Script and witness are pruned at this height.</p>
-            ) : scriptExplainerEnabled ? (
-              <ScriptExplainer
-                hex={resolvedScriptHex}
-                kind="input"
-                scriptType={input.scriptType}
-                isCoinbase={input.isCoinbase}
-                witness={input.witness}
-                loading={scriptHexLoading}
-                error={scriptHexErrorMessage}
-                onRetry={() => {
-                  void refetchScriptHex();
-                }}
-              />
-            ) : (
-              <ScriptLookupStatus
-                hex={resolvedScriptHex}
-                loading={scriptHexLoading}
-                error={scriptHexErrorMessage}
-                onRetry={() => {
-                  void refetchScriptHex();
-                }}
-              />
             )}
-            {resolvedScriptHex !== undefined && (
-              <DetailRow label="Script (hex)" value={resolvedScriptHex || '(empty)'} />
-            )}
-            {input.script?.mnemonic && (
-              <DetailRow label="Script (mnemonic)" value={input.script.mnemonic} />
+            {input.script && (
+              <ScriptDetail kind="input" txid={txid} index={input.index} script={input.script} />
             )}
             {input.witness && input.witness.length > 0 && (
               <div className="space-y-1">
-                <p className="text-accentSecondary text-[10px] tracking-wide uppercase">Witness</p>
+                <p className="text-accentSecondary text-[10px] tracking-wide uppercase">
+                  Witness stack ({input.witness.length})
+                </p>
                 <div className="space-y-1">
                   {input.witness.map((item, idx) => (
                     <code
@@ -537,22 +517,7 @@ function TransactionOutputRow({
   onToggle: () => void;
 }) {
   const { params: networkParams } = useNetwork();
-  const { enabled: scriptExplainerEnabled } = useScriptExplainerPreference();
-  const shouldFetchHex = isExpanded && output.script?.hex === undefined;
-  const {
-    data: scriptHex,
-    isError: scriptHexIsError,
-    error: scriptHexError,
-    isFetching: scriptHexLoading,
-    refetch: refetchScriptHex,
-  } = useTransactionOutputScriptHex(txid, output.index, { enabled: shouldFetchHex });
-
-  const resolvedScriptHex = output.script?.hex ?? (scriptHexIsError ? undefined : scriptHex);
-  const scriptHexErrorMessage = scriptHexIsError
-    ? scriptHexError instanceof Error
-      ? scriptHexError.message
-      : 'Failed to load script hex'
-    : null;
+  const unspendable = isNullData(output.script?.mnemonic);
 
   return (
     <div
@@ -563,87 +528,67 @@ function TransactionOutputRow({
       className={`scroll-mt-24 px-4 py-3 text-sm ${isHighlighted ? 'bg-accent/10 ring-accent ring-2 ring-inset' : ''}`}
     >
       <div className="flex items-start gap-2">
-        <p className="text-textMuted min-w-0 flex-1 text-xs">
+        <PointIndex txid={txid} index={output.index} kind="output" />
+        <p data-fit className="text-textMuted min-w-0 flex-1 overflow-hidden text-xs whitespace-nowrap">
           {output.address ? (
             <Link
               to={addressPath(canonicalizeAddress(output.address, networkParams))}
               className="text-accent hover:text-accentSecondary"
               state={{ displayAddress: output.address }}
+              title="Output payment address"
             >
-              <HashText value={output.address} truncate={12} className="font-mono" />
+              <FitHash value={output.address} className="font-mono" />
             </Link>
           ) : (
-            'Unknown'
+            'Unknown address'
           )}
         </p>
         <p className="text-textPrimary shrink-0 font-medium">{formatSats(output.valueSats)}</p>
       </div>
       <div className="text-textMuted mt-1 flex flex-wrap items-center gap-3 text-xs">
-        <span>Index {output.index}</span>
-        <SaveBookmarkButton target={{ kind: 'output', txid, index: output.index }} compact />
-        {output.scriptType && <span>{output.scriptType}</span>}
-        <button
-          type="button"
-          onClick={() => {
-            void copyTextToClipboard(`${txid}:${String(output.index)}`);
-          }}
-          className="text-accent hover:text-accentSecondary"
-        >
-          Copy outpoint
-        </button>
-      </div>
-      <div className="text-textMuted mt-2 text-xs" aria-live="polite">
-        {spendLoading ? (
-          'Checking spend status…'
-        ) : spend?.status === 'spent' ? (
-          <Link
-            to={transactionInputPath(spend.txid, spend.inputIndex)}
-            className="text-accent hover:text-accentSecondary inline-flex flex-wrap items-center gap-1"
+        <span data-fit aria-live="polite" className="min-w-0 flex-1 overflow-hidden whitespace-nowrap">
+          {spendLoading ? (
+            'Checking spend status…'
+          ) : spend?.status === 'spent' ? (
+            <Link
+              to={transactionInputPath(spend.txid, spend.inputIndex)}
+              className="text-accent hover:text-accentSecondary font-mono"
+              title="Spent by input"
+            >
+              <FitHash value={spend.txid} />:{spend.inputIndex}
+            </Link>
+          ) : unspendable ? (
+            <span className="text-amber-300">Unspendable</span>
+          ) : spend?.status === 'unspent' ? (
+            <span className="text-emerald-300">Unspent</span>
+          ) : (
+            'Spend status unavailable'
+          )}
+        </span>
+        <span className="ml-auto flex items-center gap-2">
+          <SaveBookmarkButton target={{ kind: 'output', txid, index: output.index }} compact />
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={isExpanded}
+            aria-label={isExpanded ? 'Less' : 'More'}
+            title={isExpanded ? 'Less' : 'More'}
+            className="text-textMuted hover:text-accent shrink-0"
           >
-            Spent by <HashText value={spend.txid} truncate={12} /> · input {spend.inputIndex}
-          </Link>
-        ) : spend?.status === 'unspent' ? (
-          'Unspent'
-        ) : (
-          'Spend status unavailable'
-        )}
+            {isExpanded ? (
+              <MinusIcon className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <PlusIcon className="h-4 w-4" aria-hidden="true" />
+            )}
+          </button>
+        </span>
       </div>
       <>
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={isExpanded}
-          className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary mt-3 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium tracking-wide uppercase"
-        >
-          {isExpanded ? 'Hide details' : 'Show details'}
-        </button>
         {isExpanded && (
-          <div className="border-accent/20 bg-surface/60 mt-3 space-y-3 rounded-lg border p-3 text-xs">
-            {scriptExplainerEnabled ? (
-              <ScriptExplainer
-                hex={resolvedScriptHex}
-                kind="output"
-                loading={scriptHexLoading}
-                error={scriptHexErrorMessage}
-                onRetry={() => {
-                  void refetchScriptHex();
-                }}
-              />
-            ) : (
-              <ScriptLookupStatus
-                hex={resolvedScriptHex}
-                loading={scriptHexLoading}
-                error={scriptHexErrorMessage}
-                onRetry={() => {
-                  void refetchScriptHex();
-                }}
-              />
-            )}
-            {resolvedScriptHex !== undefined && (
-              <DetailRow label="Script (hex)" value={resolvedScriptHex || '(empty)'} />
-            )}
-            {output.script?.mnemonic && (
-              <DetailRow label="Script (mnemonic)" value={output.script.mnemonic} />
+          <div className="mt-3 space-y-3 text-xs">
+            {output.scriptType && <DetailRow label="Script type" value={output.scriptType} />}
+            {output.script && (
+              <ScriptDetail kind="output" txid={txid} index={output.index} script={output.script} />
             )}
           </div>
         )}
@@ -658,6 +603,79 @@ function inputKey(input: { prevTxId?: string; index: number }) {
 
 function outputKey(output: { index: number }) {
   return `output-${String(output.index)}`;
+}
+
+// The index of an input or output, which copies its point when clicked.
+function PointIndex({ txid, index, kind }: { txid: string; index: number; kind: 'input' | 'output' }) {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => {
+      setCopied(false);
+    }, 1500);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [copied]);
+
+  const label = copied ? 'Copied' : `Copy ${kind} point`;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        void copyTextToClipboard(`${txid}:${String(index)}`).then(setCopied);
+      }}
+      aria-label={label}
+      title={label}
+      className="text-textMuted bg-accent/10 hover:text-accent shrink-0 rounded px-1.5 font-mono text-xs tabular-nums"
+    >
+      {copied ? '✓' : `#${String(index)}`}
+    </button>
+  );
+}
+
+// A script as its mnemonic, or as its hex, fetched when first shown.
+function ScriptDetail({
+  kind,
+  txid,
+  index,
+  script,
+}: {
+  kind: 'input' | 'output';
+  txid: string;
+  index: number;
+  script: { mnemonic?: string; hex?: string };
+}) {
+  const [hex, setHex] = useState(false);
+  const fetch = hex && script.hex === undefined;
+  const input = useTransactionInputScriptHex(txid, index, { enabled: fetch && kind === 'input' });
+  const output = useTransactionOutputScriptHex(txid, index, { enabled: fetch && kind === 'output' });
+  const query = kind === 'input' ? input : output;
+  const value = !hex
+    ? (script.mnemonic ?? '')
+    : script.hex ?? (query.isError ? 'Script unavailable' : query.data ?? 'Loading…');
+
+  return (
+    <div className="space-y-1">
+      <p className="text-accentSecondary text-[10px] tracking-wide uppercase">
+        Script ·{' '}
+        <button
+          type="button"
+          onClick={() => {
+            setHex(!hex);
+          }}
+          className="text-accent hover:text-accentSecondary uppercase"
+          title={hex ? 'Show the script mnemonic' : 'Show the script hex'}
+        >
+          {hex ? 'hex' : 'mnemonic'}
+        </button>
+      </p>
+      <code className="text-textMuted bg-inset block rounded px-2 py-1 font-mono text-[11px] break-all">
+        {value || '(empty)'}
+      </code>
+    </div>
+  );
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {

@@ -14,6 +14,7 @@ import {
   transactionOutputPath,
 } from '@/lib/utils/routes';
 import { rememberLibbitcoinAddressAlias } from '@/lib/utils/libbitcoin-address-alias';
+import { HEADER_ACTION } from '@/lib/utils/styles';
 
 function getHttpStatus(error: unknown) {
   if (!error || typeof error !== 'object' || Array.isArray(error)) return;
@@ -160,13 +161,13 @@ export function SearchPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               to={blockByHashPath(blockLookup.data.hash)}
-              className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent rounded-md border px-3 py-2 text-sm"
+              className={HEADER_ACTION}
             >
               View block
             </Link>
             <Link
               to={transactionPath(transactionLookup.data.txid)}
-              className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent rounded-md border px-3 py-2 text-sm"
+              className={HEADER_ACTION}
             >
               View transaction
             </Link>
@@ -228,7 +229,7 @@ export function SearchPage() {
         ) : null}
         <button
           type="button"
-          className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent rounded-md border px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
+          className={`${HEADER_ACTION} disabled:cursor-wait`}
           disabled={retrying}
           onClick={() => {
             const retries: Array<Promise<unknown>> = [];

@@ -3,23 +3,23 @@ import { Link } from 'react-router-dom';
 import { HashrateChart } from '@/components/hashrate-chart';
 import { MiningSettings, type PageSettings } from '@/components/mining-settings';
 import { AddressQRCode } from '@/components/qr-code';
-import { useServerConfiguration } from '@/lib/hooks/useBlockchainData';
+import { useBlockHeader, useServerConfiguration } from '@/lib/hooks/useBlockchainData';
 import { useNow } from '@/lib/hooks/useNow';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
 import { miner, type MinerSettings, type MinerState, type Share } from '@/lib/mining/miner';
 import {
   formatDifficulty,
   formatDuration,
-  formatHash,
   formatHashrate,
   formatShortRelativeTime,
   shareSeconds,
 } from '@/lib/mining/format';
 import { formatInteger } from '@/lib/utils/format';
-import { blockByHashPath, templatePath } from '@/lib/utils/routes';
+import { addressPath, blockByHashPath, templatePath } from '@/lib/utils/routes';
 import { serviceSocketUrl } from '@/lib/utils/services';
+import { HEADER_ACTION } from '@/lib/utils/styles';
 
-const LINK = 'text-accent hover:underline';
+const LINK = 'text-accent hover:text-accentSecondary';
 
 const STORAGE_KEY = 'libbitcoin.miner';
 
@@ -138,7 +138,7 @@ export function WebMinerPage() {
             onClick={() => {
               setEditing(true);
             }}
-            className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-medium tracking-wide uppercase disabled:cursor-not-allowed disabled:opacity-50"
+            className={`${HEADER_ACTION} disabled:cursor-not-allowed`}
           >
             <CogIcon />
             Settings
@@ -147,7 +147,7 @@ export function WebMinerPage() {
             type="button"
             onClick={toggle}
             disabled={!running && (!current.url || !current.worker)}
-            className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-medium tracking-wide uppercase disabled:cursor-not-allowed disabled:opacity-50"
+            className={`${HEADER_ACTION} disabled:cursor-not-allowed`}
           >
             {running ? 'Stop' : 'Start'}
           </button>
@@ -258,9 +258,9 @@ function MinerDetail({
                 <col className="sm:w-24" />
                 <col className="hidden w-24 sm:table-column" />
                 <col className="hidden w-28 sm:table-column" />
-                <col className="w-24 sm:w-28" />
+                <col className="w-20" />
                 <col className="hidden sm:table-column" />
-                <col className="w-24 sm:w-36" />
+                <col className="w-24" />
               </colgroup>
               <thead className="text-textMuted text-left">
                 <tr>
@@ -285,8 +285,7 @@ function MinerDetail({
   );
 }
 
-// The current job of the miner, and the payout address its coinbase pays,
-// labeled by tag.
+// The current job of the miner, and the payout address its coinbase pays.
 function JobPanel({
   state,
   settings,
@@ -301,11 +300,20 @@ function JobPanel({
   now: number;
 }) {
   const job = state.job;
+  const unknown = job !== undefined && job.height === undefined;
+  const previous = useBlockHeader(job?.previous ?? '', { enabled: unknown });
+  const height = previous.data?.height;
+  useEffect(() => {
+    if (job && unknown && height !== undefined) miner.setHeight(job.previous, height + 1);
+  }, [job, unknown, height]);
+
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto]">
       <div className="border-accent/30 bg-surface/80 space-y-4 rounded-xl border p-6">
         <div className="min-w-0">
-          <h2 className="text-accent text-lg font-semibold">Current job</h2>
+          <h2 className="text-accent text-lg font-semibold">
+            {settings.protocol === 'v2' ? 'Stratum v2' : 'Stratum v1'}
+          </h2>
           <p className="text-textMuted text-sm break-all">
             <span className="font-mono">{settings.url || '—'}</span> · {formatInteger(settings.threads)} threads
             {state.simd !== undefined && <> · {state.simd ? 'WebAssembly SIMD' : 'JavaScript'}</>}
@@ -322,28 +330,36 @@ function JobPanel({
                 </Link>
               )}
             </Item>
-            <Item label="Previous block">
-              <Link to={blockByHashPath(job.previous)} className={`${LINK} font-mono`} title={job.previous}>
-                {formatHash(job.previous)}
-              </Link>
-            </Item>
-            <Item label="Coinbase tag">{job.tag ?? '—'}</Item>
+            <Item label="Coinbase tag">{job.tag ?? (tag || '—')}</Item>
             <Item label="Network difficulty">{formatDifficulty(job.networkDifficulty)}</Item>
             <Item label="Job">
               <span className="font-mono">{job.id}</span>
-              {job.clean && <span className="text-textMuted"> · clean</span>}
+              {job.clean && settings.protocol !== 'v2' && <span className="text-textMuted"> · clean</span>}
             </Item>
             <Item label="Received">{formatShortRelativeTime(Math.floor(job.received / 1000), now)}</Item>
+            <Item label="Previous block" wide>
+              <Link to={blockByHashPath(job.previous)} className={`${LINK} font-mono break-all`}>
+                {job.previous}
+              </Link>
+            </Item>
+            <Item label="Payout address" wide>
+              {address ? (
+                <Link to={addressPath(address)} className={`${LINK} font-mono break-all`}>
+                  {address}
+                </Link>
+              ) : (
+                '—'
+              )}
+            </Item>
           </dl>
         ) : (
           <p className="text-textMuted text-sm">Start mining to receive a job.</p>
         )}
       </div>
       {address && (
-        <figure className="w-40 space-y-2 place-self-start" title={address}>
+        <Link to={addressPath(address)} className="block w-40 place-self-start" title={address}>
           <AddressQRCode value={address} />
-          <figcaption className="text-textPrimary text-center text-sm font-medium break-words">{tag || '—'}</figcaption>
-        </figure>
+        </Link>
       )}
     </section>
   );
@@ -374,18 +390,17 @@ function ShareRow({ share, now }: { share: Share; now: number }) {
 
 function Outcome({ share }: { share: Share }) {
   if (share.outcome === 'pending') return <span className="text-textMuted">Pending…</span>;
-  if (share.outcome === 'unanswered') return <span className="text-amber-300">No answer</span>;
+  if (share.outcome === 'unanswered') return <span className="text-amber-300">Timeout</span>;
   if (share.outcome === 'rejected') {
-    return <span className="text-rose-300">Rejected{share.reason ? `: ${share.reason}` : ''}</span>;
+    const text = `Rejected${share.reason ? `: ${share.reason}` : ''}`;
+    return (
+      <span className="text-rose-300" title={text}>
+        {text}
+      </span>
+    );
   }
-  return (
-    <span className="text-emerald-300">
-      Accepted
-      {share.block && (
-        <span className="ml-2 rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs uppercase">Block</span>
-      )}
-    </span>
-  );
+  if (share.block) return <span className="text-emerald-300">Submitted</span>;
+  return <span className="text-sky-300">Accepted</span>;
 }
 
 function Notice({ title, children }: { title: string; children: ReactNode }) {
@@ -397,9 +412,9 @@ function Notice({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Item({ label, children }: { label: string; children: ReactNode }) {
+function Item({ label, wide = false, children }: { label: string; wide?: boolean; children: ReactNode }) {
   return (
-    <div>
+    <div className={wide ? 'col-span-full' : undefined}>
       <dt className="text-textMuted text-xs tracking-wide uppercase">{label}</dt>
       <dd className="text-textPrimary mt-1 font-medium tabular-nums">{children}</dd>
     </div>

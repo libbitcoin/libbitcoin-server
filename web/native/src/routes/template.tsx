@@ -37,6 +37,7 @@ import {
   sectionSuffix,
   templatePath,
 } from '@/lib/utils/routes';
+import { HEADER_ACTION } from '@/lib/utils/styles';
 
 // A held arrow key pages no faster than this, in milliseconds.
 const REPEAT = 100;
@@ -212,14 +213,14 @@ export function TemplatePage() {
         <div className="flex flex-wrap items-center gap-3">
           <Link
             to={previous}
-            className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent rounded-md border px-3 py-2 text-sm"
+            className={HEADER_ACTION}
           >
             ← Previous
           </Link>
           {next ? (
             <Link
               to={next}
-              className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent rounded-md border px-3 py-2 text-sm"
+              className={HEADER_ACTION}
             >
               Next →
             </Link>

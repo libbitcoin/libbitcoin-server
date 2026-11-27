@@ -24,8 +24,6 @@ import { WebMinerPage } from '@/routes/web-miner';
 import {
   BlockTransactionRedirect,
   CandidateBlockRedirect,
-  InputRedirect,
-  OutputRedirect,
 } from '@/routes/redirects';
 
 // Suffixes of the block paths that open the block page.
@@ -92,14 +90,14 @@ const router = createBrowserRouter(
       <Route path="v1/tx/:txid/header" element={<TransactionPage />} />
       <Route path="v1/tx/:txid/details" element={<TransactionPage />} />
       <Route path="v1/input/:txid" element={<TransactionPage />} />
-      <Route path="v1/input/:txid/:index" element={<InputRedirect />} />
-      <Route path="v1/input/:txid/:index/script" element={<InputRedirect />} />
-      <Route path="v1/input/:txid/:index/witness" element={<InputRedirect />} />
+      <Route path="v1/input/:txid/:index" element={<TransactionPage />} />
+      <Route path="v1/input/:txid/:index/script" element={<TransactionPage />} />
+      <Route path="v1/input/:txid/:index/witness" element={<TransactionPage />} />
       <Route path="v1/output/:txid" element={<TransactionPage />} />
-      <Route path="v1/output/:txid/:index" element={<OutputRedirect />} />
-      <Route path="v1/output/:txid/:index/script" element={<OutputRedirect />} />
-      <Route path="v1/output/:txid/:index/spender" element={<OutputRedirect />} />
-      <Route path="v1/output/:txid/:index/spenders" element={<OutputRedirect />} />
+      <Route path="v1/output/:txid/:index" element={<TransactionPage />} />
+      <Route path="v1/output/:txid/:index/script" element={<TransactionPage />} />
+      <Route path="v1/output/:txid/:index/spender" element={<TransactionPage />} />
+      <Route path="v1/output/:txid/:index/spenders" element={<TransactionPage />} />
       <Route path="v1/address/:address" element={<AddressPage />} />
       <Route path="v1/address/:address/confirmed" element={<AddressPage />} />
       <Route path="v1/address/:address/unconfirmed" element={<AddressPage />} />

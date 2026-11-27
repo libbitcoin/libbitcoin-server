@@ -21,9 +21,9 @@ import {
 } from '@/lib/utils/format';
 import { useBlockchainClient, type AddressActivityItem } from '@/lib/api/client';
 import { AddressQueriesDisabledError } from '@/lib/api/errors';
-import { copyTextToClipboard } from '@/lib/utils/clipboard';
 import { AddressQRCode } from '@/components/qr-code';
 import { HashText } from '@/components/hash-text';
+import { CopyButton } from '@/components/copy-button';
 import { SaveBookmarkButton } from '@/components/save-bookmark';
 import { scriptHashFromAddress } from '@/lib/api/providers/libbitcoin-mapper';
 import {
@@ -198,19 +198,12 @@ export function AddressPage() {
       <header className="space-y-3">
         <p className="text-accentSecondary text-sm tracking-wide uppercase">Address</p>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 tabIndex={-1} className="text-accent text-2xl font-semibold break-all">
-            {addressValue || '—'}
-          </h1>
-          <button
-            type="button"
-            onClick={() => {
-              void copyTextToClipboard(addressValue);
-            }}
-            disabled={!addressValue.trim()}
-            className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-medium tracking-wide uppercase"
-          >
-            Copy address
-          </button>
+          <div className="flex min-w-0 items-center gap-2">
+            <h1 tabIndex={-1} className="text-accent text-2xl font-semibold break-all">
+              {addressValue || '—'}
+            </h1>
+            {addressValue.trim() && <CopyButton value={addressValue} label="Copy address" />}
+          </div>
           {data && (
             <SaveBookmarkButton
               target={{
