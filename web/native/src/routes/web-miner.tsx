@@ -102,6 +102,8 @@ export function WebMinerPage() {
     else miner.start(effective(settings));
   };
 
+  const current = effective(settings);
+
   // Saved settings apply to a running miner by restarting it.
   const onSave = (next: PageSettings) => {
     setSettings(next);
@@ -110,25 +112,43 @@ export function WebMinerPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <p className="text-accentSecondary text-sm tracking-wide uppercase">Mining</p>
-        <h1 tabIndex={-1} className="text-accent text-3xl font-semibold">
-          Web Miner
-        </h1>
+    <div className="space-y-8">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 tabIndex={-1} className="text-accent text-2xl font-semibold">
+            Web Miner
+          </h1>
+          <p className="text-textMuted text-sm">Mines the node&apos;s block templates in this browser.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setEditing(true);
+            }}
+            className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-medium tracking-wide uppercase disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <CogIcon />
+            Settings
+          </button>
+          <button
+            type="button"
+            onClick={toggle}
+            disabled={!running && (!current.url || !current.worker)}
+            className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary inline-flex items-center gap-2 rounded-md border px-3 py-1 text-xs font-medium tracking-wide uppercase disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {running ? 'Stop' : 'Start'}
+          </button>
+        </div>
       </header>
 
       <MinerDetail
         state={state}
-        settings={effective(settings)}
+        settings={current}
         address={payout ?? settings.address}
         tag={coinbaseTag ?? settings.tag}
         running={running}
         now={now}
-        onToggle={toggle}
-        onEdit={() => {
-          setEditing(true);
-        }}
       />
 
       <MiningSettings
@@ -163,8 +183,6 @@ function MinerDetail({
   tag,
   running,
   now,
-  onToggle,
-  onEdit,
 }: {
   state: MinerState;
   settings: MinerSettings;
@@ -172,15 +190,13 @@ function MinerDetail({
   tag: string;
   running: boolean;
   now: number;
-  onToggle: () => void;
-  onEdit: () => void;
 }) {
   const perShare = shareSeconds(state.difficulty, state.hashrate);
   const insecure =
     globalThis.location?.protocol === 'https:' && settings.url.trim().toLowerCase().startsWith('ws://');
   return (
     <>
-      <JobPanel state={state} address={address} tag={tag} now={now} />
+      <JobPanel state={state} settings={settings} address={address} tag={tag} now={now} />
 
       {state.status === 'failed' && state.message && (
         <Notice title="Mining stopped">{state.message}</Notice>
@@ -203,36 +219,6 @@ function MinerDetail({
       )}
 
       <div className="border-accent/30 bg-surface/80 space-y-5 rounded-2xl border p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-accent text-xl font-semibold">This browser</h2>
-            <p className="text-textMuted text-sm break-all">
-              <span className="font-mono">{settings.url || '—'}</span> · {formatInteger(settings.threads)} threads
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={onEdit}
-              className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent inline-flex items-center gap-2 rounded-md border px-4 py-1.5 text-sm"
-            >
-              <CogIcon />
-              Settings
-            </button>
-            <button
-              type="button"
-              onClick={onToggle}
-              disabled={!running && (!settings.url || !settings.worker)}
-              className={`rounded-md border px-5 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                running
-                  ? 'border-accent/40 text-textPrimary hover:border-accent hover:text-accent'
-                  : 'border-accent bg-accent/20 text-accent hover:bg-accent/30'
-              }`}
-            >
-              {running ? 'Stop' : 'Start'}
-            </button>
-          </div>
-        </div>
         <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           <Stat label="Hashrate" value={running ? formatHashrate(state.hashrate) : '—'} />
           <Stat label="Difficulty" value={formatDifficulty(state.difficulty)} />
@@ -254,23 +240,23 @@ function MinerDetail({
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[44rem] table-fixed text-sm tabular-nums">
+            <table className="w-full table-fixed text-sm tabular-nums">
               <colgroup>
-                <col className="w-24" />
-                <col className="w-24" />
-                <col className="w-28" />
-                <col className="w-28" />
-                <col />
-                <col className="w-36" />
+                <col className="sm:w-24" />
+                <col className="hidden w-24 sm:table-column" />
+                <col className="hidden w-28 sm:table-column" />
+                <col className="w-24 sm:w-28" />
+                <col className="hidden sm:table-column" />
+                <col className="w-24 sm:w-36" />
               </colgroup>
               <thead className="text-textMuted text-left">
                 <tr>
                   <th className="py-1 pr-4 font-normal">Found</th>
-                  <th className="py-1 pr-4 font-normal">Template</th>
-                  <th className="py-1 pr-4 font-normal">Nonce</th>
+                  <th className="hidden py-1 pr-4 font-normal sm:table-cell">Template</th>
+                  <th className="hidden py-1 pr-4 font-normal sm:table-cell">Nonce</th>
                   <th className="py-1 pr-4 text-right font-normal">Difficulty</th>
-                  <th className="py-1 pr-4 font-normal">Hash</th>
-                  <th className="py-1 font-normal">Result</th>
+                  <th className="hidden py-1 pr-4 pl-4 font-normal sm:table-cell">Hash</th>
+                  <th className="py-1 text-right font-normal">Result</th>
                 </tr>
               </thead>
               <tbody>
@@ -286,55 +272,66 @@ function MinerDetail({
   );
 }
 
-// The current job, and the payout address its coinbase pays, labeled by tag.
-function JobPanel({ state, address, tag, now }: { state: MinerState; address: string; tag: string; now: number }) {
+// The current job of the miner, and the payout address its coinbase pays,
+// labeled by tag.
+function JobPanel({
+  state,
+  settings,
+  address,
+  tag,
+  now,
+}: {
+  state: MinerState;
+  settings: MinerSettings;
+  address: string;
+  tag: string;
+  now: number;
+}) {
   const job = state.job;
   return (
-    <div className="border-accent/30 bg-surface/80 rounded-2xl border p-5">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-accent mb-4 text-lg font-semibold">Current job</h3>
-          {job ? (
-            <dl className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
-              <Item label="Template">
-                {job.height === undefined ? (
-                  '—'
-                ) : (
-                  <Link to={templatePath(job.height)} className={LINK}>
-                    {formatInteger(job.height)}
-                  </Link>
-                )}
-              </Item>
-              <Item label="Previous block">
-                <Link to={blockByHashPath(job.previous)} className={`${LINK} font-mono`} title={job.previous}>
-                  {formatHash(job.previous)}
-                </Link>
-              </Item>
-              <Item label="Coinbase tag">{job.tag ?? '—'}</Item>
-              <Item label="Network difficulty">{formatDifficulty(job.networkDifficulty)}</Item>
-              <Item label="Job">
-                <span className="font-mono">{job.id}</span>
-                {job.clean && <span className="text-textMuted"> · clean</span>}
-              </Item>
-              <Item label="Received">{formatShortRelativeTime(Math.floor(job.received / 1000), now)}</Item>
-            </dl>
-          ) : (
-            <p className="text-textMuted text-sm">Start mining to receive a job.</p>
-          )}
+    <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="border-accent/30 bg-surface/80 space-y-4 rounded-xl border p-6">
+        <div className="min-w-0">
+          <h2 className="text-accent text-lg font-semibold">Current job</h2>
+          <p className="text-textMuted text-sm break-all">
+            <span className="font-mono">{settings.url || '—'}</span> · {formatInteger(settings.threads)} threads
+          </p>
         </div>
-        {address && (
-          <figure className="w-40 shrink-0 space-y-2 self-center sm:self-start">
-            <AddressQRCode value={address} size={144} />
-            <figcaption className="text-textPrimary text-center text-sm font-medium break-words">
-              {tag || '—'}
-            </figcaption>
-            <p className="text-textMuted font-mono text-xs break-all" title={address}>
-              {address}
-            </p>
-          </figure>
+        {job ? (
+          <dl className="grid grid-cols-2 gap-4 text-sm lg:grid-cols-3">
+            <Item label="Template">
+              {job.height === undefined ? (
+                '—'
+              ) : (
+                <Link to={templatePath(job.height)} className={LINK}>
+                  {formatInteger(job.height)}
+                </Link>
+              )}
+            </Item>
+            <Item label="Previous block">
+              <Link to={blockByHashPath(job.previous)} className={`${LINK} font-mono`} title={job.previous}>
+                {formatHash(job.previous)}
+              </Link>
+            </Item>
+            <Item label="Coinbase tag">{job.tag ?? '—'}</Item>
+            <Item label="Network difficulty">{formatDifficulty(job.networkDifficulty)}</Item>
+            <Item label="Job">
+              <span className="font-mono">{job.id}</span>
+              {job.clean && <span className="text-textMuted"> · clean</span>}
+            </Item>
+            <Item label="Received">{formatShortRelativeTime(Math.floor(job.received / 1000), now)}</Item>
+          </dl>
+        ) : (
+          <p className="text-textMuted text-sm">Start mining to receive a job.</p>
         )}
       </div>
-    </div>
+      {address && (
+        <figure className="w-40 space-y-2 place-self-start" title={address}>
+          <AddressQRCode value={address} />
+          <figcaption className="text-textPrimary text-center text-sm font-medium break-words">{tag || '—'}</figcaption>
+        </figure>
+      )}
+    </section>
   );
 }
 
@@ -342,19 +339,19 @@ function ShareRow({ share, now }: { share: Share; now: number }) {
   return (
     <tr className="border-accent/10 border-t">
       <td className="py-1 pr-4 whitespace-nowrap">{formatShortRelativeTime(Math.floor(share.time / 1000), now)}</td>
-      <td className="py-1 pr-4">{share.height === undefined ? '—' : formatInteger(share.height)}</td>
-      <td className="py-1 pr-4 font-mono">{share.nonce}</td>
+      <td className="hidden py-1 pr-4 sm:table-cell">{share.height === undefined ? '—' : formatInteger(share.height)}</td>
+      <td className="hidden py-1 pr-4 font-mono sm:table-cell">{share.nonce}</td>
       <td className="py-1 pr-4 text-right">{formatDifficulty(share.difficulty)}</td>
-      <td className="truncate py-1 pr-4 font-mono whitespace-nowrap" title={share.hash}>
+      <td className="hidden truncate py-1 pr-4 pl-4 font-mono whitespace-nowrap sm:table-cell" title={share.hash}>
         {share.block ? (
           <Link to={blockByHashPath(share.hash)} className={LINK}>
-            {formatHash(share.hash)}
+            {share.hash}
           </Link>
         ) : (
-          formatHash(share.hash)
+          share.hash
         )}
       </td>
-      <td className="truncate py-1 whitespace-nowrap">
+      <td className="truncate py-1 text-right whitespace-nowrap">
         <Outcome share={share} />
       </td>
     </tr>
