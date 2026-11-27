@@ -295,6 +295,7 @@ function JobPanel({
           <h2 className="text-accent text-lg font-semibold">Current job</h2>
           <p className="text-textMuted text-sm break-all">
             <span className="font-mono">{settings.url || '—'}</span> · {formatInteger(settings.threads)} threads
+            {state.simd !== undefined && <> · {state.simd ? 'WebAssembly SIMD' : 'JavaScript'}</>}
           </p>
         </div>
         {job ? (

@@ -245,6 +245,7 @@
     <None Include="..\..\..\..\web\native\src\lib\mining\format.ts" />
     <None Include="..\..\..\..\web\native\src\lib\mining\miner.ts" />
     <None Include="..\..\..\..\web\native\src\lib\mining\miner.worker.ts" />
+    <None Include="..\..\..\..\web\native\src\lib\mining\scan-simd.ts" />
     <None Include="..\..\..\..\web\native\src\lib\mining\sha256.ts" />
     <None Include="..\..\..\..\web\native\src\lib\mining\stratum.ts" />
     <None Include="..\..\..\..\web\native\src\lib\theme.ts" />
@@ -291,6 +292,7 @@
     <None Include="..\..\..\..\web\native\test\lib\mining\format.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\mining\miner.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\mining\mining.test.ts" />
+    <None Include="..\..\..\..\web\native\test\lib\mining\scan-simd.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\address.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\coinbase.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\format.test.ts" />

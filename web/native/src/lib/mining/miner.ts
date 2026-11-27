@@ -69,6 +69,8 @@ export interface MinerState {
   job?: MinerJob;
   jobs: number;
   hashrate: number;
+  // True if the workers hash with WebAssembly SIMD, false with JavaScript.
+  simd?: boolean;
   history: HashrateSample[];
   hashes: number;
   accepted: number;
@@ -458,6 +460,7 @@ class Miner {
   private fromWorker(worker: Worker, response: WorkerResponse) {
     if (response.type === 'progress') {
       this.counted += response.hashes;
+      if (this.state.simd !== response.simd) this.update({ simd: response.simd });
       return;
     }
 

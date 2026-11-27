@@ -553,6 +553,9 @@
     <None Include="..\..\..\..\web\native\src\lib\mining\miner.worker.ts">
       <Filter>web\native\src\lib\mining</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\lib\mining\scan-simd.ts">
+      <Filter>web\native\src\lib\mining</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\lib\mining\sha256.ts">
       <Filter>web\native\src\lib\mining</Filter>
     </None>
@@ -689,6 +692,9 @@
       <Filter>web\native\test\lib\mining</Filter>
     </None>
     <None Include="..\..\..\..\web\native\test\lib\mining\mining.test.ts">
+      <Filter>web\native\test\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\mining\scan-simd.test.ts">
       <Filter>web\native\test\lib\mining</Filter>
     </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\address.test.ts">

@@ -1,3 +1,4 @@
+import { simdScanner } from './scan-simd';
 import { scan, type HeaderWork, type Target } from './sha256';
 
 export type WorkerRequest =
@@ -7,7 +8,7 @@ export type WorkerRequest =
 
 export type WorkerResponse =
   | { type: 'found'; unit: number; nonce: number }
-  | { type: 'progress'; unit: number; hashes: number }
+  | { type: 'progress'; unit: number; hashes: number; simd: boolean }
   | { type: 'done'; unit: number };
 
 const scope = globalThis as unknown as {
@@ -18,6 +19,10 @@ const scope = globalThis as unknown as {
 // Nonces hashed between yields to the message loop.
 const CHUNK = 1 << 16;
 
+// WebAssembly SIMD where supported, else the JavaScript scanner.
+const simd = simdScanner();
+const hash = simd ?? scan;
+
 let current: { unit: number; work: HeaderWork; next: number; end: number } | undefined;
 let target: Target | undefined;
 let scheduled = false;
@@ -27,10 +32,10 @@ function step() {
   const unit = current;
   if (!unit || !target) return;
   const end = Math.min(unit.next + CHUNK, unit.end);
-  scan(unit.work, target, unit.next, end, (nonce) => {
+  hash(unit.work, target, unit.next, end, (nonce) => {
     scope.postMessage({ type: 'found', unit: unit.unit, nonce });
   });
-  scope.postMessage({ type: 'progress', unit: unit.unit, hashes: end - unit.next });
+  scope.postMessage({ type: 'progress', unit: unit.unit, hashes: end - unit.next, simd: simd !== undefined });
   unit.next = end;
   if (end >= unit.end) {
     current = undefined;
