@@ -70,51 +70,35 @@
     <Filter Include="web\native\src\lib\hooks">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib\utils">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="web\native\src\routes">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="web\native\src\vendor">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="web\native\src\vendor\mining-pools">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000009}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="web\native\test">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000010}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="web\native\test\lib">
     <Filter Include="web\native\src\lib\mining">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000004}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="web\native\src\lib\utils">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="web\native\src\routes">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\vendor">
+    <Filter Include="web\native\src\lib\utils">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\vendor\mining-pools">
+    <Filter Include="web\native\src\routes">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\test">
+    <Filter Include="web\native\src\vendor">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\test\lib">
+    <Filter Include="web\native\src\vendor\mining-pools">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000010}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\test\lib\mining">
+    <Filter Include="web\native\test">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000A1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\test\lib\utils">
+    <Filter Include="web\native\test\lib">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000B1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\shared">
+    <Filter Include="web\native\test\lib\mining">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000C1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\test\lib\utils">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000D1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\shared">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000E1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -614,8 +598,10 @@
     <None Include="..\..\..\..\web\native\src\lib\utils\search.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
-    <None Include="..\..\..\..\web\native\src\lib\utils\template-follow.ts">
     <None Include="..\..\..\..\web\native\src\lib\utils\services.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\template-follow.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\template-scene.ts">
@@ -723,8 +709,10 @@
     <None Include="..\..\..\..\web\native\test\lib\utils\search.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
-    <None Include="..\..\..\..\web\native\test\lib\utils\template-follow.test.ts">
     <None Include="..\..\..\..\web\native\test\lib\utils\services.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\template-follow.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\template-scene.test.ts">
