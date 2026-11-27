@@ -663,6 +663,41 @@ static void require_portable(const char* name, uint16_t peer,
     BC_REQUIRE(contains_host(services.esplora.host_names(), esplora_host, 80));
 }
 
+static const std::string browser
+{
+    "[electrum]\n" "host = localhost\n" "origin = example.com\n"
+    "allow_opaque_origin = true\n"
+    "[sparrow]\n" "host = localhost\n" "origin = example.com\n"
+    "allow_opaque_origin = true\n"
+    "[stratum_v1]\n" "host = localhost\n" "origin = example.com\n"
+    "allow_opaque_origin = true\n"
+    "[stratum_v2]\n" "host = localhost\n" "origin = example.com\n"
+    "allow_opaque_origin = true\n"
+};
+
+BC_AUTO_TEST_CASE(parser__parse__browser_policy__expected)
+{
+    const auto config = write_config(browser);
+    const char* argv[]{ "bs", "-n", "mainnet", "-c", config.c_str() };
+    std::ostringstream error{};
+    server::parser instance{ selection::mainnet, pages, pages };
+    const auto parsed = instance.parse(5, argv, error);
+    const auto& services = instance.configured.server;
+    BC_REQUIRE(parsed);
+    BC_REQUIRE_EQUAL(services.electrum.hosts.size(), 1u);
+    BC_REQUIRE_EQUAL(services.electrum.origins.size(), 1u);
+    BC_REQUIRE(services.electrum.allow_opaque_origin);
+    BC_REQUIRE_EQUAL(services.sparrow.hosts.size(), 1u);
+    BC_REQUIRE_EQUAL(services.sparrow.origins.size(), 1u);
+    BC_REQUIRE(services.sparrow.allow_opaque_origin);
+    BC_REQUIRE_EQUAL(services.stratum_v1.hosts.size(), 1u);
+    BC_REQUIRE_EQUAL(services.stratum_v1.origins.size(), 1u);
+    BC_REQUIRE(services.stratum_v1.allow_opaque_origin);
+    BC_REQUIRE_EQUAL(services.stratum_v2.hosts.size(), 1u);
+    BC_REQUIRE_EQUAL(services.stratum_v2.origins.size(), 1u);
+    BC_REQUIRE(services.stratum_v2.allow_opaque_origin);
+}
+
 BC_AUTO_TEST_CASE(parser__parse__portable_mainnet__mainnet_ports)
 {
     require_portable("mainnet", 8333, 8280, 8780);

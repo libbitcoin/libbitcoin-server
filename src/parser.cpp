@@ -209,6 +209,7 @@ void parser::select_paths() NOEXCEPT
     secured(configured.server.sparrow);
     secured(configured.server.esplora);
     secured(configured.server.stratum_v1);
+    secured(configured.server.stratum_v2);
 
 #if defined (HAVE_WINDOWS)
     relative(configured.log.symbols_path);
@@ -2016,6 +2017,21 @@ options_metadata parser::load_settings() THROWS
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
     )
     (
+        "electrum.host",
+        setting<network::config::endpoints>(&configured.server.electrum.hosts),
+        "The host name (http verification), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "electrum.origin",
+        setting<network::config::endpoints>(&configured.server.electrum.origins),
+        "The allowed origin (see CORS), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "electrum.allow_opaque_origin",
+        setting<bool>(&configured.server.electrum.allow_opaque_origin),
+        "Allow requests from opaque origin (see CORS), defaults to {}."
+    )
+    (
         "electrum.compression",
         setting<bool>(&configured.server.electrum.compression),
         "Compress http response bodies as accepted by the request (gzip, deflate), defaults to {}."
@@ -2176,6 +2192,21 @@ options_metadata parser::load_settings() THROWS
         "sparrow.credential",
         secret<network::config::credentials>(&configured.server.sparrow.credentials),
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
+    )
+    (
+        "sparrow.host",
+        setting<network::config::endpoints>(&configured.server.sparrow.hosts),
+        "The host name (http verification), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "sparrow.origin",
+        setting<network::config::endpoints>(&configured.server.sparrow.origins),
+        "The allowed origin (see CORS), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "sparrow.allow_opaque_origin",
+        setting<bool>(&configured.server.sparrow.allow_opaque_origin),
+        "Allow requests from opaque origin (see CORS), defaults to {}."
     )
     (
         "sparrow.compression",
@@ -2460,6 +2491,21 @@ options_metadata parser::load_settings() THROWS
         "The 'username:password' authorization (not secure), multiple allowed."
     )
     (
+        "stratum_v1.host",
+        setting<network::config::endpoints>(&configured.server.stratum_v1.hosts),
+        "The host name (http verification), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "stratum_v1.origin",
+        setting<network::config::endpoints>(&configured.server.stratum_v1.origins),
+        "The allowed origin (see CORS), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "stratum_v1.allow_opaque_origin",
+        setting<bool>(&configured.server.stratum_v1.allow_opaque_origin),
+        "Allow requests from opaque origin (see CORS), defaults to {}."
+    )
+    (
         "stratum_v1.compression",
         setting<bool>(&configured.server.stratum_v1.compression),
         "Compress http response bodies as accepted by the request (gzip, deflate), defaults to {}."
@@ -2559,7 +2605,27 @@ options_metadata parser::load_settings() THROWS
     (
         "stratum_v2.safe",
         setting<network::config::authorities>(&configured.server.stratum_v2.safes),
-        "IP address to Noise bind, multiple allowed, defaults to {} (disabled)."
+        "IP address to secure bind (tls and/or Noise, detected), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "stratum_v2.cert_auth",
+        setting<config::path>(&configured.server.stratum_v2.cert_auth),
+        "The trusted client certificate directory (*.PEM), enables client authentication."
+    )
+    (
+        "stratum_v2.cert_path",
+        setting<config::path>(&configured.server.stratum_v2.cert_path),
+        "The path to the server certificate file (.PEM), defaults to {}."
+    )
+    (
+        "stratum_v2.key_path",
+        setting<config::path>(&configured.server.stratum_v2.key_path),
+        "The path to the server private key file (.PEM), defaults to {}."
+    )
+    (
+        "stratum_v2.key_pass",
+        secret<std::string>(&configured.server.stratum_v2.key_pass),
+        "The password to decrypt the server private key file (.PEM), optional."
     )
     (
         "stratum_v2.advertise",
@@ -2570,6 +2636,21 @@ options_metadata parser::load_settings() THROWS
         "stratum_v2.credential",
         secret<network::config::credentials>(&configured.server.stratum_v2.credentials),
         "The 'username:password' authorization (not secure), multiple allowed."
+    )
+    (
+        "stratum_v2.host",
+        setting<network::config::endpoints>(&configured.server.stratum_v2.hosts),
+        "The host name (http verification), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "stratum_v2.origin",
+        setting<network::config::endpoints>(&configured.server.stratum_v2.origins),
+        "The allowed origin (see CORS), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "stratum_v2.allow_opaque_origin",
+        setting<bool>(&configured.server.stratum_v2.allow_opaque_origin),
+        "Allow requests from opaque origin (see CORS), defaults to {}."
     )
     (
         "stratum_v2.compression",

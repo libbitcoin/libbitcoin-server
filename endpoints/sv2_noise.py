@@ -187,7 +187,8 @@ class Initiator(Handshake):
         self.log('es')
         certificate = self.decrypt_and_hash(message[144:234])
         self.log('message2')
-        if not verify_certificate(certificate, rs, self.authority, now):
+        if self.authority is not None and not verify_certificate(
+                certificate, rs, self.authority, now):
             raise ValueError('certificate')
         self.server_ellswift = rs
         self.certificate = certificate
@@ -269,3 +270,17 @@ def base58(data):
 def authority_key(authority_xonly):
     payload = b'\x01\x00' + authority_xonly
     return base58(payload + sha256(sha256(payload))[:4])
+
+
+def authority_xonly(key):
+    """The x-only key of a published authority key (ValueError if malformed)."""
+    value = 0
+    for char in key:
+        value = value * 58 + BASE58.index(char)
+    data = value.to_bytes((value.bit_length() + 7) // 8, 'big')
+    data = b'\x00' * (len(key) - len(key.lstrip('1'))) + data
+    payload, checksum = data[:-4], data[-4:]
+    if (len(payload) != 34 or payload[:2] != b'\x01\x00' or
+            sha256(sha256(payload))[:4] != checksum):
+        raise ValueError('authority key')
+    return payload[2:]

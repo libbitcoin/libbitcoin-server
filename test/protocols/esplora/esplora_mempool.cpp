@@ -98,9 +98,9 @@ BC_AUTO_TEST_CASE(esplora__get__non_origin_form__bad_request)
     BC_REQUIRE_EQUAL(get_status("blocks/tip/height"), http::status::bad_request);
 }
 
-BC_AUTO_TEST_CASE(esplora__get__opaque_origin__forbidden)
+BC_AUTO_TEST_CASE(esplora__get__opaque_origin__ok)
 {
-    BC_REQUIRE_EQUAL(get_status("/blocks/tip/height", http::field::origin, "null"), http::status::forbidden);
+    BC_REQUIRE_EQUAL(get_status("/blocks/tip/height", http::field::origin, "null"), http::status::ok);
 }
 
 BC_AUTO_TEST_CASE(esplora__get__origin__access_control)
@@ -121,9 +121,9 @@ BC_AUTO_TEST_CASE(esplora__post__non_origin_form__bad_request)
     BC_REQUIRE_EQUAL(post_status("tx", "00"), http::status::bad_request);
 }
 
-BC_AUTO_TEST_CASE(esplora__post__opaque_origin__forbidden)
+BC_AUTO_TEST_CASE(esplora__post__opaque_origin__bad_request)
 {
-    BC_REQUIRE_EQUAL(post_status("/tx", "00", http::field::origin, "null"), http::status::forbidden);
+    BC_REQUIRE_EQUAL(post_status("/tx", "00", http::field::origin, "null"), http::status::bad_request);
 }
 
 BC_AUTO_TEST_CASE(esplora__post__empty_host__bad_request)

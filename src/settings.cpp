@@ -446,7 +446,8 @@ code settings::stratum_v2_server::initialize_noise() NOEXCEPT
     const auto certified = !issued.empty();
     const auto verified = !authority_key.empty();
     if (secret.empty())
-        return authorized || certified || verified || !safes.empty() ?
+        return authorized || certified || verified ||
+            (!safes.empty() && !tls_secured()) ?
             network::error::invalid_configuration : network::error::success;
 
     if (noise)
@@ -479,17 +480,26 @@ code settings::stratum_v2_server::initialize_noise() NOEXCEPT
 
 bool settings::stratum_v2_server::tls_secured() const NOEXCEPT
 {
-    return false;
+    return !cert_path.empty() || !key_path.empty();
 }
 
 bool settings::stratum_v2_server::secure() const NOEXCEPT
 {
-    return !safes.empty() && noise;
+    return network::settings::tls_server::secure() ||
+        (!safes.empty() && noise);
 }
 
 network::settings::transport
 settings::stratum_v2_server::secure_context() const NOEXCEPT
 {
+    const auto tls = network::settings::tls_server::secure();
+    if (tls && noise)
+        return network::settings::tls_noise{ std::cref(*context),
+            std::cref(*noise) };
+
+    if (tls)
+        return network::settings::tls_server::secure_context();
+
     BC_ASSERT(noise);
     return std::cref(*noise);
 }

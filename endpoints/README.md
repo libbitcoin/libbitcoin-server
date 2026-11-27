@@ -19,7 +19,7 @@ Integration tests for the client-server interfaces of libbitcoin-server
 | **Transports** | TCP downgrade, HTTP POST, websocket | `test_transports.py` | 6 |
 | **Stratum v1** | TCP/HTTP/websocket + JSON-RPC 1.0 | `test_stratum_v1.py` | 45 |
 | **Robustness** (all services) | raw TCP/HTTP/websocket, misbehaving clients | `test_robustness_*.py`, `test_longrun.py` | 145 |
-| **Stratum v2** | websocket + binary frames | `test_stratum_v2.py` | 37 |
+| **Stratum v2** | websocket or Noise tcp + binary frames | `test_stratum_v2.py` | 39 |
 | **Stratum v2 Noise** (no server) | fixed-key handshake and transport vectors | `test_sv2_noise.py` | 13 |
 
 Test counts are test functions; parametrized cases run more (about 2,150 in
@@ -140,6 +140,8 @@ All options have localhost defaults.
 | `--stratum-v2-host`, `--stratum-v2-port` | localhost, 8980 | Stratum v2 (websocket) |
 | `--stratum-v2-user` | worker | the user identity: an address (`<address>[.<rig>]`) unless the server configures `payout_address` |
 | `--stratum-v2-password` | none | the stratum credential password, when `[stratum_v2] credential` is configured (its user is the identity account) |
+| `--stratum-v2-transport` | ws | `ws` (a `[stratum_v2] bind`) or `noise` (tcp to a `[stratum_v2] safe` with Noise configured) |
+| `--stratum-v2-authority` | none | the Noise authority public key (base58check) the server certificate must verify against |
 | `--timeout` | 30 | request timeout in seconds |
 | `--subscription-timeout` | 60 | seconds to wait for a notification |
 | `--scan-timeout` | 1800 | seconds for whole-set scans (`gettxoutsetinfo`, `scantxoutset`) |
@@ -472,6 +474,22 @@ minimum_difficulty = 0.00001  # shares reachable in python
 
 ```bash
 pytest test_stratum_v2.py --stratum-v2-port=18980 --native-port=19181 \
+  --stratum-v2-user=bcrt1qyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zs4w3j0
+```
+
+The same suite runs over Noise tcp against a secured bind, as an SRI miner
+connects. Generate the keys with bx (`noise-new`, `noise-public`) and add:
+
+```ini
+[stratum_v2]
+safe = 127.0.0.1:18943
+noise_secret = <base58check secret>
+noise_authority = <base58check authority secret>  # or noise_certificate
+```
+
+```bash
+pytest test_stratum_v2.py --stratum-v2-transport=noise --stratum-v2-port=18943 \
+  --native-port=19181 --stratum-v2-authority=<authority public key> \
   --stratum-v2-user=bcrt1qyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zs4w3j0
 ```
 

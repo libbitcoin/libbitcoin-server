@@ -2,9 +2,12 @@
 Tests for libbitcoin-server Stratum v2 mining interface.
 
 Tests the Stratum v2 mining protocol over websocket, one binary frame to each
-websocket message (no Noise): connection setup, standard and extended mining
-channels, jobs and their previous blocks, targets, channel updates and
-closes, and share submission.
+websocket message (no Noise), or over tcp secured by Noise
+(--stratum-v2-transport=noise against a [stratum_v2] safe, frames streamed):
+connection setup, standard and extended mining channels, jobs and their
+previous blocks, targets, channel updates and closes, and share submission.
+With --stratum-v2-authority the server certificate is verified against that
+authority key.
 
 A channel pays the address of its user identity, up to any dot, unless the
 server configures [stratum_v2] payout_address, in which case any identity
@@ -21,18 +24,23 @@ Run with:
     pytest test_stratum_v2.py
     pytest test_stratum_v2.py --stratum-v2-host=localhost --stratum-v2-port=8980
     pytest test_stratum_v2.py --stratum-v2-user=bc1q...
+    pytest test_stratum_v2.py --stratum-v2-transport=noise --stratum-v2-port=8943
 """
 
 from __future__ import annotations
 
 import base64
 import hashlib
+import os
+import socket
 import struct
 import time
 
 import pytest
 import requests
 import websocket
+
+import sv2_noise
 
 # Message types (mining protocol).
 SETUP_CONNECTION = 0x00
@@ -274,12 +282,54 @@ def submit_extended(channel_id: int, sequence: int, job_id: int, nonce: int,
 
 # ─── Client ──────────────────────────────────────────────────────────────────
 
-class Sv2Client:
+class NoiseTransport:
+    """Tcp secured by Noise NX as initiator, sv2 frames sealed and streamed."""
+
+    def __init__(self, config: dict):
+        self.sock = socket.create_connection((config["host"], config["port"]),
+                                             timeout=config["timeout"])
+        authority = (sv2_noise.authority_xonly(config["authority"])
+                     if config["authority"] else None)
+        secret = os.urandom(32)
+        ephemeral = sv2_noise.ellswift_encode(secret, os.urandom(32))
+        initiator = sv2_noise.Initiator(secret, ephemeral, authority)
+        self.sock.sendall(initiator.step_0())
+        self.send_cipher, self.receive_cipher = initiator.step_2(
+            self.exactly(234), int(time.time()))
+
+    def exactly(self, size: int) -> bytes:
+        data = b""
+        while len(data) < size:
+            chunk = self.sock.recv(size - len(data))
+            if not chunk:
+                raise ConnectionError("server closed the connection")
+            data += chunk
+        return data
+
+    def close(self):
+        self.sock.close()
+
+    def send(self, data: bytes):
+        extension = int.from_bytes(data[0:2], "little")
+        self.sock.sendall(sv2_noise.encrypt_frame(self.send_cipher, extension,
+                                                  data[2], data[6:]))
+
+    def receive(self) -> bytes:
+        sealed = self.exactly(sv2_noise.HEADER_LEN + sv2_noise.MAC_LEN)
+        heading = self.receive_cipher.decrypt_with_ad(b"", sealed)
+        length = int.from_bytes(heading[3:6], "little")
+        body = self.exactly(sv2_noise.ciphertext_length(length))
+        payload = b""
+        for start in range(0, len(body), sv2_noise.MAX_CT_LEN):
+            payload += self.receive_cipher.decrypt_with_ad(
+                b"", body[start:start + sv2_noise.MAX_CT_LEN])
+        return heading + payload
+
+
+class WebsocketTransport:
     """One websocket, a frame to each binary message."""
 
-    def __init__(self, config: dict, user: str | None = None,
-                 password: str | None = None):
-        self.timeout = config["timeout"]
+    def __init__(self, config: dict, user: str | None, password: str | None):
         url = f"ws://{config['host']}:{config['port']}/"
         header = []
         secret = config["password"] if password is None else password
@@ -288,7 +338,7 @@ class Sv2Client:
             token = base64.b64encode(f"{account}:{secret}".encode()).decode()
             header.append(f"Authorization: Basic {token}")
         self.ws = websocket.create_connection(url, header=header,
-                                              timeout=self.timeout)
+                                              timeout=config["timeout"])
 
     def close(self):
         self.ws.close()
@@ -296,11 +346,33 @@ class Sv2Client:
     def send(self, data: bytes):
         self.ws.send_binary(data)
 
-    def receive(self) -> dict:
+    def receive(self) -> bytes:
         opcode, data = self.ws.recv_data()
         if opcode == websocket.ABNF.OPCODE_CLOSE:
             raise ConnectionError("server closed the connection")
         assert opcode == websocket.ABNF.OPCODE_BINARY, "not a binary message"
+        return data
+
+
+class Sv2Client:
+    """One connection over the configured transport, a frame at a time."""
+
+    def __init__(self, config: dict, user: str | None = None,
+                 password: str | None = None):
+        self.timeout = config["timeout"]
+        if config["transport"] == "noise":
+            self.transport = NoiseTransport(config)
+        else:
+            self.transport = WebsocketTransport(config, user, password)
+
+    def close(self):
+        self.transport.close()
+
+    def send(self, data: bytes):
+        self.transport.send(data)
+
+    def receive(self) -> dict:
+        data = self.transport.receive()
         extension, message_type, reader = unframe(data)
         message = parse(message_type, reader)
         channel = message_type in _CHANNEL_MESSAGES
@@ -324,7 +396,8 @@ class Sv2Client:
         """The server closes the connection (no message follows)."""
         try:
             self.receive()
-        except (ConnectionError, websocket.WebSocketException, OSError):
+        except (ConnectionError, websocket.WebSocketException, OSError,
+                sv2_noise.DecryptFailed):
             return True
         return False
 
@@ -336,6 +409,11 @@ def _connect(config: dict, **kwargs) -> Sv2Client:
         return Sv2Client(config, **kwargs)
     except (OSError, websocket.WebSocketException) as exc:
         pytest.skip(f"Cannot connect to Stratum v2 server: {exc}")
+
+
+def _websocket_only(config: dict):
+    if config["transport"] != "ws":
+        pytest.skip("websocket transport only")
 
 
 @pytest.fixture
@@ -559,7 +637,8 @@ def test_mining_before_setup_dropped(client: Sv2Client,
 
 
 def test_get_without_upgrade(stratum_v2_config: dict):
-    url = f"http://{stratum_v2_config['host']}:{stratum_v2_config['port']}/"
+    _websocket_only(stratum_v2_config)
+    url =f"http://{stratum_v2_config['host']}:{stratum_v2_config['port']}/"
     try:
         response = requests.get(url, timeout=stratum_v2_config["timeout"])
     except requests.exceptions.ConnectionError as exc:
@@ -825,8 +904,33 @@ def test_close_channel_refuses_shares(extended: "Miner"):
 # ─── Credentials ─────────────────────────────────────────────────────────────
 
 def test_upgrade_wrong_password_refused(stratum_v2_config: dict):
+    _websocket_only(stratum_v2_config)
     if not stratum_v2_config["password"]:
         pytest.skip("no credential configured (--stratum-v2-password)")
     with pytest.raises(websocket.WebSocketException):
         Sv2Client(stratum_v2_config,
                   password=stratum_v2_config["password"] + "x")
+
+
+def test_noise_with_credential_dropped(stratum_v2_config: dict):
+    """Tcp carries no credential, so a service that authorizes drops it."""
+    if stratum_v2_config["transport"] != "noise":
+        pytest.skip("noise transport only")
+    if not stratum_v2_config["password"]:
+        pytest.skip("no credential configured (--stratum-v2-password)")
+    client = _connect(stratum_v2_config)
+    client.send(setup_connection())
+    assert client.dropped()
+    client.close()
+
+
+# ─── Noise ───────────────────────────────────────────────────────────────────
+
+def test_noise_other_authority_refused(stratum_v2_config: dict):
+    """The server certificate does not verify against another authority."""
+    if stratum_v2_config["transport"] != "noise":
+        pytest.skip("noise transport only")
+    other = sv2_noise.xonly_of_secret((1).to_bytes(32, "big"))
+    config = dict(stratum_v2_config, authority=sv2_noise.authority_key(other))
+    with pytest.raises(ValueError):
+        Sv2Client(config)

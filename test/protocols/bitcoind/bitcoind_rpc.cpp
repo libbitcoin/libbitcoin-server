@@ -4238,16 +4238,16 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__addnode__add__null)
     BC_REQUIRE(response.at("result").is_null());
 }
 
-// origin policy (opaque origins are disallowed by default)
+// origin policy (no origins configured)
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__options__opaque_origin__forbidden)
+BC_AUTO_TEST_CASE(bitcoind_rpc__options__opaque_origin__ok)
 {
-    BC_REQUIRE_EQUAL(options_origin_status("/", "null"), status::forbidden);
+    BC_REQUIRE_EQUAL(options_origin_status("/", "null"), status::ok);
 }
 
-BC_AUTO_TEST_CASE(bitcoind_rpc__post__opaque_origin__forbidden)
+BC_AUTO_TEST_CASE(bitcoind_rpc__post__opaque_origin__ok)
 {
-    BC_REQUIRE_EQUAL(rpc_origin_status("getblockcount", "null"), status::forbidden);
+    BC_REQUIRE_EQUAL(rpc_origin_status("getblockcount", "null"), status::ok);
 }
 
 BC_AUTO_TEST_SUITE_END()
