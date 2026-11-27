@@ -2668,6 +2668,26 @@ options_metadata parser::load_settings() THROWS
         "The mining channels open on a connection, defaults to {}."
     )
     (
+        "stratum_v2.noise_secret",
+        secret<wallet::ec_private>(&configured.server.stratum_v2.noise_secret),
+        "The WIF Noise static key, defaults to none (no Noise)."
+    )
+    (
+        "stratum_v2.noise_authority",
+        secret<wallet::ec_private>(&configured.server.stratum_v2.noise_authority),
+        "The WIF Noise authority key that issues certificates, defaults to none."
+    )
+    (
+        "stratum_v2.noise_certificate",
+        setting<config::base16>(&configured.server.stratum_v2.noise_certificate),
+        "The base16 Noise certificate pre-issued by the authority, defaults to none."
+    )
+    (
+        "stratum_v2.noise_validity_days",
+        setting<uint16_t>(&configured.server.stratum_v2.noise_validity_days),
+        "The days either side of issue that an issued certificate is valid, defaults to {}."
+    )
+    (
         "stratum_v2.minimum_difficulty",
         setting<double>(&configured.server.stratum_v2.minimum_difficulty),
         "The share difficulty floor of a channel, defaults to {}."

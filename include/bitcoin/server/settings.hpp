@@ -289,8 +289,11 @@ public:
         using base = mining_server;
         using base::base;
 
-        /// Validate the extranonce sizes.
+        /// Validate the extranonce sizes and initialize the noise context.
         code initialize_context() NOEXCEPT override;
+
+        /// Initialize the noise context (invalid_configuration if malformed).
+        code initialize_noise() NOEXCEPT;
 
         /// Bytes of coinbase extranonce, assigned and rolled.
         size_t coinbase_extranonce_size() const NOEXCEPT override;
@@ -303,6 +306,21 @@ public:
 
         /// Mining channels open on a connection.
         uint32_t maximum_channels{ 1024 };
+
+        /// Noise static key, with which the server is known.
+        system::wallet::ec_private noise_secret{};
+
+        /// Noise authority key, with which certificates are issued.
+        system::wallet::ec_private noise_authority{};
+
+        /// Noise certificate (base16), pre-issued by the authority.
+        system::config::base16 noise_certificate{};
+
+        /// Days either side of issue that an issued certificate is valid.
+        uint16_t noise_validity_days{ 1 };
+
+        /// Noise responder context (initialized if static secret configured).
+        std::unique_ptr<const network::noise::context> noise{};
     };
 
     struct BCS_API esplora_server

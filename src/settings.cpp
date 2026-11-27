@@ -402,7 +402,39 @@ code settings::stratum_v2_server::initialize_context() NOEXCEPT
         coinbase_extranonce_size() > system::hash_size)
         return network::error::invalid_configuration;
 
-    return network::error::success;
+    return initialize_noise();
+}
+
+// Noise requires a static secret and exactly one of authority or certificate.
+code settings::stratum_v2_server::initialize_noise() NOEXCEPT
+{
+    using namespace system;
+    using namespace network;
+    constexpr uint32_t seconds_per_day = 86400;
+    const data_chunk& issued = noise_certificate;
+    const auto authorized = static_cast<bool>(noise_authority);
+    const auto certified = !issued.empty();
+    if (!noise_secret)
+        return authorized || certified ? network::error::invalid_configuration :
+            network::error::success;
+
+    if (noise)
+        return network::error::operation_failed;
+
+    if (authorized == certified ||
+        (certified && issued.size() != noise::cipher::certificate_size))
+        return network::error::invalid_configuration;
+
+    const auto& key = noise_secret.secret();
+    if (authorized)
+        noise = to_unique<noise::context>(key, noise_authority.secret(),
+            ceilinged_multiply<uint32_t>(noise_validity_days, seconds_per_day));
+    else
+        noise = to_unique<noise::context>(key,
+            data_slice{ issued }.to_array<noise::cipher::certificate_size>());
+
+    return noise->valid() ? network::error::success :
+        network::error::invalid_configuration;
 }
 
 size_t settings::stratum_v2_server::coinbase_extranonce_size() const NOEXCEPT

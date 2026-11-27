@@ -377,6 +377,88 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__coinbase_extranonce_size__defaults_
     BC_REQUIRE_EQUAL(instance.coinbase_extranonce_size(), 12u);
 }
 
+static const system::wallet::ec_private noise_secret{ "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn" };
+static const system::wallet::ec_private noise_authority{ "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU74NMTptX4" };
+constexpr system::data_array<74> noise_certificate{};
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_authority_without_secret__invalid_configuration)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.noise_authority = noise_authority;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_certificate_without_secret__invalid_configuration)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.noise_certificate = noise_certificate;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_secret_alone__invalid_configuration)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.noise_secret = noise_secret;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_secret_and_authority__issuing_context)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.noise_secret = noise_secret;
+    instance.noise_authority = noise_authority;
+    const auto ec = instance.initialize_context();
+    BC_REQUIRE(!ec);
+    BC_REQUIRE(instance.noise);
+    BC_REQUIRE(instance.noise->valid());
+    BC_REQUIRE(instance.noise->authority().has_value());
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_validity_days__issued_window)
+{
+    constexpr uint32_t now = 1800000000;
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.noise_secret = noise_secret;
+    instance.noise_authority = noise_authority;
+    instance.noise_validity_days = 2;
+    network::noise::certificate::data out{};
+    const auto ec = instance.initialize_context();
+    const auto issued = instance.noise->issue(out, now);
+    BC_REQUIRE(!ec);
+    BC_REQUIRE(issued);
+    BC_REQUIRE_EQUAL(network::noise::certificate::valid_from(out), now - 172800u);
+    BC_REQUIRE_EQUAL(network::noise::certificate::not_valid_after(out), now + 172800u);
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_secret_and_certificate__pre_issued_context)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.noise_secret = noise_secret;
+    instance.noise_certificate = noise_certificate;
+    const auto ec = instance.initialize_context();
+    BC_REQUIRE(!ec);
+    BC_REQUIRE(instance.noise);
+    BC_REQUIRE(instance.noise->valid());
+    BC_REQUIRE(!instance.noise->authority().has_value());
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_authority_and_certificate__invalid_configuration)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.noise_secret = noise_secret;
+    instance.noise_authority = noise_authority;
+    instance.noise_certificate = noise_certificate;
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_short_certificate__invalid_configuration)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.noise_secret = noise_secret;
+    instance.noise_certificate = system::data_array<73>{};
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
 BC_AUTO_TEST_CASE(server__btcd_server__initialize_context_enable_utxo__no_timeouts)
 {
     server::settings::btcd_server instance{ "btcd" };
@@ -545,6 +627,8 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__defaults__expected)
     BC_REQUIRE_EQUAL(server.minimum_difficulty, 1.0);
     BC_REQUIRE_EQUAL(server.start_difficulty, 0.0);
     BC_REQUIRE_EQUAL(server.share_interval_seconds, 10u);
+    BC_REQUIRE_EQUAL(server.noise_validity_days, 1u);
+    BC_REQUIRE(!server.noise);
 
     // tcp_server
     BC_REQUIRE_EQUAL(server.name, "stratum_v2");
