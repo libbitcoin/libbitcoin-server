@@ -56,5 +56,10 @@ extranonces::prefix session::allocate_prefix(size_t size) const NOEXCEPT
     return node_.allocate_prefix(size);
 }
 
+const miners::ptr& session::mining() const NOEXCEPT
+{
+    return node_.mining();
+}
+
 } // namespace server
 } // namespace libbitcoin

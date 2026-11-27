@@ -51,7 +51,14 @@ void protocol_stratum_v1::start() NOEXCEPT
     SUBSCRIBE_RPC(handle_mining_multi_version, _1, _2, _3);
 
     mining_t::start();
-    add_channel(zero, mining_);
+    add_channel(zero, mining_,
+    {
+        .service = "stratum_v1",
+        .transport = miners::to_transport(false, channel_->websocket(),
+            channel_->secure()),
+        .client = channel_->client(),
+        .workers = channel_->workers()
+    });
     start_jobs();
 }
 
@@ -95,6 +102,7 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
     const auto job = mining_->find(id);
     if (!job)
     {
+        reject_share(*mining_, "job_not_found");
         send_code(job_not_found);
         return;
     }

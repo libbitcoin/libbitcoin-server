@@ -161,12 +161,13 @@ void protocol_stratum_v1_handshake::handle_unclaimed(
 
 // Miners may send the connected host and port, which are not used.
 void protocol_stratum_v1_handshake::handle_mining_subscribe(const code& ec,
-    rpc_interface::mining_subscribe, const std::string&,
+    rpc_interface::mining_subscribe, const std::string& user_agent,
     const std::string&, const std::string&, const value_t&) NOEXCEPT
 {
     if (stopped(ec))
         return;
 
+    channel_->set_client(user_agent);
     channel_->set_subscribed();
     const auto id = encode_base16(to_big_endian(channel_->identifier()));
     send_result(array_t

@@ -44,6 +44,21 @@ public:
         network::tracker<channel_stratum_v2>(log)
     {
     }
+
+    /// The vendor and firmware of the miner (requires strand).
+    inline void set_client(const std::string& client) NOEXCEPT
+    {
+        client_ = client;
+    }
+
+    inline const std::string& client() const NOEXCEPT
+    {
+        return client_;
+    }
+
+private:
+    // This is protected by strand.
+    std::string client_{};
 };
 
 } // namespace server

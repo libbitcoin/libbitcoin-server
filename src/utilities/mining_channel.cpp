@@ -33,6 +33,16 @@ mining_channel::mining_channel(const extranonces::prefix& prefix,
     BC_ASSERT(prefix_);
 }
 
+const std::string& mining_channel::device() const NOEXCEPT
+{
+    return device_;
+}
+
+void mining_channel::set_device(const std::string& id) NOEXCEPT
+{
+    device_ = id;
+}
+
 const data_chunk& mining_channel::extranonce() const NOEXCEPT
 {
     return *prefix_;

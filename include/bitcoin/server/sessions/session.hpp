@@ -73,6 +73,9 @@ public:
     /// A coinbase extranonce prefix not overlapping one in use.
     extranonces::prefix allocate_prefix(size_t size) const NOEXCEPT;
 
+    /// The mining channels of the stratum services.
+    const miners::ptr& mining() const NOEXCEPT;
+
 private:
     // These are thread safe.
     const configuration& config_;

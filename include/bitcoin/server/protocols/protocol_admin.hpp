@@ -45,7 +45,8 @@ public:
         const options_t& options) NOEXCEPT
       : protocol_native(session, channel, options),
         network::tracker<protocol_admin>(session->log),
-        log_interest_(system::emplace_shared<interest_t>(session->log))
+        log_interest_(system::emplace_shared<interest_t>(session->log)),
+        mining_timer_(make_timer())
     {
     }
 
@@ -82,6 +83,10 @@ protected:
     void handle_get_event_subscribe(const code& ec,
         admin_interface::event_subscribe, uint8_t version,
         uint64_t filter) NOEXCEPT;
+    void handle_get_mining(const code& ec,
+        admin_interface::mining, uint8_t version) NOEXCEPT;
+    void handle_get_mining_subscribe(const code& ec,
+        admin_interface::mining_subscribe, uint8_t version) NOEXCEPT;
 
 protected:
     /// Notification event handlers (protocol strand).
@@ -89,10 +94,17 @@ protected:
     void do_event(uint8_t event_, uint64_t zulu, uint64_t value) NOEXCEPT;
     void do_log(uint8_t level, uint64_t zulu,
         const std::string& message) NOEXCEPT;
+    void do_mining(const code& ec) NOEXCEPT;
 
 private:
     using filter_t = std::atomic<uint64_t>;
     using interest_t = network::logger::interest;
+
+    // Seconds between checks for opened or closed mining channels.
+    static constexpr size_t mining_check_seconds = 1;
+
+    // Checks between mining snapshots without an opened or closed channel.
+    static constexpr size_t mining_snapshot_checks = 5;
 
     // Utils.
     static uint64_t to_zulu(const network::logger::time& point) NOEXCEPT;
@@ -100,14 +112,20 @@ private:
         filter_t& filter) NOEXCEPT;
     static bool update_filter(uint64_t& prior, uint64_t value,
         filter_t& filter) NOEXCEPT;
+    system::json::value mining_snapshot() const NOEXCEPT;
+    void start_mining() NOEXCEPT;
 
     // These are thread safe.
     const interest_t::ptr log_interest_;
+    const network::deadline::ptr mining_timer_;
     filter_t event_state_{};
 
     // These are protected by strand.
     admin_dispatcher admin_dispatcher_{};
     bool log_subscribed_{};
+    bool mining_subscribed_{};
+    uint64_t mining_generation_{};
+    size_t mining_checks_{};
 };
 
 } // namespace server

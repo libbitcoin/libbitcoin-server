@@ -207,7 +207,14 @@ void protocol_stratum_v2::open_channel(uint32_t request_id,
     channel->set_floor(floor);
     channel->set_payout(payout);
     channel->set_notified(difficulty);
-    add_channel(id, channel);
+    add_channel(id, channel,
+    {
+        .service = "stratum_v2",
+        .transport = miners::to_transport(channel_->noised(),
+            channel_->websocket(), channel_->secure()),
+        .client = channel_->client(),
+        .workers = { identity }
+    });
     authorize_timer_->stop();
 
     const auto target = to_target_hash(difficulty);
@@ -318,8 +325,9 @@ void protocol_stratum_v2::submit_share(const share& share,
     const auto job = channel->find(share.job_id);
     if (!job)
     {
-        share_failed(share, channel->issued(share.job_id) ? "stale-share" :
-            "invalid-job-id");
+        const auto stale = channel->issued(share.job_id);
+        reject_share(*channel, stale ? "stale" : "job_not_found");
+        share_failed(share, stale ? "stale-share" : "invalid-job-id");
         return;
     }
 

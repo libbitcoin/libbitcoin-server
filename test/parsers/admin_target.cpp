@@ -160,6 +160,42 @@ BC_AUTO_TEST_CASE(parsers__admin_target__event_subscribe_extra_segment__extra_se
     BC_REQUIRE_EQUAL(admin_target(out, "/v3/event/subscribe/extra"), server::error::extra_segment);
 }
 
+// mining
+
+BC_AUTO_TEST_CASE(parsers__admin_target__mining_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!admin_target(request, "/v42/mining"));
+    BC_REQUIRE_EQUAL(request.method, "mining");
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 1u);
+    BC_REQUIRE_EQUAL(std::get<uint8_t>(object.at("version").value()), 42u);
+}
+
+BC_AUTO_TEST_CASE(parsers__admin_target__mining_subscribe_valid__expected)
+{
+    request_t request{};
+    BC_REQUIRE(!admin_target(request, "/v42/mining/subscribe"));
+    BC_REQUIRE_EQUAL(request.method, "mining_subscribe");
+
+    const auto& object = std::get<object_t>(request.params.value());
+    BC_REQUIRE_EQUAL(object.size(), 1u);
+    BC_REQUIRE_EQUAL(std::get<uint8_t>(object.at("version").value()), 42u);
+}
+
+BC_AUTO_TEST_CASE(parsers__admin_target__mining_invalid_subcomponent__invalid_subcomponent)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(admin_target(out, "/v3/mining/invalid"), server::error::invalid_subcomponent);
+}
+
+BC_AUTO_TEST_CASE(parsers__admin_target__mining_subscribe_extra_segment__extra_segment)
+{
+    request_t out{};
+    BC_REQUIRE_EQUAL(admin_target(out, "/v3/mining/subscribe/extra"), server::error::extra_segment);
+}
+
 // Cross-interface targets (native grammar is not admin grammar).
 
 BC_AUTO_TEST_CASE(parsers__admin_target__native_target__invalid_target)

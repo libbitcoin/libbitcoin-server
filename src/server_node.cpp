@@ -37,7 +37,8 @@ server_node::server_node(query& query, const configuration& configuration,
     const logger& log) NOEXCEPT
   : full_node(query, configuration, log),
     config_(configuration),
-    extranonces_(emplace_shared<extranonces>())
+    extranonces_(emplace_shared<extranonces>()),
+    miners_(emplace_shared<miners>())
 {
 }
 
@@ -51,6 +52,11 @@ server_node::~server_node() NOEXCEPT
 extranonces::prefix server_node::allocate_prefix(size_t size) NOEXCEPT
 {
     return extranonces_->allocate(size);
+}
+
+const miners::ptr& server_node::mining() const NOEXCEPT
+{
+    return miners_;
 }
 
 const configuration& server_node::server_config() const NOEXCEPT

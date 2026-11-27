@@ -168,6 +168,7 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\utilities\extranonces.cpp" />
     <ClCompile Include="..\..\..\..\test\utilities\merkle.cpp" />
+    <ClCompile Include="..\..\..\..\test\utilities\miners.cpp" />
     <ClCompile Include="..\..\..\..\test\utilities\mining_channel.cpp" />
     <ClCompile Include="..\..\..\..\test\utilities\stratum_v1.cpp">
       <ObjectFileName>$(IntDir)test_utilities_stratum_v1.obj</ObjectFileName>
