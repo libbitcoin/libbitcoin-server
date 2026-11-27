@@ -105,8 +105,16 @@ private:
         {
         }
 
+        inline void set_max_target(const system::hash_digest& target) NOEXCEPT
+        {
+            max_target = target;
+            set_floor(to_hash_difficulty(target));
+        }
+
         const uint32_t id;
         const bool standard;
+        system::hash_digest max_target{};
+        system::hash_digest notified_target{};
     };
 
     // A share of a channel, the extranonce empty for a standard channel.

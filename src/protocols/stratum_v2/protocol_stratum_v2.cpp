@@ -42,6 +42,13 @@ static uint64_t to_shares_sum(double difficulty) NOEXCEPT
         static_cast<uint64_t>(difficulty);
 }
 
+// Target of floor difficulty may exceed maximum.
+static hash_digest to_bounded_target(double difficulty,
+    const hash_digest& maximum) NOEXCEPT
+{
+    return from_uintx(std::min(to_share_target(difficulty), to_uintx(maximum)));
+}
+
 // Start.
 // ----------------------------------------------------------------------------
 
@@ -117,7 +124,8 @@ bool protocol_stratum_v2::handle_receive_open_extended_mining_channel(
     return true;
 }
 
-// The maximum target of the miner floors the channel difficulty.
+// The maximum target of the miner floors the channel difficulty and bounds
+// its target.
 bool protocol_stratum_v2::handle_receive_update_channel(const code& ec,
     const update_channel::cptr& message) NOEXCEPT
 {
@@ -147,8 +155,15 @@ bool protocol_stratum_v2::handle_receive_update_channel(const code& ec,
     const auto difficulty = automatic && rate > 0.0 ? rate :
         channel->difficulty();
 
-    channel->set_floor(to_hash_difficulty(message->max_target));
+    channel->set_max_target(message->max_target);
     suggest(*channel, difficulty);
+
+    // Maximum may lower target at unchanged difficulty.
+    const auto bounded = to_bounded_target(channel->difficulty(),
+        channel->max_target);
+    if (bounded != channel->notified_target)
+        refresh(*channel);
+
     return true;
 }
 
@@ -204,9 +219,8 @@ void protocol_stratum_v2::open_channel(uint32_t request_id,
     const auto channel = emplace_shared<channel_state>(prefix, difficulty, id,
         standard);
 
-    channel->set_floor(floor);
+    channel->set_max_target(max_target);
     channel->set_payout(payout);
-    channel->set_notified(difficulty);
     add_channel(id, channel,
     {
         .service = "stratum_v2",
@@ -217,7 +231,8 @@ void protocol_stratum_v2::open_channel(uint32_t request_id,
     });
     authorize_timer_->stop();
 
-    const auto target = to_target_hash(difficulty);
+    const auto target = to_bounded_target(difficulty, max_target);
+    channel->notified_target = target;
     if (standard)
     {
         const open_standard_mining_channel_success success
@@ -431,12 +446,12 @@ void protocol_stratum_v2::send_job(mining_channel& channel,
     const job::cptr& job, bool clean) NOEXCEPT
 {
     BC_ASSERT(stranded());
-    const auto& state = static_cast<const channel_state&>(channel);
-    const auto difficulty = job->difficulty;
-    if (difficulty != channel.notified())
+    auto& state = static_cast<channel_state&>(channel);
+    const auto bounded = to_bounded_target(job->difficulty, state.max_target);
+    if (bounded != state.notified_target)
     {
-        channel.set_notified(difficulty);
-        const set_target target{ state.id, to_target_hash(difficulty) };
+        state.notified_target = bounded;
+        const set_target target{ state.id, bounded };
         SEND(target, handle_send, _1);
     }
 

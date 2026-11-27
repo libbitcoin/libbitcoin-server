@@ -112,6 +112,9 @@ protected:
     /// Set the difficulty of the channel, at or above its floor.
     void suggest(mining_channel& channel, double difficulty) NOEXCEPT;
 
+    /// Issue the current job again at channel difficulty and a later time.
+    void refresh(mining_channel& channel) NOEXCEPT;
+
     /// Chase events (template replacement and submitted block completion).
     bool handle_chase(const code& ec,
         node::event_value value) NOEXCEPT override;
@@ -138,7 +141,6 @@ private:
     void do_template(const code& ec,
         const node::block_template::cptr& held) NOEXCEPT;
     double floor(const mining_channel& channel) const NOEXCEPT;
-    void refresh(mining_channel& channel) NOEXCEPT;
     void retarget(mining_channel& channel) NOEXCEPT;
     void start_decay() NOEXCEPT;
     void handle_decay(const code& ec) NOEXCEPT;
