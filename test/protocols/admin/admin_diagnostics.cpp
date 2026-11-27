@@ -122,9 +122,9 @@ BC_AUTO_TEST_CASE(admin__dispatch__invalid_subcomponent__bad_request)
     BC_REQUIRE(get_status("/v1/log/bogus") == status::bad_request);
 }
 
-BC_AUTO_TEST_CASE(admin__dispatch__html__bad_request)
+BC_AUTO_TEST_CASE(admin__dispatch__html__not_implemented)
 {
-    BC_REQUIRE(get_status("/v1/log/subscribe?filter=1&format=html") == status::bad_request);
+    BC_REQUIRE(get_status("/v1/log/subscribe?filter=1&format=html") == status::not_implemented);
 }
 
 // native (http)

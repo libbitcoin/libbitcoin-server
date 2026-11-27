@@ -419,9 +419,9 @@ BC_AUTO_TEST_CASE(native__dispatch__invalid_target__bad_request)
     BC_REQUIRE_EQUAL(get_status("/v1/bogus"), http::status::bad_request);
 }
 
-BC_AUTO_TEST_CASE(native__dispatch__html__bad_request)
+BC_AUTO_TEST_CASE(native__dispatch__html__not_implemented)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/top?format=html"), http::status::bad_request);
+    BC_REQUIRE_EQUAL(get_status("/v1/top?format=html"), http::status::not_implemented);
 }
 
 BC_AUTO_TEST_CASE(native__ws_dispatch__html__not_acceptable)
@@ -1273,6 +1273,21 @@ BC_AUTO_TEST_CASE(native__file__root__default_page)
 BC_AUTO_TEST_CASE(native__file__extensionless__default_page)
 {
     BC_REQUIRE_EQUAL(get_text("/some/route"), "<p>index</p>");
+}
+
+BC_AUTO_TEST_CASE(native__file__trailing_slash__default_page)
+{
+    BC_REQUIRE_EQUAL(get_text("/some/route/"), "<p>index</p>");
+}
+
+BC_AUTO_TEST_CASE(native__file__unsafe_extensionless__default_page)
+{
+    BC_REQUIRE_EQUAL(get_text("/some/ro~ute"), "<p>index</p>");
+}
+
+BC_AUTO_TEST_CASE(native__file__unsafe_named__bad_request)
+{
+    BC_REQUIRE_EQUAL(get_status("/some/../page.css"), http::status::bad_request);
 }
 
 BC_AUTO_TEST_CASE(native__file__named__expected)
