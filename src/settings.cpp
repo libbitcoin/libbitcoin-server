@@ -446,7 +446,7 @@ code settings::stratum_v2_server::initialize_noise() NOEXCEPT
     const auto certified = !issued.empty();
     const auto verified = !authority_key.empty();
     if (secret.empty())
-        return authorized || certified || verified ?
+        return authorized || certified || verified || !safes.empty() ?
             network::error::invalid_configuration : network::error::success;
 
     if (noise)
@@ -475,6 +475,23 @@ code settings::stratum_v2_server::initialize_noise() NOEXCEPT
     }
 
     return network::error::success;
+}
+
+bool settings::stratum_v2_server::tls_secured() const NOEXCEPT
+{
+    return false;
+}
+
+bool settings::stratum_v2_server::secure() const NOEXCEPT
+{
+    return !safes.empty() && noise;
+}
+
+network::settings::transport
+settings::stratum_v2_server::secure_context() const NOEXCEPT
+{
+    BC_ASSERT(noise);
+    return std::cref(*noise);
 }
 
 size_t settings::stratum_v2_server::coinbase_extranonce_size() const NOEXCEPT

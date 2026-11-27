@@ -591,6 +591,37 @@ BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_malformed_author
     BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
 }
 
+BC_AUTO_TEST_CASE(server__stratum_v2_server__initialize_context_safes_without_secret__invalid_configuration)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.safes.emplace_back("127.0.0.1:8943");
+    BC_REQUIRE(instance.initialize_context() == network::error::invalid_configuration);
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__secure__secret_without_safes__false)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.noise_secret = noise_secret();
+    instance.noise_authority = noise_authority();
+    const auto ec = instance.initialize_context();
+    BC_REQUIRE(!ec);
+    BC_REQUIRE(!instance.secure());
+    BC_REQUIRE(!instance.tls_secured());
+}
+
+BC_AUTO_TEST_CASE(server__stratum_v2_server__secure__secret_and_safes__noise_context)
+{
+    server::settings::stratum_v2_server instance{ "stratum_v2" };
+    instance.safes.emplace_back("127.0.0.1:8943");
+    instance.noise_secret = noise_secret();
+    instance.noise_authority = noise_authority();
+    const auto ec = instance.initialize_context();
+    const auto context = instance.secure_context();
+    BC_REQUIRE(!ec);
+    BC_REQUIRE(instance.secure());
+    BC_REQUIRE(std::holds_alternative<std::reference_wrapper<const noise::context>>(context));
+}
+
 BC_AUTO_TEST_CASE(server__btcd_server__initialize_context_enable_utxo__no_timeouts)
 {
     server::settings::btcd_server instance{ "btcd" };
