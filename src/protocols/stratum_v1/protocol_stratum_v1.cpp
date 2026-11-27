@@ -44,34 +44,15 @@ void protocol_stratum_v1::start() NOEXCEPT
     if (started())
         return;
 
-    SUBSCRIBE_RPC(handle_mining_subscribe, _1, _2, _3, _4, _5, _6);
-    SUBSCRIBE_RPC(handle_mining_authorize, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_mining_submit, _1, _2, _3, _4, _5, _6, _7, _8);
-    SUBSCRIBE_RPC(handle_mining_configure, _1, _2, _3, _4);
     SUBSCRIBE_RPC(handle_mining_suggest_difficulty, _1, _2, _3);
     SUBSCRIBE_RPC(handle_mining_suggest_target, _1, _2, _3);
     SUBSCRIBE_RPC(handle_mining_get_transactions, _1, _2, _3);
     SUBSCRIBE_RPC(handle_mining_multi_version, _1, _2, _3);
-    SUBSCRIBE_RPC(handle_mining_extranonce_subscribe, _1, _2);
-
-    if (!is_zero(options_.authorize_timeout_seconds))
-        authorize_timer_->start(BIND(handle_timeout, _1));
 
     mining_t::start();
-    if (!mining_)
-    {
-        stop(network::error::oversubscribed);
-        return;
-    }
-
     add_channel(zero, mining_);
-}
-
-void protocol_stratum_v1::stopping(const code& ec) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    authorize_timer_->stop();
-    mining_t::stopping(ec);
+    start_jobs();
 }
 
 // No attached protocol subscribes the method (terminal responder).
@@ -88,73 +69,6 @@ void protocol_stratum_v1::handle_unclaimed(const request_t&) NOEXCEPT
 // Handlers.
 // ----------------------------------------------------------------------------
 
-// Miners may send the connected host and port, which are not used.
-void protocol_stratum_v1::handle_mining_subscribe(const code& ec,
-    rpc_interface::mining_subscribe, const std::string&,
-    const std::string&, const std::string&, const value_t&) NOEXCEPT
-{
-    if (stopped(ec))
-        return;
-
-    channel_->set_subscribed();
-    const auto id = encode_base16(to_big_endian(channel_->identifier()));
-    send_result(array_t
-    {
-        array_t
-        {
-            array_t{ string_t{ "mining.set_difficulty" }, id },
-            array_t{ string_t{ "mining.notify" }, id }
-        },
-        string_t{ encode_base16(mining_->extranonce()) },
-        options_.extranonce2_size
-    });
-
-    start_mining();
-}
-
-// The worker name up to any dot is the account, the payout address unless one
-// is configured. Absent basic authorization (tcp or ws), a configured
-// credential is satisfied here by the account and password.
-void protocol_stratum_v1::handle_mining_authorize(const code& ec,
-    rpc_interface::mining_authorize, const std::string& username,
-    const std::string& password) NOEXCEPT
-{
-    using namespace error::stratum_v1;
-    using namespace network::config;
-    if (stopped(ec))
-        return;
-
-    const auto account = username.substr(zero, username.find('.'));
-    if (!channel_->credentialed())
-    {
-        channel_->set_authorized(credential::to_digest(account, password));
-        if (!channel_->credentialed())
-        {
-            send_code(unauthorized_worker);
-            return;
-        }
-    }
-
-    chain::script payout{};
-    const auto& address = options_.payout_address;
-    const auto name = address.empty() ? account : address;
-
-    if (output_script(payout, name, p2kh_, p2sh_, witness_) ||
-        (channel_->has_payout() && payout != mining_->payout()))
-    {
-        send_code(unauthorized_worker);
-        return;
-    }
-
-    // The payout of the channel is set by its first authorized worker.
-    if (!channel_->has_payout())
-        mining_->set_payout(payout);
-
-    channel_->authorize(username);
-    send_result(true);
-    start_mining();
-}
-
 void protocol_stratum_v1::handle_mining_submit(const code& ec,
     rpc_interface::mining_submit, const std::string& worker_name,
     const std::string& job_id, const std::string& extranonce2,
@@ -164,12 +78,6 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
     using namespace error::stratum_v1;
     if (stopped(ec))
         return;
-
-    if (!channel_->subscribed())
-    {
-        send_code(not_subscribed);
-        return;
-    }
 
     if (!channel_->authorized_worker(worker_name))
     {
@@ -249,45 +157,6 @@ void protocol_stratum_v1::handle_mining_submit(const code& ec,
     }
 }
 
-// Version rolling (bip310) is the only extension, others are declined.
-void protocol_stratum_v1::handle_mining_configure(const code& ec,
-    rpc_interface::mining_configure, const interface::array_t& extensions,
-    const interface::object_t& parameters) NOEXCEPT
-{
-    if (stopped(ec))
-        return;
-
-    object_t result{};
-    for (const auto& extension: extensions)
-    {
-        const auto name = std::get_if<string_t>(&extension.value());
-        if (is_null(name))
-            continue;
-
-        if (*name != "version-rolling")
-        {
-            result.emplace(*name, false);
-            continue;
-        }
-
-        auto mask = max_uint32;
-        const auto it = parameters.find("version-rolling.mask");
-        if (it != parameters.end())
-        {
-            const auto text = std::get_if<string_t>(&it->second.value());
-            if (is_null(text) || !decode_word(mask, *text))
-                mask = zero;
-        }
-
-        mask &= version_rolling_mask;
-        channel_->set_mask(mask);
-        result.emplace(*name, true);
-        result.emplace("version-rolling.mask", encode_word(mask));
-    }
-
-    send_result(std::move(result));
-}
-
 void protocol_stratum_v1::handle_mining_suggest_difficulty(const code& ec,
     rpc_interface::mining_suggest_difficulty, double difficulty) NOEXCEPT
 {
@@ -343,29 +212,8 @@ void protocol_stratum_v1::handle_mining_multi_version(const code& ec,
     });
 }
 
-// The extranonce of a channel does not change.
-void protocol_stratum_v1::handle_mining_extranonce_subscribe(const code& ec,
-    rpc_interface::mining_extranonce_subscribe) NOEXCEPT
-{
-    if (stopped(ec))
-        return;
-
-    send_result(true);
-}
-
 // Jobs.
 // ----------------------------------------------------------------------------
-
-// A subscribed and authorized channel demands templates and is issued jobs.
-void protocol_stratum_v1::start_mining() NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    if (!channel_->subscribed() || !channel_->has_payout())
-        return;
-
-    authorize_timer_->stop();
-    start_jobs();
-}
 
 size_t protocol_stratum_v1::extranonce_size() const NOEXCEPT
 {
@@ -409,15 +257,6 @@ void protocol_stratum_v1::send_job(mining_channel& channel,
         encode_word(job->timestamp),
         clean
     });
-}
-
-void protocol_stratum_v1::handle_timeout(const code& ec) NOEXCEPT
-{
-    BC_ASSERT(stranded());
-    if (stopped() || ec == network::error::operation_canceled)
-        return;
-
-    stop(ec ? ec : code{ network::error::channel_timeout });
 }
 
 BC_POP_WARNING()

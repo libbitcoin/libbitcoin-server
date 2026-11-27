@@ -237,6 +237,7 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_extranonce_subscribe__true)
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_get_transactions__unknown_not_implemented)
 {
+    start_job();
     const auto response = get(R"({"id":7,"method":"mining.get_transactions","params":["00000000"]})");
     BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
     BC_REQUIRE(response.at("error").as_array().at(1).as_string() == not_implemented.message());
@@ -244,6 +245,7 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_get_transactions__unknown_not_implemented)
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_multi_version__unknown_not_implemented)
 {
+    start_job();
     const auto response = get(R"({"id":8,"method":"mining.multi_version","params":[4]})");
     BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
     BC_REQUIRE(response.at("error").as_array().at(1).as_string() == not_implemented.message());
@@ -261,8 +263,15 @@ BC_AUTO_TEST_CASE(stratum_v1__server_notification__method_not_found)
     BC_REQUIRE_EQUAL(get_error(R"({"id":9,"method":"mining.notify","params":[]})"), network::rpc::reserved::method_not_found);
 }
 
+BC_AUTO_TEST_CASE(stratum_v1__unknown_method__mining__method_not_found)
+{
+    start_job();
+    BC_REQUIRE_EQUAL(get_error(R"({"id":9,"method":"mining.bogus","params":[]})"), network::rpc::reserved::method_not_found);
+}
+
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__missing_params__invalid_params)
 {
+    start_job();
     BC_REQUIRE_EQUAL(get_error(R"({"id":10,"method":"mining.submit","params":["w"]})"), network::rpc::reserved::invalid_params);
 }
 
@@ -341,6 +350,12 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__not_subscribed__not_subscribed)
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__unauthorized_worker__unauthorized_worker)
 {
     subscribe();
+    BC_REQUIRE_EQUAL(get_error(R"({"id":3,"method":"mining.submit","params":["nobody","00000000","00000000","00000000","00000000"]})"), unauthorized_worker.value());
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__mining_unauthorized_worker__unauthorized_worker)
+{
+    start_job();
     BC_REQUIRE_EQUAL(get_error(R"({"id":3,"method":"mining.submit","params":["nobody","00000000","00000000","00000000","00000000"]})"), unauthorized_worker.value());
 }
 

@@ -267,11 +267,7 @@ void CLASS::accept_share(mining_channel& channel, const job& job,
 TEMPLATE
 double CLASS::start_difficulty(double hash_rate) const NOEXCEPT
 {
-    const auto start = options_.start_difficulty > 0.0 ?
-        options_.start_difficulty :
-        to_rate_difficulty(hash_rate, options_.share_interval_seconds);
-
-    return std::max(options_.minimum_difficulty, start);
+    return options_.initial_difficulty(hash_rate);
 }
 
 TEMPLATE
@@ -370,13 +366,8 @@ TEMPLATE
 void CLASS::suggest(mining_channel& channel, double difficulty) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
-    const auto floored = std::max(floor(channel), difficulty);
-    if (floored == channel.difficulty())
-        return;
-
-    channel.set_difficulty(floored);
-    channel.reset_window();
-    refresh(channel);
+    if (channel.suggest(difficulty, options_.minimum_difficulty))
+        refresh(channel);
 }
 
 // Blocks.

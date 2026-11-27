@@ -381,6 +381,15 @@ code settings::mining_server::initialize_context() NOEXCEPT
     return network::error::success;
 }
 
+double settings::mining_server::initial_difficulty(
+    double hash_rate) const NOEXCEPT
+{
+    const auto start = start_difficulty > 0.0 ? start_difficulty :
+        to_rate_difficulty(hash_rate, share_interval_seconds);
+
+    return std::max(minimum_difficulty, start);
+}
+
 code settings::stratum_v1_server::initialize_context() NOEXCEPT
 {
     if (const auto ec = base::initialize_context())

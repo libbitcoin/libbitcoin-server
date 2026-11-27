@@ -62,6 +62,7 @@ using esplora                = publish<esplora_methods>;
 using native                 = publish<native_methods>;
 using sparrow                = publish<sparrow_methods>;
 using stratum_v1             = publish<stratum_v1_methods>;
+using stratum_v1_handshake   = publish<stratum_v1_handshake_methods>;
 using zmq                    = publish<zmq_methods>;
 
 } // namespace interface

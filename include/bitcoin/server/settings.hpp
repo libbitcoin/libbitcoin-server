@@ -242,6 +242,9 @@ public:
         /// Bytes of coinbase extranonce, assigned and rolled.
         virtual size_t coinbase_extranonce_size() const NOEXCEPT = 0;
 
+        /// The difficulty of a new channel, of the hash rate if automatic.
+        double initial_difficulty(double hash_rate) const NOEXCEPT;
+
         /// Address paid by the coinbase, otherwise the worker name.
         std::string payout_address{};
 

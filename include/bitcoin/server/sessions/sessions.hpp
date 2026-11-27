@@ -54,7 +54,8 @@ using session_btcd = session_handshake<protocol_bitcoind_version,
     protocol_btcd_notifications, protocol_btcd_test,
     protocol_btcd_transaction, protocol_btcd_utility,
     protocol_btcd_wallet, protocol_bitcoind>;
-using session_stratum_v1 = session_server<protocol_stratum_v1>;
+using session_stratum_v1 = session_handshake<protocol_stratum_v1_handshake,
+    protocol_stratum_v1>;
 using session_stratum_v2 = session_handshake<protocol_stratum_v2_setup,
     protocol_stratum_v2>;
 using session_zmq = session_server<protocol_zmq>;
