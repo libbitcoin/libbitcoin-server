@@ -152,6 +152,9 @@ export interface TransactionSummary {
   hash: string;
   wtxid?: string;
   status: 'unconfirmed' | 'confirmed';
+  /** Not confirmed and not conflicted by a confirmed tx. */
+  confirmable?: boolean;
+  coinbase?: boolean;
   confirmations: number;
   blockHeight?: number;
   blockHash?: string;
@@ -185,6 +188,7 @@ export interface BlockValidation {
   state?: {
     validated?: boolean;
     confirmed?: boolean;
+    candidate?: boolean;
     confirmable?: boolean;
     unconfirmable?: boolean;
   };

@@ -460,6 +460,9 @@
     <None Include="..\..\..\..\web\native\src\components\theme-select.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\components\toggle.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\components\transaction-table.tsx">
       <Filter>web\native\src\components</Filter>
     </None>

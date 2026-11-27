@@ -1,9 +1,7 @@
 import { useId, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { type BlockValidation } from '@/lib/api/client';
 import { useBlockValidation } from '@/lib/hooks/useBlockchainData';
-import { blockValidationPath } from '@/lib/utils/routes';
 
 // Descriptions refer to https://github.com/bitcoin/bips. Activation comes only from the node.
 const RULE_DESCRIPTIONS: Partial<Record<string, string>> = {
@@ -41,6 +39,7 @@ function ruleLabel(rule: string) {
 const VALIDATION_FLAGS = [
   ['validated', 'Validated'],
   ['confirmed', 'Confirmed'],
+  ['candidate', 'Candidate'],
   ['confirmable', 'Confirmable'],
   ['unconfirmable', 'Unconfirmable'],
 ] as const;
@@ -84,28 +83,17 @@ export function BlockValidationInspector({
           <div className="border-accent/20 space-y-6 border-t p-6">
             <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
               {query.data ? <MedianTimePast value={query.data.medianTimePast} /> : <span />}
-              <div className="flex flex-wrap items-center gap-4">
-                <Link
-                  className="text-accent hover:text-accentSecondary"
-                  to={blockValidationPath(blockHash)}
-                >
-                  Link to inspector
-                </Link>
-                <button
-                  type="button"
-                  className="text-accent hover:text-accentSecondary disabled:cursor-wait disabled:opacity-60"
-                  disabled={query.isFetching}
-                  onClick={() => {
-                    void query.refetch();
-                  }}
-                >
-                  {query.isFetching
-                    ? 'Refreshing…'
-                    : query.isError
-                      ? 'Retry validation lookup'
-                      : 'Refresh validation'}
-                </button>
-              </div>
+              <button
+                type="button"
+                className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent inline-flex items-center gap-2 rounded-md border px-4 py-1.5 text-sm disabled:cursor-wait disabled:opacity-60"
+                disabled={query.isFetching}
+                onClick={() => {
+                  void query.refetch();
+                }}
+              >
+                <ArrowPathIcon aria-hidden="true" className={`h-4 w-4 ${query.isFetching ? 'animate-spin' : ''}`} />
+                {query.isError ? 'Retry' : 'Refresh'}
+              </button>
             </div>
             {query.isPending ? (
               <p role="status" className="text-textMuted text-sm">
@@ -142,7 +130,7 @@ function ValidationDetails({ validation }: { validation: BlockValidation }) {
       {validation.state && (
         <div className="space-y-3">
           <h3 className="text-accent text-sm font-semibold">Validation state</h3>
-          <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-5">
             {VALIDATION_FLAGS.map(([key, label]) => (
               <div key={key}>
                 <dt className="text-textMuted">{label}</dt>

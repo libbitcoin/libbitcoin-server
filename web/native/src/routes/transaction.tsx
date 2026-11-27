@@ -158,7 +158,15 @@ export function TransactionPage() {
     typeof tx?.feeRate === 'number'
       ? `${formatNumber(tx.feeRate, { maximumFractionDigits: 2 })} sat/vB`
       : '—';
-  const status = tx?.status;
+  const status = !tx
+    ? undefined
+    : tx.status === 'confirmed'
+      ? 'confirmed'
+      : tx.confirmable
+        ? 'confirmable'
+        : tx.coinbase
+          ? 'unconfirmed'
+          : 'unconfirmable';
   const receivedTime = tx?.receivedTime;
   const receivedLine = tx
     ? receivedTime

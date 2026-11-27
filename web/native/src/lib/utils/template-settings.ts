@@ -15,6 +15,7 @@ export interface PlotView {
 const STORAGE_KEY = 'libbitcoinTemplateDisplay';
 const HEIGHT_KEY = 'libbitcoinTemplateHeight';
 const ORBIT_KEY = 'libbitcoinTemplateOrbit';
+const BLOCKS_KEY = 'libbitcoinBlocksFilter';
 const CAMERA_KEY = 'libbitcoinTemplateCamera';
 const PLOT_KEY = 'libbitcoinTemplatePlot';
 const CAMERA_FIELDS = ['azimuth', 'elevation', 'distance', 'x', 'y', 'z'] as const;
@@ -139,6 +140,25 @@ export function loadOrbit(storage: Storage | null = browserStorage()): boolean {
     return storage?.getItem(ORBIT_KEY) === 'on';
   } catch {
     return false;
+  }
+}
+
+export function loadUnconfirmedOnly(storage: Storage | null = browserStorage()): boolean {
+  try {
+    return storage?.getItem(BLOCKS_KEY) === 'unconfirmed';
+  } catch {
+    return false;
+  }
+}
+
+export function saveUnconfirmedOnly(
+  unconfirmed: boolean,
+  storage: Storage | null = browserStorage()
+): void {
+  try {
+    storage?.setItem(BLOCKS_KEY, unconfirmed ? 'unconfirmed' : 'all');
+  } catch {
+    // The in-memory selection still works when storage is unavailable.
   }
 }
 

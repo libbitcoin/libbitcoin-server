@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BlockMinerValue } from '@/components/miner-value';
 import { Spinner } from '@/components/spinner';
+import { Toggle } from '@/components/toggle';
 import {
   useBlockchainClient,
   type BlockSummary,
@@ -13,6 +14,7 @@ import { useNow } from '@/lib/hooks/useNow';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
 import { useWindowScrollToBottom } from '@/lib/hooks/useWindowScrollToBottom';
 import { formatBytes, formatInteger, formatShortRelativeTime } from '@/lib/utils/format';
+import { loadUnconfirmedOnly, saveUnconfirmedOnly } from '@/lib/utils/template-settings';
 import { blockByHashPath, blockByHeightPath, templatePath } from '@/lib/utils/routes';
 
 const PAGE_SIZE = 30;
@@ -37,6 +39,11 @@ interface Row {
 
 const laneX = (lane: number) => LANE / 2 + lane * LANE;
 
+const filters: Array<{ id: 'all' | 'unconfirmed'; label: string }> = [
+  { id: 'all', label: 'All' },
+  { id: 'unconfirmed', label: 'Unconfirmed' },
+];
+
 // The chain as a tree, the top first and genesis last: the confirmed chain in
 // the first lane, the candidate headers above it, each weak branch in a lane
 // of its own from the block it builds on.
@@ -48,6 +55,11 @@ export function BlocksPage() {
   const { data: branches } = useBranches();
   const [older, setOlder] = useState<BlockSummary[]>([]);
   const [loading, setLoading] = useState(false);
+  const [unconfirmed, setUnconfirmed] = useState(loadUnconfirmedOnly);
+  const updateFilter = useCallback((next: 'all' | 'unconfirmed') => {
+    setUnconfirmed(next === 'unconfirmed');
+    saveUnconfirmedOnly(next === 'unconfirmed');
+  }, []);
 
   useEffect(() => {
     setOlder([]);
@@ -75,7 +87,7 @@ export function BlocksPage() {
   }, [client, lowest]);
 
   useWindowScrollToBottom({
-    enabled: !loading && !done && strong.length > 0,
+    enabled: !unconfirmed && !loading && !done && strong.length > 0,
     onBottomReached: loadMore,
   });
 
@@ -90,27 +102,49 @@ export function BlocksPage() {
   const top = strong.at(0)?.height;
   const laned = useMemo(() => toLanes(weak), [weak]);
   const rows = useMemo(
-    () => (lowest === undefined ? [] : toRows(strong, lead, weak, laned, lowest)),
-    [strong, lead, weak, laned, lowest]
+    () =>
+      unconfirmed
+        ? toWeakRows(weak, laned)
+        : lowest === undefined
+          ? []
+          : toRows(strong, lead, weak, laned, lowest),
+    [unconfirmed, strong, lead, weak, laned, lowest]
   );
   const lanes = Math.max(0, ...laned) + 1;
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 tabIndex={-1} className="text-accent text-2xl font-semibold">
-          Blocks
-        </h1>
-        <p className="text-textMuted text-sm">The confirmed blocks and any archived branches.</p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 tabIndex={-1} className="text-accent text-2xl font-semibold">
+            Blocks
+          </h1>
+          <p className="text-textMuted text-sm">
+            {unconfirmed
+              ? 'The unconfirmed blocks this node has seen.'
+              : 'The confirmed blocks and any unconfirmed blocks this node has seen.'}
+          </p>
+        </div>
+        <div className="text-sm">
+          <Toggle
+            label="Blocks shown"
+            options={filters}
+            value={unconfirmed ? 'unconfirmed' : 'all'}
+            onChange={updateFilter}
+          />
+        </div>
       </header>
 
       {isError && <p className="text-accentSecondary text-sm">Could not load blocks.</p>}
       {isLoading && <Spinner label="Loading blocks…" />}
+      {unconfirmed && branches !== undefined && rows.length === 0 && (
+        <p className="text-textMuted text-sm">No unconfirmed blocks.</p>
+      )}
 
       {rows.length > 0 && (
-        <div className="border-accent/30 overflow-hidden rounded-xl border">
-          <ul>
-            {top !== undefined && (
+        <div className="border-accent/30 overflow-hidden overflow-x-auto rounded-xl border">
+          <ul className="min-w-[44rem]">
+            {!unconfirmed && top !== undefined && (
               <li className="border-accentSecondary/20 flex items-center border-b" style={{ height: ROW }}>
                 <Lanes lanes={lanes} template={templatePath(top + 1)} />
                 <Link
@@ -138,7 +172,7 @@ export function BlocksPage() {
         </div>
       )}
 
-      {!done && strong.length > 0 && (
+      {!unconfirmed && !done && strong.length > 0 && (
         <div className="flex justify-center">
           <button
             type="button"
@@ -152,6 +186,31 @@ export function BlocksPage() {
       )}
     </div>
   );
+}
+
+// Rows of the weak branches alone, from the highest top down, so heights at
+// which no branch has a block are absent.
+function toWeakRows(weak: ChainBranch[], laned: number[]): Row[] {
+  const rows = new Map<number, Row>();
+  weak.forEach((branch, index) => {
+    const base = branch.headers.at(-1)?.height;
+    for (const header of branch.headers) {
+      let row = rows.get(header.height);
+      if (!row) {
+        row = { height: header.height, nodes: [] };
+        rows.set(header.height, row);
+      }
+
+      row.nodes.push({
+        lane: laned[index],
+        header,
+        top: header.height === branch.top.height,
+        base: header.height === base && branch.fork !== undefined,
+      });
+    }
+  });
+
+  return [...rows.values()].sort((left, right) => right.height - left.height);
 }
 
 // The lane of each branch, top first: the first lane free below the branch
@@ -220,7 +279,7 @@ function Lanes({ lanes, row, template }: { lanes: number; row?: Row; template?: 
           key={node.header.hash}
           lane={node.lane}
           hash={node.header.hash}
-          label="Weak branch block"
+          label="Unconfirmed block"
         />
       ))}
       <svg width={lanes * LANE} height={ROW} aria-hidden="true" fill="none" strokeWidth={2}>
@@ -295,7 +354,7 @@ function RowDetail({ row, now }: { row: Row; now: number }) {
   }
 
   return (
-    <div className="grid min-w-0 flex-1 grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-x-4 px-3 text-sm sm:grid-cols-[5.5rem_minmax(0,1fr)_5.5rem_6.5rem_4.5rem_5rem]">
+    <div className="grid min-w-0 flex-1 grid-cols-[5.5rem_minmax(8rem,1fr)_5.5rem_6.5rem_4.5rem_5rem] items-center gap-x-4 px-3 text-sm">
       <Link
         to={blockByHeightPath(row.height)}
         className="text-accent hover:text-accentSecondary font-medium tabular-nums"
@@ -306,13 +365,13 @@ function RowDetail({ row, now }: { row: Row; now: number }) {
         {strong.hash}
       </Link>
       <span className="text-textMuted truncate">{formatShortRelativeTime(strong.timestamp, now)}</span>
-      <span className="text-textPrimary hidden truncate sm:block">
+      <span className="text-textPrimary truncate">
         <BlockMinerValue hash={strong.hash} />
       </span>
-      <span className="text-textMuted hidden text-right tabular-nums sm:block">
+      <span className="text-textMuted text-right tabular-nums">
         {typeof strong.txCount === 'number' ? `${formatInteger(strong.txCount)} txs` : '—'}
       </span>
-      <span className="text-textMuted hidden text-right tabular-nums sm:block">
+      <span className="text-textMuted text-right tabular-nums">
         {formatBytes(strong.size)}
       </span>
     </div>

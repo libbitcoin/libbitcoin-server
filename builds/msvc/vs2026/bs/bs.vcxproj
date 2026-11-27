@@ -220,6 +220,7 @@
     <None Include="..\..\..\..\web\native\src\components\template-scene-view.tsx" />
     <None Include="..\..\..\..\web\native\src\components\template-treemap.tsx" />
     <None Include="..\..\..\..\web\native\src\components\theme-select.tsx" />
+    <None Include="..\..\..\..\web\native\src\components\toggle.tsx" />
     <None Include="..\..\..\..\web\native\src\components\transaction-table.tsx" />
     <None Include="..\..\..\..\web\native\src\components\view-frame.tsx" />
     <None Include="..\..\..\..\web\native\src\index.css" />

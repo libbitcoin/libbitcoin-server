@@ -83,6 +83,7 @@ interface BlockHeaderContextResponse {
     count: number;
     validated: boolean;
     confirmed: boolean;
+    candidate: boolean;
     confirmable: boolean;
     unconfirmable: boolean;
   };
@@ -96,6 +97,7 @@ const blockValidationSchema = z.object({
     .object({
       validated: z.boolean().optional(),
       confirmed: z.boolean().optional(),
+      candidate: z.boolean().optional(),
       confirmable: z.boolean().optional(),
       unconfirmable: z.boolean().optional(),
     })
@@ -140,6 +142,7 @@ interface TxDetailsResponse {
   /** When the tx was pooled, in seconds, if unconfirmed. */
   time?: number;
   confirmed?: TxDetailsConfirmedResponse;
+  confirmable?: boolean;
 }
 
 const TOP_CACHE_TTL_MS = 5_000;
@@ -291,6 +294,8 @@ function applyTxDetails(
   return {
     ...summary,
     wtxid: details.wtxid || summary.wtxid,
+    confirmable: details.confirmable === true,
+    coinbase: details.coinbase === true,
     feeSats: typeof details.fee === 'number' ? details.fee : summary.feeSats,
     feeRate,
     size: typeof details.maximal === 'number' ? details.maximal : summary.size,
@@ -1725,6 +1730,8 @@ export function createLibbitcoinClient({
         txid,
         hash: txid,
         status: confirmed ? 'confirmed' : 'unconfirmed',
+        confirmable: details.confirmable === true,
+        coinbase: details.coinbase === true,
         confirmations,
         blockHeight: height,
         blockHash: header?.hash,

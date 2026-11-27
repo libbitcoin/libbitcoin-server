@@ -1,8 +1,16 @@
-export type ChainStatus = 'confirmed' | 'unconfirmed';
+export type ChainStatus =
+  | 'confirmed'
+  | 'candidate'
+  | 'unconfirmed'
+  | 'confirmable'
+  | 'unconfirmable';
 
 const STYLES: Record<ChainStatus, string> = {
   confirmed: 'bg-emerald-500/20 text-emerald-300',
+  candidate: 'bg-sky-500/20 text-sky-300',
   unconfirmed: 'bg-amber-500/20 text-amber-300',
+  confirmable: 'bg-amber-500/20 text-amber-300',
+  unconfirmable: 'bg-rose-500/20 text-rose-300',
 };
 
 const UNKNOWN = 'bg-slate-500/20 text-slate-300';
