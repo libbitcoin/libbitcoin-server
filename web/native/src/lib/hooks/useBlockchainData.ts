@@ -21,7 +21,6 @@ import {
   BlockchainEvent,
   ChainBranch,
   HeaderTop,
-  EstimateMode,
   PoolFees,
   RecentMiners,
   TemplateTransaction,
@@ -206,10 +205,10 @@ export function useServerConfiguration() {
   });
 }
 
-export function useFees(mode?: EstimateMode) {
+export function useFees() {
   return useBlockchainQuery<PoolFees>({
-    queryKey: ['fees', mode ?? 'default'],
-    queryFn: (client) => client.getFees(mode),
+    queryKey: ['fees'],
+    queryFn: (client) => client.getFees(),
     staleTime: 10_000,
     refetchInterval: 15_000,
   });

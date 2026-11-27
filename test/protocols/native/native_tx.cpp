@@ -319,11 +319,20 @@ BC_AUTO_TEST_CASE(native__fees__empty_pool__zeros)
     BC_REQUIRE(response.is_object());
 
     const auto& object = response.as_object();
-    BC_REQUIRE_EQUAL(object.size(), 4u);
+    BC_REQUIRE_EQUAL(object.size(), 5u);
     BC_REQUIRE_EQUAL(object.at("count").as_int64(), 0);
     BC_REQUIRE_EQUAL(object.at("virtual").as_int64(), 0);
     BC_REQUIRE_EQUAL(object.at("fee").as_int64(), 0);
     BC_REQUIRE(object.at("histogram").as_array().empty());
+
+    const auto& estimates = object.at("estimates").as_object();
+    BC_REQUIRE_EQUAL(estimates.size(), 4u);
+    BC_REQUIRE_EQUAL(estimates.at("economical").as_object().size(), 5u);
+    BC_REQUIRE_EQUAL(estimates.at("conservative").as_object().size(), 5u);
+    BC_REQUIRE_EQUAL(estimates.at("geometric").as_object().size(), 5u);
+    BC_REQUIRE_EQUAL(estimates.at("basic").as_object().size(), 5u);
+    BC_REQUIRE(estimates.at("economical").as_object().contains("1"));
+    BC_REQUIRE(estimates.at("economical").as_object().contains("144"));
 }
 
 BC_AUTO_TEST_CASE(native__ws_fees__empty_pool__json)

@@ -46,7 +46,7 @@ export function DashboardPage() {
   const info = useServerInfo();
   const now = useNow();
   const { data: fees } = useFees();
-  const estimate = fees?.estimates?.['1'];
+  const estimate = fees?.estimates?.economical?.['1'];
   const nextBlockRate =
     typeof estimate === 'number'
       ? estimate
@@ -138,7 +138,7 @@ export function DashboardPage() {
           }
           detail={
             fees
-              ? `${typeof fees.estimates?.['1'] === 'number' ? 'estimate' : 'pool average'} · ${formatNumber(fees.count, { maximumFractionDigits: 0 })} txs`
+              ? `${typeof estimate === 'number' ? 'estimate' : 'pool average'} · ${formatNumber(fees.count, { maximumFractionDigits: 0 })} txs`
               : '—'
           }
         />

@@ -54,7 +54,7 @@ function unavailable(error: unknown): string {
 export function FeesPage() {
   usePageTitle('Fees');
   const [mode, setMode] = useState<EstimateMode>(loadMode);
-  const { data: fees, isLoading, isError, error } = useFees(mode);
+  const { data: fees, isLoading, isError, error } = useFees();
 
   const onMode = (next: EstimateMode) => {
     setMode(next);
@@ -87,7 +87,7 @@ export function FeesPage() {
         <>
           <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {TARGETS.map(([target, label]) => {
-              const value = fees.estimates?.[target];
+              const value = fees.estimates?.[mode]?.[target];
               return (
                 <Card
                   key={target}

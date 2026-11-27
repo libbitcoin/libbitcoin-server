@@ -13,8 +13,8 @@ export interface BlockReference {
 /** Fee estimate modes of the node. */
 export type EstimateMode = 'basic' | 'geometric' | 'economical' | 'conservative';
 
-/** Fee rates (sat/vB) by confirmation target in blocks, null if none. */
-export type FeeEstimates = { mode: EstimateMode } & Partial<Record<string, number | null>>;
+/** Fee rates (sat/vB) by mode and confirmation target in blocks, null if none. */
+export type FeeEstimates = Partial<Record<EstimateMode, Partial<Record<string, number | null>>>>;
 
 export interface PoolFees {
   count: number;
@@ -298,7 +298,7 @@ export interface BlockchainClient {
   getCandidateBlockHash(height: number): Promise<string>;
   /** Hash of the tx at position in the block. */
   getBlockTransactionHash(block: BlockReference, position: number): Promise<string>;
-  getFees(mode?: EstimateMode): Promise<PoolFees>;
+  getFees(): Promise<PoolFees>;
   /** Txs of the template of the block at height, in block order (less the coinbase). */
   getTemplate(height: number): Promise<TemplateTransaction[]>;
   /** Hashes of the txs of the template of the block at height, in block order. */

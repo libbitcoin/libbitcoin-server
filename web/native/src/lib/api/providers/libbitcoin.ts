@@ -19,7 +19,6 @@ import {
   BranchHeader,
   ChainBranch,
   HeaderTop,
-  EstimateMode,
   PoolFees,
   RecentMiners,
   TemplateTransaction,
@@ -175,8 +174,10 @@ const feesSchema = z.object({
   fee: z.number(),
   histogram: z.array(z.tuple([z.number(), z.number()])),
   estimates: z
-    .object({ mode: z.enum(['basic', 'geometric', 'economical', 'conservative']) })
-    .catchall(z.number().nullable())
+    .partialRecord(
+      z.enum(['basic', 'geometric', 'economical', 'conservative']),
+      z.record(z.string(), z.number().nullable())
+    )
     .nullable()
     .optional()
     .transform((value) => value ?? null),
@@ -1636,9 +1637,8 @@ export function createLibbitcoinClient({
       return hash;
     },
 
-    async getFees(mode?: EstimateMode): Promise<PoolFees> {
-      const query = mode ? `&mode=${mode}` : '';
-      return feesSchema.parse(await fetchJson<unknown>(baseUrl, `/v1/fees?format=json${query}`));
+    async getFees(): Promise<PoolFees> {
+      return feesSchema.parse(await fetchJson<unknown>(baseUrl, '/v1/fees?format=json'));
     },
 
     async getTemplate(height: number): Promise<TemplateTransaction[]> {
