@@ -575,8 +575,12 @@ def _expand(bits: str) -> int:
     return (value & 0x007fffff) << (8 * ((value >> 24) - 3))
 
 
+# segwit (bip145) and consensuscleanup (bip54, required where active).
+_RULES = ["segwit", "consensuscleanup"]
+
+
 def _template(config: dict) -> dict:
-    data = raw_rpc(config, "getblocktemplate", [{"rules": ["segwit"]}])
+    data = raw_rpc(config, "getblocktemplate", [{"rules": _RULES}])
     if data.get("error") is not None:
         pytest.skip(f"no template: {data['error']}")
     return data["result"]
@@ -661,6 +665,19 @@ def test_getblocktemplate(bitcoind_rpc_config):
         assert all(0 < parent < position for parent in tx["depends"])
         fees += tx["fee"]
     assert template["coinbasevalue"] >= fees
+
+
+@pytest.mark.requires_pool
+def test_getblocktemplate_bip54_rule_declared(bitcoind_rpc_config):
+    """Where bip54 is active the client must declare consensuscleanup."""
+    template = _template(bitcoind_rpc_config)
+    data = raw_rpc(bitcoind_rpc_config, "getblocktemplate",
+                   [{"rules": ["segwit"]}])
+    if "!consensuscleanup" in template["rules"]:
+        assert data["error"]["code"] == -8
+    else:
+        assert data.get("error") is None
+        assert "!consensuscleanup" not in data["result"]["rules"]
 
 
 def test_submitblock_duplicate(bitcoind_rpc_config):

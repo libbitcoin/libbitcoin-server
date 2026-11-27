@@ -366,6 +366,7 @@ void protocol_bitcoind_mining::do_submit_header(const code& ec,
 
 // bip22: template mode only (not bip23 proposals).
 // bip145: client must declare segwit rule.
+// bip54: client must declare consensuscleanup rule where bip54 is active.
 void protocol_bitcoind_mining::handle_get_block_template(const code& ec,
     rpc_interface::get_block_template,
     const object_t& template_request) NOEXCEPT
@@ -385,17 +386,24 @@ void protocol_bitcoind_mining::handle_get_block_template(const code& ec,
     }
 
     auto segwit = false;
+    auto cleanup = false;
     const auto rules = template_request.find("rules");
     if (rules != template_request.end())
     {
         const auto names = std::get_if<array_t>(&rules->second.value());
         if (!is_null(names))
         {
-            segwit = std::ranges::any_of(*names, [](const auto& rule) NOEXCEPT
+            const auto declared = [&](const std::string_view& rule) NOEXCEPT
             {
-                const auto name = std::get_if<string_t>(&rule.value());
-                return !is_null(name) && *name == "segwit";
-            });
+                return std::ranges::any_of(*names, [&](const auto& item) NOEXCEPT
+                {
+                    const auto name = std::get_if<string_t>(&item.value());
+                    return !is_null(name) && *name == rule;
+                });
+            };
+
+            segwit = declared("segwit");
+            cleanup = declared("consensuscleanup");
         }
     }
 
@@ -410,25 +418,27 @@ void protocol_bitcoind_mining::handle_get_block_template(const code& ec,
     if (longpollid != template_request.end() &&
         is_current(sequence, longpollid->second))
     {
-        arm_longpoll(sequence);
+        arm_longpoll(sequence, cleanup);
         return;
     }
 
-    get_template(BIND(handle_template, _1, _2, gate()));
+    get_template(BIND(handle_template, _1, _2, gate(), cleanup));
 }
 
 void protocol_bitcoind_mining::handle_template(const code& ec,
-    const node::block_template::cptr& held, const gate_t::ptr& gate) NOEXCEPT
+    const node::block_template::cptr& held, const gate_t::ptr& gate,
+    bool cleanup) NOEXCEPT
 {
     if (stopped())
         return;
 
-    POST(do_template, ec, held, gate);
+    POST(do_template, ec, held, gate, cleanup);
 }
 
 // A template not over the confirmed top is requested again.
 void protocol_bitcoind_mining::do_template(const code& ec,
-    const node::block_template::cptr& held, const gate_t::ptr& gate) NOEXCEPT
+    const node::block_template::cptr& held, const gate_t::ptr& gate,
+    bool cleanup) NOEXCEPT
 {
     BC_ASSERT(stranded());
     using namespace chain;
@@ -451,7 +461,7 @@ void protocol_bitcoind_mining::do_template(const code& ec,
     const auto& query = archive();
     if (held->previous != query.get_top_confirmed_hash())
     {
-        get_template(BIND(handle_template, _1, _2, gate));
+        get_template(BIND(handle_template, _1, _2, gate, cleanup));
         return;
     }
 
@@ -459,6 +469,20 @@ void protocol_bitcoind_mining::do_template(const code& ec,
     const auto& ctx = held->context;
     const auto height = ctx.height;
     const auto bip141 = ctx.is_enabled(flags::bip141_rule);
+
+    // bitcoind deploys the bip54 rules together as consensuscleanup.
+    const auto bip54 =
+        ctx.is_enabled(flags::bip54_timewarp_rule) ||
+        ctx.is_enabled(flags::bip54_timespan_rule) ||
+        ctx.is_enabled(flags::bip54_sigops_rule) ||
+        ctx.is_enabled(flags::bip54_txsize_rule) ||
+        ctx.is_enabled(flags::bip54_coinbase_rule);
+
+    if (bip54 && !cleanup)
+    {
+        send_error(error::bitcoind::invalid_parameter);
+        return;
+    }
 
     // Tx depends on template txs it spends, by position from one (coinbase 0).
     array_t transactions{};
@@ -508,6 +532,9 @@ void protocol_bitcoind_mining::do_template(const code& ec,
 
     if (ctx.is_enabled(flags::bip341_rule))
         rules.emplace_back(string_t{ "taproot" });
+
+    if (bip54)
+        rules.emplace_back(string_t{ "!consensuscleanup" });
 
     const auto bits = ctx.work_required;
     const auto minimum = add1(ctx.median_time_past);
@@ -604,11 +631,13 @@ bool protocol_bitcoind_mining::is_current(uint64_t& sequence,
         sequence == template_generation();
 }
 
-void protocol_bitcoind_mining::arm_longpoll(uint64_t sequence) NOEXCEPT
+void protocol_bitcoind_mining::arm_longpoll(uint64_t sequence,
+    bool cleanup) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
-    const auto poll = emplace_shared<longpoll>(longpoll{ sequence, gate() });
+    const auto poll = emplace_shared<longpoll>(
+        longpoll{ sequence, cleanup, gate() });
     const auto race = emplace_shared<longpoll_race>(
         BIND(handle_longpoll_complete, _1, poll));
 
@@ -693,7 +722,7 @@ void protocol_bitcoind_mining::do_longpoll_complete(const code& ec,
     if (ec || stopped())
         return;
 
-    get_template(BIND(handle_template, _1, _2, poll->gate));
+    get_template(BIND(handle_template, _1, _2, poll->gate, poll->cleanup));
 }
 
 bool protocol_bitcoind_mining::longpoll_done(

@@ -4773,6 +4773,14 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__no_segwit_rule__invalid_parame
     BC_REQUIRE(has_code(rpc("getblocktemplate", R"([{"rules":["csv"]}])"), -8));
 }
 
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__bip54_inactive_declared__rule_omitted)
+{
+    const auto response = rpc("getblocktemplate", R"([{"rules":["segwit","consensuscleanup"]}])");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+    BC_REQUIRE_EQUAL(response.at("result").at("rules").as_array().size(), 1u);
+    BC_REQUIRE_EQUAL(as_text(response.at("result").at("rules").as_array().front()), "csv");
+}
+
 BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__proposal_mode__invalid_parameter)
 {
     BC_REQUIRE(has_code(rpc("getblocktemplate", R"([{"mode":"proposal","rules":["segwit"]}])"), -8));
@@ -5433,6 +5441,32 @@ BC_AUTO_TEST_CASE(bitcoind_rpc__getblockchaininfo__bip9_softforks_taproot__activ
     BC_REQUIRE(result.at("bip9_softforks").as_object().contains("taproot"));
     BC_REQUIRE_EQUAL(as_text(result.at("bip9_softforks").at("taproot").at("status")), "active");
     BC_REQUIRE_EQUAL(result.at("bip9_softforks").at("taproot").at("since").as_int64(), 9);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+// bip54 active
+// ----------------------------------------------------------------------------
+// Broadcast store with the bip54 deployments active above genesis.
+
+BC_FIXTURE_TEST_SUITE(bitcoind_bip54_active_tests, bitcoind_bip54_active_setup_fixture)
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__bip54_active_undeclared__invalid_parameter)
+{
+    BC_REQUIRE(has_code(rpc("getblocktemplate", R"([{"rules":["segwit"]}])"), -8));
+    BC_REQUIRE(has_code(rpc("getblocktemplate", R"([{"rules":["consensuscleanup"]}])"), -8));
+}
+
+BC_AUTO_TEST_CASE(bitcoind_rpc__getblocktemplate__bip54_active_declared__required_rule)
+{
+    const auto response = rpc("getblocktemplate", R"([{"rules":["segwit","consensuscleanup"]}])");
+    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
+
+    const auto& rules = response.at("result").at("rules").as_array();
+    BC_REQUIRE(std::ranges::any_of(rules, [](const auto& rule) NOEXCEPT
+    {
+        return rule.is_string() && rule.as_string() == "!consensuscleanup";
+    }));
 }
 
 BC_AUTO_TEST_SUITE_END()

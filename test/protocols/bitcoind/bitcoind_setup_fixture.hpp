@@ -409,6 +409,30 @@ struct bitcoind_taproot_active_setup_fixture
     }
 };
 
+// Configured as broadcast, with the bip54 deployments active above genesis.
+struct bitcoind_bip54_active_setup_fixture
+  : bitcoind_setup_fixture
+{
+    inline bitcoind_bip54_active_setup_fixture()
+      : bitcoind_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_broadcast_store(query);
+        }, [](configuration& config)
+        {
+            using deployment = system::chain::chain_state::deployment;
+            constexpr auto always = deployment::always_active;
+            auto& bitcoin = config.bitcoin;
+            bitcoin.bip54_timewarp_deployment.start = always;
+            bitcoin.bip54_timespan_deployment.start = always;
+            bitcoin.bip54_sigops_deployment.start = always;
+            bitcoin.bip54_txsize_deployment.start = always;
+            bitcoin.bip54_coinbase_deployment.start = always;
+            config.node.currency_window_minutes = 0;
+        }, true)
+    {
+    }
+};
+
 // Configured with chasers started and no currency window -- for tests of
 // transaction submission, which tx chaser refuses unless top is current.
 struct bitcoind_submit_setup_fixture

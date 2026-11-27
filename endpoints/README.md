@@ -11,7 +11,7 @@ Integration tests for the client-server interfaces of libbitcoin-server
 | **Native REST** | HTTP + JSON | `test_native.py` | 46 |
 | **Esplora REST** | HTTP + JSON, websocket | `test_esplora.py` | 49 |
 | **bitcoind REST** | HTTP + JSON/hex/binary | `test_bitcoind_rest.py` | 15 |
-| **bitcoind RPC** | HTTP + JSON-RPC | `test_bitcoind_rpc.py` | 38 |
+| **bitcoind RPC** | HTTP + JSON-RPC | `test_bitcoind_rpc.py` | 39 |
 | **btcd** | websocket/HTTP + JSON-RPC 1.0 | `test_btcd_rpc.py` | 43 |
 | **Electrum** | TCP + JSON-RPC 2.0 | `test_electrum.py` | 34 |
 | **Electrum subscriptions** | TCP + notifications | `test_electrum_subscriptions.py` | 2 |
@@ -253,7 +253,8 @@ Tested:
   error)
 - **Mining:** `getmininginfo` (top and next block work), `getnetworkhashps`
   (default window, genesis, invalid window), `getblocktemplate` (BIP145
-  segwit rule and template mode required, BIP22 fields, BIP141 commitment,
+  segwit rule and template mode required, BIP54 consensuscleanup rule
+  required where active, BIP22 fields, BIP141 commitment,
   transaction dependencies), `submitblock` (duplicate, undecodable, invalid
   with a reject reason), `submitheader` (known, unknown parent,
   undecodable), and `getprioritisedtransactions`/`prioritisetransaction`
