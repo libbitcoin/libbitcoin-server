@@ -163,7 +163,7 @@ void protocol_stratum_v2::open_channel(uint32_t request_id,
         return;
     }
 
-    if (channel_count() >= options_.maximum_channels)
+    if (mining_channel_count() >= options_.maximum_channels)
     {
         open_failed(request_id, "too-many-channels");
         return;

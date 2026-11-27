@@ -82,7 +82,7 @@ protected:
     mining_channel::ptr find_channel(uint32_t id) const NOEXCEPT;
 
     /// The mining channels of the connection (requires strand).
-    size_t channel_count() const NOEXCEPT;
+    size_t mining_channel_count() const NOEXCEPT;
 
     /// The difficulty of a new channel, of the hash rate if automatic.
     double start_difficulty(double hash_rate) const NOEXCEPT;

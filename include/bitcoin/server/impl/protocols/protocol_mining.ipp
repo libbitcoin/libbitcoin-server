@@ -72,7 +72,7 @@ mining_channel::ptr CLASS::find_channel(uint32_t id) const NOEXCEPT
 }
 
 TEMPLATE
-size_t CLASS::channel_count() const NOEXCEPT
+size_t CLASS::mining_channel_count() const NOEXCEPT
 {
     BC_ASSERT(this->stranded());
     return channels_.size();
