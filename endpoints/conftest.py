@@ -228,6 +228,21 @@ def pytest_addoption(parser):
              "[stratum_v2] credential whose user is the identity account "
              "(default: none)"
     )
+    parser.addoption(
+        "--stratum-v2-transport",
+        action="store",
+        default="ws",
+        choices=["ws", "noise"],
+        help="Stratum v2 transport: ws (a [stratum_v2] bind) or noise (tcp to "
+             "a [stratum_v2] safe with Noise configured) (default: ws)"
+    )
+    parser.addoption(
+        "--stratum-v2-authority",
+        action="store",
+        default="",
+        help="Stratum v2 Noise authority public key (base58check) that the "
+             "server certificate must verify against (default: unverified)"
+    )
 
     # Robustness options (test_robustness_*.py)
     parser.addoption(
@@ -612,5 +627,7 @@ def stratum_v2_config(request):
         "port": int(request.config.getoption("--stratum-v2-port")),
         "user": request.config.getoption("--stratum-v2-user"),
         "password": request.config.getoption("--stratum-v2-password"),
+        "transport": request.config.getoption("--stratum-v2-transport"),
+        "authority": request.config.getoption("--stratum-v2-authority"),
         "timeout": float(request.config.getoption("--timeout"))
     }
