@@ -99,6 +99,7 @@ private:
     static mining_channel::ptr to_mining(const extranonces::prefix& prefix,
         double difficulty) NOEXCEPT;
 
+    void callback(const code& ec) NOEXCEPT;
     void complete() NOEXCEPT;
     void handle_timeout(const code& ec) NOEXCEPT;
 

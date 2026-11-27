@@ -38,6 +38,15 @@ static chain::script p2kh(uint8_t fill)
 
 BC_FIXTURE_TEST_SUITE(stratum_v1_tests, stratum_v1_ten_block_setup_fixture)
 
+// handshake
+
+BC_AUTO_TEST_CASE(stratum_v1__handshake__channel_stopped__completed_once)
+{
+    const auto codes = stop_handshake<session_stratum_v1>(config_.server.stratum_v1);
+    BC_REQUIRE_EQUAL(codes.size(), 1u);
+    BC_REQUIRE_EQUAL(codes.front(), network::error::peer_disconnect);
+}
+
 // mining.subscribe
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_subscribe__tcp__subscriptions_extranonce1_and_size)
