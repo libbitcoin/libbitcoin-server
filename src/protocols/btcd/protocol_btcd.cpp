@@ -337,68 +337,6 @@ void protocol_btcd::handle_stop_notify_new_transactions(const code& ec,
     send_result({});
 }
 
-// Handlers (deprecated).
-// ----------------------------------------------------------------------------
-// notify_received/notify_spent bodies live in protocol_btcd_filter.cpp.
-
-// Implemented only for empty addresses/outpoints case.
-// Call btcwallet makes to bootstrap its sync starting point.
-void protocol_btcd::handle_rescan(const code& ec,
-    btcd_interface::rescan, const std::string& beginblock,
-    const std::optional<value_t>& addresses,
-    const std::optional<value_t>& outpoints,
-    const std::string&) NOEXCEPT
-{
-    if (stopped(ec)) return;
-
-    hash_digest begin_hash{};
-    if (!decode_hash(begin_hash, beginblock))
-    {
-        send_error(error::btcd::deserialization_error);
-        return;
-    }
-
-    const auto& query = archive();
-    if (query.to_header(begin_hash).is_terminal())
-    {
-        send_error(error::btcd::invalid_address_or_key);
-        return;
-    }
-
-    const auto has_entries = [](const std::optional<value_t>& list) NOEXCEPT
-    {
-        return list.has_value() &&
-            std::holds_alternative<array_t>(list->value()) &&
-            !std::get<array_t>(list->value()).empty();
-    };
-
-    const auto has_addresses = has_entries(addresses);
-    const auto has_outpoints = has_entries(outpoints);
-
-    if (has_addresses || has_outpoints)
-    {
-        send_error(error::btcd::unimplemented);
-        return;
-    }
-
-    size_t top{};
-    const auto confirmed = query.to_top_confirmed();
-    const auto header = query.get_header(confirmed);
-    if (!header || !query.get_height(top, confirmed))
-    {
-        send_error(error::btcd::internal_error);
-        return;
-    }
-
-    send_result({});
-    send_notification("rescanfinished", array_t
-    {
-        encode_hash(header->hash()),
-        to64(top),
-        header->timestamp()
-    });
-}
-
 // Chase events.
 // ----------------------------------------------------------------------------
 

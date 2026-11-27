@@ -105,6 +105,7 @@
 #include <bitcoin/server/protocols/protocol_rpc.hpp>
 #include <bitcoin/server/protocols/protocol_sparrow.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
+#include <bitcoin/server/protocols/protocol_stratum_v1_handshake.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2_setup.hpp>
 #include <bitcoin/server/protocols/protocol_submit.hpp>

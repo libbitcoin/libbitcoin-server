@@ -1,5 +1,8 @@
 import { expect, test } from 'vitest';
 import { inferAddressType } from '@/lib/utils/address';
+import { isAddress, MAINNET_PARAMS } from '@/lib/api/providers/libbitcoin-mapper';
+
+const TESTNET_PARAMS = { p2pkh: 0x6f, p2sh: 0xc4, hrp: 'tb' };
 
 test('address__infer_address_type__null__undefined', () => {
   expect(inferAddressType(null)).toBeUndefined();
@@ -47,4 +50,32 @@ test('address__infer_address_type__p2tr__p2tr', () => {
 
 test('address__infer_address_type__extended_key__undefined', () => {
   expect(inferAddressType('xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8')).toBeUndefined();
+});
+
+test('address__is_address__mainnet_p2pkh_mainnet__true', () => {
+  expect(isAddress('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', MAINNET_PARAMS)).toBe(true);
+});
+
+test('address__is_address__mainnet_p2wpkh_mainnet__true', () => {
+  expect(isAddress('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4', MAINNET_PARAMS)).toBe(true);
+});
+
+test('address__is_address__testnet_p2wpkh_mainnet__false', () => {
+  expect(isAddress('tb1qy58y5sll5j6nrrcz08kk0ja9wp97smqlk3mvzj', MAINNET_PARAMS)).toBe(false);
+});
+
+test('address__is_address__testnet_p2wpkh_testnet__true', () => {
+  expect(isAddress('tb1qy58y5sll5j6nrrcz08kk0ja9wp97smqlk3mvzj', TESTNET_PARAMS)).toBe(true);
+});
+
+test('address__is_address__mainnet_p2pkh_testnet__false', () => {
+  expect(isAddress('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', TESTNET_PARAMS)).toBe(false);
+});
+
+test('address__is_address__bad_checksum_mainnet__false', () => {
+  expect(isAddress('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNb', MAINNET_PARAMS)).toBe(false);
+});
+
+test('address__is_address__name_mainnet__false', () => {
+  expect(isAddress('browser', MAINNET_PARAMS)).toBe(false);
 });

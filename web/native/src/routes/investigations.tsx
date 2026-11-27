@@ -92,11 +92,10 @@ export function InvestigationsPage() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-accentSecondary text-sm tracking-wide uppercase">Research workspace</p>
-          <h1 tabIndex={-1} className="text-accent text-3xl font-semibold">
+          <h1 tabIndex={-1} className="text-accent text-2xl font-semibold">
             Saved investigations
           </h1>
-          <p className="text-textMuted mt-2 text-sm">
+          <p className="text-textMuted text-sm">
             Bookmarks and notes are saved in this browser. Export a backup to keep them elsewhere.
           </p>
         </div>

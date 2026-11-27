@@ -85,7 +85,13 @@ export function BlockPage() {
   // A block off the confirmed chain steps within its own branch, to its top.
   const detached = validation?.state?.confirmed === false;
   const settled = validation?.state?.confirmed === true;
-  const status = detached ? 'unconfirmed' : settled ? 'confirmed' : undefined;
+  const status = settled
+    ? 'confirmed'
+    : validation?.state?.candidate === true
+      ? 'candidate'
+      : detached
+        ? 'unconfirmed'
+        : undefined;
   const { data: branches } = useBranches({ enabled: detached });
   const nextPath = nextBlockPath(block, validation?.state?.confirmed, branches, suffix);
   const previousPath =

@@ -880,6 +880,33 @@ BC_AUTO_TEST_CASE(stratum_v2__open_standard_mining_channel__after_close__success
 
 BC_AUTO_TEST_SUITE_END()
 
+BC_FIXTURE_TEST_SUITE(stratum_v2_authorize_timeout_tests, stratum_v2_authorize_timeout_setup_fixture)
+
+BC_AUTO_TEST_CASE(stratum_v2__authorize_timeout__no_setup__dropped)
+{
+    const auto ec = upgrade();
+    const auto frame = receive();
+    BC_REQUIRE(!ec);
+    BC_REQUIRE(frame.empty());
+}
+
+BC_AUTO_TEST_CASE(stratum_v2__authorize_timeout__setup_no_channel__dropped)
+{
+    const auto ready = setup();
+    const auto frame = receive();
+    BC_REQUIRE(ready);
+    BC_REQUIRE(frame.empty());
+}
+
+BC_AUTO_TEST_CASE(stratum_v2__authorize_timeout__channel_open__retained)
+{
+    const auto started = start_extended();
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    BC_REQUIRE(submit_shares(started, 1));
+}
+
+BC_AUTO_TEST_SUITE_END()
+
 BC_FIXTURE_TEST_SUITE(stratum_v2_broadcast_tests, stratum_v2_broadcast_setup_fixture)
 
 BC_AUTO_TEST_CASE(stratum_v2__new_extended_mining_job__pooled_transaction__merkle_path_of_one)

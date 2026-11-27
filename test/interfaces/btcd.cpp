@@ -60,8 +60,6 @@ static_assert(btcd_served("stopnotifyreceived"));
 static_assert(btcd_served("notifyspent"));
 static_assert(btcd_served("stopnotifyspent"));
 
-// rescan served for empty addresses/outpoints form (btcwallet sync bootstrap),
-// so published despite its group.
 static_assert(btcd_served("rescan"));
 
 // A name absent from the interface satisfies neither.

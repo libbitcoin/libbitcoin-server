@@ -19,74 +19,92 @@
     <Filter Include="web">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000003}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\admin_dashboard">
+    <Filter Include="web\admin-dashboard">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\admin_dashboard">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
     </Filter>
     <Filter Include="web\admin_dashboard\src">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
     </Filter>
     <Filter Include="web\admin_dashboard\src\app">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
     </Filter>
     <Filter Include="web\admin_dashboard\src\components">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
     </Filter>
     <Filter Include="web\admin_dashboard\src\lib">
-      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="web\admin_dashboard\test">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\admin_dashboard\test\lib">
+    <Filter Include="web\admin_dashboard\src\lib\mining">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000A}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native">
+    <Filter Include="web\admin_dashboard\test">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000B}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src">
+    <Filter Include="web\admin_dashboard\test\lib">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\app">
+    <Filter Include="web\admin_dashboard\test\lib\mining">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000D}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\components">
+    <Filter Include="web\blockexplorer">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000E}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib">
+    <Filter Include="web\native">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-00000000000F}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib\api">
+    <Filter Include="web\native\src">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000001}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib\api\providers">
+    <Filter Include="web\native\src\app">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000002}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib\hooks">
+    <Filter Include="web\native\src\components">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000003}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\lib\utils">
+    <Filter Include="web\native\src\lib">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000004}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\routes">
+    <Filter Include="web\native\src\lib\api">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000005}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\vendor">
+    <Filter Include="web\native\src\lib\api\providers">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000006}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\src\vendor\mining-pools">
+    <Filter Include="web\native\src\lib\hooks">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000007}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\test">
+    <Filter Include="web\native\src\lib\mining">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000008}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\test\lib">
+    <Filter Include="web\native\src\lib\utils">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000009}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\native\test\lib\utils">
+    <Filter Include="web\native\src\routes">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000010}</UniqueIdentifier>
     </Filter>
-    <Filter Include="web\shared">
+    <Filter Include="web\native\src\vendor">
       <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000A1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\src\vendor\mining-pools">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000B1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\test">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000C1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\test\lib">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000D1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\test\lib\mining">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000E1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\native\test\lib\utils">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-0000000000F1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="web\shared">
+      <UniqueIdentifier>{F45B7D90-90BC-41EF-0000-000000000002}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -205,10 +223,16 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\components\event-view.tsx">
       <Filter>web\admin_dashboard\src\components</Filter>
     </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\components\hashrate-chart.tsx">
+      <Filter>web\admin_dashboard\src\components</Filter>
+    </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\components\log-view.tsx">
       <Filter>web\admin_dashboard\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\components\metric-item.tsx">
+      <Filter>web\admin_dashboard\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\components\mining.tsx">
       <Filter>web\admin_dashboard\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\components\node-sync-progress.tsx">
@@ -279,6 +303,12 @@
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\log-window.ts">
       <Filter>web\admin_dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\mining\format.ts">
+      <Filter>web\admin_dashboard\src\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\mining\sample.ts">
+      <Filter>web\admin_dashboard\src\lib\mining</Filter>
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\native-client.ts">
       <Filter>web\admin_dashboard\src\lib</Filter>
@@ -355,6 +385,9 @@
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\log-window.test.ts">
       <Filter>web\admin_dashboard\test\lib</Filter>
     </None>
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\mining\format.test.ts">
+      <Filter>web\admin_dashboard\test\lib\mining</Filter>
+    </None>
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\pool-rates.test.ts">
       <Filter>web\admin_dashboard\test\lib</Filter>
     </None>
@@ -418,13 +451,22 @@
     <None Include="..\..\..\..\web\native\src\components\copy-button.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\components\fee-chart.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\components\hash-text.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\components\hashrate-chart.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\components\miner-share.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\components\miner-value.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\components\mining-settings.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\components\qr-code.tsx">
@@ -458,6 +500,9 @@
       <Filter>web\native\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\components\theme-select.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\components\toggle.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\components\transaction-table.tsx">
@@ -498,6 +543,24 @@
     </None>
     <None Include="..\..\..\..\web\native\src\lib\hooks\useWindowScrollToBottom.ts">
       <Filter>web\native\src\lib\hooks</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\mining\format.ts">
+      <Filter>web\native\src\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\mining\miner.ts">
+      <Filter>web\native\src\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\mining\miner.worker.ts">
+      <Filter>web\native\src\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\mining\scan-simd.ts">
+      <Filter>web\native\src\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\mining\sha256.ts">
+      <Filter>web\native\src\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\mining\stratum.ts">
+      <Filter>web\native\src\lib\mining</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\theme.ts">
       <Filter>web\native\src\lib</Filter>
@@ -544,10 +607,19 @@
     <None Include="..\..\..\..\web\native\src\lib\utils\search.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\services.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\template-follow.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\template-scene.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\template-settings.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\template-slide.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\main.tsx">
@@ -595,6 +667,9 @@
     <None Include="..\..\..\..\web\native\src\routes\transactions.tsx">
       <Filter>web\native\src\routes</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\routes\web-miner.tsx">
+      <Filter>web\native\src\routes</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\themes.css">
       <Filter>web\native\src</Filter>
     </None>
@@ -609,6 +684,18 @@
     </None>
     <None Include="..\..\..\..\web\native\tailwind.config.js">
       <Filter>web\native</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\mining\format.test.ts">
+      <Filter>web\native\test\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\mining\miner.test.ts">
+      <Filter>web\native\test\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\mining\mining.test.ts">
+      <Filter>web\native\test\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\mining\scan-simd.test.ts">
+      <Filter>web\native\test\lib\mining</Filter>
     </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\address.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
@@ -634,10 +721,19 @@
     <None Include="..\..\..\..\web\native\test\lib\utils\search.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\services.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\template-follow.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\template-scene.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\template-settings.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\template-slide.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\tsconfig.json">

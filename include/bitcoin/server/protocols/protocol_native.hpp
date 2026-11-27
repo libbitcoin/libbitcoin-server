@@ -344,10 +344,17 @@ private:
     void send_template_txs_details(const node::block_template& held,
         uint8_t media) NOEXCEPT;
 
+    using fees_ptr = std::shared_ptr<system::json::object>;
     void handle_fees(const code& ec, const database::fee_rates& rates,
         const gate_t::ptr& gate) NOEXCEPT;
     void complete_get_fees(const code& ec, const database::fee_rates& rates,
         const gate_t::ptr& gate) NOEXCEPT;
+    void estimate_fees(size_t index, const fees_ptr& fees,
+        const gate_t::ptr& gate) NOEXCEPT;
+    void handle_estimate_fees(const code& ec, uint64_t rate, size_t index,
+        const fees_ptr& fees, const gate_t::ptr& gate) NOEXCEPT;
+    void complete_estimate_fees(const code& ec, uint64_t rate, size_t index,
+        const fees_ptr& fees, const gate_t::ptr& gate) NOEXCEPT;
 
     void get_txs_unconfirmed(bool details, uint8_t media) NOEXCEPT;
     void handle_txs_unconfirmed(const code& ec,

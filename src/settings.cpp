@@ -364,15 +364,30 @@ code settings::mining_server::initialize_context() NOEXCEPT
     if (const auto ec = base::initialize_context())
         return ec;
 
+    const auto restricted = [](const auto& credential) NOEXCEPT
+    {
+        return !credential.methods().empty();
+    };
+
     const auto extranonce = coinbase_extranonce_size();
     const auto script = coinbase_script_size(coinbase_tag.size(), extranonce);
-    if (coinbase_tag.size() > max_direct_push ||
+    if (std::ranges::any_of(credentials, restricted) ||
+        coinbase_tag.size() > max_direct_push ||
         extranonce > max_direct_push || script > max_coinbase_size ||
         !(minimum_difficulty > 0.0) || !(start_difficulty >= 0.0) ||
         std::isinf(minimum_difficulty) || std::isinf(start_difficulty))
         return network::error::invalid_configuration;
 
     return network::error::success;
+}
+
+double settings::mining_server::initial_difficulty(
+    double hash_rate) const NOEXCEPT
+{
+    const auto start = start_difficulty > 0.0 ? start_difficulty :
+        to_rate_difficulty(hash_rate, share_interval_seconds);
+
+    return std::max(minimum_difficulty, start);
 }
 
 code settings::stratum_v1_server::initialize_context() NOEXCEPT
@@ -402,7 +417,81 @@ code settings::stratum_v2_server::initialize_context() NOEXCEPT
         coinbase_extranonce_size() > system::hash_size)
         return network::error::invalid_configuration;
 
+    return initialize_noise();
+}
+
+static bool is_authorized(const network::noise::context& instance,
+    const system::ec_xonly& authority) NOEXCEPT
+{
+    using namespace network::noise;
+    const auto now = network::unix_time();
+    system::ec_xonly key{};
+    certificate::data proof{};
+    return certificate::to_xonly(key, instance.static_secret()) &&
+        instance.issue(proof, now) &&
+        certificate::verify(proof, key, authority, now);
+}
+
+// Noise requires a static secret and exactly one of authority or certificate.
+code settings::stratum_v2_server::initialize_noise() NOEXCEPT
+{
+    using namespace system;
+    using namespace network;
+    constexpr uint32_t seconds_per_day = 86400;
+    const data_chunk& secret = noise_secret;
+    const data_chunk& authority = noise_authority;
+    const data_chunk& authority_key = noise_authority_key;
+    const data_chunk& issued = noise_certificate;
+    const auto authorized = !authority.empty();
+    const auto certified = !issued.empty();
+    const auto verified = !authority_key.empty();
+    if (secret.empty())
+        return authorized || certified || verified || !safes.empty() ?
+            network::error::invalid_configuration : network::error::success;
+
+    if (noise)
+        return network::error::operation_failed;
+
+    ec_xonly verifier{};
+    if (secret.size() != ec_secret_size || authorized == certified ||
+        (authorized && authority.size() != ec_secret_size) ||
+        (certified && issued.size() != noise::cipher::certificate_size) ||
+        (verified && !noise::certificate::to_authority(verifier, authority_key)))
+        return network::error::invalid_configuration;
+
+    const auto key = data_slice{ secret }.to_array<ec_secret_size>();
+    if (authorized)
+        noise = to_unique<noise::context>(key,
+            data_slice{ authority }.to_array<ec_secret_size>(),
+            ceilinged_multiply<uint32_t>(noise_validity_days, seconds_per_day));
+    else
+        noise = to_unique<noise::context>(key,
+            data_slice{ issued }.to_array<noise::cipher::certificate_size>());
+
+    if (!noise->valid() || (verified && !is_authorized(*noise, verifier)))
+    {
+        noise.reset();
+        return network::error::invalid_configuration;
+    }
+
     return network::error::success;
+}
+
+bool settings::stratum_v2_server::tls_secured() const NOEXCEPT
+{
+    return false;
+}
+
+bool settings::stratum_v2_server::secure() const NOEXCEPT
+{
+    return !safes.empty() && noise;
+}
+
+network::settings::transport
+settings::stratum_v2_server::secure_context() const NOEXCEPT
+{
+    BC_ASSERT(noise);
+    return std::cref(*noise);
 }
 
 size_t settings::stratum_v2_server::coinbase_extranonce_size() const NOEXCEPT

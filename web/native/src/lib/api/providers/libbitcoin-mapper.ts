@@ -193,6 +193,11 @@ function addressToScript(
   return null;
 }
 
+/** True if the address is of a type and network of the params. */
+export function isAddress(address: string, params: NetworkParams): boolean {
+  return addressToScript(address.trim(), params) !== null;
+}
+
 export function scriptHashFromAddress(
   address: string,
   params: NetworkParams

@@ -54,10 +54,15 @@ public:
     };
 
     inline protocol_stratum_v2_setup(const auto& session,
-        const network::channel::ptr& channel, const options_t&) NOEXCEPT
+        const network::channel::ptr& channel,
+        const options_t& options) NOEXCEPT
       : server::protocol(session, channel),
         network::protocol(session, channel),
         network::tracker<protocol_stratum_v2_setup>(session->log),
+        options_(options),
+        timer_(system::emplace_shared<network::deadline>(session->log,
+            channel->strand(),
+            network::seconds(options.authorize_timeout_seconds))),
         channel_(std::dynamic_pointer_cast<channel_t>(channel))
     {
     }
@@ -77,6 +82,11 @@ protected:
 private:
     void refuse(uint32_t flags, const std::string& reason) NOEXCEPT;
     void callback(const code& ec) NOEXCEPT;
+    void handle_timeout(const code& ec) NOEXCEPT;
+
+    // These are thread safe.
+    const options_t& options_;
+    const network::deadline::ptr timer_;
 
     // This is mostly thread safe, and used in a thread safe manner.
     const channel_t::ptr channel_;

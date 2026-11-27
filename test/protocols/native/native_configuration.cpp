@@ -33,7 +33,8 @@ BC_AUTO_TEST_CASE(native__configuration__json__expected)
     BC_REQUIRE(response.is_object());
 
     const auto& object = response.as_object();
-    BC_REQUIRE_EQUAL(object.size(), 5u);
+    BC_REQUIRE_EQUAL(object.size(), 6u);
+    BC_REQUIRE(object.at("server").as_object().empty());
 
     const auto& store = object.at("store").as_object();
     BC_REQUIRE_EQUAL(store.size(), 5u);
@@ -116,6 +117,21 @@ BC_AUTO_TEST_CASE(native__configuration__text__not_acceptable)
 BC_AUTO_TEST_CASE(native__configuration__data__not_acceptable)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/configuration?format=data"), http::status::not_acceptable);
+}
+
+BC_AUTO_TEST_SUITE_END()
+
+BC_FIXTURE_TEST_SUITE(native_advertise_tests, native_advertise_setup_fixture)
+
+BC_AUTO_TEST_CASE(native__configuration__advertised__native_urls)
+{
+    const auto response = get_json("/v1/configuration?format=json");
+    const auto& server = response.as_object().at("server").as_object();
+    BC_REQUIRE_EQUAL(server.size(), 1u);
+    const auto& urls = server.at("native").as_object().at("advertise").as_array();
+    BC_REQUIRE_EQUAL(urls.size(), 2u);
+    BC_REQUIRE_EQUAL(urls.at(0).as_string(), "https://example.com:443");
+    BC_REQUIRE_EQUAL(urls.at(1).as_string(), "http://example.com:8180");
 }
 
 BC_AUTO_TEST_CASE(native__ws_configuration__default__json)

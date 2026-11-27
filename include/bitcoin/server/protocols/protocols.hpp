@@ -52,6 +52,7 @@
 #include <bitcoin/server/protocols/protocol_submit.hpp>
 #include <bitcoin/server/protocols/protocol_mining.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v1.hpp>
+#include <bitcoin/server/protocols/protocol_stratum_v1_handshake.hpp>
 #include <bitcoin/server/protocols/protocol_sv2.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2.hpp>
 #include <bitcoin/server/protocols/protocol_stratum_v2_setup.hpp>
@@ -123,6 +124,8 @@ server::protocol → node::protocol
     │   ╞══ protocol_rpc<electrum>
     │   │   └── protocol_electrum (terminal responder, attached last)
     │   │       └── protocol_sparrow (+ dispatcher<sparrow>)
+    │   ╞══ protocol_rpc<stratum_v1_handshake>
+    │   │   └── protocol_stratum_v1_handshake (handshake, attached first)
     │   ╘══ protocol_rpc<stratum_v1>
     │       └── protocol_submit<Base>
     │           └── protocol_mining<Base>

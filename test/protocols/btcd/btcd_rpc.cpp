@@ -44,6 +44,7 @@ static const code block_not_found{ server::error::btcd::invalid_address_or_key }
 // filter watching found_address matches exactly one of its transactions.
 static const std::string found_address{ "1BaMPFdqMUQ46BV8iRcwbVfsam57oBLMM" };
 static const std::string other_address{ "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn" };
+static const std::string script_address{ "31xsx7sPoS2UfoUAKfoXLX6wTPvpetyo7s" };
 static const std::string bogus_address{ "not-an-address" };
 
 namespace {
@@ -58,6 +59,13 @@ std::string as_text(const system::json::value& value) NOEXCEPT
 std::string coinbase_txid(const chain::block& block) NOEXCEPT
 {
     return encode_hash(block.transactions_ptr()->front()->hash(false));
+}
+
+bool confirm(test::query_t& query, const chain::block& block,
+    const database::context& context) NOEXCEPT
+{
+    return query.set(block, context, {}, false, false) &&
+        query.push_confirmed(query.to_header(block.hash()), true);
 }
 
 } // namespace
@@ -931,36 +939,200 @@ BC_AUTO_TEST_CASE(btcd_rpc__rescan__invalid_beginblock__deserialization)
     BC_REQUIRE_EQUAL(rpc_error("rescan", R"(["not-a-hash",[],[],""])"), deserialization.value());
 }
 
-BC_AUTO_TEST_CASE(btcd_rpc__rescan__null_lists__rescan_finished)
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__null_lists__rescan_finished_then_result)
 {
-    const auto response = rpc("rescan", std::format(R"(["{}",null,null,""])", block9));
-    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
-
+    send("rescan", std::format(R"(["{}",null,null,""])", block9));
     const auto finished = receive_notification();
+    const auto response = receive_notification();
+
     BC_REQUIRE_EQUAL(as_text(finished.at("method")), "rescanfinished");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
-BC_AUTO_TEST_CASE(btcd_rpc__rescan__no_addresses_or_outpoints__rescan_finished)
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__no_addresses_or_outpoints__rescan_finished_at_top)
 {
-    const auto response = rpc("rescan", std::format(R"(["{}",[],[],""])", block9));
-    BC_REQUIRE_MESSAGE(response.is_object() && response.as_object().contains("result"), serialize(response));
-    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
-
+    send("rescan", std::format(R"(["{}",[],[],""])", block9));
     const auto finished = receive_notification();
-    BC_REQUIRE_EQUAL(as_text(finished.at("method")), "rescanfinished");
+    const auto response = receive_notification();
 
     const auto& params = finished.at("params").as_array();
+    BC_REQUIRE_EQUAL(as_text(finished.at("method")), "rescanfinished");
     BC_REQUIRE_EQUAL(params.size(), 3u);
     BC_REQUIRE_EQUAL(as_text(params[0]), block9);
     BC_REQUIRE_EQUAL(params[1].as_int64(), 9);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
-BC_AUTO_TEST_CASE(btcd_rpc__rescan__with_addresses__not_implemented)
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__address_paid__recvtx)
 {
-    constexpr auto request = R"(["{}",["{}"],[],""])";
-    const auto result = rpc_error("rescan", std::format(request, block9, found_address));
-    BC_REQUIRE_EQUAL(result, unimplemented.value());
+    BC_REQUIRE(confirm(query_, test::mock_block10, { 0, 10, 0 }));
+    send("rescan", std::format(R"(["{}",["{}"],[],""])", block9, found_address));
+    const auto recvtx = receive_notification();
+    const auto finished = receive_notification();
+    const auto response = receive_notification();
+
+    const auto& paying = *test::mock_block10.transactions_ptr()->at(1);
+    BC_REQUIRE_EQUAL(as_text(recvtx.at("method")), "recvtx");
+    BC_REQUIRE_EQUAL(as_text(recvtx.at("params").as_array()[0]), encode_base16(paying.to_data(true)));
+    BC_REQUIRE_EQUAL(recvtx.at("params").as_array()[1].at("height").as_int64(), 10);
+    BC_REQUIRE_EQUAL(recvtx.at("params").as_array()[1].at("index").as_int64(), 1);
+    BC_REQUIRE_EQUAL(as_text(finished.at("method")), "rescanfinished");
+    BC_REQUIRE_EQUAL(as_text(finished.at("params").as_array()[0]), encode_hash(test::mock_block10.hash()));
+    BC_REQUIRE_EQUAL(finished.at("params").as_array()[1].as_int64(), 10);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__address_paid_and_spent_in_block__recvtx_then_redeemingtx)
+{
+    BC_REQUIRE(confirm(query_, test::mock_block13, { 0, 10, 0 }));
+    send("rescan", std::format(R"(["{}",["{}"],[],""])", block9, found_address));
+    const auto recvtx = receive_notification();
+    const auto redeemingtx = receive_notification();
+    const auto finished = receive_notification();
+    const auto response = receive_notification();
+
+    BC_REQUIRE_EQUAL(as_text(recvtx.at("method")), "recvtx");
+    BC_REQUIRE_EQUAL(recvtx.at("params").as_array()[1].at("index").as_int64(), 1);
+    BC_REQUIRE_EQUAL(as_text(redeemingtx.at("method")), "redeemingtx");
+    BC_REQUIRE_EQUAL(redeemingtx.at("params").as_array()[1].at("index").as_int64(), 2);
+    BC_REQUIRE_EQUAL(as_text(finished.at("method")), "rescanfinished");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__address_paid_then_spent_later__recvtx_then_redeemingtx)
+{
+    const auto block11 = encode_hash(test::mock_block11.hash());
+    BC_REQUIRE(confirm(query_, test::mock_block10, { 0, 10, 0 }));
+    BC_REQUIRE(confirm(query_, test::mock_block11, { 0, 11, 0 }));
+    BC_REQUIRE(confirm(query_, test::mock_block12, { 0, 12, 0 }));
+    send("rescan", std::format(R"(["{}",["{}"],[],""])", block11, script_address));
+    const auto recvtx = receive_notification();
+    const auto redeemingtx = receive_notification();
+    const auto finished = receive_notification();
+    const auto response = receive_notification();
+
+    BC_REQUIRE_EQUAL(as_text(recvtx.at("method")), "recvtx");
+    BC_REQUIRE_EQUAL(recvtx.at("params").as_array()[1].at("height").as_int64(), 11);
+    BC_REQUIRE_EQUAL(as_text(redeemingtx.at("method")), "redeemingtx");
+    BC_REQUIRE_EQUAL(redeemingtx.at("params").as_array()[1].at("height").as_int64(), 12);
+    BC_REQUIRE_EQUAL(as_text(finished.at("method")), "rescanfinished");
+    BC_REQUIRE_EQUAL(finished.at("params").as_array()[1].as_int64(), 12);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__two_addresses__height_order_redeemingtx_before_recvtx)
+{
+    BC_REQUIRE(confirm(query_, test::mock_block10, { 0, 10, 0 }));
+    BC_REQUIRE(confirm(query_, test::mock_block11, { 0, 11, 0 }));
+    BC_REQUIRE(confirm(query_, test::mock_block12, { 0, 12, 0 }));
+    send("rescan", std::format(R"(["{}",["{}","{}"],[],""])", block9, script_address, found_address));
+    const auto first = receive_notification();
+    const auto second = receive_notification();
+    const auto third = receive_notification();
+    const auto fourth = receive_notification();
+    const auto finished = receive_notification();
+    const auto response = receive_notification();
+
+    BC_REQUIRE_EQUAL(as_text(first.at("method")), "recvtx");
+    BC_REQUIRE_EQUAL(first.at("params").as_array()[1].at("height").as_int64(), 10);
+    BC_REQUIRE_EQUAL(as_text(second.at("method")), "recvtx");
+    BC_REQUIRE_EQUAL(second.at("params").as_array()[1].at("height").as_int64(), 11);
+    BC_REQUIRE_EQUAL(as_text(third.at("method")), "redeemingtx");
+    BC_REQUIRE_EQUAL(third.at("params").as_array()[1].at("height").as_int64(), 12);
+    BC_REQUIRE_EQUAL(as_text(fourth.at("method")), "recvtx");
+    BC_REQUIRE_EQUAL(fourth.at("params").as_array()[1].at("height").as_int64(), 12);
+    BC_REQUIRE_EQUAL(as_text(finished.at("method")), "rescanfinished");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__endblock__later_blocks_excluded)
+{
+    const auto block11 = encode_hash(test::mock_block11.hash());
+    BC_REQUIRE(confirm(query_, test::mock_block10, { 0, 10, 0 }));
+    BC_REQUIRE(confirm(query_, test::mock_block11, { 0, 11, 0 }));
+    BC_REQUIRE(confirm(query_, test::mock_block12, { 0, 12, 0 }));
+    send("rescan", std::format(R"(["{}",["{}"],[],"{}"])", block11, script_address, block11));
+    const auto recvtx = receive_notification();
+    const auto finished = receive_notification();
+    const auto response = receive_notification();
+
+    BC_REQUIRE_EQUAL(as_text(recvtx.at("method")), "recvtx");
+    BC_REQUIRE_EQUAL(recvtx.at("params").as_array()[1].at("height").as_int64(), 11);
+    BC_REQUIRE_EQUAL(as_text(finished.at("method")), "rescanfinished");
+    BC_REQUIRE_EQUAL(as_text(finished.at("params").as_array()[0]), block11);
+    BC_REQUIRE_EQUAL(finished.at("params").as_array()[1].as_int64(), 11);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__beginblock__earlier_blocks_excluded)
+{
+    const auto block11 = encode_hash(test::mock_block11.hash());
+    BC_REQUIRE(confirm(query_, test::mock_block10, { 0, 10, 0 }));
+    BC_REQUIRE(confirm(query_, test::mock_block11, { 0, 11, 0 }));
+    send("rescan", std::format(R"(["{}",["{}"],[],""])", block11, found_address));
+    const auto recvtx = receive_notification();
+    const auto finished = receive_notification();
+    const auto response = receive_notification();
+
+    BC_REQUIRE_EQUAL(as_text(recvtx.at("method")), "recvtx");
+    BC_REQUIRE_EQUAL(recvtx.at("params").as_array()[1].at("height").as_int64(), 11);
+    BC_REQUIRE_EQUAL(as_text(finished.at("method")), "rescanfinished");
+    BC_REQUIRE_EQUAL(finished.at("params").as_array()[1].as_int64(), 11);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__outpoint_spent__redeemingtx)
+{
+    constexpr auto request = R"(["{}",[],[{{"hash":"{}","index":0}}],""])";
+    BC_REQUIRE(confirm(query_, test::mock_block10, { 0, 10, 0 }));
+    send("rescan", std::format(request, block9, coinbase_txid(test::block1)));
+    const auto redeemingtx = receive_notification();
+    const auto finished = receive_notification();
+    const auto response = receive_notification();
+
+    const auto& paying = *test::mock_block10.transactions_ptr()->at(1);
+    BC_REQUIRE_EQUAL(as_text(redeemingtx.at("method")), "redeemingtx");
+    BC_REQUIRE_EQUAL(as_text(redeemingtx.at("params").as_array()[0]), encode_base16(paying.to_data(true)));
+    BC_REQUIRE_EQUAL(redeemingtx.at("params").as_array()[1].at("height").as_int64(), 10);
+    BC_REQUIRE_EQUAL(as_text(finished.at("method")), "rescanfinished");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__outpoint_spent_before_beginblock__rescan_finished_only)
+{
+    constexpr auto request = R"(["{}",[],[{{"hash":"{}","index":0}}],""])";
+    const auto block11 = encode_hash(test::mock_block11.hash());
+    BC_REQUIRE(confirm(query_, test::mock_block10, { 0, 10, 0 }));
+    BC_REQUIRE(confirm(query_, test::mock_block11, { 0, 11, 0 }));
+    send("rescan", std::format(request, block11, coinbase_txid(test::block1)));
+    const auto finished = receive_notification();
+    const auto response = receive_notification();
+
+    BC_REQUIRE_EQUAL(as_text(finished.at("method")), "rescanfinished");
+    BC_REQUIRE_EQUAL(finished.at("params").as_array()[1].as_int64(), 11);
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__beginblock_after_endblock__invalid_parameter)
+{
+    const auto result = rpc_error("rescan", std::format(R"(["{}",[],[],"{}"])", block9, encode_hash(test::block1_hash)));
+    BC_REQUIRE_EQUAL(result, invalid_parameter.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__unknown_endblock__not_found)
+{
+    const auto result = rpc_error("rescan", std::format(R"(["{}",[],[],"{}"])", block9, encode_hash(null_hash)));
+    BC_REQUIRE_EQUAL(result, block_not_found.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__invalid_endblock__deserialization)
+{
+    BC_REQUIRE_EQUAL(rpc_error("rescan", std::format(R"(["{}",[],[],"not-a-hash"])", block9)), deserialization.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_rpc__rescan__bogus_address__invalid_parameter)
+{
+    BC_REQUIRE_EQUAL(rpc_error("rescan", std::format(R"(["{}",["{}"],[],""])", block9, bogus_address)), invalid_parameter.value());
 }
 
 // bitcoind interface methods (bridged into the ws dispatcher)
@@ -1540,6 +1712,29 @@ BC_AUTO_TEST_CASE(btcd_no_index__rescanblocks__any__not_implemented)
     constexpr auto request = R"([["{}"]])";
     const auto result = rpc_error("rescanblocks", std::format(request, encode_hash(test::block1_hash)));
     BC_REQUIRE_EQUAL(result, unimplemented.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_no_index__rescan__address__not_implemented)
+{
+    const auto result = rpc_error("rescan", std::format(R"(["{}",["{}"],[],""])", block9, found_address));
+    BC_REQUIRE_EQUAL(result, unimplemented.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_no_index__rescan__outpoint_only__not_implemented)
+{
+    constexpr auto request = R"(["{}",[],[{{"hash":"{}","index":0}}],""])";
+    const auto result = rpc_error("rescan", std::format(request, block9, coinbase_txid(test::block1)));
+    BC_REQUIRE_EQUAL(result, unimplemented.value());
+}
+
+BC_AUTO_TEST_CASE(btcd_no_index__rescan__empty_lists__rescan_finished_then_result)
+{
+    send("rescan", std::format(R"(["{}",[],[],""])", block9));
+    const auto finished = receive_notification();
+    const auto response = receive_notification();
+
+    BC_REQUIRE_EQUAL(as_text(finished.at("method")), "rescanfinished");
+    REQUIRE_NO_THROW_TRUE(response.at("result").is_null());
 }
 
 BC_AUTO_TEST_CASE(btcd_no_index__searchrawtransactions__any__misc_error)

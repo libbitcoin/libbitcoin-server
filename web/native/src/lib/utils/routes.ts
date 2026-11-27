@@ -6,6 +6,18 @@ export function blocksPath() {
   return '/v1/block';
 }
 
+export function topPath() {
+  return '/v1/top';
+}
+
+export function configurationPath() {
+  return '/v1/configuration';
+}
+
+export function feesPath() {
+  return '/v1/fees';
+}
+
 /** The section suffix of a block or template path (/txs or /txs/details). */
 export function sectionSuffix(pathname: string) {
   if (pathname.endsWith('/txs/details')) return '/txs/details';
@@ -30,6 +42,10 @@ export function templatePath(height: number | string) {
 
 export function investigationsPath() {
   return '/v1/investigations';
+}
+
+export function webMinerPath() {
+  return '/v1/miner';
 }
 
 export function blockByHashPath(hash: string) {

@@ -28,8 +28,9 @@
 namespace libbitcoin {
 namespace server {
 
-/// Stratum v1 solo mining, a job per held template paying the channel's
-/// worker, shares checked against the channel difficulty and blocks submitted.
+/// Stratum v1 solo mining (attached at completion of the handshake), a job per
+/// held template paying the channel's worker, shares checked against the
+/// channel difficulty and blocks submitted.
 class BCS_API protocol_stratum_v1
   : public protocol_mining<protocol_rpc<interface::stratum_v1>>,
     protected network::tracker<protocol_stratum_v1>
@@ -47,21 +48,12 @@ public:
       : mining_t(session, channel, options),
         network::tracker<protocol_stratum_v1>(session->log),
         options_(options),
-        p2kh_(session->server_settings().wallet.p2kh_prefix),
-        p2sh_(session->server_settings().wallet.p2sh_prefix),
-        witness_(session->server_settings().wallet.witness_prefix),
         channel_(std::dynamic_pointer_cast<channel_t>(channel)),
-        prefix_(session->allocate_prefix(options.extranonce1_size)),
-        mining_(prefix_ ? system::emplace_shared<mining_channel>(prefix_,
-            start_difficulty(0.0)) : mining_channel::ptr{}),
-        authorize_timer_(system::emplace_shared<network::deadline>(
-            session->log, channel->strand(),
-            network::seconds(options.authorize_timeout_seconds)))
+        mining_(channel_->mining())
     {
     }
 
     void start() NOEXCEPT override;
-    void stopping(const code& ec) NOEXCEPT override;
 
 protected:
     /// Terminal responder (attached last) for unclaimed methods.
@@ -76,22 +68,11 @@ protected:
         bool clean) NOEXCEPT override;
 
     /// Handlers.
-    void handle_mining_subscribe(const code& ec,
-        rpc_interface::mining_subscribe, const std::string& user_agent,
-        const std::string& session_id, const std::string& host,
-        const network::rpc::value_t& port) NOEXCEPT;
-    void handle_mining_authorize(const code& ec,
-        rpc_interface::mining_authorize, const std::string& username,
-        const std::string& password) NOEXCEPT;
     void handle_mining_submit(const code& ec,
         rpc_interface::mining_submit, const std::string& worker_name,
         const std::string& job_id, const std::string& extranonce2,
         const std::string& ntime, const std::string& nonce,
         const std::string& version_bits) NOEXCEPT;
-    void handle_mining_configure(const code& ec,
-        rpc_interface::mining_configure,
-        const interface::array_t& extensions,
-        const interface::object_t& parameters) NOEXCEPT;
     void handle_mining_suggest_difficulty(const code& ec,
         rpc_interface::mining_suggest_difficulty,
         double difficulty) NOEXCEPT;
@@ -103,8 +84,6 @@ protected:
         const std::string& job_id) NOEXCEPT;
     void handle_mining_multi_version(const code& ec,
         rpc_interface::mining_multi_version, double version) NOEXCEPT;
-    void handle_mining_extranonce_subscribe(const code& ec,
-        rpc_interface::mining_extranonce_subscribe) NOEXCEPT;
 
 private:
     // Notifications require a full duplex transport.
@@ -113,18 +92,10 @@ private:
         return channel_->websocket() || channel_->downgraded();
     }
 
-    void start_mining() NOEXCEPT;
-    void handle_timeout(const code& ec) NOEXCEPT;
-
     // These are thread safe.
     const options_t& options_;
-    const uint8_t p2kh_;
-    const uint8_t p2sh_;
-    const std::string witness_;
     const channel_t::ptr channel_;
-    const extranonces::prefix prefix_;
     const mining_channel::ptr mining_;
-    const network::deadline::ptr authorize_timer_;
 };
 
 } // namespace server

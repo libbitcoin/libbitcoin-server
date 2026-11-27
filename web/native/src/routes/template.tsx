@@ -2,13 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BlockViewer } from '@/components/block-viewer';
 import { Spinner } from '@/components/spinner';
-import { WeakBranchNotice } from '@/components/branch-notice';
 import { StatusPill } from '@/components/status-pill';
 import { TransactionTable } from '@/components/transaction-table';
 import { errorStatus } from '@/lib/api/errors';
 import {
   useBlockHeader,
   useLatestTemplateHeight,
+  usePrefetchTemplate,
   useTemplateNotifications,
   useTemplate,
   useTemplateTransactionHashes,
@@ -24,6 +24,14 @@ import {
 } from '@/lib/utils/format';
 import { notifyBrowser } from '@/lib/utils/notify';
 import {
+  followHeight,
+  followMove,
+  followWhen,
+  isOvertaken,
+  type Opened,
+} from '@/lib/utils/template-follow';
+import { loadTemplateDisplay } from '@/lib/utils/template-settings';
+import {
   blockByHeightPath,
   sectionId,
   sectionSuffix,
@@ -32,6 +40,10 @@ import {
 
 // A held arrow key pages no faster than this, in milliseconds.
 const REPEAT = 100;
+
+function reducedMotion(): boolean {
+  return globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 
 function unavailable(error: unknown): string {
   const status = errorStatus(error);
@@ -69,10 +81,12 @@ export function TemplatePage() {
   const next = more ? `${templatePath(height + 1)}${suffix}` : null;
 
   // The top when this height was opened. A template already mined then opens
-  // as its block; one mined while open stays, linking to its block.
-  const [opened, setOpened] = useState<{ height: number; top: number }>();
-  const overtaken =
-    opened?.height === height && opened.top < height && top !== undefined && height <= top.height;
+  // as its block; one mined while open gives way to the next template.
+  const [opened, setOpened] = useState<Opened>();
+  const overtaken = isOvertaken(opened, height, top?.height);
+  const [departing, setDeparting] = useState(false);
+  // The next template may not be built yet, its notification then loads it.
+  const awaited = absent && top !== undefined && height === top.height + 1;
   const [focus, setFocus] = useState<{ position: number; key: number }>();
   const showPosition = (position: number) => {
     setFocus((current) => ({ position, key: (current?.key ?? 0) + 1 }));
@@ -141,6 +155,37 @@ export function TemplatePage() {
     });
   }, [height, navigate, overtaken]);
 
+  // The page follows the template of the next block. In 3D the mined template
+  // moves out of its scene as the next moves in; the 2D view, a hidden page or
+  // reduced motion switches without moving.
+  const following = followHeight(opened, height, top?.height);
+  const prefetch = usePrefetchTemplate();
+  useEffect(() => {
+    if (following === undefined) return;
+    const follow = () => {
+      setDeparting(false);
+      void navigate(`${templatePath(following)}${suffix}`, { replace: true });
+    };
+
+    const move = followMove(loadTemplateDisplay(), document.hidden, reducedMotion());
+    if (move === null) {
+      follow();
+      return;
+    }
+
+    // The next template is loaded while the mined one moves out, so that its
+    // page opens drawn rather than loading.
+    let current = true;
+    setDeparting(move > 0);
+    void followWhen(move, prefetch(following)).then(() => {
+      if (current) follow();
+    });
+    return () => {
+      current = false;
+      setDeparting(false);
+    };
+  }, [following, navigate, prefetch, suffix]);
+
   // A path ending in a section opens the page at it, once it is drawn.
   const section = sectionId(suffix);
   const sectionReady = Boolean(txs);
@@ -189,13 +234,12 @@ export function TemplatePage() {
         </div>
       </header>
 
-      {overtaken && (
-        <WeakBranchNotice to={`${blockByHeightPath(height)}${suffix}`} label="View block">
-          This template was overtaken by confirmed block {formatInteger(height)}. It is shown as it was.
-        </WeakBranchNotice>
+      {awaited && (
+        <div className="py-10">
+          <Spinner label="Waiting for the next template…" />
+        </div>
       )}
-
-      {isError && (
+      {isError && !awaited && (
         <div className="border-accentSecondary/40 bg-accentSecondary/10 text-textPrimary rounded-xl border px-4 py-3 text-sm">
           <p className="text-accent font-semibold">Template unavailable</p>
           <p className="text-textMuted mt-1 break-words">{unavailable(error)}</p>
@@ -217,13 +261,13 @@ export function TemplatePage() {
           </section>
 
           <BlockViewer
-            key={height}
             elements={txs}
             height={height}
             coinbase
             reservation
             forceExpanded={suffix === '/txs/details'}
             focus={focus}
+            departing={departing}
           />
 
           <TransactionTable key={`txs-${String(height)}`} rows={rows} onPosition={showPosition} />

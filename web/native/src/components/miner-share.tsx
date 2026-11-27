@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useRecentMiners } from '@/lib/hooks/useBlockchainData';
 import { formatNumber } from '@/lib/utils/format';
 import type { Miner } from '@/lib/utils/miner';
+import { webMinerPath } from '@/lib/utils/routes';
 
 const SLICE_COLORS = ['var(--chart-series-1)', 'var(--chart-series-2)', 'var(--chart-series-3)'];
 const LISTED_MINERS = SLICE_COLORS.length;
@@ -60,7 +62,8 @@ export function MinerShareCard({ count }: { count: number }) {
       <p className="text-accentSecondary text-xs tracking-wide uppercase">Miners</p>
       {total > 0 ? (
         <div className="flex items-center gap-3">
-          <svg viewBox="0 0 100 100" className="h-14 w-14 shrink-0" role="img">
+          <Link to={webMinerPath()} aria-label="Web miner" title="Web miner" className="shrink-0 rounded-full hover:opacity-80">
+          <svg viewBox="0 0 100 100" className="h-14 w-14" role="img">
             <title>Blocks by miner</title>
             {slices.map((slice) =>
               slice.end - slice.start >= 1 ? (
@@ -81,6 +84,7 @@ export function MinerShareCard({ count }: { count: number }) {
               )
             )}
           </svg>
+          </Link>
           <ul className="min-w-0 flex-1 text-xs leading-tight">
             {shares.map((share) => (
               <li key={share.name} className="flex items-center gap-1.5">

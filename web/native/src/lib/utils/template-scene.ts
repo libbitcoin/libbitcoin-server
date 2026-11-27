@@ -11,6 +11,7 @@ import {
   type RateBlend,
 } from './pool-template';
 import { formatInteger } from './format';
+import { TemplateSlide } from './template-slide';
 
 // Templates drawn in 3D on a 2D canvas: each template is a platform, each
 // transaction a box on it. The footprint is the 2D treemap tile, so area is
@@ -126,6 +127,8 @@ export class TemplateScene {
   private frame = 0;
   private orbit = false;
   private last = 0;
+  // The move of the templates as they are replaced.
+  private readonly slide: TemplateSlide<PoolTemplates>;
   private ratio = 1;
   private palette: ScenePalette = {
     surface: [31, 33, 28],
@@ -140,6 +143,14 @@ export class TemplateScene {
     private readonly onSelect: (transaction: number) => void,
     private readonly animate: boolean
   ) {
+    this.slide = new TemplateSlide({
+      load: (pool) => {
+        this.load(pool);
+      },
+      // Far enough along the view for the templates to leave it.
+      travel: () => this.camera.distance * 1.4 + WIDTH,
+      animate,
+    });
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Canvas 2D context unavailable.');
     this.context = context;
@@ -170,6 +181,18 @@ export class TemplateScene {
   }
 
   setPool(pool: PoolTemplates): void {
+    this.slide.set(pool);
+    if (this.slide.moving) this.request();
+  }
+
+  // Moves the templates out to the left of the view, over the duration. The
+  // next pool set then moves in from the right over the same duration.
+  moveOut(duration: number): void {
+    this.slide.moveOut(duration);
+    if (this.slide.moving) this.request();
+  }
+
+  private load(pool: PoolTemplates): void {
     this.pool = pool;
     const largest = Math.max(1, ...pool.transactions.map((transaction) => transaction.fee));
     const boxes: Box[] = [];
@@ -301,6 +324,8 @@ export class TemplateScene {
       moving = true;
     }
 
+    if (this.slide.step(time)) moving = true;
+
     if (this.goal) {
       camera.x += (this.goal.x - camera.x) * 0.14;
       camera.z += (this.goal.z - camera.z) * 0.14;
@@ -340,9 +365,9 @@ export class TemplateScene {
     if (!this.pool) return;
 
     const level = Math.cos(camera.elevation);
-    const ex = camera.x + camera.distance * level * Math.sin(camera.azimuth);
+    let ex = camera.x + camera.distance * level * Math.sin(camera.azimuth);
     const ey = camera.y + camera.distance * Math.sin(camera.elevation);
-    const ez = camera.z + camera.distance * level * Math.cos(camera.azimuth);
+    let ez = camera.z + camera.distance * level * Math.cos(camera.azimuth);
     let [fx, fy, fz] = [camera.x - ex, camera.y - ey, camera.z - ez];
     const length = Math.hypot(fx, fy, fz);
     [fx, fy, fz] = [fx / length, fy / length, fz / length];
@@ -422,6 +447,11 @@ export class TemplateScene {
         context.lineTo(line[2], line[3]);
         context.stroke();
       }
+
+    // The templates are drawn shifted along the view (the eye shifted against
+    // them), the ground stays in place.
+    ex -= this.slide.shift * rx;
+    ez -= this.slide.shift * rz;
 
     const platforms = Array.from({ length: count }, (_, index) => index).sort(
       (left, right) => Math.abs(templateCenter(right) - ex) - Math.abs(templateCenter(left) - ex)

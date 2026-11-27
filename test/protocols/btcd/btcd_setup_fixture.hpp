@@ -46,6 +46,9 @@ struct btcd_setup_fixture
     system::json::value rpc(std::string_view method,
         std::string_view params = "[]");
 
+    // JSON-RPC 1.0 request over websocket, its response read as a frame.
+    void send(std::string_view method, std::string_view params = "[]");
+
     // As rpc(), returning the response's error code (-1 if not an error).
     int64_t rpc_error(std::string_view method,
         std::string_view params = "[]");

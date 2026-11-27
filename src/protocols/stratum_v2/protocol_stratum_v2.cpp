@@ -62,7 +62,26 @@ void protocol_stratum_v2::start() NOEXCEPT
     SUBSCRIBE_CHANNEL(submit_shares_extended,
         handle_receive_submit_shares_extended, _1, _2);
 
+    if (!is_zero(options_.authorize_timeout_seconds))
+        authorize_timer_->start(BIND(handle_timeout, _1));
+
     mining_t::start();
+}
+
+void protocol_stratum_v2::stopping(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    authorize_timer_->stop();
+    mining_t::stopping(ec);
+}
+
+void protocol_stratum_v2::handle_timeout(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+    if (stopped() || ec == network::error::operation_canceled)
+        return;
+
+    stop(ec ? ec : code{ network::error::channel_timeout });
 }
 
 // Channels.
@@ -163,7 +182,7 @@ void protocol_stratum_v2::open_channel(uint32_t request_id,
         return;
     }
 
-    if (channel_count() >= options_.maximum_channels)
+    if (mining_channel_count() >= options_.maximum_channels)
     {
         open_failed(request_id, "too-many-channels");
         return;
@@ -189,6 +208,7 @@ void protocol_stratum_v2::open_channel(uint32_t request_id,
     channel->set_payout(payout);
     channel->set_notified(difficulty);
     add_channel(id, channel);
+    authorize_timer_->stop();
 
     const auto target = to_target_hash(difficulty);
     if (standard)

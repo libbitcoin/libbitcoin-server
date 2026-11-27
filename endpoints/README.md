@@ -20,6 +20,7 @@ Integration tests for the client-server interfaces of libbitcoin-server
 | **Stratum v1** | TCP/HTTP/websocket + JSON-RPC 1.0 | `test_stratum_v1.py` | 45 |
 | **Robustness** (all services) | raw TCP/HTTP/websocket, misbehaving clients | `test_robustness_*.py`, `test_longrun.py` | 145 |
 | **Stratum v2** | websocket + binary frames | `test_stratum_v2.py` | 37 |
+| **Stratum v2 Noise** (no server) | fixed-key handshake and transport vectors | `test_sv2_noise.py` | 13 |
 
 Test counts are test functions; parametrized cases run more (about 2,150 in
 all).
@@ -287,7 +288,8 @@ bitcoind).
   invalid addresses and outpoints
 - **Filters:** `loadtxfilter`, `rescanblocks`, `filteredblockconnected`
 - **`rescan`:** unknown begin block rejected, empty address and outpoint
-  lists finish at once with `rescanfinished`, addresses not implemented
+  lists finish at once with `rescanfinished`, a spent outpoint reports
+  `redeemingtx` before `rescanfinished` and the response
 - **Methods:** `getdifficulty`, `getinfo` (also over HTTP POST),
   `getnettotals`, `getnetworkhashps`, `createrawtransaction`/
   `decoderawtransaction`, `decodescript`, `validateaddress`, `help`, `stop`

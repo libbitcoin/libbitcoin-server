@@ -4,6 +4,7 @@ import { type BlockSummary, useServerInfo } from '@/lib/api/client';
 import {
   useBlockStats,
   useBlockchainEventStatus,
+  useFees,
   useLatestBlocks,
   useRecentTransactions,
   useTransactionSizes,
@@ -29,6 +30,9 @@ import {
   blockByHashPath,
   blockByHeightPath,
   blocksPath,
+  configurationPath,
+  feesPath,
+  topPath,
   transactionPath,
   transactionsPath,
 } from '@/lib/utils/routes';
@@ -41,6 +45,14 @@ export function DashboardPage() {
   usePageTitle();
   const info = useServerInfo();
   const now = useNow();
+  const { data: fees } = useFees();
+  const estimate = fees?.estimates?.economical?.['1'];
+  const nextBlockRate =
+    typeof estimate === 'number'
+      ? estimate
+      : fees && fees.virtual > 0
+        ? fees.fee / fees.virtual
+        : undefined;
   const recentTransactions = useRecentTransactions(RECENT_TRANSACTION_LIMIT);
   const eventStatus = useBlockchainEventStatus();
   const websocket = eventStatus.transport === 'websocket';
@@ -90,26 +102,19 @@ export function DashboardPage() {
         </div>
       ) : null}
 
-      <header className="space-y-2">
-        <p className="text-accentSecondary text-sm tracking-wide uppercase">Dashboard</p>
-        <div className="flex min-h-10 flex-wrap items-end justify-between gap-4">
-          <div className="space-y-2">
-            <h1 tabIndex={-1} className="text-accent text-3xl font-semibold">
-              Overview
-            </h1>
-          </div>
-        </div>
+      <header>
+        <h1 tabIndex={-1} className="text-accent text-2xl font-semibold">
+          Overview
+        </h1>
+        <p className="text-textMuted text-sm">The chain, pool and services of this node.</p>
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         <OverviewCard
-          label="Top"
+          label="Top Block"
           value={
             latestBlock ? (
-              <Link
-                to={blockByHashPath(latestBlock.hash)}
-                className="text-accent hover:text-accentSecondary"
-              >
+              <Link to={topPath()} className="text-accent hover:text-accentSecondary">
                 {formatNumber(latestBlock.height, { maximumFractionDigits: 0 })}
               </Link>
             ) : blocksLoading ? (
@@ -118,18 +123,24 @@ export function DashboardPage() {
               '—'
             )
           }
-          detail={latestBlock ? <HashText value={latestBlock.hash} truncate={10} /> : '—'}
+          detail={latestBlock ? formatRelativeTime(latestBlock.timestamp, now) : '—'}
         />
         <OverviewCard
-          label="Latest Age"
+          label="Next Block Fee"
           value={
-            latestBlock
-              ? formatRelativeTime(latestBlock.timestamp, now)
-              : blocksLoading
-                ? 'Loading…'
-                : '—'
+            nextBlockRate === undefined ? (
+              '—'
+            ) : (
+              <Link to={feesPath()} className="text-accent hover:text-accentSecondary">
+                {`${formatNumber(nextBlockRate, { maximumFractionDigits: 2 })} sat/vB`}
+              </Link>
+            )
           }
-          detail={latestBlock ? formatTimestamp(latestBlock.timestamp) : '—'}
+          detail={
+            fees
+              ? `${typeof estimate === 'number' ? 'estimate' : 'pool average'} · ${formatNumber(fees.count, { maximumFractionDigits: 0 })} txs`
+              : '—'
+          }
         />
         <OverviewCard
           label="Avg Interval"
@@ -226,9 +237,17 @@ export function DashboardPage() {
 
         <div className="grid gap-6">
           <div className="border-accent/30 bg-surface/80 space-y-5 rounded-2xl border p-6">
-            <div className="space-y-2">
-              <p className="text-accentSecondary text-xs tracking-wide uppercase">Server</p>
-              <h2 className="text-accent text-xl font-semibold">Server Status</h2>
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-2">
+                <p className="text-accentSecondary text-xs tracking-wide uppercase">Server</p>
+                <h2 className="text-accent text-xl font-semibold">Server Status</h2>
+              </div>
+              <Link
+                to={configurationPath()}
+                className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary inline-flex items-center rounded-md border px-3 py-1 text-xs font-medium tracking-wide uppercase"
+              >
+                Configuration
+              </Link>
             </div>
 
             <div className="space-y-3">

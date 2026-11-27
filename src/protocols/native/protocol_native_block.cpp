@@ -321,6 +321,7 @@ void protocol_native::handle_get_block_header_context(const code& ec,
         }
 
         const auto bypass = query.is_bypass(link);
+        const auto confirmed = query.is_confirmed_block(link);
 
         object["state"] = system::json::object
         {
@@ -328,7 +329,8 @@ void protocol_native::handle_get_block_header_context(const code& ec,
             { "weight", chain::weighted_size(nominal, maximal) },
             { "count", query.get_tx_count(link) },
             { "validated", bypass || query.is_validated(link) },
-            { "confirmed", query.is_confirmed_block(link) },
+            { "confirmed", confirmed },
+            { "candidate", !confirmed && query.is_candidate_header(link) },
             { "confirmable", bypass || query.is_confirmable(link) },
             { "unconfirmable", !bypass && query.is_unconfirmable(link) }
         };

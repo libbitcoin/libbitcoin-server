@@ -32,6 +32,18 @@ using namespace std::placeholders;
 // The vsize of a fee histogram bin (electrs).
 constexpr size_t histogram_bin = 50'000;
 
+// Fee estimates, by mode and confirmation target in blocks.
+using mode_t = node::estimate_mode;
+constexpr std::array<std::pair<mode_t, std::string_view>, 4> estimate_modes
+{
+    std::pair{ mode_t::economical, "economical" },
+    std::pair{ mode_t::conservative, "conservative" },
+    std::pair{ mode_t::geometric, "geometric" },
+    std::pair{ mode_t::basic, "basic" }
+};
+constexpr std::array<size_t, 5> estimate_targets{ 1, 3, 6, 12, 144 };
+constexpr auto estimate_count = estimate_modes.size() * estimate_targets.size();
+
 BC_PUSH_WARNING(NO_INCOMPLETE_SWITCH)
 BC_PUSH_WARNING(NO_THROW_IN_NOEXCEPT)
 
@@ -159,7 +171,8 @@ void protocol_native::handle_get_tx_details(const code& ec,
         { "fee", floored_subtract(value, spend) }
     };
 
-    if (const auto block = query.find_strong(link); !block.is_terminal())
+    const auto block = query.find_strong(link);
+    if (!block.is_terminal() && query.is_confirmed_block(block))
     {
         size_t position{};
         database::context context{};
@@ -176,9 +189,13 @@ void protocol_native::handle_get_tx_details(const code& ec,
             { "position", position }
         };
     }
-    else if (uint32_t time{}; query.get_pooled_time(time, link))
+    else
     {
-        object["time"] = time;
+        if (!coinbase && query.is_confirmable_tx(link))
+            object["confirmable"] = true;
+
+        if (uint32_t time{}; query.get_pooled_time(time, link))
+            object["time"] = time;
     }
 
     send_json(std::move(object));
@@ -638,7 +655,7 @@ void protocol_native::handle_fees(const code& ec,
 }
 
 void protocol_native::complete_get_fees(const code& ec,
-    const database::fee_rates& rates, const gate_t::ptr&) NOEXCEPT
+    const database::fee_rates& rates, const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(stranded());
 
@@ -663,16 +680,80 @@ void protocol_native::complete_get_fees(const code& ec,
         return;
     }
 
+    system::json::object estimates{};
+    for (const auto& mode: estimate_modes)
+        estimates[mode.second] = system::json::object{};
+
     const auto summary = to_fee_summary(rates, histogram_bin);
-    system::json::object object
+    const auto fees = emplace_shared<system::json::object>(system::json::object
     {
         { "count", summary.count },
         { "virtual", summary.vsize },
         { "fee", summary.fee },
-        { "histogram", system::json::value_from(summary.histogram) }
-    };
+        { "histogram", system::json::value_from(summary.histogram) },
+        { "estimates", std::move(estimates) }
+    });
 
-    send_json(std::move(object));
+    estimate_fees(zero, fees, gate);
+}
+
+// Estimates are made in turn, so that each continues one pool projection.
+void protocol_native::estimate_fees(size_t index, const fees_ptr& fees,
+    const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (index == estimate_count)
+    {
+        send_json(std::move(*fees));
+        return;
+    }
+
+    // The estimator targets the next block as zero.
+    const auto mode = estimate_modes.at(index / estimate_targets.size()).first;
+    const auto target = estimate_targets.at(index % estimate_targets.size());
+    estimate(sub1(target), mode,
+        BIND(handle_estimate_fees, _1, _2, index, fees, gate));
+}
+
+void protocol_native::handle_estimate_fees(const code& ec, uint64_t rate,
+    size_t index, const fees_ptr& fees, const gate_t::ptr& gate) NOEXCEPT
+{
+    POST(complete_estimate_fees, ec, rate, index, fees, gate);
+}
+
+// Rates are sat per virtual kilobyte, published as sat per virtual byte.
+void protocol_native::complete_estimate_fees(const code& ec, uint64_t rate,
+    size_t index, const fees_ptr& fees, const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    if (ec == node::error::estimate_disabled ||
+        ec == node::error::estimate_premature)
+    {
+        (*fees)["estimates"] = nullptr;
+        send_json(std::move(*fees));
+        return;
+    }
+
+    if (ec && ec != node::error::estimate_false)
+    {
+        send_internal_server_error(ec);
+        return;
+    }
+
+    const auto name = estimate_modes.at(index / estimate_targets.size()).second;
+    const auto target = estimate_targets.at(index % estimate_targets.size());
+    auto& estimates = (*fees)["estimates"].as_object()[name].as_object();
+    if (ec)
+        estimates[std::to_string(target)] = nullptr;
+    else
+        estimates[std::to_string(target)] = to_floating(rate) / 1'000.0;
+
+    estimate_fees(add1(index), fees, gate);
 }
 
 BC_POP_WARNING()

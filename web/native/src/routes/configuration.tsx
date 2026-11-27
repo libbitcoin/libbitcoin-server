@@ -7,11 +7,11 @@ export function ConfigurationPage() {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
-        <p className="text-accentSecondary text-sm tracking-wide uppercase">Server</p>
-        <h1 tabIndex={-1} className="text-accent text-3xl font-semibold">
+      <header>
+        <h1 tabIndex={-1} className="text-accent text-2xl font-semibold">
           Configuration
         </h1>
+        <p className="text-textMuted text-sm">The configuration served by this node.</p>
       </header>
 
       {isError && (
@@ -26,7 +26,7 @@ export function ConfigurationPage() {
 
       {configuration && (
         <pre className="border-accent/30 bg-surface/80 text-textPrimary overflow-x-auto rounded-2xl border p-5 text-sm">
-          {JSON.stringify(configuration, null, 2)}
+          {JSON.stringify(configuration.source, null, 2)}
         </pre>
       )}
     </div>

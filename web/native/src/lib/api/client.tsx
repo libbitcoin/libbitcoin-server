@@ -10,11 +10,19 @@ export interface BlockReference {
 }
 
 /** Totals of the pool and its rates (sat/vB) by virtual size. */
+/** Fee estimate modes of the node. */
+export type EstimateMode = 'basic' | 'geometric' | 'economical' | 'conservative';
+
+/** Fee rates (sat/vB) by mode and confirmation target in blocks, null if none. */
+export type FeeEstimates = Partial<Record<EstimateMode, Partial<Record<string, number | null>>>>;
+
 export interface PoolFees {
   count: number;
   virtual: number;
   fee: number;
   histogram: Array<[number, number]>;
+  /** Null while the node cannot estimate. */
+  estimates: FeeEstimates | null;
 }
 
 /** Details of a template tx, with its cluster within the template. */
@@ -88,6 +96,14 @@ export interface NetworkParams {
   hrp: string;
 }
 
+/** A service of the node advertised by its configuration. */
+export interface AdvertisedService {
+  /** Public http/https urls (ws/wss on the same port). */
+  advertise: string[];
+  payout_address?: string | null;
+  coinbase_tag?: string | null;
+}
+
 export interface BlockchainClientConfiguration {
   address: boolean;
   filter: boolean;
@@ -101,6 +117,10 @@ export interface BlockchainClientConfiguration {
   wallet: NetworkParams;
   /** Height at and below which tx inputs (scripts and witnesses) are pruned. */
   pruned?: number;
+  /** Advertised services, by configuration section name (as served). */
+  server: Readonly<Partial<Record<string, AdvertisedService>>>;
+  /** The configuration as served. */
+  source: unknown;
 }
 
 export interface BlockStats {
@@ -152,6 +172,9 @@ export interface TransactionSummary {
   hash: string;
   wtxid?: string;
   status: 'unconfirmed' | 'confirmed';
+  /** Not confirmed and not conflicted by a confirmed tx. */
+  confirmable?: boolean;
+  coinbase?: boolean;
   confirmations: number;
   blockHeight?: number;
   blockHash?: string;
@@ -185,6 +208,7 @@ export interface BlockValidation {
   state?: {
     validated?: boolean;
     confirmed?: boolean;
+    candidate?: boolean;
     confirmable?: boolean;
     unconfirmable?: boolean;
   };

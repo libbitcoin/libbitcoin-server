@@ -237,6 +237,7 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_extranonce_subscribe__true)
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_get_transactions__unknown_not_implemented)
 {
+    start_job();
     const auto response = get(R"({"id":7,"method":"mining.get_transactions","params":["00000000"]})");
     BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
     BC_REQUIRE(response.at("error").as_array().at(1).as_string() == not_implemented.message());
@@ -244,6 +245,7 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_get_transactions__unknown_not_implemented)
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_multi_version__unknown_not_implemented)
 {
+    start_job();
     const auto response = get(R"({"id":8,"method":"mining.multi_version","params":[4]})");
     BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unknown.value());
     BC_REQUIRE(response.at("error").as_array().at(1).as_string() == not_implemented.message());
@@ -261,8 +263,15 @@ BC_AUTO_TEST_CASE(stratum_v1__server_notification__method_not_found)
     BC_REQUIRE_EQUAL(get_error(R"({"id":9,"method":"mining.notify","params":[]})"), network::rpc::reserved::method_not_found);
 }
 
+BC_AUTO_TEST_CASE(stratum_v1__unknown_method__mining__method_not_found)
+{
+    start_job();
+    BC_REQUIRE_EQUAL(get_error(R"({"id":9,"method":"mining.bogus","params":[]})"), network::rpc::reserved::method_not_found);
+}
+
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__missing_params__invalid_params)
 {
+    start_job();
     BC_REQUIRE_EQUAL(get_error(R"({"id":10,"method":"mining.submit","params":["w"]})"), network::rpc::reserved::invalid_params);
 }
 
@@ -341,6 +350,12 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__not_subscribed__not_subscribed)
 BC_AUTO_TEST_CASE(stratum_v1__mining_submit__unauthorized_worker__unauthorized_worker)
 {
     subscribe();
+    BC_REQUIRE_EQUAL(get_error(R"({"id":3,"method":"mining.submit","params":["nobody","00000000","00000000","00000000","00000000"]})"), unauthorized_worker.value());
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__mining_unauthorized_worker__unauthorized_worker)
+{
+    start_job();
     BC_REQUIRE_EQUAL(get_error(R"({"id":3,"method":"mining.submit","params":["nobody","00000000","00000000","00000000","00000000"]})"), unauthorized_worker.value());
 }
 
@@ -573,9 +588,45 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_submit__tcp_credential_unsatisfied__unautho
     BC_REQUIRE(dropped.as_object().contains("dropped"));
 }
 
-BC_AUTO_TEST_CASE(stratum_v1__websocket_upgrade__without_credential__refused)
+BC_AUTO_TEST_CASE(stratum_v1__websocket_upgrade__without_credential__accepted)
 {
-    BC_REQUIRE(ws_upgrade());
+    BC_REQUIRE(!ws_upgrade());
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_subscribe__websocket_credential_unsatisfied__subscriptions)
+{
+    ws_upgrade();
+    const auto subscribed = ws_get(R"({"id":1,"method":"mining.subscribe","params":[]})");
+    BC_REQUIRE(subscribed.at("error").is_null());
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__websocket_wrong_password__unauthorized_worker)
+{
+    ws_upgrade();
+    const auto authorized = ws_get(std::format(R"({{"id":2,"method":"mining.authorize","params":["{}.rig","wrong"]}})", address(0x01)));
+    BC_REQUIRE_EQUAL(authorized.at("error").as_array().at(0).as_int64(), unauthorized_worker.value());
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__websocket_in_band_credential__job_notified)
+{
+    ws_upgrade();
+    ws_get(R"({"id":1,"method":"mining.subscribe","params":[]})");
+    const auto authorized = ws_get(std::format(R"({{"id":2,"method":"mining.authorize","params":["{}.rig","pass"]}})", address(0x01)));
+    const auto difficulty = ws_receive();
+    const auto job = ws_receive();
+    BC_REQUIRE(authorized.at("result").as_bool());
+    BC_REQUIRE(difficulty.at("method").as_string() == "mining.set_difficulty");
+    BC_REQUIRE(job.at("method").as_string() == "mining.notify");
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_submit__websocket_credential_unsatisfied__unauthorized_dropped)
+{
+    ws_upgrade();
+    ws_get(R"({"id":1,"method":"mining.subscribe","params":[]})");
+    const auto submitted = ws_get(R"({"id":3,"method":"mining.submit","params":["w","00000000","00000000","00000000","00000000"]})");
+    const auto dropped = ws_receive();
+    BC_REQUIRE_EQUAL(submitted.at("error").as_array().at(0).as_int64(), code{ network::error::unauthorized }.value());
+    BC_REQUIRE(dropped.as_object().contains("dropped"));
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__websocket_credential__job_notified)

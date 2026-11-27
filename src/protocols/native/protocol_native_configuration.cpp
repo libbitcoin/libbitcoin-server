@@ -53,6 +53,46 @@ void protocol_native::handle_get_configuration(const code& ec,
     const auto silent = query.silent_enabled() ?
         json::value(query.silent_start_height()) : json::value(nullptr);
 
+    const auto text = [](const std::string& value) NOEXCEPT
+    {
+        return value.empty() ? json::value(nullptr) : json::value(value);
+    };
+
+    json::object server{};
+    const auto advertise = [&](const std::string& name, const auto& service,
+        json::object&& model) NOEXCEPT
+    {
+        if (!service.enabled() || service.advertise.empty())
+            return;
+
+        json::array urls{};
+        for (const auto& url: service.advertise)
+            urls.emplace_back(url.to_uri());
+
+        model.emplace("advertise", std::move(urls));
+        server.emplace(name, std::move(model));
+    };
+
+    const auto mining = [&](const auto& service) NOEXCEPT
+    {
+        return json::object
+        {
+            { "payout_address", text(service.payout_address) },
+            { "coinbase_tag", text(service.coinbase_tag) }
+        };
+    };
+
+    const auto& services = server_settings();
+    advertise("admin", services.admin, {});
+    advertise("native", services.native, {});
+    advertise("bitcoind", services.bitcoind, {});
+    advertise("btcd", services.btcd, {});
+    advertise("electrum", services.electrum, {});
+    advertise("sparrow", services.sparrow, {});
+    advertise("esplora", services.esplora, {});
+    advertise("stratum_v1", services.stratum_v1, mining(services.stratum_v1));
+    advertise("stratum_v2", services.stratum_v2, mining(services.stratum_v2));
+
     send_json(json::object
     {
         { "store", json::object
@@ -130,7 +170,8 @@ void protocol_native::handle_get_configuration(const code& ec,
                 { "ltc_retarget_overflow_patch", fork.ltc_retarget_overflow_patch },
                 { "ltc_scrypt_proof_of_work", fork.ltc_scrypt_proof_of_work }
             }
-        }
+        },
+        { "server", std::move(server) }
     });
 }
 

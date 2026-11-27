@@ -209,7 +209,6 @@ void parser::select_paths() NOEXCEPT
     secured(configured.server.sparrow);
     secured(configured.server.esplora);
     secured(configured.server.stratum_v1);
-    secured(configured.server.stratum_v2);
 
 #if defined (HAVE_WINDOWS)
     relative(configured.log.symbols_path);
@@ -1442,6 +1441,11 @@ options_metadata parser::load_settings() THROWS
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
+        "admin.advertise",
+        setting<system::config::urls>(&configured.server.admin.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
+    )
+    (
         "admin.credential",
         secret<network::config::credentials>(&configured.server.admin.credentials),
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
@@ -1557,6 +1561,11 @@ options_metadata parser::load_settings() THROWS
         "native.key_pass",
         secret<std::string>(&configured.server.native.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "native.advertise",
+        setting<system::config::urls>(&configured.server.native.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
     )
     (
         "native.credential",
@@ -1679,6 +1688,11 @@ options_metadata parser::load_settings() THROWS
         "bitcoind.key_pass",
         secret<std::string>(&configured.server.bitcoind.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "bitcoind.advertise",
+        setting<system::config::urls>(&configured.server.bitcoind.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
     )
     (
         "bitcoind.credential",
@@ -1865,6 +1879,11 @@ options_metadata parser::load_settings() THROWS
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
+        "btcd.advertise",
+        setting<system::config::urls>(&configured.server.btcd.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
+    )
+    (
         "btcd.credential",
         secret<network::config::credentials>(&configured.server.btcd.credentials),
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
@@ -1985,6 +2004,11 @@ options_metadata parser::load_settings() THROWS
         "electrum.key_pass",
         secret<std::string>(&configured.server.electrum.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "electrum.advertise",
+        setting<system::config::urls>(&configured.server.electrum.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
     )
     (
         "electrum.credential",
@@ -2144,6 +2168,11 @@ options_metadata parser::load_settings() THROWS
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
+        "sparrow.advertise",
+        setting<system::config::urls>(&configured.server.sparrow.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
+    )
+    (
         "sparrow.credential",
         secret<network::config::credentials>(&configured.server.sparrow.credentials),
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
@@ -2300,6 +2329,11 @@ options_metadata parser::load_settings() THROWS
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
+        "esplora.advertise",
+        setting<system::config::urls>(&configured.server.esplora.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
+    )
+    (
         "esplora.credential",
         secret<network::config::credentials>(&configured.server.esplora.credentials),
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
@@ -2416,9 +2450,14 @@ options_metadata parser::load_settings() THROWS
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
+        "stratum_v1.advertise",
+        setting<system::config::urls>(&configured.server.stratum_v1.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
+    )
+    (
         "stratum_v1.credential",
         secret<network::config::credentials>(&configured.server.stratum_v1.credentials),
-        "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
+        "The 'username:password' authorization (not secure), multiple allowed."
     )
     (
         "stratum_v1.compression",
@@ -2520,32 +2559,17 @@ options_metadata parser::load_settings() THROWS
     (
         "stratum_v2.safe",
         setting<network::config::authorities>(&configured.server.stratum_v2.safes),
-        "IP address to secure bind, multiple allowed, defaults to {} (disabled)."
+        "IP address to Noise bind, multiple allowed, defaults to {} (disabled)."
     )
     (
-        "stratum_v2.cert_auth",
-        setting<config::path>(&configured.server.stratum_v2.cert_auth),
-        "The trusted client certificate directory (*.PEM), enables client authentication."
-    )
-    (
-        "stratum_v2.cert_path",
-        setting<config::path>(&configured.server.stratum_v2.cert_path),
-        "The path to the server certificate file (.PEM), defaults to {}."
-    )
-    (
-        "stratum_v2.key_path",
-        setting<config::path>(&configured.server.stratum_v2.key_path),
-        "The path to the server private key file (.PEM), defaults to {}."
-    )
-    (
-        "stratum_v2.key_pass",
-        secret<std::string>(&configured.server.stratum_v2.key_pass),
-        "The password to decrypt the server private key file (.PEM), optional."
+        "stratum_v2.advertise",
+        setting<system::config::urls>(&configured.server.stratum_v2.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
     )
     (
         "stratum_v2.credential",
         secret<network::config::credentials>(&configured.server.stratum_v2.credentials),
-        "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
+        "The 'username:password' authorization (not secure), multiple allowed."
     )
     (
         "stratum_v2.compression",
@@ -2623,6 +2647,31 @@ options_metadata parser::load_settings() THROWS
         "The mining channels open on a connection, defaults to {}."
     )
     (
+        "stratum_v2.noise_secret",
+        secret<config::base58check>(&configured.server.stratum_v2.noise_secret),
+        "The base58check Noise static secret key, defaults to none (no Noise)."
+    )
+    (
+        "stratum_v2.noise_authority",
+        secret<config::base58check>(&configured.server.stratum_v2.noise_authority),
+        "The base58check Noise authority secret key that issues certificates, defaults to none."
+    )
+    (
+        "stratum_v2.noise_authority_key",
+        setting<config::base58check>(&configured.server.stratum_v2.noise_authority_key),
+        "The base58check Noise authority public key that verifies the certificate, defaults to none."
+    )
+    (
+        "stratum_v2.noise_certificate",
+        setting<config::base58check>(&configured.server.stratum_v2.noise_certificate),
+        "The base58check Noise certificate pre-issued by the authority, defaults to none."
+    )
+    (
+        "stratum_v2.noise_validity_days",
+        setting<uint16_t>(&configured.server.stratum_v2.noise_validity_days),
+        "The days either side of issue that an issued certificate is valid, defaults to {}."
+    )
+    (
         "stratum_v2.minimum_difficulty",
         setting<double>(&configured.server.stratum_v2.minimum_difficulty),
         "The share difficulty floor of a channel, defaults to {}."
@@ -2636,6 +2685,11 @@ options_metadata parser::load_settings() THROWS
         "stratum_v2.share_interval_seconds",
         setting<uint32_t>(&configured.server.stratum_v2.share_interval_seconds),
         "The target seconds between shares of a channel, defaults to {} (0 fixes difficulty)."
+    )
+    (
+        "stratum_v2.authorize_timeout_seconds",
+        setting<uint32_t>(&configured.server.stratum_v2.authorize_timeout_seconds),
+        "The seconds to set up a connection and to open a channel, defaults to {} (0 is unlimited)."
     )
     /* [node] */
     (

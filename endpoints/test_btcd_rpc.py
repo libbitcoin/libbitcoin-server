@@ -391,30 +391,36 @@ def test_rescan_unknown_beginblock_rejected(conn):
     assert response.get("error") is not None
 
 
-def test_rescan_no_addrs_no_outpoints_finishes_immediately(conn):
-    """Minimal implementation of this deprecated method: matches real btcd's
-    own "skip scanning, report immediate completion" branch for an empty
-    addr/outpoint list -- the exact call btcwallet's own rpcclient makes to
-    bootstrap its initial sync starting point (found via a real lnd
-    integration test), distinct from rescanblocks/loadtxfilter's actual
-    address-watching path. The finished notification always carries the
-    current chain top, not the requested beginblock.
-    """
-    response = conn.send_rpc("rescan", [ReferenceData.GENESIS_HASH, [], [], ""])
-    assert response.get("error") is None
-
-    notification = conn.read_notification(10.0)
-    assert notification is not None, "no rescanfinished notification received"
-    assert notification["method"] == "rescanfinished"
-    assert len(notification["params"]) == 3
+def rescan(conn, params: list) -> list:
+    """The rescan notifications in order, followed by the response."""
+    conn.ws.send_text(json.dumps({"jsonrpc": "1.0", "id": 0,
+        "method": "rescan", "params": params}))
+    frames = []
+    while True:
+        raw = conn.ws.recv_message(30.0)
+        assert raw is not None, "rescan: no response"
+        frames.append(json.loads(raw))
+        if "id" in frames[-1]:
+            return frames
 
 
-def test_rescan_with_addresses_not_implemented(conn):
-    # A real historical address/outpoint scan is deliberately not
-    # implemented -- no observed real caller needs it.
-    response = conn.raw_rpc("rescan",
-        [ReferenceData.GENESIS_HASH, [ReferenceData.EXAMPLE_ADDRESS], [], ""])
-    assert response.get("error") is not None
+def test_rescan_no_addrs_no_outpoints_finishes_at_top(conn):
+    frames = rescan(conn, [ReferenceData.GENESIS_HASH, [], [], ""])
+    assert [frame.get("method") for frame in frames[:-1]] == ["rescanfinished"]
+    assert len(frames[0]["params"]) == 3
+    assert frames[-1].get("error") is None
+
+
+def test_rescan_outpoint_spent_redeemingtx(conn):
+    # Block 9 coinbase, spent by the first bitcoin transaction (block 170).
+    outpoint = {"hash": "0437cd7f8525ceed2324359c2d0ba26006d92d856a9c20fa0241106ee5a597c9", "index": 0}
+    frames = rescan(conn, [ReferenceData.GENESIS_HASH, [], [outpoint],
+        ReferenceData.FIRST_TX_BLOCK_HASH])
+    methods = [frame.get("method") for frame in frames[:-1]]
+    assert methods == ["redeemingtx", "rescanfinished"]
+    assert frames[0]["params"][1]["height"] == ReferenceData.FIRST_TX_BLOCK_HEIGHT
+    assert frames[1]["params"][1] == ReferenceData.FIRST_TX_BLOCK_HEIGHT
+    assert frames[-1].get("error") is None
 
 
 @pytest.mark.slow

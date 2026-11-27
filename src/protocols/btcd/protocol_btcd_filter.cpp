@@ -370,6 +370,211 @@ void protocol_btcd::do_stop_notify_spent(const chain::points& points) NOEXCEPT
         watching_legacy_.store(false, relaxed);
 }
 
+// Handlers (rescan).
+// ----------------------------------------------------------------------------
+
+void protocol_btcd::handle_rescan(const code& ec, btcd_interface::rescan,
+    const std::string& beginblock, const std::optional<value_t>& addresses,
+    const std::optional<value_t>& outpoints,
+    const std::string& endblock) NOEXCEPT
+{
+    if (stopped(ec))
+        return;
+
+    hash_digest begin_hash{};
+    hash_digest end_hash{};
+    if (!decode_hash(begin_hash, beginblock) ||
+        (!endblock.empty() && !decode_hash(end_hash, endblock)))
+    {
+        send_error(error::btcd::deserialization_error);
+        return;
+    }
+
+    hashes keys{};
+    chain::points points{};
+    if (btcd::filter_keys(keys, addresses, p2kh_, p2sh_, witness_) ||
+        btcd::filter_points(points, outpoints))
+    {
+        send_error(error::btcd::invalid_parameter);
+        return;
+    }
+
+    const auto& query = archive();
+    const auto watching = !keys.empty() || !points.empty();
+    if (watching && !query.address_enabled())
+    {
+        send_error(error::btcd::unimplemented);
+        return;
+    }
+
+    size_t begin{};
+    const auto first = query.to_header(begin_hash);
+    if (!query.is_confirmed_block(first) || !query.get_height(begin, first))
+    {
+        send_error(error::btcd::invalid_address_or_key);
+        return;
+    }
+
+    size_t end{};
+    auto last = query.to_top_confirmed();
+    if (endblock.empty())
+    {
+        if (!query.get_height(end, last))
+        {
+            send_error(error::btcd::internal_error);
+            return;
+        }
+    }
+    else
+    {
+        last = query.to_header(end_hash);
+        if (!query.is_confirmed_block(last) || !query.get_height(end, last))
+        {
+            send_error(error::btcd::invalid_address_or_key);
+            return;
+        }
+    }
+
+    if (begin > end)
+    {
+        send_error(error::btcd::invalid_parameter);
+        return;
+    }
+
+    PARALLEL(do_rescan, std::move(keys), std::move(points), begin, end, last,
+        gate());
+}
+
+void protocol_btcd::do_rescan(const hashes& keys, const chain::points& points,
+    size_t begin, size_t end, const database::header_link& last,
+    const gate_t::ptr& gate) NOEXCEPT
+{
+    BC_ASSERT(!stranded());
+
+    database::touches matched{};
+    const auto& query = archive();
+    const auto limit = btcd_options().maximum_history;
+    for (const auto& key: keys)
+    {
+        database::touches part{};
+        if (const auto fault = query.get_confirmed_touches(stopping_, part,
+            key, begin, end, limit, turbo_))
+        {
+            if (fault != database::error::query_canceled)
+            {
+                POST_BTCD(complete_rescan, fault, nullptr, nullptr, gate);
+            }
+
+            return;
+        }
+
+        matched.insert(matched.end(), part.cbegin(), part.cend());
+    }
+
+    for (const auto& prevout: points)
+    {
+        if (stopping_)
+            return;
+
+        database::touches part{};
+        if (const auto fault = query.get_confirmed_touches(part, prevout,
+            begin, end))
+        {
+            POST_BTCD(complete_rescan, fault, nullptr, nullptr, gate);
+            return;
+        }
+
+        matched.insert(matched.end(), part.cbegin(), part.cend());
+    }
+
+    // A transaction can touch more than one of the watched outputs.
+    database::touch::sort_and_merge(matched);
+
+    header_cptr header{};
+    notifications found{};
+    auto height = max_size_t;
+    for (const auto& touch: matched)
+    {
+        if (stopping_)
+            return;
+
+        if (touch.height != height)
+        {
+            height = touch.height;
+            const auto link = query.to_confirmed(height);
+            header = query.get_header(link);
+            if (!header || query.is_pruned(link))
+            {
+                constexpr auto code = error::btcd::invalid_address_or_key;
+                POST_BTCD(complete_rescan, code, nullptr, nullptr, gate);
+                return;
+            }
+        }
+
+        std::string tx{};
+        if (!get_tx_text(tx, touch.link))
+        {
+            constexpr auto code = database::error::integrity;
+            POST_BTCD(complete_rescan, code, nullptr, nullptr, gate);
+            return;
+        }
+
+        const auto position = touch.position;
+        if (touch.spends)
+        {
+            found.emplace_back("redeemingtx",
+                serialize_legacy(std::string{ tx }, header, height, position));
+        }
+
+        if (touch.funds)
+        {
+            found.emplace_back("recvtx",
+                serialize_legacy(std::move(tx), header, height, position));
+        }
+    }
+
+    // Matches are by height, so the end block must still be confirmed.
+    const auto top = query.get_header(last);
+    if (!query.is_confirmed_block(last) || !top)
+    {
+        constexpr auto code = error::btcd::invalid_address_or_key;
+        POST_BTCD(complete_rescan, code, nullptr, nullptr, gate);
+        return;
+    }
+
+    POST_BTCD(complete_rescan, error::success,
+        emplace_shared<notifications>(std::move(found)),
+        emplace_shared<array_t>(array_t
+        {
+            encode_hash(top->get_hash()),
+            to64(end),
+            top->timestamp()
+        }), gate);
+}
+
+void protocol_btcd::complete_rescan(const code& ec,
+    const notifications_ptr& found, const array_ptr& finished,
+    const gate_t::ptr&) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    if (ec)
+    {
+        using namespace error::btcd;
+        send_error(translate(ec, internal_error));
+        return;
+    }
+
+    for (auto& [method, params]: *found)
+        send_notification(method, std::move(params));
+
+    send_notification("rescanfinished", std::move(*finished));
+    send_result({});
+}
+
 void protocol_btcd::handle_rescan_blocks(const code& ec,
     btcd_interface::rescan_blocks,
     const std::optional<value_t>& blockhashes) NOEXCEPT
@@ -430,7 +635,8 @@ void protocol_btcd::do_rescan_blocks(const hashes_ptr& block_hashes,
 }
 
 void protocol_btcd::do_rescan_watches(const hashes_ptr& block_hashes,
-    const hashes& keys, chain::points& points, const gate_t::ptr& gate) NOEXCEPT
+    const hashes& keys, const chain::points& points,
+    const gate_t::ptr& gate) NOEXCEPT
 {
     BC_ASSERT(!stranded());
 
@@ -466,17 +672,36 @@ void protocol_btcd::do_rescan_watches(const hashes_ptr& block_hashes,
         named.emplace_back(std::move(hash), height);
     }
 
-    // Match the snapshot against the named heights (full replay).
+    // Match the snapshot against the range of the named heights.
     matches matched{};
+    const auto limit = btcd_options().maximum_history;
+    const auto low = heights.empty() ? zero : *heights.cbegin();
+    const auto high = heights.empty() ? zero : *heights.crbegin();
+    const auto match = [&](const database::touches& touches) NOEXCEPT
+    {
+        for (const auto& touch: touches)
+            if (heights.contains(touch.height))
+                matched[touch.height].emplace(touch.position, touch.link);
+    };
+
     for (const auto& key: keys)
     {
-        if (stopping_)
-            return;
+        if (heights.empty())
+            break;
 
-        address_watch replay{};
-        const auto fault = match_addresses(matched, replay, key, heights);
-        if (fault == database::error::query_canceled)
+        database::touches part{};
+        if (const auto fault = query.get_confirmed_touches(stopping_, part,
+            key, low, high, limit, turbo_))
+        {
+            if (fault != database::error::query_canceled)
+            {
+                POST_BTCD(complete_rescan_blocks, fault, nullptr, gate);
+            }
+
             return;
+        }
+
+        match(part);
     }
 
     for (const auto& prevout: points)
@@ -484,8 +709,18 @@ void protocol_btcd::do_rescan_watches(const hashes_ptr& block_hashes,
         if (stopping_)
             return;
 
-        outpoint_watch replay{};
-        match_outpoints(matched, replay, prevout, heights);
+        if (heights.empty())
+            break;
+
+        database::touches part{};
+        if (const auto fault = query.get_confirmed_touches(part, prevout, low,
+            high))
+        {
+            POST_BTCD(complete_rescan_blocks, fault, nullptr, gate);
+            return;
+        }
+
+        match(part);
     }
 
     // Matches are by height, so each named block must still be confirmed.
@@ -608,15 +843,14 @@ void protocol_btcd::do_search_raw_transactions(const hashes& keys,
 {
     BC_ASSERT(!stranded());
 
-    histories history{};
+    database::touches matched{};
     auto& query = archive();
     const auto limit = btcd_options().maximum_history;
     for (const auto& key: keys)
     {
-        histories part{};
-        database::height_link cursor{};
-        if (const auto fault = query.get_confirmed_history(stopping_, cursor,
-            part, key, limit, turbo_))
+        database::touches part{};
+        if (const auto fault = query.get_confirmed_touches(stopping_, part,
+            key, zero, max_size_t, limit, turbo_))
         {
             if (fault == database::error::query_canceled)
                 return;
@@ -626,19 +860,19 @@ void protocol_btcd::do_search_raw_transactions(const hashes& keys,
             return;
         }
 
-        history.insert(history.end(), part.cbegin(), part.cend());
+        matched.insert(matched.end(), part.cbegin(), part.cend());
     }
 
     // A transaction can pay more than one of the searched scripts.
     if (keys.size() > one)
-        database::history::filter_sort_and_dedup(history);
+        database::touch::sort_and_merge(matched);
 
-    // Confirmed history ascends by height, btcd's default order.
+    // Touches ascend in block order, btcd's default order.
     if (reverse)
-        std::reverse(history.begin(), history.end());
+        std::reverse(matched.begin(), matched.end());
 
     array_t found{};
-    for (const auto& entry: history)
+    for (const auto& touch: matched)
     {
         if (stopping_)
             return;
@@ -652,8 +886,7 @@ void protocol_btcd::do_search_raw_transactions(const hashes& keys,
         if (found.size() == count)
             break;
 
-        constexpr auto witness = true;
-        const auto link = query.to_tx(entry.tx.hash());
+        const auto& link = touch.link;
         if (query.is_pruned(link))
         {
             constexpr auto code = error::btcd::invalid_address_or_key;
@@ -662,19 +895,26 @@ void protocol_btcd::do_search_raw_transactions(const hashes& keys,
             return;
         }
 
-        const auto tx = query.get_transaction(link, witness);
+        if (!verbose)
+        {
+            std::string text{};
+            if (!get_tx_text(text, link))
+            {
+                POST_BTCD(complete_search_raw_transactions,
+                    error::btcd::internal_error, to_shared<array_t>(), gate);
+                return;
+            }
+
+            found.emplace_back(std::move(text));
+            continue;
+        }
+
+        const auto tx = query.get_transaction(link, true);
         if (!tx)
         {
             POST_BTCD(complete_search_raw_transactions,
                 error::btcd::internal_error, to_shared<array_t>(), gate);
             return;
-        }
-
-        if (!verbose)
-        {
-            const auto size = tx->serialized_size(witness);
-            found.emplace_back(to_text(*tx, size, witness));
-            continue;
         }
 
         auto model = btcd::search_transaction(query, link, *tx, filter,
@@ -831,19 +1071,25 @@ code protocol_btcd::match_receives(std::vector<array_t>& out,
     if (at == received.cend())
         return error::success;
 
-    for (const auto& [position, hash]: at->second)
+    for (const auto& [position, link]: at->second)
     {
-        const auto tx = query.get_transaction(query.to_tx(hash), true);
+        constexpr auto witness = true;
+        const auto tx = query.get_transaction(link, witness);
         if (!tx)
             return database::error::integrity;
 
         // The address walk matches spends, which are not receives.
         bool paid{};
+        const auto hash = tx->get_hash(false);
         if (const auto fault = arm_spent_watches(paid, *tx, hash))
             return fault;
 
         if (paid)
-            out.push_back(serialize_legacy(*tx, header, height, position));
+        {
+            const auto size = tx->serialized_size(witness);
+            out.push_back(serialize_legacy(to_text(*tx, size, witness),
+                header, height, position));
+        }
     }
 
     return error::success;
@@ -855,7 +1101,6 @@ code protocol_btcd::match_spends(std::vector<array_t>& out,
 {
     BC_ASSERT(notification_strand_.running_in_this_thread());
 
-    const auto& query = archive();
     for (auto it = spent_watches_.begin(); it != spent_watches_.end();)
     {
         if (stopping_)
@@ -870,13 +1115,14 @@ code protocol_btcd::match_spends(std::vector<array_t>& out,
             continue;
         }
 
-        for (const auto& [position, hash]: at->second)
+        for (const auto& [position, link]: at->second)
         {
-            const auto tx = query.get_transaction(query.to_tx(hash), true);
-            if (!tx)
+            std::string tx{};
+            if (!get_tx_text(tx, link))
                 return database::error::integrity;
 
-            out.push_back(serialize_legacy(*tx, header, height, position));
+            out.push_back(serialize_legacy(std::move(tx), header, height,
+                position));
         }
 
         it = spent_watches_.erase(it);
@@ -1030,7 +1276,8 @@ code protocol_btcd::match_addresses(matches& out, address_watch& sub,
 
     for (const auto& entry: delta)
         if (entry.confirmed() && heights.contains(entry.tx.height()))
-            out[entry.tx.height()].emplace(entry.position, entry.tx.hash());
+            out[entry.tx.height()].emplace(entry.position,
+                query.find_strong_tx(entry.tx.hash()));
 
     return error::success;
 }
@@ -1042,12 +1289,13 @@ void protocol_btcd::match_outpoints(matches& out, outpoint_watch& sub,
     const point& prevout, const sizes& heights) NOEXCEPT
 {
     outpoint_watch next{};
-    next.spenders = archive().get_spenders_history(prevout);
+    const auto& query = archive();
+    next.spenders = query.get_spenders_history(prevout);
 
     for (const auto& spender: difference(next.spenders, sub.spenders))
         if (spender.confirmed() && heights.contains(spender.tx.height()))
             out[spender.tx.height()].emplace(spender.position,
-                spender.tx.hash());
+                query.find_strong_tx(spender.tx.hash()));
 
     sub = std::move(next);
 }
@@ -1055,21 +1303,34 @@ void protocol_btcd::match_outpoints(matches& out, outpoint_watch& sub,
 bool protocol_btcd::serialize_matches(array_t& out,
     const matched_txs& txs) NOEXCEPT
 {
-    constexpr auto witness = true;
-    const auto& query = archive();
-    for (const auto& [position, hash]: txs)
+    for (const auto& [position, link]: txs)
     {
         if (stopping_)
             return true;
 
-        const auto tx = query.get_transaction(query.to_tx(hash), witness);
-        if (!tx)
+        std::string tx{};
+        if (!get_tx_text(tx, link))
             return false;
 
-        out.emplace_back(to_text(*tx, tx->serialized_size(witness), witness));
+        out.emplace_back(std::move(tx));
     }
 
     return true;
+}
+
+bool protocol_btcd::get_tx_text(std::string& out,
+    const database::tx_link& link) const NOEXCEPT
+{
+    size_t size{};
+    constexpr auto witness = true;
+    const auto& query = archive();
+    if (!query.get_tx_size(size, link, witness))
+        return false;
+
+    out.assign(two * size, '\0');
+    stream::out::fast sink{ out };
+    write::base16::fast writer{ sink };
+    return query.get_wire_tx(writer, link, witness) && writer;
 }
 
 // Mirrors real btcd's auto-registration of a spent-watch on a match.
@@ -1106,13 +1367,12 @@ void protocol_btcd::complete_overflow(const code& ec) NOEXCEPT
 }
 
 // [txHex, blockDetails] wire shape of a real btcd recvtx/redeemingtx.
-array_t protocol_btcd::serialize_legacy(const chain::transaction& tx,
+array_t protocol_btcd::serialize_legacy(std::string&& tx,
     const header_cptr& header, size_t height, size_t position) NOEXCEPT
 {
-    constexpr auto witness = true;
     return array_t
     {
-        to_text(tx, tx.serialized_size(witness), witness),
+        std::move(tx),
         object_t
         {
             { "height", to64(height) },

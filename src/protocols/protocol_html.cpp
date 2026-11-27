@@ -188,16 +188,10 @@ void protocol_html::dispatch_embedded(const request& request) NOEXCEPT
 // Content-type field is determined by requested file extension.
 void protocol_html::dispatch_file(const request& request) NOEXCEPT
 {
-    // Empty path implies malformed target (terminal).
-    auto path = to_local_path(request.target());
-    if (path.empty())
-    {
-        send_bad_target({}, *reset_request());
-        return;
-    }
+    std::filesystem::path path{};
 
     // If no file extension it's REST on the single/default html page.
-    if (!path.has_extension())
+    if (!to_path(request.target()).has_extension())
     {
         path = to_local_path();
 
@@ -205,6 +199,16 @@ void protocol_html::dispatch_file(const request& request) NOEXCEPT
         if (path.empty())
         {
             send_not_implemented();
+            return;
+        }
+    }
+    else
+    {
+        // Empty path implies malformed target (terminal).
+        path = to_local_path(request.target());
+        if (path.empty())
+        {
+            send_bad_target({}, *reset_request());
             return;
         }
     }

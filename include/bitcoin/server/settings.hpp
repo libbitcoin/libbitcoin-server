@@ -242,6 +242,9 @@ public:
         /// Bytes of coinbase extranonce, assigned and rolled.
         virtual size_t coinbase_extranonce_size() const NOEXCEPT = 0;
 
+        /// The difficulty of a new channel, of the hash rate if automatic.
+        double initial_difficulty(double hash_rate) const NOEXCEPT;
+
         /// Address paid by the coinbase, otherwise the worker name.
         std::string payout_address{};
 
@@ -256,6 +259,9 @@ public:
 
         /// Target seconds between shares of a channel, zero fixes difficulty.
         uint32_t share_interval_seconds{ 10 };
+
+        /// Seconds to authorize a connection, zero is unlimited.
+        uint32_t authorize_timeout_seconds{ 15 };
     };
 
     /// Stratum v1 is served over tcp/s (json-rpc downgrade), http/s and ws/s,
@@ -277,20 +283,29 @@ public:
 
         /// Bytes of coinbase extranonce rolled by the miner.
         uint8_t extranonce2_size{ 4 };
-
-        /// Seconds to subscribe and authorize a channel, zero is unlimited.
-        uint32_t authorize_timeout_seconds{ 15 };
     };
 
-    /// Stratum v2 is served over ws/s (binary frames).
+    /// Stratum v2 is served over ws or tcp, secured by noise (binary frames).
     struct BCS_API stratum_v2_server
       : public mining_server
     {
         using base = mining_server;
         using base::base;
 
-        /// Validate the extranonce sizes.
+        /// Validate the extranonce sizes and initialize the noise context.
         code initialize_context() NOEXCEPT override;
+
+        /// Initialize the noise context (invalid_configuration if malformed).
+        code initialize_noise() NOEXCEPT;
+
+        /// The secured bindings are served by noise, not tls.
+        bool tls_secured() const NOEXCEPT override;
+
+        /// False if safes is empty or the noise context is not initialized.
+        bool secure() const NOEXCEPT override;
+
+        /// The noise::context (initialized).
+        network::settings::transport secure_context() const NOEXCEPT override;
 
         /// Bytes of coinbase extranonce, assigned and rolled.
         size_t coinbase_extranonce_size() const NOEXCEPT override;
@@ -303,6 +318,24 @@ public:
 
         /// Mining channels open on a connection.
         uint32_t maximum_channels{ 1024 };
+
+        /// Noise static secret key, with which the server is known.
+        system::config::base58check noise_secret{};
+
+        /// Noise authority secret key, with which certificates are issued.
+        system::config::base58check noise_authority{};
+
+        /// Noise authority public key, with which the certificate is verified.
+        system::config::base58check noise_authority_key{};
+
+        /// Noise certificate, pre-issued by the authority.
+        system::config::base58check noise_certificate{};
+
+        /// Days either side of issue that an issued certificate is valid.
+        uint16_t noise_validity_days{ 1 };
+
+        /// Noise responder context (initialized if static secret configured).
+        std::unique_ptr<const network::noise::context> noise{};
     };
 
     struct BCS_API esplora_server

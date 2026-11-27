@@ -22,12 +22,13 @@
 #include <bitcoin/server/channels/channel_rpc.hpp>
 #include <bitcoin/server/define.hpp>
 #include <bitcoin/server/settings.hpp>
+#include <bitcoin/server/utilities/utilities.hpp>
 
 namespace libbitcoin {
 namespace server {
 
 /// Channel for stratum v1 service (universal json-rpc), carrying the state of
-/// its miner's subscription and authorization.
+/// its miner's subscription and authorization, authorized in band.
 class BCS_API channel_stratum_v1
   : public channel_rpc,
     protected network::tracker<channel_stratum_v1>
@@ -39,36 +40,10 @@ public:
     inline channel_stratum_v1(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
-      : channel_rpc(log, socket, identifier, config, options),
+      : channel_rpc(log, socket, identifier, config, options, true),
         network::tracker<channel_stratum_v1>(log),
         options_(options)
     {
-    }
-
-    /// Authorization.
-    /// -----------------------------------------------------------------------
-
-    /// A raw tcp channel has no http headers, so it carries its credential in
-    /// mining.authorize and passes the http gate.
-    inline bool authorized() const NOEXCEPT override
-    {
-        return downgraded() || channel_rpc::authorized();
-    }
-
-    /// Before its credential a raw tcp channel is permitted only the methods
-    /// that precede mining.authorize.
-    inline bool permitted(const std::string& method) const NOEXCEPT override
-    {
-        if (downgraded() && !credentialed())
-            return std::ranges::find(handshake, method) != handshake.end();
-
-        return channel_rpc::permitted(method);
-    }
-
-    /// The credential is satisfied (not required, by header or in-band).
-    inline bool credentialed() const NOEXCEPT
-    {
-        return channel_rpc::authorized();
     }
 
     /// Properties (require strand).
@@ -77,6 +52,16 @@ public:
     inline const options_t& options() const NOEXCEPT
     {
         return options_;
+    }
+
+    inline void set_mining(const mining_channel::ptr& mining) NOEXCEPT
+    {
+        mining_ = mining;
+    }
+
+    inline const mining_channel::ptr& mining() const NOEXCEPT
+    {
+        return mining_;
     }
 
     inline void set_subscribed() NOEXCEPT
@@ -122,20 +107,11 @@ protected:
     }
 
 private:
-    static constexpr std::array<std::string_view, 6> handshake
-    {
-        "mining.subscribe",
-        "mining.authorize",
-        "mining.configure",
-        "mining.suggest_difficulty",
-        "mining.suggest_target",
-        "mining.extranonce.subscribe"
-    };
-
     // This is thread safe.
     const options_t& options_;
 
     // These are protected by strand.
+    mining_channel::ptr mining_{};
     std::unordered_set<std::string> workers_{};
     uint32_t mask_{};
     bool subscribed_{};

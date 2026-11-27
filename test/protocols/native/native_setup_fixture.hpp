@@ -168,6 +168,19 @@ struct native_unconfirmed_setup_fixture
     }
 };
 
+struct native_unconfirmed_coinbase_setup_fixture
+  : native_setup_fixture
+{
+    inline native_unconfirmed_coinbase_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return query.initialize(test::genesis) &&
+                query.set(test::block1, database::context{ 0, 1, 0 }, {}, false, false);
+        })
+    {
+    }
+};
+
 struct native_unassociated_setup_fixture
   : native_setup_fixture
 {
@@ -287,6 +300,25 @@ struct native_hosts_setup_fixture
         }, [](server::configuration& config)
         {
             config.server.native.hosts = { { "example.com" } };
+        })
+    {
+    }
+};
+
+struct native_advertise_setup_fixture
+  : native_setup_fixture
+{
+    inline native_advertise_setup_fixture()
+      : native_setup_fixture([](test::query_t& query)
+        {
+            return test::setup_ten_block_store(query);
+        }, [](server::configuration& config)
+        {
+            config.server.native.advertise =
+            {
+                system::config::url{ "https://example.com:443" },
+                system::config::url{ "http://example.com:8180" }
+            };
         })
     {
     }

@@ -4,8 +4,11 @@ import {
   blockByHashPath,
   blockByHeightPath,
   blockValidationPath,
+  configurationPath,
+  feesPath,
   isAddressPath,
   searchPath,
+  topPath,
   transactionInputPath,
   transactionOutputPath,
 } from '@/lib/utils/routes';
@@ -16,6 +19,18 @@ test('routes__block_by_hash_path__hash__hash_path', () => {
 
 test('routes__block_validation_path__hash__header_context_path', () => {
   expect(blockValidationPath('00ab')).toBe('/v1/block/hash/00ab/header/context');
+});
+
+test('routes__configuration_path__default__configuration_path', () => {
+  expect(configurationPath()).toBe('/v1/configuration');
+});
+
+test('routes__fees_path__default__fees_path', () => {
+  expect(feesPath()).toBe('/v1/fees');
+});
+
+test('routes__top_path__default__top_path', () => {
+  expect(topPath()).toBe('/v1/top');
 });
 
 test('routes__block_by_height_path__number__confirmed_path', () => {

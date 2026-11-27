@@ -142,5 +142,16 @@ void mining_channel::reset_window() NOEXCEPT
     window_ = network::steady_clock::now();
 }
 
+bool mining_channel::suggest(double difficulty, double minimum) NOEXCEPT
+{
+    const auto floored = std::max({ minimum, floor_, difficulty });
+    if (floored == difficulty_)
+        return false;
+
+    difficulty_ = floored;
+    reset_window();
+    return true;
+}
+
 } // namespace server
 } // namespace libbitcoin

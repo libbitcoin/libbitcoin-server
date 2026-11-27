@@ -4,6 +4,7 @@ import {
   AddressActivityItem,
   AddressSummary,
   AddressUtxo,
+  AdvertisedService,
   BlockchainClientConfiguration,
   BlockHeaderDetail,
   BlockValidation,
@@ -83,6 +84,7 @@ interface BlockHeaderContextResponse {
     count: number;
     validated: boolean;
     confirmed: boolean;
+    candidate: boolean;
     confirmable: boolean;
     unconfirmable: boolean;
   };
@@ -96,6 +98,7 @@ const blockValidationSchema = z.object({
     .object({
       validated: z.boolean().optional(),
       confirmed: z.boolean().optional(),
+      candidate: z.boolean().optional(),
       confirmable: z.boolean().optional(),
       unconfirmable: z.boolean().optional(),
     })
@@ -140,6 +143,7 @@ interface TxDetailsResponse {
   /** When the tx was pooled, in seconds, if unconfirmed. */
   time?: number;
   confirmed?: TxDetailsConfirmedResponse;
+  confirmable?: boolean;
 }
 
 const TOP_CACHE_TTL_MS = 5_000;
@@ -169,6 +173,14 @@ const feesSchema = z.object({
   virtual: z.number(),
   fee: z.number(),
   histogram: z.array(z.tuple([z.number(), z.number()])),
+  estimates: z
+    .partialRecord(
+      z.enum(['basic', 'geometric', 'economical', 'conservative']),
+      z.record(z.string(), z.number().nullable())
+    )
+    .nullable()
+    .optional()
+    .transform((value) => value ?? null),
 });
 
 const templateSchema = z.array(
@@ -212,6 +224,16 @@ const configurationSchema = z.object({
     witness: z.string().trim().min(1),
   }),
   forks: z.record(z.string(), z.boolean()),
+  server: z
+    .record(
+      z.string(),
+      z.object({
+        advertise: z.array(z.string()),
+        payout_address: z.string().nullable().optional(),
+        coinbase_tag: z.string().nullable().optional(),
+      })
+    )
+    .optional(),
 });
 
 function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
@@ -220,6 +242,7 @@ function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
     throw new Error('Invalid server configuration');
   }
   const { store, node, wallet, forks, network } = parsed.data;
+  const served = raw as { server?: Record<string, AdvertisedService> };
   const flags = (source: Record<string, unknown>) =>
     Object.fromEntries(
       Object.entries(source).filter(
@@ -241,6 +264,8 @@ function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
     forks: enabledForks,
     wallet: { p2pkh: wallet.p2kh, p2sh: wallet.p2sh, hrp: wallet.witness },
     ...(typeof store.pruned === 'number' ? { pruned: store.pruned } : {}),
+    server: served.server ?? {},
+    source: raw,
   };
 }
 
@@ -291,6 +316,8 @@ function applyTxDetails(
   return {
     ...summary,
     wtxid: details.wtxid || summary.wtxid,
+    confirmable: details.confirmable === true,
+    coinbase: details.coinbase === true,
     feeSats: typeof details.fee === 'number' ? details.fee : summary.feeSats,
     feeRate,
     size: typeof details.maximal === 'number' ? details.maximal : summary.size,
@@ -1725,6 +1752,8 @@ export function createLibbitcoinClient({
         txid,
         hash: txid,
         status: confirmed ? 'confirmed' : 'unconfirmed',
+        confirmable: details.confirmable === true,
+        coinbase: details.coinbase === true,
         confirmations,
         blockHeight: height,
         blockHash: header?.hash,

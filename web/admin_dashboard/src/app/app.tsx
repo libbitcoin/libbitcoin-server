@@ -2,6 +2,7 @@ import { useMemo, useState, useSyncExternalStore } from 'react';
 import { Settings } from '@/components/settings';
 import { EventView } from '@/components/event-view';
 import { LogView } from '@/components/log-view';
+import { Mining } from '@/components/mining';
 import { Overview } from '@/components/overview';
 import { SyncStatusNotifier } from '@/components/sync-status-notifier';
 import {
@@ -16,12 +17,13 @@ import { useAdminTelemetry, useNativeTelemetry } from '@/lib/use-telemetry';
 import { useCurrentTime } from '@/lib/use-current-time';
 import { coinOf } from '@/lib/wallet-prefixes';
 
-type DashboardView = 'overview' | 'logs' | 'events';
+type DashboardView = 'overview' | 'logs' | 'events' | 'mining';
 
 const navigation: Array<{ id: DashboardView; label: string }> = [
   { id: 'overview', label: 'Overview' },
   { id: 'logs', label: 'Logs' },
   { id: 'events', label: 'Events' },
+  { id: 'mining', label: 'Mining' },
 ];
 
 export function App() {
@@ -178,6 +180,7 @@ export function App() {
             }}
           />
         )}
+        {view === 'mining' && <Mining />}
       </main>
 
       <SyncStatusNotifier

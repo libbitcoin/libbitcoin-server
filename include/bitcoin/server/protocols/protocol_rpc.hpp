@@ -113,8 +113,8 @@ protected:
         // Senders respond to the cached request.
         set_request(post);
 
-        // Defer methods not defined by the interface.
-        if (!rpc_dispatcher::contains(message.method))
+        // Defer methods not claimed by the interface.
+        if (!claims(message.method))
         {
             handle_unclaimed(message);
             return;
@@ -209,7 +209,7 @@ protected:
             return;
 
         // ws frames carry no headers, so ws authorization is enforced here.
-        if (!authorized())
+        if (!in_band() && !authorized())
         {
             set_claimed();
             send_code(network::error::unauthorized,
@@ -227,8 +227,8 @@ protected:
         const auto& message =
             request.body().template get<network::rpc::request>().message;
 
-        // Defer methods not defined by the interface.
-        if (!rpc_dispatcher::contains(message.method))
+        // Defer methods not claimed by the interface.
+        if (!claims(message.method))
         {
             handle_unclaimed(message);
             return;
@@ -238,7 +238,7 @@ protected:
         set_claimed();
 
         // The credential may be restricted to a subset of interface methods.
-        if (!permitted(message.method))
+        if (!in_band() && !permitted(message.method))
         {
             send_code(network::error::unauthorized,
                 network::error::unauthorized);
@@ -249,7 +249,20 @@ protected:
             handle_dispatch_fault(code);
     }
 
-    /// Invoked for a request not defined by interface, which protocol attached
+    /// True if the interface claims the method, by default if it defines it.
+    virtual bool claims(const std::string& method) const NOEXCEPT
+    {
+        return rpc_dispatcher::contains(method);
+    }
+
+    /// True if the interface authorizes a ws/tcp channel itself, so its
+    /// methods precede authorization and are not restricted by credential.
+    virtual bool in_band() const NOEXCEPT
+    {
+        return false;
+    }
+
+    /// Invoked for a request not claimed by interface, which protocol attached
     /// last overrides to respond (all others defer by default).
     virtual void handle_unclaimed(
         const network::rpc::request_t&) NOEXCEPT

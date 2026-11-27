@@ -68,6 +68,10 @@ public:
     double floor() const NOEXCEPT;
     void set_floor(double difficulty) NOEXCEPT;
 
+    /// Set the difficulty, at or above the floor and the minimum, and reset
+    /// the retarget window, false if unchanged.
+    bool suggest(double difficulty, double minimum) NOEXCEPT;
+
     /// The difficulty last notified to the miner.
     double notified() const NOEXCEPT;
     void set_notified(double difficulty) NOEXCEPT;

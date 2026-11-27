@@ -183,6 +183,7 @@
     <ClCompile Include="..\..\..\..\src\protocols\protocol_http.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\sparrow\protocol_sparrow.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\stratum_v1\protocol_stratum_v1.cpp" />
+    <ClCompile Include="..\..\..\..\src\protocols\stratum_v1\protocol_stratum_v1_handshake.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\stratum_v2\protocol_stratum_v2.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\stratum_v2\protocol_stratum_v2_setup.cpp" />
     <ClCompile Include="..\..\..\..\src\protocols\zmq\protocol_zmq.cpp" />
@@ -297,6 +298,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_rpc.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_sparrow.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v1.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v1_handshake.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2_setup.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_submit.hpp" />

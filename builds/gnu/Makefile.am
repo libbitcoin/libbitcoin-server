@@ -126,6 +126,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/protocols/native/protocol_native_tx.cpp \
     ${srcdir}/../../src/protocols/sparrow/protocol_sparrow.cpp \
     ${srcdir}/../../src/protocols/stratum_v1/protocol_stratum_v1.cpp \
+    ${srcdir}/../../src/protocols/stratum_v1/protocol_stratum_v1_handshake.cpp \
     ${srcdir}/../../src/protocols/stratum_v2/protocol_stratum_v2.cpp \
     ${srcdir}/../../src/protocols/stratum_v2/protocol_stratum_v2_setup.cpp \
     ${srcdir}/../../src/protocols/zmq/protocol_zmq.cpp \
@@ -300,6 +301,7 @@ include_bitcoin_server_protocols_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_rpc.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_sparrow.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_stratum_v1.hpp \
+    ${srcdir}/../../include/bitcoin/server/protocols/protocol_stratum_v1_handshake.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_stratum_v2.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_stratum_v2_setup.hpp \
     ${srcdir}/../../include/bitcoin/server/protocols/protocol_submit.hpp \

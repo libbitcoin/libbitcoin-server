@@ -58,11 +58,15 @@ public:
         p2kh_(session->server_settings().wallet.p2kh_prefix),
         p2sh_(session->server_settings().wallet.p2sh_prefix),
         witness_(session->server_settings().wallet.witness_prefix),
-        channel_(std::dynamic_pointer_cast<channel_t>(channel))
+        channel_(std::dynamic_pointer_cast<channel_t>(channel)),
+        authorize_timer_(system::emplace_shared<network::deadline>(
+            session->log, channel->strand(),
+            network::seconds(options.authorize_timeout_seconds)))
     {
     }
 
     void start() NOEXCEPT override;
+    void stopping(const code& ec) NOEXCEPT override;
 
 protected:
     DECLARE_SEND()
@@ -129,6 +133,7 @@ private:
     bool to_payout(system::chain::script& out,
         const std::string& identity) const NOEXCEPT;
     channel_state::ptr find(uint32_t id) const NOEXCEPT;
+    void handle_timeout(const code& ec) NOEXCEPT;
 
     // These are thread safe.
     const options_t& options_;
@@ -136,6 +141,7 @@ private:
     const uint8_t p2sh_;
     const std::string witness_;
     const channel_t::ptr channel_;
+    const network::deadline::ptr authorize_timer_;
 
     // This is protected by strand.
     uint32_t next_{};

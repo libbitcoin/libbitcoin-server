@@ -76,6 +76,12 @@ system::json::value btcd_setup_fixture::rpc(std::string_view method,
     return client_.frame(body_of(request_id_++, method, params), true);
 }
 
+void btcd_setup_fixture::send(std::string_view method,
+    std::string_view params)
+{
+    client_.write_frame(body_of(request_id_++, method, params));
+}
+
 // The params of a negotiateversion request for exactly the version.
 static std::string negotiation(server::bitcoind::version version)
 {

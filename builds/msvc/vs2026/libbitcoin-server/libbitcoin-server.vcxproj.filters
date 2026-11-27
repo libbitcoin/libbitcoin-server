@@ -309,6 +309,9 @@
     <ClCompile Include="..\..\..\..\src\protocols\stratum_v1\protocol_stratum_v1.cpp">
       <Filter>src\protocols\stratum_v1</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\protocols\stratum_v1\protocol_stratum_v1_handshake.cpp">
+      <Filter>src\protocols\stratum_v1</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\src\protocols\stratum_v2\protocol_stratum_v2.cpp">
       <Filter>src\protocols\stratum_v2</Filter>
     </ClCompile>
@@ -645,6 +648,9 @@
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v1.hpp">
+      <Filter>include\bitcoin\server\protocols</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v1_handshake.hpp">
       <Filter>include\bitcoin\server\protocols</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\include\bitcoin\server\protocols\protocol_stratum_v2.hpp">
