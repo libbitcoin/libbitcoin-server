@@ -209,6 +209,7 @@ void parser::select_paths() NOEXCEPT
     secured(configured.server.sparrow);
     secured(configured.server.esplora);
     secured(configured.server.stratum_v1);
+    secured(configured.server.stratum_v2);
 
 #if defined (HAVE_WINDOWS)
     relative(configured.log.symbols_path);
@@ -2559,7 +2560,27 @@ options_metadata parser::load_settings() THROWS
     (
         "stratum_v2.safe",
         setting<network::config::authorities>(&configured.server.stratum_v2.safes),
-        "IP address to Noise bind, multiple allowed, defaults to {} (disabled)."
+        "IP address to secure bind (tls and/or Noise, detected), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "stratum_v2.cert_auth",
+        setting<config::path>(&configured.server.stratum_v2.cert_auth),
+        "The trusted client certificate directory (*.PEM), enables client authentication."
+    )
+    (
+        "stratum_v2.cert_path",
+        setting<config::path>(&configured.server.stratum_v2.cert_path),
+        "The path to the server certificate file (.PEM), defaults to {}."
+    )
+    (
+        "stratum_v2.key_path",
+        setting<config::path>(&configured.server.stratum_v2.key_path),
+        "The path to the server private key file (.PEM), defaults to {}."
+    )
+    (
+        "stratum_v2.key_pass",
+        secret<std::string>(&configured.server.stratum_v2.key_pass),
+        "The password to decrypt the server private key file (.PEM), optional."
     )
     (
         "stratum_v2.advertise",

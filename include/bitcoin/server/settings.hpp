@@ -285,7 +285,8 @@ public:
         uint8_t extranonce2_size{ 4 };
     };
 
-    /// Stratum v2 is served over ws or tcp, secured by noise (binary frames).
+    /// Stratum v2 is served over ws or tcp (binary frames), secured binds by
+    /// tls and/or noise (detected).
     struct BCS_API stratum_v2_server
       : public mining_server
     {
@@ -298,13 +299,13 @@ public:
         /// Initialize the noise context (invalid_configuration if malformed).
         code initialize_noise() NOEXCEPT;
 
-        /// The secured bindings are served by noise, not tls.
+        /// The secured bindings are served by tls (certificate or key path).
         bool tls_secured() const NOEXCEPT override;
 
-        /// False if safes is empty or the noise context is not initialized.
+        /// True if safes and either tls or noise is configured.
         bool secure() const NOEXCEPT override;
 
-        /// The noise::context (initialized).
+        /// The tls and/or noise context (initialized).
         network::settings::transport secure_context() const NOEXCEPT override;
 
         /// Bytes of coinbase extranonce, assigned and rolled.
