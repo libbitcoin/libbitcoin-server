@@ -39,7 +39,7 @@ public:
     inline channel_stratum_v1(const network::logger& log,
         const network::socket::ptr& socket, uint64_t identifier,
         const node::configuration& config, const options_t& options) NOEXCEPT
-      : channel_rpc(log, socket, identifier, config, options),
+      : channel_rpc(log, socket, identifier, config, options, true),
         network::tracker<channel_stratum_v1>(log),
         options_(options)
     {
@@ -48,18 +48,18 @@ public:
     /// Authorization.
     /// -----------------------------------------------------------------------
 
-    /// A raw tcp channel has no http headers, so it carries its credential in
-    /// mining.authorize and passes the http gate.
+    /// A tcp or ws channel may carry its credential in mining.authorize, so it
+    /// passes the http gate.
     inline bool authorized() const NOEXCEPT override
     {
-        return downgraded() || channel_rpc::authorized();
+        return in_band() || channel_rpc::authorized();
     }
 
-    /// Before its credential a raw tcp channel is permitted only the methods
+    /// Before its credential a tcp or ws channel is permitted only the methods
     /// that precede mining.authorize.
     inline bool permitted(const std::string& method) const NOEXCEPT override
     {
-        if (downgraded() && !credentialed())
+        if (in_band() && !credentialed())
             return std::ranges::find(handshake, method) != handshake.end();
 
         return channel_rpc::permitted(method);
@@ -122,6 +122,11 @@ protected:
     }
 
 private:
+    inline bool in_band() const NOEXCEPT
+    {
+        return downgraded() || websocket();
+    }
+
     static constexpr std::array<std::string_view, 6> handshake
     {
         "mining.subscribe",

@@ -113,8 +113,8 @@ void protocol_stratum_v1::handle_mining_subscribe(const code& ec,
 }
 
 // The worker name up to any dot is the account, the payout address unless one
-// is configured. Raw tcp carries no http headers, so a configured credential
-// is satisfied here by the account and password, as by basic authorization.
+// is configured. Absent basic authorization (tcp or ws), a configured
+// credential is satisfied here by the account and password.
 void protocol_stratum_v1::handle_mining_authorize(const code& ec,
     rpc_interface::mining_authorize, const std::string& username,
     const std::string& password) NOEXCEPT
