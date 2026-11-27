@@ -1442,6 +1442,11 @@ options_metadata parser::load_settings() THROWS
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
+        "admin.advertise",
+        setting<system::config::urls>(&configured.server.admin.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
+    )
+    (
         "admin.credential",
         secret<network::config::credentials>(&configured.server.admin.credentials),
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
@@ -1557,6 +1562,11 @@ options_metadata parser::load_settings() THROWS
         "native.key_pass",
         secret<std::string>(&configured.server.native.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "native.advertise",
+        setting<system::config::urls>(&configured.server.native.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
     )
     (
         "native.credential",
@@ -1679,6 +1689,11 @@ options_metadata parser::load_settings() THROWS
         "bitcoind.key_pass",
         secret<std::string>(&configured.server.bitcoind.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "bitcoind.advertise",
+        setting<system::config::urls>(&configured.server.bitcoind.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
     )
     (
         "bitcoind.credential",
@@ -1865,6 +1880,11 @@ options_metadata parser::load_settings() THROWS
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
+        "btcd.advertise",
+        setting<system::config::urls>(&configured.server.btcd.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
+    )
+    (
         "btcd.credential",
         secret<network::config::credentials>(&configured.server.btcd.credentials),
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
@@ -1985,6 +2005,11 @@ options_metadata parser::load_settings() THROWS
         "electrum.key_pass",
         secret<std::string>(&configured.server.electrum.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "electrum.advertise",
+        setting<system::config::urls>(&configured.server.electrum.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
     )
     (
         "electrum.credential",
@@ -2144,6 +2169,11 @@ options_metadata parser::load_settings() THROWS
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
+        "sparrow.advertise",
+        setting<system::config::urls>(&configured.server.sparrow.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
+    )
+    (
         "sparrow.credential",
         secret<network::config::credentials>(&configured.server.sparrow.credentials),
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
@@ -2300,6 +2330,11 @@ options_metadata parser::load_settings() THROWS
         "The password to decrypt the server private key file (.PEM), optional."
     )
     (
+        "esplora.advertise",
+        setting<system::config::urls>(&configured.server.esplora.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
+    )
+    (
         "esplora.credential",
         secret<network::config::credentials>(&configured.server.esplora.credentials),
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
@@ -2414,6 +2449,11 @@ options_metadata parser::load_settings() THROWS
         "stratum_v1.key_pass",
         secret<std::string>(&configured.server.stratum_v1.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "stratum_v1.advertise",
+        setting<system::config::urls>(&configured.server.stratum_v1.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
     )
     (
         "stratum_v1.credential",
@@ -2541,6 +2581,11 @@ options_metadata parser::load_settings() THROWS
         "stratum_v2.key_pass",
         secret<std::string>(&configured.server.stratum_v2.key_pass),
         "The password to decrypt the server private key file (.PEM), optional."
+    )
+    (
+        "stratum_v2.advertise",
+        setting<system::config::urls>(&configured.server.stratum_v2.advertise),
+        "The public [http|https://]host[:port] url, ws on its port, multiple allowed, defaults to {} (none)."
     )
     (
         "stratum_v2.credential",
