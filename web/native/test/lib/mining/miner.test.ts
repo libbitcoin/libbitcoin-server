@@ -60,3 +60,7 @@ test('carried drops the run for another worker', () => {
 test('carried keeps nothing for a first run', () => {
   expect(carried({ ...run, settings: undefined }, { url: 'ws://host:48880', worker: 'browser', password: '', threads: 4 })).toEqual({});
 });
+
+test('carried drops the run for another protocol', () => {
+  expect(carried(run, { url: 'ws://host:48880', worker: 'browser', password: '', threads: 4, protocol: 'v2' })).toEqual({});
+});

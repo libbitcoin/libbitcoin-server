@@ -44,6 +44,7 @@ function defaults(): PageSettings {
     threads: Math.max(1, cores() - 1),
     address: '',
     tag: '',
+    protocol: 'v1',
   };
 }
 
@@ -57,6 +58,7 @@ function load(): PageSettings {
       password: typeof saved.password === 'string' ? saved.password : base.password,
       address: typeof saved.address === 'string' ? saved.address : base.address,
       tag: typeof saved.tag === 'string' ? saved.tag : base.tag,
+      protocol: saved.protocol === 'v2' ? 'v2' : 'v1',
       threads:
         typeof saved.threads === 'number' && saved.threads >= 1
           ? Math.min(saved.threads, maximumThreads())
@@ -82,7 +84,10 @@ export function WebMinerPage() {
   const state = useSyncExternalStore(miner.subscribe, miner.getSnapshot, miner.getSnapshot);
   const [settings, setSettings] = useState<PageSettings>(load);
   const configuration = useServerConfiguration().data;
-  const stratum = configuration?.server.stratum_v1;
+  // Stratum v2 is chosen only where the node advertises it.
+  const v2 = configuration?.server.stratum_v2;
+  const protocol = settings.protocol === 'v2' && v2 ? 'v2' : 'v1';
+  const stratum = protocol === 'v2' ? v2 : configuration?.server.stratum_v1;
   const advertised = serviceSocketUrl(stratum);
   const payout = stratum?.payout_address;
   const coinbaseTag = stratum?.coinbase_tag;
@@ -101,6 +106,7 @@ export function WebMinerPage() {
     worker: payout ? page.worker : page.address,
     password: page.password,
     threads: page.threads,
+    protocol,
   });
 
   const toggle = () => {
@@ -161,6 +167,7 @@ export function WebMinerPage() {
         open={editing}
         settings={settings}
         require={{ url: !advertised, address: !payout, tag: !coinbaseTag }}
+        protocols={v2 !== undefined}
         wallet={configuration?.wallet}
         network={configuration?.network}
         maximum={maximumThreads()}

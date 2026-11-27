@@ -1,6 +1,15 @@
 import MinerWorker from './miner.worker?worker&inline';
 import type { WorkerRequest, WorkerResponse } from './miner.worker';
-import { headerWork } from './sha256';
+import { bytesToHex, headerWork } from './sha256';
+import {
+  bitsHex,
+  openStandardMiningChannel,
+  parseFrame,
+  setupConnection,
+  standardHeader,
+  submitSharesStandard,
+  type ServerMessage,
+} from './sv2';
 import {
   bitsTarget,
   buildHeader,
@@ -15,16 +24,20 @@ import {
   submitParams,
   suggestedDifficulty,
   targetDifficulty,
+  THREAD_RATE,
   targetWords,
   withNonce,
   type Job,
 } from './stratum';
+
+export type MinerProtocol = 'v1' | 'v2';
 
 export interface MinerSettings {
   url: string;
   worker: string;
   password: string;
   threads: number;
+  protocol?: MinerProtocol;
 }
 
 export interface HashrateSample {
@@ -117,16 +130,39 @@ const initial: MinerState = {
 // The totals, shares and history of a run, kept by a restart of the same
 // stratum service and worker.
 export function carried(state: MinerState, settings: MinerSettings): Partial<MinerState> {
-  if (state.settings?.url !== settings.url || state.settings.worker !== settings.worker) return {};
+  if (
+    state.settings?.url !== settings.url ||
+    state.settings.worker !== settings.worker ||
+    (state.settings.protocol ?? 'v1') !== (settings.protocol ?? 'v1')
+  )
+    return {};
   const { jobs, history, hashes, accepted, rejected, blocks, shares } = state;
   return { jobs, history, hashes, accepted, rejected, blocks, shares };
 }
 
-interface Unit {
-  job: Job;
-  extranonce2: string;
-  header: Uint8Array;
+// A stratum v2 standard job, made current by its previous block.
+interface StandardJob {
+  job: number;
+  version: number;
+  merkle: Uint8Array;
+  previous: Uint8Array;
+  ntime: number;
+  bits: number;
 }
+
+// A unit of work: the header hashed, and what its share submits.
+interface Unit {
+  header: Uint8Array;
+  id: string;
+  bits: string;
+  height?: number;
+  job?: Job;
+  extranonce2?: string;
+  standard?: StandardJob;
+}
+
+// The maximum target of a standard channel, any difficulty the server sets.
+const MAXIMUM_TARGET = (1n << 256n) - 1n;
 
 function reason(error: unknown): string {
   if (Array.isArray(error)) return String(error[1] ?? error[0] ?? 'rejected');
@@ -159,6 +195,12 @@ class Miner {
   private attempts = 0;
   private retry?: ReturnType<typeof setTimeout>;
   private shareKey = 0;
+  private channel?: number;
+  private standardJobs = new Map<number, { version: number; merkle: Uint8Array }>();
+  private previous?: { job: number; previous: Uint8Array; ntime: number; bits: number };
+  private standard?: StandardJob;
+  private timeCounter = 0;
+  private sequence = 0;
   private samples: { time: number; hashes: number }[] = [];
   private counted = 0;
   private timer?: ReturnType<typeof setInterval>;
@@ -198,6 +240,10 @@ class Miner {
 
   private connect(settings: MinerSettings) {
     this.buffer = '';
+    this.channel = undefined;
+    this.standardJobs.clear();
+    this.previous = undefined;
+    this.standard = undefined;
     let socket: WebSocket;
     try {
       socket = new WebSocket(settings.url);
@@ -206,13 +252,23 @@ class Miner {
       return;
     }
 
+    const v2 = settings.protocol === 'v2';
+    if (v2) socket.binaryType = 'arraybuffer';
     this.socket = socket;
     socket.onopen = () => {
+      if (v2) {
+        const url = new URL(settings.url);
+        const port = Number(url.port) || (url.protocol === 'wss:' ? 443 : 80);
+        socket.send(setupConnection(url.hostname, port, 'libbitcoin-web/1.0'));
+        return;
+      }
+
       this.send(SUBSCRIBE, 'mining.subscribe', ['libbitcoin-web/1.0']);
       this.send(AUTHORIZE, 'mining.authorize', [settings.worker, settings.password]);
     };
     socket.onmessage = (event: MessageEvent) => {
       if (typeof event.data === 'string') this.receive(event.data);
+      else if (event.data instanceof ArrayBuffer) this.receiveFrame(new Uint8Array(event.data));
     };
     socket.onerror = () => {
       if (this.socket === socket) this.lose(`Cannot connect to ${settings.url}.`);
@@ -394,10 +450,116 @@ class Miner {
   }
 
   private setDifficulty(difficulty: number) {
-    this.target = difficultyTarget(difficulty);
-    this.update({ difficulty });
-    const target = targetWords(this.target);
-    for (const worker of this.workers) this.post(worker, { type: 'target', target });
+    this.setTarget(difficultyTarget(difficulty));
+  }
+
+  private setTarget(target: bigint) {
+    this.target = target;
+    this.update({ difficulty: targetDifficulty(target) });
+    const words = targetWords(target);
+    for (const worker of this.workers) this.post(worker, { type: 'target', target: words });
+  }
+
+  // A stratum v2 frame, one to each binary websocket message.
+  private receiveFrame(data: Uint8Array) {
+    const message = parseFrame(data);
+    if (message) this.handleFrame(message);
+  }
+
+  private handleFrame(message: ServerMessage) {
+    const settings = this.state.settings;
+    switch (message.type) {
+      case 'setup_success': {
+        const threads = settings?.threads ?? 1;
+        const request = ++this.requestId;
+        const frame = openStandardMiningChannel(request, settings?.worker ?? '', threads * THREAD_RATE, MAXIMUM_TARGET);
+        this.socket?.send(frame);
+        return;
+      }
+      case 'setup_error':
+        this.fail(`Setup refused: ${message.code}`);
+        return;
+      case 'open_success':
+        this.channel = message.channel;
+        this.setTarget(message.target);
+        this.subscribed = true;
+        this.attempts = 0;
+        if (this.state.status === 'connecting') this.update({ status: 'waiting', message: undefined });
+        return;
+      case 'open_error':
+        this.fail(`Worker not authorized: ${message.code}`);
+        return;
+      case 'job':
+        if (message.channel !== this.channel) return;
+        this.standardJobs.set(message.job, { version: message.version, merkle: message.merkle });
+        if (message.ntime !== undefined && this.previous) this.activate(message.job, message.ntime);
+        return;
+      case 'prev_hash':
+        if (message.channel !== this.channel) return;
+        this.previous = { job: message.job, previous: message.previous, ntime: message.ntime, bits: message.bits };
+        this.activate(message.job, message.ntime);
+        return;
+      case 'target':
+        if (message.channel === this.channel) this.setTarget(message.target);
+        return;
+      case 'shares_success':
+        this.answer((sequence) => sequence <= message.last, true);
+        return;
+      case 'shares_error':
+        this.answer((sequence) => sequence === message.sequence, false, message.code);
+        return;
+      case 'close':
+        if (message.channel === this.channel) this.lose(`Channel closed: ${message.code}`);
+        return;
+      default:
+        return;
+    }
+  }
+
+  // Shares pending by sequence are answered.
+  private answer(matches: (sequence: number) => boolean, accepted: boolean, why?: string) {
+    const keys = new Set<number>();
+    for (const [sequence, entry] of this.pending) {
+      if (!matches(sequence)) continue;
+      keys.add(entry.key);
+      this.pending.delete(sequence);
+    }
+
+    if (keys.size === 0) return;
+    this.update({
+      accepted: this.state.accepted + (accepted ? keys.size : 0),
+      rejected: this.state.rejected + (accepted ? 0 : keys.size),
+      shares: this.state.shares.map((share) =>
+        keys.has(share.key)
+          ? { ...share, outcome: accepted ? 'accepted' : 'rejected', reason: accepted ? undefined : why }
+          : share
+      ),
+    });
+  }
+
+  // The standard job becomes current with its previous block.
+  private activate(job: number, ntime: number) {
+    const known = this.standardJobs.get(job);
+    const previous = this.previous;
+    if (!known || !previous) return;
+    this.standard = { job, version: known.version, merkle: known.merkle, previous: previous.previous, ntime, bits: previous.bits };
+    this.timeCounter = 0;
+    this.update({
+      status: 'mining',
+      jobs: this.state.jobs + 1,
+      job: {
+        id: job.toString(16).padStart(8, '0'),
+        previous: bytesToHex(previous.previous.slice().reverse()),
+        networkDifficulty: targetDifficulty(bitsTarget(bitsHex(previous.bits))),
+        time: ntime,
+        clean: true,
+        received: Date.now(),
+      },
+    });
+
+    const threads = this.state.settings?.threads ?? 1;
+    while (this.workers.length < threads) this.spawn();
+    for (const worker of this.workers) this.assign(worker);
   }
 
   private setJob(job: Job) {
@@ -436,16 +598,41 @@ class Miner {
     worker.postMessage(request);
   }
 
-  private assign(worker: Worker) {
+  // A unit of a standard job is its nonce space at a later time than the last.
+  private unitOf(): Unit | undefined {
+    const standard = this.standard;
+    if (standard) {
+      const ntime = standard.ntime + this.timeCounter++;
+      return {
+        header: standardHeader(standard.version, standard.previous, standard.merkle, ntime, standard.bits),
+        id: standard.job.toString(16).padStart(8, '0'),
+        bits: bitsHex(standard.bits),
+        standard: { ...standard, ntime },
+      };
+    }
+
     const job = this.job;
-    if (!job) return;
+    if (!job) return undefined;
+    const extranonce2 = extranonce(this.extranonceCounter++, this.extranonce2Size);
+    return {
+      header: buildHeader(job, this.extranonce1, extranonce2),
+      id: job.id,
+      bits: job.bits,
+      height: coinbaseHeight(job),
+      job,
+      extranonce2,
+    };
+  }
+
+  private assign(worker: Worker) {
+    const value = this.unitOf();
+    if (!value) return;
     const previous = this.assigned.get(worker);
     if (previous !== undefined) this.units.delete(previous);
 
-    const extranonce2 = extranonce(this.extranonceCounter++, this.extranonce2Size);
-    const header = buildHeader(job, this.extranonce1, extranonce2);
+    const header = value.header;
     const unit = ++this.unitCounter;
-    this.units.set(unit, { job, extranonce2, header });
+    this.units.set(unit, value);
     this.assigned.set(worker, unit);
     this.post(worker, {
       type: 'work',
@@ -480,16 +667,26 @@ class Miner {
 
     // Checked here too, as the target may have changed since.
     if (value > this.target) return;
-    const block = value <= bitsTarget(unit.job.bits);
-    const id = ++this.requestId;
+    const block = value <= bitsTarget(unit.bits);
     const key = ++this.shareKey;
-    this.pending.set(id, { key, sent: Date.now() });
-    this.send(id, 'mining.submit', submitParams(this.state.settings?.worker ?? '', unit.job, unit.extranonce2, nonce));
+    const standard = unit.standard;
+    if (standard && this.channel !== undefined) {
+      const sequence = ++this.sequence;
+      this.pending.set(sequence, { key, sent: Date.now() });
+      this.socket?.send(submitSharesStandard(this.channel, sequence, standard.job, nonce, standard.ntime, standard.version));
+    } else if (unit.job && unit.extranonce2 !== undefined) {
+      const id = ++this.requestId;
+      this.pending.set(id, { key, sent: Date.now() });
+      this.send(id, 'mining.submit', submitParams(this.state.settings?.worker ?? '', unit.job, unit.extranonce2, nonce));
+    } else {
+      return;
+    }
+
     const share: Share = {
       key,
       time: Date.now(),
-      job: unit.job.id,
-      height: coinbaseHeight(unit.job),
+      job: unit.id,
+      height: unit.height,
       nonce: (nonce >>> 0).toString(16).padStart(8, '0'),
       hash: headerHash(header),
       difficulty: targetDifficulty(value),

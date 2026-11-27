@@ -27,12 +27,14 @@ export function MiningSettings({
   wallet,
   network,
   maximum,
+  protocols,
   onSave,
   onClose,
 }: {
   open: boolean;
   settings: PageSettings;
   require: RequiredSettings;
+  protocols?: boolean;
   wallet?: NetworkParams;
   network?: string;
   maximum: number;
@@ -88,6 +90,20 @@ export function MiningSettings({
         <h2 id="mining-settings-title" className="text-accent text-lg font-semibold">
           Settings
         </h2>
+        {protocols && (
+          <Field label="Protocol">
+            <select
+              className={INPUT}
+              value={draft.protocol ?? 'v1'}
+              onChange={(event) => {
+                change('protocol', event.target.value === 'v2' ? 'v2' : 'v1');
+              }}
+            >
+              <option value="v1">Stratum v1</option>
+              <option value="v2">Stratum v2</option>
+            </select>
+          </Field>
+        )}
         {require.url && (
           <Field label="Stratum service">
             <input
