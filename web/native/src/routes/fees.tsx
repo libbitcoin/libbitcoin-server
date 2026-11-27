@@ -21,11 +21,11 @@ export function FeesPage() {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
-        <p className="text-accentSecondary text-sm tracking-wide uppercase">Pool</p>
-        <h1 tabIndex={-1} className="text-accent text-3xl font-semibold">
+      <header>
+        <h1 tabIndex={-1} className="text-accent text-2xl font-semibold">
           Fees
         </h1>
+        <p className="text-textMuted text-sm">The fee rates of the pool.</p>
       </header>
 
       {isError && (

@@ -7,11 +7,11 @@ export function ConfigurationPage() {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
-        <p className="text-accentSecondary text-sm tracking-wide uppercase">Server</p>
-        <h1 tabIndex={-1} className="text-accent text-3xl font-semibold">
+      <header>
+        <h1 tabIndex={-1} className="text-accent text-2xl font-semibold">
           Configuration
         </h1>
+        <p className="text-textMuted text-sm">The configuration served by this node.</p>
       </header>
 
       {isError && (

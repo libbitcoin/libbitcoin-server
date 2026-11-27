@@ -90,15 +90,11 @@ export function DashboardPage() {
         </div>
       ) : null}
 
-      <header className="space-y-2">
-        <p className="text-accentSecondary text-sm tracking-wide uppercase">Dashboard</p>
-        <div className="flex min-h-10 flex-wrap items-end justify-between gap-4">
-          <div className="space-y-2">
-            <h1 tabIndex={-1} className="text-accent text-3xl font-semibold">
-              Overview
-            </h1>
-          </div>
-        </div>
+      <header>
+        <h1 tabIndex={-1} className="text-accent text-2xl font-semibold">
+          Overview
+        </h1>
+        <p className="text-textMuted text-sm">The chain, pool and services of this node.</p>
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">

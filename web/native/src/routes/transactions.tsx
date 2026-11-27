@@ -18,7 +18,7 @@ function unavailable(error: unknown): string {
 
 // The unconfirmed transactions of the pool, all of them, in pool order.
 export function TransactionsPage() {
-  usePageTitle('Transactions');
+  usePageTitle('Transaction Pool');
   const { data: txs, isLoading, isError, error } = useUnconfirmedTransactionDetails();
   const { data: hashes } = useUnconfirmedTransactionHashes();
   const clusters = new Set(txs?.map((tx) => tx.cluster)).size;
@@ -41,7 +41,7 @@ export function TransactionsPage() {
     <div className="space-y-8">
       <header>
         <h1 tabIndex={-1} className="text-accent text-2xl font-semibold">
-          Transactions
+          Transaction Pool
         </h1>
         <p className="text-textMuted text-sm">The unconfirmed transactions of the pool.</p>
       </header>
