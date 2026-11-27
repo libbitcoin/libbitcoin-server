@@ -96,6 +96,14 @@ export interface NetworkParams {
   hrp: string;
 }
 
+/** A service of the node advertised by its configuration. */
+export interface AdvertisedService {
+  /** Public http/https urls (ws/wss on the same port). */
+  advertise: string[];
+  payout_address?: string | null;
+  coinbase_tag?: string | null;
+}
+
 export interface BlockchainClientConfiguration {
   address: boolean;
   filter: boolean;
@@ -109,6 +117,10 @@ export interface BlockchainClientConfiguration {
   wallet: NetworkParams;
   /** Height at and below which tx inputs (scripts and witnesses) are pruned. */
   pruned?: number;
+  /** Advertised services, by configuration section name (as served). */
+  server: Readonly<Partial<Record<string, AdvertisedService>>>;
+  /** The configuration as served. */
+  source: unknown;
 }
 
 export interface BlockStats {

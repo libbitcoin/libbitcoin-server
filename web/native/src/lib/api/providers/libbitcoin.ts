@@ -4,6 +4,7 @@ import {
   AddressActivityItem,
   AddressSummary,
   AddressUtxo,
+  AdvertisedService,
   BlockchainClientConfiguration,
   BlockHeaderDetail,
   BlockValidation,
@@ -222,6 +223,16 @@ const configurationSchema = z.object({
     witness: z.string().trim().min(1),
   }),
   forks: z.record(z.string(), z.boolean()),
+  server: z
+    .record(
+      z.string(),
+      z.object({
+        advertise: z.array(z.string()),
+        payout_address: z.string().nullable().optional(),
+        coinbase_tag: z.string().nullable().optional(),
+      })
+    )
+    .optional(),
 });
 
 function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
@@ -230,6 +241,7 @@ function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
     throw new Error('Invalid server configuration');
   }
   const { store, node, wallet, forks, network } = parsed.data;
+  const served = raw as { server?: Record<string, AdvertisedService> };
   const flags = (source: Record<string, unknown>) =>
     Object.fromEntries(
       Object.entries(source).filter(
@@ -251,6 +263,8 @@ function normalizeConfiguration(raw: unknown): BlockchainClientConfiguration {
     forks: enabledForks,
     wallet: { p2pkh: wallet.p2kh, p2sh: wallet.p2sh, hrp: wallet.witness },
     ...(typeof store.pruned === 'number' ? { pruned: store.pruned } : {}),
+    server: served.server ?? {},
+    source: raw,
   };
 }
 

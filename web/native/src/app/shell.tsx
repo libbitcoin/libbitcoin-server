@@ -13,7 +13,6 @@ import {
   investigationsPath,
   isAddressPath,
   transactionsPath,
-  webMinerPath,
 } from '@/lib/utils/routes';
 
 export function AppShell() {
@@ -57,7 +56,7 @@ export function AppShell() {
               </NavLink>
               <span className="text-textMuted text-sm">{network}</span>
             </div>
-            <nav className="text-textMuted order-3 flex w-full flex-wrap items-center gap-x-3 gap-y-1 text-sm md:order-2 md:w-auto md:flex-nowrap">
+            <nav className="text-textMuted order-3 flex w-full items-center gap-3 text-sm md:order-2 md:w-auto">
               <NavLink
                 to={blocksPath()}
                 className={({ isActive }) =>
@@ -77,16 +76,6 @@ export function AppShell() {
                 }
               >
                 Transactions
-              </NavLink>
-              <NavLink
-                to={webMinerPath()}
-                className={({ isActive }) =>
-                  `text-textMuted hover:text-accent rounded-md px-3 py-1 whitespace-nowrap transition ${
-                    isActive ? 'bg-accentSecondary/20 text-accent' : ''
-                  }`
-                }
-              >
-                Web Miner
               </NavLink>
               <NavLink
                 to={investigationsPath()}

@@ -615,6 +615,7 @@
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\template-follow.ts">
+    <None Include="..\..\..\..\web\native\src\lib\utils\services.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\template-scene.ts">
@@ -723,6 +724,7 @@
       <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\template-follow.test.ts">
+    <None Include="..\..\..\..\web\native\test\lib\utils\services.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\template-scene.test.ts">

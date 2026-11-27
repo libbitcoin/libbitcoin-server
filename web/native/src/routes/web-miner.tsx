@@ -1,10 +1,12 @@
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { HashrateChart } from '@/components/hashrate-chart';
-import { MiningSettings } from '@/components/mining-settings';
+import { MiningSettings, type PageSettings } from '@/components/mining-settings';
+import { AddressQRCode } from '@/components/qr-code';
+import { useServerConfiguration } from '@/lib/hooks/useBlockchainData';
 import { useNow } from '@/lib/hooks/useNow';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
-import { miner, type MinerSettings, type MinerState, type MinerStatus, type Share } from '@/lib/mining/miner';
+import { miner, type MinerSettings, type MinerState, type Share } from '@/lib/mining/miner';
 import {
   formatDifficulty,
   formatDuration,
@@ -15,6 +17,7 @@ import {
 } from '@/lib/mining/format';
 import { formatInteger } from '@/lib/utils/format';
 import { blockByHashPath, templatePath } from '@/lib/utils/routes';
+import { serviceSocketUrl } from '@/lib/utils/services';
 
 const LINK = 'text-accent hover:underline';
 
@@ -27,24 +30,27 @@ function cores(): number {
   return Math.max(1, globalThis.navigator?.hardwareConcurrency || 2);
 }
 
-function defaults(): MinerSettings {
-  const secure = globalThis.location?.protocol === 'https:';
+function defaults(): PageSettings {
   return {
-    url: `${secure ? 'wss' : 'ws'}://${globalThis.location?.hostname || 'localhost'}:3333`,
+    url: '',
     worker: 'browser',
-    password: 'x',
+    password: '',
     threads: Math.max(1, cores() - 1),
+    address: '',
+    tag: '',
   };
 }
 
-function load(): MinerSettings {
+function load(): PageSettings {
   const base = defaults();
   try {
-    const saved = JSON.parse(globalThis.localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<MinerSettings>;
+    const saved = JSON.parse(globalThis.localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<PageSettings>;
     return {
-      url: typeof saved.url === 'string' && saved.url ? saved.url : base.url,
+      url: typeof saved.url === 'string' ? saved.url : base.url,
       worker: typeof saved.worker === 'string' && saved.worker ? saved.worker : base.worker,
       password: typeof saved.password === 'string' ? saved.password : base.password,
+      address: typeof saved.address === 'string' ? saved.address : base.address,
+      tag: typeof saved.tag === 'string' ? saved.tag : base.tag,
       threads:
         typeof saved.threads === 'number' && saved.threads >= 1
           ? Math.min(saved.threads, cores())
@@ -55,7 +61,7 @@ function load(): MinerSettings {
   }
 }
 
-function save(settings: MinerSettings) {
+function save(settings: PageSettings) {
   try {
     globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch {
@@ -63,20 +69,17 @@ function save(settings: MinerSettings) {
   }
 }
 
-const STATUS: Record<MinerStatus, { label: string; style: string }> = {
-  stopped: { label: 'Stopped', style: 'bg-slate-500/20 text-slate-300' },
-  connecting: { label: 'Connecting', style: 'bg-amber-500/20 text-amber-300' },
-  waiting: { label: 'Waiting for work', style: 'bg-amber-500/20 text-amber-300' },
-  mining: { label: 'Mining', style: 'bg-emerald-500/20 text-emerald-300' },
-  failed: { label: 'Failed', style: 'bg-rose-500/20 text-rose-300' },
-};
-
 // Mines the node's block templates in this browser, as a client of its stratum
 // v1 service over a websocket. Mining continues across page navigation.
 export function WebMinerPage() {
   usePageTitle('Web Miner');
   const state = useSyncExternalStore(miner.subscribe, miner.getSnapshot, miner.getSnapshot);
-  const [settings, setSettings] = useState<MinerSettings>(load);
+  const [settings, setSettings] = useState<PageSettings>(load);
+  const configuration = useServerConfiguration().data;
+  const stratum = configuration?.server.stratum_v1;
+  const advertised = serviceSocketUrl(stratum);
+  const payout = stratum?.payout_address;
+  const coinbaseTag = stratum?.coinbase_tag;
   const [editing, setEditing] = useState(false);
   // Events are newer than the last tick of the clock.
   const now = Math.max(useNow(1_000), Date.now());
@@ -86,16 +89,24 @@ export function WebMinerPage() {
     save(settings);
   }, [settings]);
 
+  // The node's advertised service and payout take precedence over the page.
+  const effective = (page: PageSettings): MinerSettings => ({
+    url: advertised ?? page.url,
+    worker: payout ? page.worker : page.address,
+    password: page.password,
+    threads: page.threads,
+  });
+
   const toggle = () => {
     if (running) miner.stop();
-    else miner.start(settings);
+    else miner.start(effective(settings));
   };
 
   // Saved settings apply to a running miner by restarting it.
-  const onSave = (next: MinerSettings) => {
+  const onSave = (next: PageSettings) => {
     setSettings(next);
     setEditing(false);
-    if (running) miner.start(next);
+    if (running) miner.start(effective(next));
   };
 
   return (
@@ -109,7 +120,9 @@ export function WebMinerPage() {
 
       <MinerDetail
         state={state}
-        settings={settings}
+        settings={effective(settings)}
+        address={payout ?? settings.address}
+        tag={coinbaseTag ?? settings.tag}
         running={running}
         now={now}
         onToggle={toggle}
@@ -121,6 +134,9 @@ export function WebMinerPage() {
       <MiningSettings
         open={editing}
         settings={settings}
+        require={{ url: !advertised, address: !payout, tag: !coinbaseTag }}
+        wallet={configuration?.wallet}
+        network={configuration?.network}
         cores={cores()}
         onSave={onSave}
         onClose={() => {
@@ -128,17 +144,6 @@ export function WebMinerPage() {
         }}
       />
     </div>
-  );
-}
-
-function Pill({ label, style }: { label: string; style: string }) {
-  return (
-    <span
-      className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-medium tracking-wide whitespace-nowrap uppercase ${style}`}
-    >
-      <span className="h-2 w-2 rounded-full bg-current" aria-hidden />
-      {label}
-    </span>
   );
 }
 
@@ -154,6 +159,8 @@ function Stat({ label, value }: { label: string; value: string }) {
 function MinerDetail({
   state,
   settings,
+  address,
+  tag,
   running,
   now,
   onToggle,
@@ -161,6 +168,8 @@ function MinerDetail({
 }: {
   state: MinerState;
   settings: MinerSettings;
+  address: string;
+  tag: string;
   running: boolean;
   now: number;
   onToggle: () => void;
@@ -171,6 +180,8 @@ function MinerDetail({
     globalThis.location?.protocol === 'https:' && settings.url.trim().toLowerCase().startsWith('ws://');
   return (
     <>
+      <JobPanel state={state} address={address} tag={tag} now={now} />
+
       {state.status === 'failed' && state.message && (
         <Notice title="Mining stopped">{state.message}</Notice>
       )}
@@ -196,19 +207,17 @@ function MinerDetail({
           <div className="min-w-0">
             <h2 className="text-accent text-xl font-semibold">This browser</h2>
             <p className="text-textMuted text-sm break-all">
-              web miner · {settings.worker} · <span className="font-mono">{settings.url}</span> ·{' '}
-              {formatInteger(settings.threads)} threads
+              <span className="font-mono">{settings.url || '—'}</span> · {formatInteger(settings.threads)} threads
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Pill label={STATUS[state.status].label} style={STATUS[state.status].style} />
             <button
               type="button"
               onClick={onEdit}
               className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent inline-flex items-center gap-2 rounded-md border px-4 py-1.5 text-sm"
             >
               <CogIcon />
-              Miner settings
+              Settings
             </button>
             <button
               type="button"
@@ -237,39 +246,6 @@ function MinerDetail({
         <HashrateChart history={state.history} />
       </div>
 
-      {state.job && (
-        <div className="border-accent/30 bg-surface/80 rounded-2xl border p-5">
-          <h3 className="text-accent mb-4 text-lg font-semibold">Current job</h3>
-          <dl className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
-            <Item label="Template">
-              {state.job.height === undefined ? (
-                '—'
-              ) : (
-                <Link to={templatePath(state.job.height)} className={LINK}>
-                  {formatInteger(state.job.height)}
-                </Link>
-              )}
-            </Item>
-            <Item label="Previous block">
-              <Link
-                to={blockByHashPath(state.job.previous)}
-                className={`${LINK} font-mono`}
-                title={state.job.previous}
-              >
-                {formatHash(state.job.previous)}
-              </Link>
-            </Item>
-            <Item label="Coinbase tag">{state.job.tag ?? '—'}</Item>
-            <Item label="Network difficulty">{formatDifficulty(state.job.networkDifficulty)}</Item>
-            <Item label="Job">
-              <span className="font-mono">{state.job.id}</span>
-              {state.job.clean && <span className="text-textMuted"> · clean</span>}
-            </Item>
-            <Item label="Received">{formatShortRelativeTime(Math.floor(state.job.received / 1000), now)}</Item>
-          </dl>
-        </div>
-      )}
-
       <div className="border-accent/30 bg-surface/80 rounded-2xl border p-5">
         <h3 className="text-accent mb-3 text-lg font-semibold">Recent shares</h3>
         {state.shares.length === 0 ? (
@@ -278,7 +254,15 @@ function MinerDetail({
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm tabular-nums">
+            <table className="w-full min-w-[44rem] table-fixed text-sm tabular-nums">
+              <colgroup>
+                <col className="w-24" />
+                <col className="w-24" />
+                <col className="w-28" />
+                <col className="w-28" />
+                <col />
+                <col className="w-36" />
+              </colgroup>
               <thead className="text-textMuted text-left">
                 <tr>
                   <th className="py-1 pr-4 font-normal">Found</th>
@@ -302,6 +286,58 @@ function MinerDetail({
   );
 }
 
+// The current job, and the payout address its coinbase pays, labeled by tag.
+function JobPanel({ state, address, tag, now }: { state: MinerState; address: string; tag: string; now: number }) {
+  const job = state.job;
+  return (
+    <div className="border-accent/30 bg-surface/80 rounded-2xl border p-5">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-accent mb-4 text-lg font-semibold">Current job</h3>
+          {job ? (
+            <dl className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+              <Item label="Template">
+                {job.height === undefined ? (
+                  '—'
+                ) : (
+                  <Link to={templatePath(job.height)} className={LINK}>
+                    {formatInteger(job.height)}
+                  </Link>
+                )}
+              </Item>
+              <Item label="Previous block">
+                <Link to={blockByHashPath(job.previous)} className={`${LINK} font-mono`} title={job.previous}>
+                  {formatHash(job.previous)}
+                </Link>
+              </Item>
+              <Item label="Coinbase tag">{job.tag ?? '—'}</Item>
+              <Item label="Network difficulty">{formatDifficulty(job.networkDifficulty)}</Item>
+              <Item label="Job">
+                <span className="font-mono">{job.id}</span>
+                {job.clean && <span className="text-textMuted"> · clean</span>}
+              </Item>
+              <Item label="Received">{formatShortRelativeTime(Math.floor(job.received / 1000), now)}</Item>
+            </dl>
+          ) : (
+            <p className="text-textMuted text-sm">Start mining to receive a job.</p>
+          )}
+        </div>
+        {address && (
+          <figure className="w-40 shrink-0 space-y-2 self-center sm:self-start">
+            <AddressQRCode value={address} size={144} />
+            <figcaption className="text-textPrimary text-center text-sm font-medium break-words">
+              {tag || '—'}
+            </figcaption>
+            <p className="text-textMuted font-mono text-xs break-all" title={address}>
+              {address}
+            </p>
+          </figure>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ShareRow({ share, now }: { share: Share; now: number }) {
   return (
     <tr className="border-accent/10 border-t">
@@ -309,7 +345,7 @@ function ShareRow({ share, now }: { share: Share; now: number }) {
       <td className="py-1 pr-4">{share.height === undefined ? '—' : formatInteger(share.height)}</td>
       <td className="py-1 pr-4 font-mono">{share.nonce}</td>
       <td className="py-1 pr-4 text-right">{formatDifficulty(share.difficulty)}</td>
-      <td className="py-1 pr-4 font-mono whitespace-nowrap" title={share.hash}>
+      <td className="truncate py-1 pr-4 font-mono whitespace-nowrap" title={share.hash}>
         {share.block ? (
           <Link to={blockByHashPath(share.hash)} className={LINK}>
             {formatHash(share.hash)}
@@ -318,7 +354,7 @@ function ShareRow({ share, now }: { share: Share; now: number }) {
           formatHash(share.hash)
         )}
       </td>
-      <td className="py-1 whitespace-nowrap">
+      <td className="truncate py-1 whitespace-nowrap">
         <Outcome share={share} />
       </td>
     </tr>

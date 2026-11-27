@@ -26,7 +26,7 @@ export function ConfigurationPage() {
 
       {configuration && (
         <pre className="border-accent/30 bg-surface/80 text-textPrimary overflow-x-auto rounded-2xl border p-5 text-sm">
-          {JSON.stringify(configuration, null, 2)}
+          {JSON.stringify(configuration.source, null, 2)}
         </pre>
       )}
     </div>
