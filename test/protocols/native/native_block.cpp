@@ -447,9 +447,9 @@ BC_AUTO_TEST_CASE(native__dispatch__absolute_form_target__bad_request)
     BC_REQUIRE_EQUAL(get_status("http://localhost/v1/top?format=json"), http::status::bad_request);
 }
 
-BC_AUTO_TEST_CASE(native__dispatch__opaque_origin__forbidden)
+BC_AUTO_TEST_CASE(native__dispatch__opaque_origin__ok)
 {
-    BC_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::origin, "null"), http::status::forbidden);
+    BC_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::origin, "null"), http::status::ok);
 }
 
 BC_AUTO_TEST_CASE(native__dispatch__origin_json__access_control)
@@ -1354,6 +1354,11 @@ BC_FIXTURE_TEST_SUITE(native_origins_tests, native_origins_setup_fixture)
 BC_AUTO_TEST_CASE(native__origins__unlisted_origin__forbidden)
 {
     BC_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::origin, "http://example.org"), http::status::forbidden);
+}
+
+BC_AUTO_TEST_CASE(native__origins__opaque_origin__forbidden)
+{
+    BC_REQUIRE_EQUAL(get_status("/v1/top?format=json", http::field::origin, "null"), http::status::forbidden);
 }
 
 BC_AUTO_TEST_CASE(native__origins__listed_origin__access_control)

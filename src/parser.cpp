@@ -2017,6 +2017,21 @@ options_metadata parser::load_settings() THROWS
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
     )
     (
+        "electrum.host",
+        setting<network::config::endpoints>(&configured.server.electrum.hosts),
+        "The host name (http verification), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "electrum.origin",
+        setting<network::config::endpoints>(&configured.server.electrum.origins),
+        "The allowed origin (see CORS), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "electrum.allow_opaque_origin",
+        setting<bool>(&configured.server.electrum.allow_opaque_origin),
+        "Allow requests from opaque origin (see CORS), defaults to {}."
+    )
+    (
         "electrum.compression",
         setting<bool>(&configured.server.electrum.compression),
         "Compress http response bodies as accepted by the request (gzip, deflate), defaults to {}."
@@ -2177,6 +2192,21 @@ options_metadata parser::load_settings() THROWS
         "sparrow.credential",
         secret<network::config::credentials>(&configured.server.sparrow.credentials),
         "The 'username:password[:method,...]' authorization (not secure), multiple allowed."
+    )
+    (
+        "sparrow.host",
+        setting<network::config::endpoints>(&configured.server.sparrow.hosts),
+        "The host name (http verification), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "sparrow.origin",
+        setting<network::config::endpoints>(&configured.server.sparrow.origins),
+        "The allowed origin (see CORS), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "sparrow.allow_opaque_origin",
+        setting<bool>(&configured.server.sparrow.allow_opaque_origin),
+        "Allow requests from opaque origin (see CORS), defaults to {}."
     )
     (
         "sparrow.compression",
@@ -2461,6 +2491,21 @@ options_metadata parser::load_settings() THROWS
         "The 'username:password' authorization (not secure), multiple allowed."
     )
     (
+        "stratum_v1.host",
+        setting<network::config::endpoints>(&configured.server.stratum_v1.hosts),
+        "The host name (http verification), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "stratum_v1.origin",
+        setting<network::config::endpoints>(&configured.server.stratum_v1.origins),
+        "The allowed origin (see CORS), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "stratum_v1.allow_opaque_origin",
+        setting<bool>(&configured.server.stratum_v1.allow_opaque_origin),
+        "Allow requests from opaque origin (see CORS), defaults to {}."
+    )
+    (
         "stratum_v1.compression",
         setting<bool>(&configured.server.stratum_v1.compression),
         "Compress http response bodies as accepted by the request (gzip, deflate), defaults to {}."
@@ -2591,6 +2636,21 @@ options_metadata parser::load_settings() THROWS
         "stratum_v2.credential",
         secret<network::config::credentials>(&configured.server.stratum_v2.credentials),
         "The 'username:password' authorization (not secure), multiple allowed."
+    )
+    (
+        "stratum_v2.host",
+        setting<network::config::endpoints>(&configured.server.stratum_v2.hosts),
+        "The host name (http verification), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "stratum_v2.origin",
+        setting<network::config::endpoints>(&configured.server.stratum_v2.origins),
+        "The allowed origin (see CORS), multiple allowed, defaults to {} (disabled)."
+    )
+    (
+        "stratum_v2.allow_opaque_origin",
+        setting<bool>(&configured.server.stratum_v2.allow_opaque_origin),
+        "Allow requests from opaque origin (see CORS), defaults to {}."
     )
     (
         "stratum_v2.compression",
