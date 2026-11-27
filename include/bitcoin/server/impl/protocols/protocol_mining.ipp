@@ -173,6 +173,7 @@ void CLASS::do_template(const code& ec,
         bitcoin.forks.bip42);
 
     const auto value = ceilinged_add(subsidy, held->fees);
+    const auto bip141 = ctx.is_enabled(flags::bip141_rule);
     const auto prefix = coinbase_prefix(height, options_.coinbase_tag,
         extranonce_size());
 
@@ -183,12 +184,17 @@ void CLASS::do_template(const code& ec,
         if (current && current->held == held)
             continue;
 
+        const auto& payout = channel.payout();
+        const auto suffix = bip141 ?
+            coinbase_suffix(height, value, payout, held->commitment) :
+            coinbase_suffix(height, value, payout);
+
         const auto clean = !current || current->previous != held->previous;
         send_job(channel, to_shared(job
         {
             held,
             prefix,
-            coinbase_suffix(height, value, channel.payout(), held->commitment),
+            suffix,
             held->previous,
             chain_state::signal_version(bitcoin),
             ctx.work_required,
@@ -242,7 +248,8 @@ share_outcome CLASS::to_outcome(mining_channel& channel, const job& job,
     using namespace system;
 
     const auto extranonce = splice(channel.extranonce(), rolled);
-    const auto coinbase = splice(splice(job.prefix, extranonce), job.suffix);
+    const auto coinbase = coinbase_unwitnessed(job.prefix, extranonce,
+        job.suffix);
     out = chain::header
     {
         version,
@@ -455,6 +462,12 @@ void CLASS::submit_mined(const mining_channel& channel,
 
     const auto& query = this->archive();
     const auto& links = job.held->links;
+    const auto& ctx = job.held->context;
+    const auto bip141 = ctx.is_enabled(chain::flags::bip141_rule);
+    const auto coinbase = bip141 ?
+        coinbase_witnessed(job.prefix, extranonce, job.suffix) :
+        coinbase_unwitnessed(job.prefix, extranonce, job.suffix);
+
     const auto hash = header.hash();
     mined_.emplace(hash, std::pair{ job.held->context.height,
         channel.device() });
@@ -463,7 +476,7 @@ void CLASS::submit_mined(const mining_channel& channel,
     write::bytes::data sink{ data };
     header.to_data(sink);
     sink.write_variable(add1(links.size()));
-    sink.write_bytes(coinbase_witnessed(job.prefix, extranonce, job.suffix));
+    sink.write_bytes(coinbase);
 
     for (const auto& link: links)
     {

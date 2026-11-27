@@ -255,7 +255,8 @@ bool protocol_stratum_v2::to_payout(chain::script& out,
     const auto name = address.empty() ?
         identity.substr(zero, identity.find('.')) : address;
 
-    return !output_script(out, name, p2kh_, p2sh_, witness_);
+    return !output_script(out, name, p2kh_, p2sh_, witness_) &&
+        out.serialized_size(false) <= max_address_script;
 }
 
 protocol_stratum_v2::channel_state::ptr protocol_stratum_v2::find(
@@ -445,8 +446,8 @@ void protocol_stratum_v2::send_job(mining_channel& channel,
 
     if (state.standard)
     {
-        const auto coinbase = splice(splice(job->prefix, channel.extranonce()),
-            job->suffix);
+        const auto coinbase = coinbase_unwitnessed(job->prefix,
+            channel.extranonce(), job->suffix);
 
         const new_mining_job standard
         {

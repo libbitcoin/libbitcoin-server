@@ -27,7 +27,6 @@ static const code low_difficulty_share{ server::error::stratum_v1::low_difficult
 static const code unauthorized_worker{ server::error::stratum_v1::unauthorized_worker };
 static const code not_subscribed{ server::error::stratum_v1::not_subscribed };
 static const code not_implemented{ server::error::not_implemented };
-static const auto empty_commitment = sha256::double_hash(null_hash, null_hash);
 static const auto subsidy = 5'000'000'000_u64;
 
 static chain::script p2kh(uint8_t fill)
@@ -122,6 +121,12 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__invalid_address__unauthorized_wo
     BC_REQUIRE_EQUAL(error.at(0).as_int64(), unauthorized_worker.value());
     BC_REQUIRE(error.at(1).as_string() == "Unauthorized worker");
     BC_REQUIRE(error.at(2).is_null());
+}
+
+BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__unknown_witness_version__unauthorized_worker)
+{
+    const auto response = authorize(wallet::witness_address{ data_chunk(40, 0x01), 2 }.encoded());
+    BC_REQUIRE_EQUAL(response.at("error").as_array().at(0).as_int64(), unauthorized_worker.value());
 }
 
 BC_AUTO_TEST_CASE(stratum_v1__mining_authorize__second_payout__unauthorized_worker)
@@ -291,7 +296,7 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_notify__first_job__expected)
     const auto job = start_job();
     const auto& params = job.at("params").as_array();
     const auto version = chain::chain_state::signal_version(config_.bitcoin);
-    const auto suffix = server::coinbase_suffix(10, subsidy, p2kh(0x01), empty_commitment);
+    const auto suffix = server::coinbase_suffix(10, subsidy, p2kh(0x01));
     BC_REQUIRE(job.at("id").is_null());
     BC_REQUIRE(!job.as_object().contains("jsonrpc"));
     BC_REQUIRE_EQUAL(params.size(), 9u);
@@ -474,7 +479,7 @@ BC_AUTO_TEST_CASE(stratum_v1__mining_notify__configured_payout__paid_to_payout)
     authorize("anyone");
     receive();
     const auto job = receive();
-    const auto suffix = server::coinbase_suffix(10, subsidy, p2kh(0x42), empty_commitment);
+    const auto suffix = server::coinbase_suffix(10, subsidy, p2kh(0x42));
     BC_REQUIRE(job.at("params").as_array().at(3).as_string() == encode_base16(suffix));
 }
 

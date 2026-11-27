@@ -353,6 +353,16 @@ BC_AUTO_TEST_CASE(stratum_v2__open_standard_mining_channel__invalid_user__unknow
     BC_REQUIRE_EQUAL(error->error_code, "unknown-user");
 }
 
+BC_AUTO_TEST_CASE(stratum_v2__open_standard_mining_channel__unknown_witness_version__unknown_user)
+{
+    const auto ready = setup();
+    open_standard(wallet::witness_address{ data_chunk(40, 0x01), 2 }.encoded());
+    const auto error = receive_message<open_mining_channel_error>();
+    BC_REQUIRE(ready);
+    BC_REQUIRE(error);
+    BC_REQUIRE_EQUAL(error->error_code, "unknown-user");
+}
+
 BC_AUTO_TEST_CASE(stratum_v2__open_standard_mining_channel__zero_max_target__max_target_out_of_range)
 {
     const auto ready = setup();

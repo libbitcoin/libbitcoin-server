@@ -86,6 +86,22 @@ data_chunk coinbase_prefix(size_t height, const std::string& tag,
 
 // The sequence is not final and the locktime is the prior height (bip54).
 data_chunk coinbase_suffix(size_t height, uint64_t value,
+    const script& payout) NOEXCEPT
+{
+    const auto locktime = possible_narrow_cast<uint32_t>(sub1(height));
+
+    data_chunk out{};
+    write::bytes::data sink{ out };
+    sink.write_4_bytes_little_endian(sub1(max_uint32));
+    sink.write_variable(one);
+    sink.write_8_bytes_little_endian(value);
+    payout.to_data(sink, true);
+    sink.write_4_bytes_little_endian(locktime);
+    sink.flush();
+    return out;
+}
+
+data_chunk coinbase_suffix(size_t height, uint64_t value,
     const script& payout, const hash_digest& commitment) NOEXCEPT
 {
     const auto locktime = possible_narrow_cast<uint32_t>(sub1(height));
@@ -105,6 +121,12 @@ data_chunk coinbase_suffix(size_t height, uint64_t value,
     sink.write_4_bytes_little_endian(locktime);
     sink.flush();
     return out;
+}
+
+data_chunk coinbase_unwitnessed(const data_chunk& prefix,
+    const data_chunk& extranonce, const data_chunk& suffix) NOEXCEPT
+{
+    return splice(splice(prefix, extranonce), suffix);
 }
 
 // The version leads the prefix and the locktime ends the suffix.
