@@ -72,8 +72,11 @@ _MAXIMUM_TARGET = b"\xff" * 32
 # The target of difficulty one (bits 0x1d00ffff).
 _DIFFICULTY_ONE = 0xffff << 208
 
-# Hashes tried for a share or block before the test skips (seconds in python).
+# Hashes tried for a share or block (seconds in python).
 _MAXIMUM_TRIES = 1 << 20
+
+# A search of the budget misses with probability e^-16 at this bound.
+_REACHABLE_TRIES = _MAXIMUM_TRIES // 16
 
 
 # ─── Codec ───────────────────────────────────────────────────────────────────
@@ -730,7 +733,7 @@ def test_submit_low_difficulty(extended: "Miner"):
 def test_submit_valid_share(request, kind: str):
     """A share meeting the target is valid, and answered once."""
     miner = request.getfixturevalue(kind)
-    if tries(miner.target) > _MAXIMUM_TRIES:
+    if tries(miner.target) > _REACHABLE_TRIES:
         pytest.skip("share target not reachable in python, lower "
                     "[stratum_v2] minimum_difficulty")
     rolled = (2).to_bytes(miner.rolled, "little") if miner.rolled else b""
@@ -758,7 +761,7 @@ def test_submit_mines_block(request, kind: str, native_config: dict):
     miner = request.getfixturevalue(kind)
     block = expand(miner.previous["nbits"])
     target = min(block, miner.target)
-    if tries(target) > _MAXIMUM_TRIES:
+    if tries(target) > _REACHABLE_TRIES:
         pytest.skip("block target not reachable in python (not regtest)")
     try:
         before = native_top(native_config)
