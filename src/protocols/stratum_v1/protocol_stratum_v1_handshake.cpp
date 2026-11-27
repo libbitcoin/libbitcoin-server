@@ -80,19 +80,30 @@ void protocol_stratum_v1_handshake::finished(const code& ec,
     if (stopped(ec))
         return;
 
-    if (handler_)
-    {
-        // Invoke handshake completion, error will result in stopped channel.
-        (*handler_)(shake);
-        handler_.reset();
-    }
+    callback(shake);
 }
 
+// Allow channel stop to terminate handshake.
 void protocol_stratum_v1_handshake::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     authorize_timer_->stop();
+    callback(ec);
     protocol_rpc<rpc_interface>::stopping(ec);
+}
+
+// private
+// Idempotent on strand, first caller gets handler.
+void protocol_stratum_v1_handshake::callback(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (!handler_)
+        return;
+
+    // Invoke handshake completion, error will result in stopped channel.
+    (*handler_)(ec);
+    handler_.reset();
 }
 
 // Dispatch.
