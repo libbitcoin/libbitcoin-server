@@ -124,8 +124,7 @@ bool protocol_stratum_v2::handle_receive_open_extended_mining_channel(
     return true;
 }
 
-// The maximum target of the miner floors the channel difficulty and bounds
-// its target.
+// Miner maximum target floors channel difficulty and bounds channel target.
 bool protocol_stratum_v2::handle_receive_update_channel(const code& ec,
     const update_channel::cptr& message) NOEXCEPT
 {
