@@ -1,5 +1,5 @@
 import { AdminClient } from './admin-client';
-import { ALL_EVENT_FILTER, isFirstHeaderFrame } from './admin-contract';
+import { ALL_EVENT_FILTER, isAdminMiningFrame, isFirstHeaderFrame } from './admin-contract';
 import { toWebSocketUrl } from './endpoints';
 import { NativeClient } from './native-client';
 import { ReconnectingWebSocket } from './reconnecting-websocket';
@@ -76,6 +76,7 @@ export class TelemetryWorkerRuntime {
     if (command.generation !== this.#generation) return;
     switch (command.type) {
       case 'pause-display': {
+        this.#client?.setPaused(command.stream, command.paused);
         if (command.stream === 'logs') {
           this.#frozenLogs = command.paused
             ? (this.#frozenLogs ?? this.#metrics.getRecentLogs())
@@ -121,6 +122,10 @@ export class TelemetryWorkerRuntime {
       case 'clear-logs': {
         this.#metrics.clearLogs();
         if (this.#frozenLogs !== null) this.#frozenLogs = [];
+        break;
+      }
+      case 'clear-faults': {
+        this.#metrics.clearFaults();
         break;
       }
       case 'clear-events': {
@@ -191,6 +196,11 @@ export class TelemetryWorkerRuntime {
         connected = current;
       }),
       client.subscribeFrames((frame) => {
+        if (isAdminMiningFrame(frame)) {
+          this.send({ type: 'mining', generation: this.#generation, mining: frame });
+          return;
+        }
+
         if (isFirstHeaderFrame(frame)) this.#reset(this.#generation);
         this.#metrics.ingest(frame);
       }),

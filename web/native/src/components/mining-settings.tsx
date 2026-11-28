@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'rea
 import type { NetworkParams } from '@/lib/api/client';
 import { isAddress } from '@/lib/api/providers/libbitcoin-mapper';
 import type { MinerSettings } from '@/lib/mining/miner';
+import { closeOnBackdrop } from '@/lib/utils/dialog';
 
 /** Miner settings of the page, with the payout fields the node may supply. */
 export interface PageSettings extends MinerSettings {
@@ -84,6 +85,7 @@ export function MiningSettings({
       aria-labelledby="mining-settings-title"
       onClose={onClose}
       onCancel={onClose}
+      onMouseDown={closeOnBackdrop(onClose)}
       className="border-accent/40 bg-surface text-textPrimary m-auto w-[min(32rem,calc(100vw-2rem))] rounded-2xl border p-0 shadow-2xl backdrop:bg-black/60"
     >
       <form onSubmit={onSubmit} className="space-y-4 p-6">

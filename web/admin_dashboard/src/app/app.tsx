@@ -1,4 +1,4 @@
-import { useMemo, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Settings } from '@/components/settings';
 import { EventView } from '@/components/event-view';
 import { LogView } from '@/components/log-view';
@@ -16,15 +16,19 @@ import { chainSync } from '@/lib/sync-status';
 import { useAdminTelemetry, useNativeTelemetry } from '@/lib/use-telemetry';
 import { useCurrentTime } from '@/lib/use-current-time';
 import { coinOf } from '@/lib/wallet-prefixes';
+import { HEADER_ACTION } from '@/lib/styles';
+import { explorerUrl } from '@/lib/native-contract';
+import { showBrowserNotification } from '@/lib/browser-notifications';
 
 type DashboardView = 'overview' | 'logs' | 'events' | 'mining';
 
 const navigation: Array<{ id: DashboardView; label: string }> = [
-  { id: 'overview', label: 'Overview' },
+  { id: 'mining', label: 'Mining' },
   { id: 'logs', label: 'Logs' },
   { id: 'events', label: 'Events' },
-  { id: 'mining', label: 'Mining' },
 ];
+
+const NAVIGATION_ITEM = 'hover:text-accent rounded-md px-3 py-1 text-sm transition';
 
 export function App() {
   const metrics = useMemo(() => new WorkerMetricsStore(), []);
@@ -50,6 +54,7 @@ export function App() {
     logFilter
   );
   const native = useNativeTelemetry(endpoints.nativeUrl, metrics, now);
+  const explorer = explorerUrl(native.configuration);
   const network = native.configuration
     ? `${coinOf(native.configuration.forks)} ${native.configuration.node.network}`
     : ' ';
@@ -67,6 +72,42 @@ export function App() {
     setBrowserNotificationsEnabled(enabled);
   }
 
+  const faults = snapshot.unclearedFaults;
+
+  // A block submitted since the mining page was last shown.
+  const mining = useSyncExternalStore(metrics.subscribeMining, metrics.getMining, metrics.getMining);
+  const latestBlock = mining?.blocks[0];
+  const [seenBlock, setSeenBlock] = useState<string>();
+  if (view === 'mining' && latestBlock && latestBlock.hash !== seenBlock) setSeenBlock(latestBlock.hash);
+  const submitted = latestBlock !== undefined && latestBlock.hash !== seenBlock;
+
+  // A new block is announced by the browser, where enabled.
+  const notifiedBlock = useRef<string | null>(null);
+  useEffect(() => {
+    if (!mining) return;
+    const hash = latestBlock?.hash ?? '';
+    const previous = notifiedBlock.current;
+    notifiedBlock.current = hash;
+    if (previous === null || hash === previous || !latestBlock || !browserNotificationsEnabled) return;
+    showBrowserNotification('Block submitted', {
+      body: `Block ${String(latestBlock.height)} was submitted by a miner.`,
+      tag: 'libbitcoin-block',
+    });
+  }, [mining, latestBlock, browserNotificationsEnabled]);
+
+  // A new fault is announced by the browser, where enabled.
+  const notifiedFaults = useRef(snapshot.totalFaults);
+  useEffect(() => {
+    const total = snapshot.totalFaults;
+    const previous = notifiedFaults.current;
+    notifiedFaults.current = total;
+    if (total <= previous || !browserNotificationsEnabled) return;
+    showBrowserNotification('Node fault', {
+      body: `${String(faults)} fault${faults === 1 ? '' : 's'} not cleared.`,
+      tag: 'libbitcoin-fault',
+    });
+  }, [snapshot.totalFaults, faults, browserNotificationsEnabled]);
+
   function updateLogFilter(filter: number) {
     saveLogFilter(filter);
     setLogFilter(filter);
@@ -78,15 +119,16 @@ export function App() {
         <div className="mx-auto max-w-7xl px-4 py-4">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-4">
             <div className="order-1 flex flex-col">
-              <button
-                type="button"
-                onClick={() => {
+              <a
+                href="/"
+                onClick={(event) => {
+                  event.preventDefault();
                   setView('overview');
                 }}
-                className="text-accent text-left text-lg font-semibold tracking-tight"
+                className="text-accent text-lg font-semibold tracking-tight"
               >
-                Libbitcoin Server
-              </button>
+                Libbitcoin Admin
+              </a>
               <span className="text-textMuted text-sm">
                 {network}
               </span>
@@ -100,23 +142,29 @@ export function App() {
                   onClick={() => {
                     setView(item.id);
                   }}
-                  className={`text-textMuted hover:text-accent rounded-md px-3 py-1 text-sm transition ${
-                    view === item.id ? 'bg-accentSecondary/20 text-accent' : ''
+                  className={`${NAVIGATION_ITEM} ${view === item.id ? 'bg-accentSecondary/20' : ''} ${
+                    item.id === 'logs' && faults > 0
+                      ? 'text-red-300'
+                      : item.id === 'mining' && submitted
+                        ? 'text-emerald-300'
+                        : view === item.id
+                        ? 'text-accent'
+                        : 'text-textMuted'
                   }`}
+                  title={item.id === 'logs' && faults > 0 ? `${String(faults)} fault${faults === 1 ? '' : 's'} not cleared` : undefined}
                 >
                   {item.label}
-                  {item.id === 'logs' && snapshot.totalLogs > 0 && (
-                    <span className="bg-background/60 ml-2 rounded px-1.5 py-0.5 text-[10px] tabular-nums">
-                      {snapshot.totalLogs > 999 ? '999+' : String(snapshot.totalLogs)}
-                    </span>
-                  )}
-                  {item.id === 'events' && snapshot.totalEvents > 0 && (
-                    <span className="bg-background/60 ml-2 rounded px-1.5 py-0.5 text-[10px] tabular-nums">
-                      {snapshot.totalEvents > 999 ? '999+' : String(snapshot.totalEvents)}
-                    </span>
-                  )}
                 </button>
               ))}
+              {explorer ? (
+                <a href={`${explorer}/v1`} target="_blank" rel="noopener noreferrer" className={`${NAVIGATION_ITEM} text-textMuted`}>
+                  Explorer
+                </a>
+              ) : (
+                <span className={`${NAVIGATION_ITEM} text-textMuted cursor-not-allowed opacity-50`} title="The native site is not advertised">
+                  Explorer
+                </span>
+              )}
             </nav>
 
             <div className="order-2 ml-auto flex items-center gap-3 md:order-3">
@@ -125,7 +173,7 @@ export function App() {
                 onClick={() => {
                   setSettingsOpen(true);
                 }}
-                className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary rounded-md border px-3 py-2 text-sm font-medium"
+                className={HEADER_ACTION}
               >
                 Settings
               </button>
@@ -133,18 +181,14 @@ export function App() {
           </div>
         </div>
       </header>
+      <div className="h-0.5" aria-hidden />
 
       <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-7xl min-w-0 space-y-8 px-4 py-8">
-        <header className="space-y-2">
-          <p className="text-accentSecondary text-sm tracking-wide uppercase">Administration</p>
-          <div className="flex min-h-10 flex-wrap items-end justify-between gap-4">
-            <h1 className="text-accent text-3xl font-semibold">Admin Dashboard</h1>
-          </div>
-        </header>
         {view === 'overview' && (
           <Overview
             adminStatus={adminStatus}
             endpoints={endpoints}
+            explorer={explorer}
             metrics={snapshot}
             native={native}
             sync={sync}
@@ -153,8 +197,6 @@ export function App() {
         {view === 'logs' && (
           <LogView
             metrics={metrics}
-            delivery={snapshot}
-            status={adminStatus}
             logFilter={logFilter}
             paused={logsPaused}
             onLogFilterChange={updateLogFilter}
@@ -164,6 +206,11 @@ export function App() {
             }}
             onClear={() => {
               metrics.clearLogs();
+            }}
+            faults={faults}
+            clearedFaultSequence={snapshot.clearedFaultSequence}
+            onClearFaults={() => {
+              metrics.clearFaults();
             }}
           />
         )}
@@ -180,7 +227,7 @@ export function App() {
             }}
           />
         )}
-        {view === 'mining' && <Mining />}
+        {view === 'mining' && <Mining metrics={metrics} />}
       </main>
 
       <SyncStatusNotifier

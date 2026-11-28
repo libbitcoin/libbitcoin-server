@@ -4,6 +4,7 @@ import type { LogQuery, LogWindow } from './log-window';
 import type { EventQuery, EventWindow } from './event-window';
 import type { NativeFees } from './native-contract';
 import type { NativeLiveState } from './native-client';
+import type { AdminMiningFrame } from './admin-contract';
 
 export type TelemetryCommand =
   | {
@@ -32,7 +33,7 @@ export type TelemetryCommand =
     }
   | { type: 'native-top'; generation: number; height: number; receivedAt: number }
   | { type: 'native-fees'; generation: number; fees: NativeFees; receivedAt: number }
-  | { type: 'clear-logs' | 'clear-events'; generation: number }
+  | { type: 'clear-logs' | 'clear-events' | 'clear-faults'; generation: number }
   | { type: 'stop' };
 
 export interface MetricsUpdate {
@@ -61,6 +62,7 @@ export type TelemetryResponse =
       update: MetricsUpdate;
     }
   | { type: 'native'; status: ConnectionStatus; live: NativeLiveState }
+  | { type: 'mining'; generation: number; mining: AdminMiningFrame }
   | { type: 'stopped' };
 
 export function createMetricsUpdate(

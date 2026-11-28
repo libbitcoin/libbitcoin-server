@@ -6,12 +6,11 @@ import {
   getMeasureDefinition,
   getSignalDefinition,
   isMeasureAllowed,
-  logSignalId,
   type SignalMeasure,
   type SignalUnit,
 } from './signal-catalog';
 
-export const MAX_CHARTS = 16;
+export const MAX_CHARTS = 32;
 export const MAX_CHART_SERIES = 8;
 export const MAX_CHART_TITLE_LENGTH = 80;
 export const CHART_RANGES = [300, 900, 3600] as const;
@@ -123,22 +122,6 @@ const chainProgress: ChartDefinition = {
     series('progress-top', NATIVE_TOP_SIGNAL_ID, 'payload-latest', CHART_COLORS[0]),
     series('progress-organized', eventSignalId(13), 'payload-latest', CHART_COLORS[2]),
     series('progress-confirmed', eventSignalId(6), 'payload-latest', CHART_COLORS[1]),
-  ],
-};
-
-const logVolume: ChartDefinition = {
-  id: 'default-log-volume',
-  title: 'Log volume',
-  visualization: 'bar',
-  scale: 'linear',
-  range: 900,
-  series: [
-    series('logs-news', logSignalId(1), 'occurrence-rate', CHART_COLORS[2]),
-    series('logs-session', logSignalId(2), 'occurrence-rate', CHART_COLORS[3]),
-    series('logs-protocol', logSignalId(3), 'occurrence-rate', CHART_COLORS[1]),
-    series('logs-remote', logSignalId(5), 'occurrence-rate', CHART_COLORS[7]),
-    series('logs-fault', logSignalId(6), 'occurrence-rate', CHART_COLORS[4]),
-    series('logs-quitting', logSignalId(7), 'occurrence-rate', CHART_COLORS[0]),
   ],
 };
 
@@ -330,12 +313,6 @@ export const CHART_TEMPLATES: readonly ChartTemplate[] = [
     chart: chainProgress,
   },
   {
-    id: 'log-volume',
-    label: 'Log volume',
-    description: 'Message rates grouped by log level.',
-    chart: logVolume,
-  },
-  {
     id: 'pool-transactions',
     label: 'Pool transactions',
     description: 'Current pool transaction count, sampled every five seconds.',
@@ -462,7 +439,6 @@ export function defaultChartDefinitions(): DashboardChartDefinition[] {
   return [
     syncPipeline,
     chainProgress,
-    logVolume,
     poolTransactions,
     poolTotalFees,
     poolVirtualSize,

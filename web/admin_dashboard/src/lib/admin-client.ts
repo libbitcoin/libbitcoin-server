@@ -1,6 +1,7 @@
 import {
   ALL_EVENT_FILTER,
   DEFAULT_LOG_FILTER,
+  FAULT_LOG_FILTER,
   type AdminFrame,
   includesLogLevel,
   isAdminLogFrame,
@@ -23,6 +24,8 @@ interface AdminClientOptions {
 export class AdminClient {
   #logFilter: number;
   #eventFilter: number;
+  #logsPaused = false;
+  #eventsPaused = false;
   #frameListeners = new Set<FrameListener>();
   #invalidFrameListeners = new Set<InvalidFrameListener>();
   #socket: ReconnectingWebSocket;
@@ -48,7 +51,11 @@ export class AdminClient {
         const frame = parseAdminFrame(text);
         if (!frame) return false;
         // A few old frames may already be in flight after reducing the server mask.
-        if (isAdminLogFrame(frame) && !includesLogLevel(this.#logFilter, frame.level)) return true;
+        if (
+          isAdminLogFrame(frame) &&
+          !includesLogLevel(this.#activeLogFilter(), frame.level)
+        )
+          return true;
         for (const listener of this.#frameListeners) listener(frame);
         return true;
       },
@@ -86,19 +93,41 @@ export class AdminClient {
     };
   }
 
+  // A paused stream is not subscribed at the server.
+  setPaused(stream: 'logs' | 'events', paused: boolean): void {
+    if (stream === 'logs') {
+      if (this.#logsPaused === paused) return;
+      this.#logsPaused = paused;
+      this.#socket.send(`/v1/log/subscribe?filter=${String(this.#activeLogFilter())}`);
+    } else {
+      if (this.#eventsPaused === paused) return;
+      this.#eventsPaused = paused;
+      this.#socket.send(`/v1/event/subscribe?filter=${String(this.#activeEventFilter())}`);
+    }
+  }
+
+  #activeLogFilter(): number {
+    return (this.#logsPaused ? 0 : this.#logFilter) | FAULT_LOG_FILTER;
+  }
+
+  #activeEventFilter(): number {
+    return this.#eventsPaused ? 0 : this.#eventFilter;
+  }
+
   setFilters(logFilter: number, eventFilter: number): void {
     if (this.#logFilter !== logFilter) {
       this.#logFilter = logFilter;
-      this.#socket.send(`/v1/log/subscribe?filter=${String(logFilter)}`);
+      this.#socket.send(`/v1/log/subscribe?filter=${String(this.#activeLogFilter())}`);
     }
     if (this.#eventFilter !== eventFilter) {
       this.#eventFilter = eventFilter;
-      this.#socket.send(`/v1/event/subscribe?filter=${String(eventFilter)}`);
+      this.#socket.send(`/v1/event/subscribe?filter=${String(this.#activeEventFilter())}`);
     }
   }
 
   #sendSubscriptions(socket: WebSocket): void {
-    socket.send(`/v1/log/subscribe?filter=${String(this.#logFilter)}`);
-    socket.send(`/v1/event/subscribe?filter=${String(this.#eventFilter)}`);
+    socket.send(`/v1/log/subscribe?filter=${String(this.#activeLogFilter())}`);
+    socket.send(`/v1/event/subscribe?filter=${String(this.#activeEventFilter())}`);
+    socket.send('/v1/mining/subscribe');
   }
 }

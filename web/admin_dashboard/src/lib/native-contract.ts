@@ -44,9 +44,24 @@ const nativeConfigurationSchema = z.object({
   forks: z
     .record(z.string(), z.boolean())
     .transform((forks) => Object.keys(forks).filter((fork) => forks[fork])),
+  server: z
+    .object({
+      native: z.object({ advertise: z.array(z.string()) }).optional(),
+    })
+    .optional(),
 });
 
 export type NativeConfiguration = z.infer<typeof nativeConfigurationSchema>;
+
+// The advertised native site, of the scheme of the page where there is one.
+export function explorerUrl(configuration: NativeConfiguration | null): string | undefined {
+  const urls = (configuration?.server?.native?.advertise ?? []).filter((url) =>
+    /^https?:\/\//iu.test(url)
+  );
+  const scheme = globalThis.location?.protocol ?? 'http:';
+  const url = urls.find((value) => value.toLowerCase().startsWith(scheme)) ?? urls[0];
+  return url?.replace(/\/+$/u, '');
+}
 
 const hashSchema = z.string().regex(/^[0-9a-f]{64}$/u);
 

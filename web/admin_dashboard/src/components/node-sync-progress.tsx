@@ -5,6 +5,7 @@ import { chartColor } from '@/lib/chart-theme';
 import type { SyncFill } from '@/lib/sync-fill';
 import { type ChainSync, SYNC_PROGRESS_HIDE_THRESHOLD_BLOCKS } from '@/lib/sync-status';
 import { useTheme } from '@/lib/theme';
+import { FitHash } from '@/components/fit-hash';
 
 interface NodeSyncProgressProps {
   sync: ChainSync | null;
@@ -30,10 +31,7 @@ export function NodeSyncProgress({ sync }: NodeSyncProgressProps) {
     >
       <header className="flex flex-wrap items-end justify-between gap-3 px-5 pt-5">
         <div>
-          <p className="text-accentSecondary text-xs tracking-wide uppercase">
-            Node synchronization
-          </p>
-          <h2 id="node-sync-progress-title" className="text-accent mt-1 text-lg font-semibold">
+          <h2 id="node-sync-progress-title" className="text-accent text-lg font-semibold">
             {sync.diverged ? 'Candidate branch diverges' : 'Catching up to top candidate header'}
           </h2>
         </div>
@@ -207,8 +205,8 @@ function SyncValue({ label, value, hash }: { label: string; value: string; hash?
       <dt className="text-accentSecondary text-xs tracking-wide uppercase">{label}</dt>
       <dd className="text-textPrimary mt-1 text-lg font-semibold tabular-nums">{value}</dd>
       {hash !== undefined && (
-        <dd className="text-textMuted truncate font-mono text-[11px]" title={hash}>
-          {hash}
+        <dd data-fit className="text-textMuted overflow-hidden font-mono text-[11px] whitespace-nowrap">
+          <FitHash value={hash} />
         </dd>
       )}
     </div>

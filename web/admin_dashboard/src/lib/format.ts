@@ -8,6 +8,12 @@ function formatNumber(value: number, maximumFractionDigits = 2): string {
   return new Intl.NumberFormat(undefined, { maximumFractionDigits }).format(value);
 }
 
+// A hash shortened to its leading and trailing characters.
+export function formatHash(hash: string, visible = 8): string {
+  if (hash.length <= visible * 2) return hash;
+  return `${hash.slice(0, visible)}…${hash.slice(-visible)}`;
+}
+
 export function formatInteger(value: number): string {
   return integerFormatter.format(value);
 }

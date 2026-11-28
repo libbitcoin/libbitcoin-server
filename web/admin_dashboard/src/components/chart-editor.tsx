@@ -144,10 +144,10 @@ export function ChartEditor({ chart, mode, onCancel, onSave }: ChartEditorProps)
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-      role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onCancel();
       }}
+      role="presentation"
     >
       <section
         role="dialog"
@@ -157,10 +157,7 @@ export function ChartEditor({ chart, mode, onCancel, onSave }: ChartEditorProps)
       >
         <header className="border-accent/20 flex items-start justify-between border-b p-5">
           <div>
-            <p className="text-accentSecondary text-xs tracking-wide uppercase">
-              Dashboard builder
-            </p>
-            <h2 id="chart-editor-title" className="text-accent mt-1 text-xl font-semibold">
+            <h2 id="chart-editor-title" className="text-accent text-xl font-semibold">
               {mode === 'add' ? 'Add chart' : 'Edit chart'}
             </h2>
           </div>
@@ -426,14 +423,14 @@ export function ChartEditor({ chart, mode, onCancel, onSave }: ChartEditorProps)
             <button
               type="button"
               onClick={onCancel}
-              className="text-textMuted hover:text-accent rounded-md px-4 py-2 text-sm"
+              className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent rounded-md border px-4 py-1.5 text-sm"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={validationError !== null}
-              className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary rounded-md border px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40"
+              className="border-accent bg-accent/20 text-accent hover:bg-accent/30 rounded-md border px-4 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
             >
               {mode === 'add' ? 'Add chart' : 'Save changes'}
             </button>

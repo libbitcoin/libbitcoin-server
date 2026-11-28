@@ -1,6 +1,6 @@
 /* eslint-disable unicorn/prefer-add-event-listener -- Replacing the handlers isolates a retiring worker from its replacement. */
 import TelemetryWorker from './telemetry.worker?worker&inline';
-import { DEFAULT_LOG_FILTER } from './admin-contract';
+import { DEFAULT_LOG_FILTER, type AdminMiningFrame } from './admin-contract';
 import { LiveMetricsStore, type MetricsSnapshot } from './live-metrics';
 import type { ConnectionStatus } from './reconnecting-websocket';
 import type { LogQuery, LogWindow } from './log-window';
@@ -34,6 +34,8 @@ export class WorkerMetricsStore {
   #nativeStatus: ConnectionStatus = INITIAL_STATUS;
   #nativeLive: NativeLiveState = INITIAL_LIVE_STATE;
   #nativeListeners = new Set<() => void>();
+  #mining: AdminMiningFrame | null = null;
+  #miningListeners = new Set<() => void>();
   #endpoint: string | null = null;
   #nativeEndpoint: string | null = null;
   #logFilter = DEFAULT_LOG_FILTER;
@@ -60,6 +62,14 @@ export class WorkerMetricsStore {
 
   readonly getSnapshot = (): MetricsSnapshot => this.#snapshot;
   readonly getStatus = (): ConnectionStatus => this.#status;
+  readonly getMining = (): AdminMiningFrame | null => this.#mining;
+  readonly subscribeMining = (listener: () => void): (() => void) => {
+    this.#miningListeners.add(listener);
+    return () => {
+      this.#miningListeners.delete(listener);
+    };
+  };
+
   readonly getNativeStatus = (): ConnectionStatus => this.#nativeStatus;
   readonly getNativeLive = (): NativeLiveState => this.#nativeLive;
   readonly subscribeNative = (listener: () => void): (() => void) => {
@@ -169,6 +179,10 @@ export class WorkerMetricsStore {
           this.#setNative(response.status, response.live);
           return;
         }
+        if (response.type === 'mining') {
+          if (response.generation === this.#generation) this.#setMining(response.mining);
+          return;
+        }
         if (response.type !== 'snapshot') return;
         if (response.requestId !== this.#pendingRequest) return;
         this.#pendingRequest = null;
@@ -238,6 +252,7 @@ export class WorkerMetricsStore {
     }
     this.#setStatus(INITIAL_STATUS);
     this.#setNative(INITIAL_STATUS, INITIAL_LIVE_STATE);
+    this.#setMining(null);
   }
 
   recordNativeTop(height: number, receivedAt = Date.now()): void {
@@ -253,6 +268,10 @@ export class WorkerMetricsStore {
     this.#logQueryVersion += 1;
     this.#requestLogs();
   }
+  clearFaults(): void {
+    this.#send({ type: 'clear-faults', generation: this.#generation });
+  }
+
   clearEvents(): void {
     this.#send({ type: 'clear-events', generation: this.#generation });
     this.#eventQueryVersion += 1;
@@ -404,6 +423,11 @@ export class WorkerMetricsStore {
     this.#worker = null;
     this.#setStatus({ ...INITIAL_STATUS, error });
     this.#setNative({ ...INITIAL_STATUS, error }, INITIAL_LIVE_STATE);
+  }
+
+  #setMining(mining: AdminMiningFrame | null): void {
+    this.#mining = mining;
+    for (const listener of this.#miningListeners) listener();
   }
 
   #setNative(status: ConnectionStatus, live: NativeLiveState): void {

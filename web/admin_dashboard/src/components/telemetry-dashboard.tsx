@@ -18,6 +18,7 @@ import { useCurrentTime } from '@/lib/use-current-time';
 import { ChartEditor } from './chart-editor';
 import { PoolFeeHistogram } from './pool-fee-histogram';
 import { TimeSeriesChart, type ChartSeries } from './time-series-chart';
+import { HEADER_ACTION } from '@/lib/styles';
 
 interface TelemetryDashboardProps {
   metrics: MetricsSnapshot;
@@ -113,8 +114,7 @@ export function TelemetryDashboard({ metrics }: TelemetryDashboardProps) {
     <section className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-accentSecondary text-xs tracking-wide uppercase">Live telemetry</p>
-          <h2 className="text-accent mt-1 text-2xl font-semibold">Custom charts</h2>
+          <h2 className="text-accent text-lg font-semibold">Charts</h2>
           <p className="text-textMuted mt-1 text-sm">
             Session data only · {String(charts.length)} of {String(MAX_CHARTS)} charts
           </p>
@@ -127,7 +127,7 @@ export function TelemetryDashboard({ metrics }: TelemetryDashboardProps) {
               setEditor({ mode: 'add', chart: createCustomChart() });
             }}
             disabled={charts.length >= MAX_CHARTS}
-            className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary rounded-md border px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40"
+            className={`${HEADER_ACTION} disabled:cursor-not-allowed`}
           >
             Add chart
           </button>
@@ -137,11 +137,11 @@ export function TelemetryDashboard({ metrics }: TelemetryDashboardProps) {
             onBlur={() => {
               setResetArmed(false);
             }}
-            className={`rounded-md border px-3 py-2 text-sm font-medium ${
+            className={
               resetArmed
-                ? 'border-amber-400/60 text-amber-200'
-                : 'border-accent/40 text-accent hover:border-accent hover:text-accentSecondary'
-            }`}
+                ? 'inline-flex items-center gap-2 rounded-md border border-amber-400/60 px-3 py-2 text-sm text-amber-200'
+                : HEADER_ACTION
+            }
           >
             {resetArmed ? 'Confirm reset' : 'Reset defaults'}
           </button>

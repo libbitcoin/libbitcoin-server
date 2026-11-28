@@ -14,6 +14,7 @@ import {
 } from '@/lib/utils/investigations';
 import { investigationsPath } from '@/lib/utils/routes';
 import { HEADER_ACTION } from '@/lib/utils/styles';
+import { closeOnBackdrop } from '@/lib/utils/dialog';
 
 export const bookmarkFieldClass =
   'border-accent/40 bg-background text-textPrimary w-full rounded-md border px-3 py-2 text-sm';
@@ -48,6 +49,7 @@ export function BookmarkDialog({
         event.preventDefault();
         onClose();
       }}
+      onMouseDown={closeOnBackdrop(onClose)}
       className="border-accent/40 bg-surface text-textPrimary fixed inset-0 m-auto max-h-[85vh] w-[calc(100%_-_2rem)] max-w-lg space-y-4 overflow-y-auto rounded-xl border p-5 shadow-2xl backdrop:bg-black/70"
     >
       <div className="flex items-center justify-between gap-3">

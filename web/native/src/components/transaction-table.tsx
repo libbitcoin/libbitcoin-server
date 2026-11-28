@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { HashText } from '@/components/hash-text';
+import { FitHash } from '@/components/fit-hash';
 import { SortHeader, useSortedRows } from '@/components/sort-header';
 import { Spinner } from '@/components/spinner';
 import { useWindowScrollToBottom } from '@/lib/hooks/useWindowScrollToBottom';
@@ -70,7 +70,16 @@ export function TransactionTable({
         )}
       </header>
       <div className="border-accent/30 overflow-hidden overflow-x-auto rounded-xl border">
-        <table className="divide-accentSecondary/30 min-w-full divide-y text-sm">
+        <table className="divide-accentSecondary/30 w-full min-w-[48rem] table-fixed divide-y text-sm">
+          <colgroup>
+            <col className="w-24" />
+            <col />
+            {timed && <col className="w-28" />}
+            <col className="w-28" />
+            <col className="w-24" />
+            <col className="w-28" />
+            <col className="w-24" />
+          </colgroup>
           <thead className="bg-accentSecondary/20 text-textMuted text-xs uppercase">
             <tr>
               <SortHeader label="Position" column="position" sort={sort} onSort={toggle} />
@@ -116,16 +125,16 @@ export function TransactionTable({
                     formatInteger(row.position)
                   )}
                 </td>
-                <td className="px-4 py-2">
+                <td data-fit className="overflow-hidden px-4 py-2 whitespace-nowrap">
                   {row.hash && !NULL_HASH.test(row.hash) ? (
                     <Link
                       to={transactionPath(row.hash)}
                       className="text-accent hover:text-accentSecondary font-mono"
                     >
-                      <HashText value={row.hash} />
+                      <FitHash value={row.hash} />
                     </Link>
                   ) : row.hash ? (
-                    <HashText value={row.hash} className="text-textMuted font-mono" />
+                    <FitHash value={row.hash} className="text-textMuted font-mono" />
                   ) : (
                     '—'
                   )}
