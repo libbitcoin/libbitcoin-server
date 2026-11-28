@@ -45,7 +45,7 @@ R"DELIM(<!doctype html>
       }
     </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <title>Libbitcoin Server Admin</title>
+    <title>Libbitcoin Admin</title>
     <script type="module" crossorigin src="/script.js"></script>
     <link rel="stylesheet" crossorigin href="/style.css">
   </head>
