@@ -31,10 +31,10 @@ class BCS_API miners
 public:
     typedef std::shared_ptr<miners> ptr;
 
-    /// Shares retained per device, newest first.
+    /// Shares retained per channel, newest first.
     static constexpr size_t maximum_shares = 20;
 
-    /// Minutes of hash rate history retained per device.
+    /// Minutes of hash rate history retained per channel.
     static constexpr size_t history_minutes = 30;
 
     /// Blocks retained, newest first.
@@ -55,7 +55,7 @@ public:
         double rate{};
     };
 
-    struct device
+    struct channel
     {
         std::string id{};
         std::string service{};
@@ -79,13 +79,13 @@ public:
         system::hash_digest hash{};
         size_t height{};
         uint64_t time{};
-        std::string device{};
+        std::string channel{};
     };
 
-    using devices = std::vector<device>;
+    using channels = std::vector<channel>;
     using blocks = std::deque<block>;
 
-    /// The device identifier of a mining channel of a connection.
+    /// The registry key of a mining channel of a connection.
     static std::string to_id(uint64_t connection, uint32_t channel) NOEXCEPT;
 
     /// The current time, in milliseconds since the epoch.
@@ -95,31 +95,31 @@ public:
     static std::string to_transport(bool noised, bool websocket,
         bool secure) NOEXCEPT;
 
-    /// Add a device (replacing one of its identifier), or remove one.
-    void add(device&& value) NOEXCEPT;
+    /// Add a channel (replacing one of its key), or remove one.
+    void add(channel&& value) NOEXCEPT;
     void remove(const std::string& id) NOEXCEPT;
 
-    /// Update the share difficulty of a device.
+    /// Update the share difficulty of a channel.
     void set_difficulty(const std::string& id, double difficulty) NOEXCEPT;
 
-    /// Record a share of a device, accepted or rejected for the result.
+    /// Record a share of a channel, accepted or rejected for the result.
     void add_share(const std::string& id, share&& value,
         bool accepted) NOEXCEPT;
 
-    /// Record a block found by a device.
+    /// Record a block found by a channel.
     void add_block(block&& value) NOEXCEPT;
 
-    /// Copies of the devices (as of the time) and of the blocks found.
-    devices get_devices(uint64_t time) NOEXCEPT;
+    /// Copies of the channels (as of the time) and of the blocks found.
+    channels get_channels(uint64_t time) NOEXCEPT;
     blocks get_blocks() const NOEXCEPT;
 
-    /// Incremented as devices are added or removed.
+    /// Incremented as channels are added or removed.
     uint64_t generation() const NOEXCEPT;
 
 private:
     struct entry
     {
-        device value{};
+        channel value{};
         uint64_t minute{};
         double work{};
     };
@@ -128,7 +128,7 @@ private:
     static void advance(entry& item, uint64_t time) NOEXCEPT;
 
     // These are protected by mutex.
-    std::map<std::string, entry> devices_{};
+    std::map<std::string, entry> channels_{};
     blocks blocks_{};
     uint64_t generation_{};
     mutable std::mutex mutex_{};

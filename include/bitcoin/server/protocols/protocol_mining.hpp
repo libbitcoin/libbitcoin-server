@@ -75,9 +75,9 @@ protected:
         bool clean) NOEXCEPT = 0;
 
     /// Add or remove a mining channel of the connection, registering its
-    /// device (service, transport, client and workers) (requires strand).
+    /// entry (service, transport, client and workers) (requires strand).
     void add_channel(uint32_t id, const mining_channel::ptr& channel,
-        miners::device&& device) NOEXCEPT;
+        miners::channel&& entry) NOEXCEPT;
     void remove_channel(uint32_t id) NOEXCEPT;
 
     /// The mining channel of the identifier, empty if none (requires strand).

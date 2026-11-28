@@ -64,7 +64,7 @@ uint64_t miners::to_minute(uint64_t time) NOEXCEPT
 }
 
 // Closes each whole minute since the last, as the rate (hashes per second) of
-// its work, and sets the device rate to the mean of its history.
+// its work, and sets the channel rate to the mean of its history.
 void miners::advance(entry& item, uint64_t time) NOEXCEPT
 {
     const auto current = to_minute(time);
@@ -88,26 +88,26 @@ void miners::advance(entry& item, uint64_t time) NOEXCEPT
         total / to_floating(history.size());
 }
 
-void miners::add(device&& value) NOEXCEPT
+void miners::add(channel&& value) NOEXCEPT
 {
     std::unique_lock lock{ mutex_ };
     const auto id = value.id;
     const auto minute = to_minute(value.connected);
-    devices_[id] = entry{ std::move(value), minute, 0.0 };
+    channels_[id] = entry{ std::move(value), minute, 0.0 };
     ++generation_;
 }
 
 void miners::remove(const std::string& id) NOEXCEPT
 {
     std::unique_lock lock{ mutex_ };
-    if (is_nonzero(devices_.erase(id)))
+    if (is_nonzero(channels_.erase(id)))
         ++generation_;
 }
 
 void miners::set_difficulty(const std::string& id, double difficulty) NOEXCEPT
 {
     std::unique_lock lock{ mutex_ };
-    if (const auto it = devices_.find(id); it != devices_.end())
+    if (const auto it = channels_.find(id); it != channels_.end())
         it->second.value.difficulty = difficulty;
 }
 
@@ -115,29 +115,29 @@ void miners::add_share(const std::string& id, share&& value,
     bool accepted) NOEXCEPT
 {
     std::unique_lock lock{ mutex_ };
-    const auto it = devices_.find(id);
-    if (it == devices_.end())
+    const auto it = channels_.find(id);
+    if (it == channels_.end())
         return;
 
     auto& item = it->second;
     advance(item, value.time);
 
-    auto& device = item.value;
+    auto& channel = item.value;
     if (accepted)
     {
-        ++device.accepted;
+        ++channel.accepted;
         item.work += value.difficulty * hashes_per_difficulty;
     }
     else
     {
-        ++device.rejected;
-        ++device.rejections[value.result];
+        ++channel.rejected;
+        ++channel.rejections[value.result];
     }
 
-    device.last_share = value.time;
-    device.shares.push_front(std::move(value));
-    while (device.shares.size() > maximum_shares)
-        device.shares.pop_back();
+    channel.last_share = value.time;
+    channel.shares.push_front(std::move(value));
+    while (channel.shares.size() > maximum_shares)
+        channel.shares.pop_back();
 }
 
 void miners::add_block(block&& value) NOEXCEPT
@@ -148,12 +148,12 @@ void miners::add_block(block&& value) NOEXCEPT
         blocks_.pop_back();
 }
 
-miners::devices miners::get_devices(uint64_t time) NOEXCEPT
+miners::channels miners::get_channels(uint64_t time) NOEXCEPT
 {
     std::unique_lock lock{ mutex_ };
-    devices out{};
-    out.reserve(devices_.size());
-    for (auto& item: devices_)
+    channels out{};
+    out.reserve(channels_.size());
+    for (auto& item: channels_)
     {
         advance(item.second, time);
         out.push_back(item.second.value);

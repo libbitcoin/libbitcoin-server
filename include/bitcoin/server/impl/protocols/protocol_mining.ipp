@@ -42,7 +42,7 @@ void CLASS::stopping(const code& ec) NOEXCEPT
         this->demand_template(false);
 
     for (const auto& entry: channels_)
-        this->mining()->remove(entry.second->device());
+        this->mining()->remove(entry.second->key());
 
     channels_.clear();
     decay_timer_->stop();
@@ -54,15 +54,15 @@ void CLASS::stopping(const code& ec) NOEXCEPT
 
 TEMPLATE
 void CLASS::add_channel(uint32_t id, const mining_channel::ptr& channel,
-    miners::device&& device) NOEXCEPT
+    miners::channel&& entry) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
-    device.id = miners::to_id(this->identifier(), id);
-    device.address = this->opposite().to_string();
-    device.connected = miners::now();
-    device.difficulty = channel->difficulty();
-    channel->set_device(device.id);
-    this->mining()->add(std::move(device));
+    entry.id = miners::to_id(this->identifier(), id);
+    entry.address = this->opposite().to_string();
+    entry.connected = miners::now();
+    entry.difficulty = channel->difficulty();
+    channel->set_key(entry.id);
+    this->mining()->add(std::move(entry));
     channels_.emplace(id, channel);
 }
 
@@ -74,7 +74,7 @@ void CLASS::remove_channel(uint32_t id) NOEXCEPT
     if (it == channels_.end())
         return;
 
-    this->mining()->remove(it->second->device());
+    this->mining()->remove(it->second->key());
     channels_.erase(it);
 }
 
@@ -209,7 +209,7 @@ TEMPLATE
 void CLASS::refresh(mining_channel& channel) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
-    this->mining()->set_difficulty(channel.device(), channel.difficulty());
+    this->mining()->set_difficulty(channel.key(), channel.difficulty());
     const auto current = channel.current();
     if (!current)
         return;
@@ -306,7 +306,7 @@ void CLASS::reject_share(const mining_channel& channel,
     BC_ASSERT(this->stranded());
     const auto current = channel.current();
     const auto height = current ? current->held->context.height : zero;
-    this->mining()->add_share(channel.device(),
+    this->mining()->add_share(channel.key(),
     {
         miners::now(), height, channel.difficulty(), result
     }, false);
@@ -337,7 +337,7 @@ void CLASS::record_share(const mining_channel& channel, const job& job,
             break;
     }
 
-    this->mining()->add_share(channel.device(),
+    this->mining()->add_share(channel.key(),
     {
         miners::now(), job.held->context.height, job.difficulty, result
     }, outcome == share_outcome::accepted);
@@ -473,7 +473,7 @@ void CLASS::submit_mined(const mining_channel& channel,
 
     const auto hash = header.hash();
     mined_.emplace(hash, std::pair{ job.held->context.height,
-        channel.device() });
+        channel.key() });
 
     data_chunk data{};
     write::bytes::data sink{ data };
@@ -512,12 +512,12 @@ void CLASS::handle_submitted(const system::hash_digest& hash,
     submission outcome, const code& ec) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
-    std::string device{};
+    std::string key{};
     size_t height{};
     if (const auto it = mined_.find(hash); it != mined_.end())
     {
         height = it->second.first;
-        device = std::move(it->second.second);
+        key = std::move(it->second.second);
         mined_.erase(it);
     }
 
@@ -531,7 +531,7 @@ void CLASS::handle_submitted(const system::hash_digest& hash,
         {
             LOGN("Stratum block accepted " << block);
             this->mining()->add_block({ hash, height, miners::now(),
-                std::move(device) });
+                std::move(key) });
             break;
         }
         case submission::inconclusive:

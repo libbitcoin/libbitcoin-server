@@ -13,7 +13,7 @@ test('admin_contract__get_log_level__unlisted__numbered', () => {
   expect(getLogLevel(8)).toEqual({ id: 8, name: 'level_8', label: 'Level 8' });
 });
 
-const DEVICE = {
+const CHANNEL = {
   id: '0000000000000001:0',
   service: 'stratum_v2',
   transport: 'ws',
@@ -32,16 +32,16 @@ const DEVICE = {
 };
 
 test('admin_contract__parse_admin_frame__mining__mining_frame', () => {
-  const frame = parseAdminFrame(JSON.stringify({ devices: [DEVICE], blocks: [] }));
+  const frame = parseAdminFrame(JSON.stringify({ channels: [CHANNEL], blocks: [] }));
   expect(frame).not.toBeNull();
   expect(frame !== null && isAdminMiningFrame(frame)).toBe(true);
 });
 
 test('admin_contract__parse_admin_frame__mining_without_last_share__mining_frame', () => {
-  const frame = parseAdminFrame(JSON.stringify({ devices: [{ ...DEVICE, last_share: null, shares: [] }], blocks: [] }));
+  const frame = parseAdminFrame(JSON.stringify({ channels: [{ ...CHANNEL, last_share: null, shares: [] }], blocks: [] }));
   expect(frame !== null && isAdminMiningFrame(frame)).toBe(true);
 });
 
-test('admin_contract__parse_admin_frame__mining_invalid_device__null', () => {
-  expect(parseAdminFrame(JSON.stringify({ devices: [{ id: 'x' }], blocks: [] }))).toBeNull();
+test('admin_contract__parse_admin_frame__mining_invalid_channel__null', () => {
+  expect(parseAdminFrame(JSON.stringify({ channels: [{ id: 'x' }], blocks: [] }))).toBeNull();
 });

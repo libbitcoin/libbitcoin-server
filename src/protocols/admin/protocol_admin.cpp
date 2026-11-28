@@ -373,19 +373,19 @@ void protocol_admin::do_mining(const code& ec) NOEXCEPT
 system::json::value protocol_admin::mining_snapshot() const NOEXCEPT
 {
     auto& registry = *mining();
-    system::json::array devices{};
-    for (const auto& device: registry.get_devices(miners::now()))
+    system::json::array channels{};
+    for (const auto& channel: registry.get_channels(miners::now()))
     {
         system::json::array workers{};
-        for (const auto& worker: device.workers)
+        for (const auto& worker: channel.workers)
             workers.emplace_back(worker);
 
         system::json::object rejections{};
-        for (const auto& [result, count]: device.rejections)
+        for (const auto& [result, count]: channel.rejections)
             rejections[result] = count;
 
         system::json::array shares{};
-        for (const auto& share: device.shares)
+        for (const auto& share: channel.shares)
             shares.push_back(system::json::object
             {
                 { "time", share.time },
@@ -395,26 +395,26 @@ system::json::value protocol_admin::mining_snapshot() const NOEXCEPT
             });
 
         system::json::array history{};
-        for (const auto& sample: device.history)
+        for (const auto& sample: channel.history)
             history.push_back(system::json::array{ sample.time, sample.rate });
 
         system::json::value last{};
-        if (device.last_share.has_value())
-            last = device.last_share.value();
+        if (channel.last_share.has_value())
+            last = channel.last_share.value();
 
-        devices.push_back(system::json::object
+        channels.push_back(system::json::object
         {
-            { "id", device.id },
-            { "service", device.service },
-            { "transport", device.transport },
-            { "address", device.address },
-            { "client", device.client },
+            { "id", channel.id },
+            { "service", channel.service },
+            { "transport", channel.transport },
+            { "address", channel.address },
+            { "client", channel.client },
             { "workers", std::move(workers) },
-            { "connected", device.connected },
-            { "difficulty", device.difficulty },
-            { "hashrate", device.hashrate },
-            { "accepted", device.accepted },
-            { "rejected", device.rejected },
+            { "connected", channel.connected },
+            { "difficulty", channel.difficulty },
+            { "hashrate", channel.hashrate },
+            { "accepted", channel.accepted },
+            { "rejected", channel.rejected },
             { "rejections", std::move(rejections) },
             { "last_share", std::move(last) },
             { "shares", std::move(shares) },
@@ -429,12 +429,12 @@ system::json::value protocol_admin::mining_snapshot() const NOEXCEPT
             { "hash", encode_hash(block.hash) },
             { "height", block.height },
             { "time", block.time },
-            { "device", block.device }
+            { "channel", block.channel }
         });
 
     return system::json::object
     {
-        { "devices", std::move(devices) },
+        { "channels", std::move(channels) },
         { "blocks", std::move(blocks) }
     };
 }

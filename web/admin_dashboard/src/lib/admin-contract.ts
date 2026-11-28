@@ -380,7 +380,7 @@ const miningShareSchema = z.object({
   result: z.string(),
 });
 
-const miningDeviceSchema = z.object({
+const miningChannelSchema = z.object({
   id: z.string(),
   service: z.string(),
   transport: z.string(),
@@ -402,12 +402,12 @@ const miningBlockSchema = z.object({
   hash: z.string(),
   height: miningCountSchema,
   time: adminTimestampSchema,
-  device: z.string(),
+  channel: z.string(),
 });
 
 // The mining channels of the stratum services and the blocks they found.
 const adminMiningFrameSchema = z.object({
-  devices: z.array(miningDeviceSchema),
+  channels: z.array(miningChannelSchema),
   blocks: z.array(miningBlockSchema),
 });
 
@@ -422,7 +422,7 @@ export type AdminLogFrame = z.infer<typeof adminLogFrameSchema>;
 export type AdminEventFrame = z.infer<typeof adminEventFrameSchema>;
 export type AdminAckFrame = z.infer<typeof adminAckFrameSchema>;
 export type AdminMiningFrame = z.infer<typeof adminMiningFrameSchema>;
-export type MiningDevice = z.infer<typeof miningDeviceSchema>;
+export type MiningChannel = z.infer<typeof miningChannelSchema>;
 export type AdminFrame = z.infer<typeof adminFrameSchema>;
 
 export const ALL_LOG_FILTER = LOG_LEVELS.reduce(
@@ -456,7 +456,7 @@ export function isAdminAckFrame(frame: AdminFrame): frame is AdminAckFrame {
 }
 
 export function isAdminMiningFrame(frame: AdminFrame): frame is AdminMiningFrame {
-  return 'devices' in frame;
+  return 'channels' in frame;
 }
 
 // The first header archived, which begins a synchronization from genesis.
@@ -474,7 +474,7 @@ export function parseAdminFrame(text: string): AdminFrame | null {
         ? adminLogFrameSchema
         : 'event' in value
           ? adminEventFrameSchema
-          : 'devices' in value
+          : 'channels' in value
             ? adminMiningFrameSchema
             : adminAckFrameSchema;
     const result = schema.safeParse(value);

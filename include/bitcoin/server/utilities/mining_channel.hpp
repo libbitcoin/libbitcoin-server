@@ -56,9 +56,9 @@ public:
     /// The coinbase extranonce prefix of the channel.
     const system::data_chunk& extranonce() const NOEXCEPT;
 
-    /// The device identifier of the channel (see miners).
-    const std::string& device() const NOEXCEPT;
-    void set_device(const std::string& id) NOEXCEPT;
+    /// The miners registry key of the channel.
+    const std::string& key() const NOEXCEPT;
+    void set_key(const std::string& key) NOEXCEPT;
 
     /// The script paid by the coinbase of the channel's jobs.
     const system::chain::script& payout() const NOEXCEPT;
@@ -110,7 +110,7 @@ private:
     using entry = std::pair<uint32_t, job::cptr>;
 
     const extranonces::prefix prefix_;
-    std::string device_{};
+    std::string key_{};
     system::chain::script payout_{};
     std::deque<entry> jobs_{};
     std::unordered_set<system::hash_digest> hashes_{};

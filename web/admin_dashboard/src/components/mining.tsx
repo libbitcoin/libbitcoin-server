@@ -1,7 +1,7 @@
 import { useState, useSyncExternalStore } from 'react';
 import { FitHash } from '@/components/fit-hash';
 import { HashrateChart } from '@/components/hashrate-chart';
-import type { AdminMiningFrame, MiningDevice } from '@/lib/admin-contract';
+import type { AdminMiningFrame, MiningChannel } from '@/lib/admin-contract';
 import { useCurrentTime } from '@/lib/use-current-time';
 import { formatInteger } from '@/lib/format';
 import type { WorkerMetricsStore } from '@/lib/worker-metrics-store';
@@ -18,10 +18,10 @@ export function Mining({ metrics }: { metrics: WorkerMetricsStore }) {
   const mining = useSyncExternalStore(metrics.subscribeMining, metrics.getMining, metrics.getMining);
   const [chosen, setChosen] = useState<string>();
   const now = useCurrentTime();
-  const devices = mining?.devices ?? [];
-  const device = devices.find((entry) => entry.id === chosen) ?? devices[0];
-  const fleet = devices.reduce((sum, entry) => sum + entry.hashrate, 0);
-  const services = [...new Set(devices.map((entry) => entry.service))];
+  const channels = mining?.channels ?? [];
+  const channel = channels.find((entry) => entry.id === chosen) ?? channels[0];
+  const fleet = channels.reduce((sum, entry) => sum + entry.hashrate, 0);
+  const services = [...new Set(channels.map((entry) => entry.service))];
 
   return (
     <div className="space-y-8">
@@ -32,34 +32,34 @@ export function Mining({ metrics }: { metrics: WorkerMetricsStore }) {
         </div>
         <p className="text-textMuted text-sm">
           Fleet <strong className="text-textPrimary text-lg tabular-nums">{formatHashrate(fleet)}</strong> ·{' '}
-          {formatInteger(devices.length)} active
+          {formatInteger(channels.length)} active
         </p>
       </header>
 
-      {devices.length === 0 ? (
+      {channels.length === 0 ? (
         <p className="border-accent/30 bg-surface/80 text-textMuted rounded-2xl border p-5 text-sm">
           {mining ? 'No miners connected.' : 'Waiting for the mining feed…'}
         </p>
       ) : (
         <div className="flex flex-wrap items-start gap-6">
           <nav
-            aria-label="Devices"
+            aria-label="Channels"
             className="border-accent/30 bg-surface/80 flex min-w-0 flex-[1_1_260px] flex-col gap-1 rounded-2xl border p-2"
           >
             {services.map((service) => (
               <div key={service} className="flex flex-col gap-1">
                 <p className="text-accentSecondary px-3 pt-2 pb-1 text-xs tracking-wide uppercase">{service}</p>
-                {devices
+                {channels
                   .filter((entry) => entry.service === service)
                   .map((entry) => (
-                    <DeviceButton
+                    <ChannelButton
                       key={entry.id}
-                      dot={deviceDot(entry, mining)}
-                      current={device?.id === entry.id}
+                      dot={channelDot(entry, mining)}
+                      current={channel?.id === entry.id}
                       onClick={() => {
                         setChosen(entry.id);
                       }}
-                      name={deviceName(entry)}
+                      name={channelName(entry)}
                       detail={`${entry.client || 'unknown client'} · ${entry.transport}`}
                       rate={formatHashrate(entry.hashrate)}
                     />
@@ -69,7 +69,7 @@ export function Mining({ metrics }: { metrics: WorkerMetricsStore }) {
           </nav>
 
           <section className="min-w-0 flex-[999_1_560px] space-y-4">
-            {device && <DeviceDetail device={device} now={now} />}
+            {channel && <ChannelDetail channel={channel} now={now} />}
           </section>
         </div>
       )}
@@ -87,21 +87,21 @@ function resultColor(result: string): string {
   return result === 'invalid' ? 'text-rose-300' : 'text-amber-300';
 }
 
-// The status of a device, green once it has submitted a block, else as its
+// The status of a channel, green once it has submitted a block, else as its
 // most recent share.
-function deviceDot(device: MiningDevice, mining: AdminMiningFrame | null): string {
-  if (mining?.blocks.some((block) => block.device === device.id)) return 'bg-emerald-300';
-  const result = device.shares[0]?.result ?? 'accepted';
+function channelDot(channel: MiningChannel, mining: AdminMiningFrame | null): string {
+  if (mining?.blocks.some((block) => block.channel === channel.id)) return 'bg-emerald-300';
+  const result = channel.shares[0]?.result ?? 'accepted';
   if (result === 'accepted' || result === 'submitted') return 'bg-sky-300';
   return result === 'invalid' ? 'bg-rose-300' : 'bg-amber-300';
 }
 
-// The workers of a device, or its identifier without any.
-function deviceName(device: MiningDevice): string {
-  return device.workers.length > 0 ? device.workers.join(', ') : device.id;
+// The workers of a channel, or its identifier without any.
+function channelName(channel: MiningChannel): string {
+  return channel.workers.length > 0 ? channel.workers.join(', ') : channel.id;
 }
 
-function DeviceButton({
+function ChannelButton({
   dot,
   current,
   onClick,
@@ -146,28 +146,49 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function DeviceDetail({ device, now }: { device: MiningDevice; now: number }) {
-  const history = device.history.map(([time, rate]) => ({ time, rate }));
-  const rejections = Object.entries(device.rejections);
+function Detail({
+  label,
+  value,
+  mono = false,
+  wide = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  wide?: boolean;
+}) {
+  return (
+    <div className={`min-w-0 ${wide ? 'col-span-full' : ''}`}>
+      <dt className="text-textMuted text-xs tracking-wide uppercase">{label}</dt>
+      <dd className={`text-textPrimary mt-0.5 break-words ${mono ? 'font-mono' : ''}`}>{value}</dd>
+    </div>
+  );
+}
+
+function ChannelDetail({ channel, now }: { channel: MiningChannel; now: number }) {
+  const history = channel.history.map(([time, rate]) => ({ time, rate }));
+  const rejections = Object.entries(channel.rejections);
   return (
     <>
       <div className="border-accent/30 bg-surface/80 space-y-5 rounded-2xl border p-5">
         <div className="min-w-0">
-          <h3 className="text-accent truncate text-xl font-semibold">{deviceName(device)}</h3>
-          <p className="text-textMuted text-sm">
-            {device.service} · {device.client || 'unknown client'} · {device.transport} ·{' '}
-            <span className="font-mono">{device.address}</span> · connected{' '}
-            {formatDuration((now - device.connected) / 1000)} ago
-          </p>
+          <h3 className="text-accent truncate text-xl font-semibold">{channelName(channel)}</h3>
         </div>
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
+          <Detail label="Service" value={channel.service} />
+          <Detail label="Transport" value={channel.transport} />
+          <Detail label="Address" value={channel.address} mono />
+          <Detail label="Connected" value={`${formatDuration((now - channel.connected) / 1000)} ago`} />
+          <Detail label="Client" value={channel.client || 'unknown'} wide />
+        </dl>
         <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          <Stat label="Hashrate" value={formatHashrate(device.hashrate)} />
-          <Stat label="Difficulty" value={formatDifficulty(device.difficulty)} />
-          <Stat label="Accepted" value={formatInteger(device.accepted)} />
-          <Stat label="Rejected" value={formatInteger(device.rejected)} />
+          <Stat label="Hashrate" value={formatHashrate(channel.hashrate)} />
+          <Stat label="Difficulty" value={formatDifficulty(channel.difficulty)} />
+          <Stat label="Accepted" value={formatInteger(channel.accepted)} />
+          <Stat label="Rejected" value={formatInteger(channel.rejected)} />
           <Stat
             label="Last share"
-            value={device.last_share === null ? '—' : formatShortRelativeTime(device.last_share / 1000, now)}
+            value={channel.last_share === null ? '—' : formatShortRelativeTime(channel.last_share / 1000, now)}
           />
         </dl>
         {rejections.length > 0 && (
@@ -181,7 +202,7 @@ function DeviceDetail({ device, now }: { device: MiningDevice; now: number }) {
 
       <div className="border-accent/30 bg-surface/80 rounded-2xl border p-5">
         <h3 className="text-accent mb-3 text-lg font-semibold">Recent shares</h3>
-        {device.shares.length === 0 ? (
+        {channel.shares.length === 0 ? (
           <p className="text-textMuted text-sm">No share submitted yet.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -195,7 +216,7 @@ function DeviceDetail({ device, now }: { device: MiningDevice; now: number }) {
                 </tr>
               </thead>
               <tbody>
-                {device.shares.map((share, index) => (
+                {channel.shares.map((share, index) => (
                   <tr key={`${String(share.time)}-${String(index)}`} className="border-accent/10 border-t">
                     <td className="py-1 pr-4 whitespace-nowrap">{formatShortRelativeTime(share.time / 1000, now)}</td>
                     <td className="py-1 pr-4">{share.height === 0 ? '—' : formatInteger(share.height)}</td>
@@ -221,7 +242,7 @@ function DeviceDetail({ device, now }: { device: MiningDevice; now: number }) {
 }
 
 function Blocks({ mining, now }: { mining: AdminMiningFrame; now: number }) {
-  const names = new Map(mining.devices.map((device) => [device.id, deviceName(device)]));
+  const names = new Map(mining.channels.map((channel) => [channel.id, channelName(channel)]));
   return (
     <section className="border-accent/30 bg-surface/80 rounded-2xl border p-5">
       <h3 className="text-accent mb-3 text-lg font-semibold">Blocks found</h3>
@@ -238,7 +259,7 @@ function Blocks({ mining, now }: { mining: AdminMiningFrame; now: number }) {
               <th className="py-1 pr-4 font-normal">Height</th>
               <th className="py-1 pr-4 font-normal">Found</th>
               <th className="py-1 pr-4 font-normal">Hash</th>
-              <th className="py-1 font-normal">Device</th>
+              <th className="py-1 font-normal">Channel</th>
             </tr>
           </thead>
           <tbody>
@@ -249,7 +270,7 @@ function Blocks({ mining, now }: { mining: AdminMiningFrame; now: number }) {
                 <td data-fit className="overflow-hidden py-1 pr-4 font-mono whitespace-nowrap">
                   <FitHash value={block.hash} />
                 </td>
-                <td className="truncate py-1">{names.get(block.device) ?? block.device}</td>
+                <td className="truncate py-1">{names.get(block.channel) ?? block.channel}</td>
               </tr>
             ))}
           </tbody>
