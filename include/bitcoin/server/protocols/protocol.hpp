@@ -135,6 +135,12 @@ public:
         return session_->allocate_prefix(size);
     }
 
+    /// The mining channels of the stratum services.
+    inline const miners::ptr& mining() const NOEXCEPT
+    {
+        return session_->mining();
+    }
+
     /// Create a timer on the channel strand.
     inline network::deadline::ptr make_timer() const NOEXCEPT
     {

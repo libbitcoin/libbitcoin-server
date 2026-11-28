@@ -90,6 +90,15 @@ code admin_target(request_t& out, const std::string_view& path) NOEXCEPT
         else
             return error::invalid_subcomponent;
     }
+    else if (target == "mining")
+    {
+        if (segment == segments.size())
+            method = "mining";
+        else if (segments[segment++] == "subscribe")
+            method = "mining_subscribe";
+        else
+            return error::invalid_subcomponent;
+    }
     else
     {
         return error::invalid_target;

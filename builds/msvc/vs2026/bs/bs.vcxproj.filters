@@ -223,6 +223,9 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\components\event-view.tsx">
       <Filter>web\admin_dashboard\src\components</Filter>
     </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\components\fit-hash.tsx">
+      <Filter>web\admin_dashboard\src\components</Filter>
+    </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\components\hashrate-chart.tsx">
       <Filter>web\admin_dashboard\src\components</Filter>
     </None>
@@ -307,9 +310,6 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\mining\format.ts">
       <Filter>web\admin_dashboard\src\lib\mining</Filter>
     </None>
-    <None Include="..\..\..\..\web\admin_dashboard\src\lib\mining\sample.ts">
-      <Filter>web\admin_dashboard\src\lib\mining</Filter>
-    </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\native-client.ts">
       <Filter>web\admin_dashboard\src\lib</Filter>
     </None>
@@ -326,6 +326,9 @@
       <Filter>web\admin_dashboard\src\lib</Filter>
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\stream-window.ts">
+      <Filter>web\admin_dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\styles.ts">
       <Filter>web\admin_dashboard\src\lib</Filter>
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\sync-fill.ts">
@@ -382,6 +385,9 @@
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\format.test.ts">
       <Filter>web\admin_dashboard\test\lib</Filter>
     </None>
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\live-metrics.test.ts">
+      <Filter>web\admin_dashboard\test\lib</Filter>
+    </None>
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\log-window.test.ts">
       <Filter>web\admin_dashboard\test\lib</Filter>
     </None>
@@ -427,9 +433,6 @@
     <None Include="..\..\..\..\web\native\src\app\saved-investigations.tsx">
       <Filter>web\native\src\app</Filter>
     </None>
-    <None Include="..\..\..\..\web\native\src\app\script-explainer-preference.tsx">
-      <Filter>web\native\src\app</Filter>
-    </None>
     <None Include="..\..\..\..\web\native\src\app\shell.tsx">
       <Filter>web\native\src\app</Filter>
     </None>
@@ -454,6 +457,9 @@
     <None Include="..\..\..\..\web\native\src\components\fee-chart.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\components\fit-hash.tsx">
+      <Filter>web\native\src\components</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\components\hash-text.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
@@ -473,12 +479,6 @@
       <Filter>web\native\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\components\save-bookmark.tsx">
-      <Filter>web\native\src\components</Filter>
-    </None>
-    <None Include="..\..\..\..\web\native\src\components\script-explainer.tsx">
-      <Filter>web\native\src\components</Filter>
-    </None>
-    <None Include="..\..\..\..\web\native\src\components\script-lookup-status.tsx">
       <Filter>web\native\src\components</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\components\search-bar.tsx">
@@ -577,6 +577,9 @@
     <None Include="..\..\..\..\web\native\src\lib\utils\coinbase.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\dialog.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\format.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
@@ -601,16 +604,16 @@
     <None Include="..\..\..\..\web\native\src\lib\utils\routes.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
-    <None Include="..\..\..\..\web\native\src\lib\utils\script-explainer.ts">
-      <Filter>web\native\src\lib\utils</Filter>
-    </None>
-    <None Include="..\..\..\..\web\native\src\lib\utils\script-opcodes.ts">
+    <None Include="..\..\..\..\web\native\src\lib\utils\script.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\search.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\services.ts">
+      <Filter>web\native\src\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\src\lib\utils\styles.ts">
       <Filter>web\native\src\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\src\lib\utils\template-follow.ts">
@@ -722,6 +725,9 @@
       <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\routes.test.ts">
+      <Filter>web\native\test\lib\utils</Filter>
+    </None>
+    <None Include="..\..\..\..\web\native\test\lib\utils\script.test.ts">
       <Filter>web\native\test\lib\utils</Filter>
     </None>
     <None Include="..\..\..\..\web\native\test\lib\utils\search.test.ts">

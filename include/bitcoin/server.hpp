@@ -133,6 +133,7 @@
 #include <bitcoin/server/utilities/electrum_version.hpp>
 #include <bitcoin/server/utilities/extranonces.hpp>
 #include <bitcoin/server/utilities/merkle.hpp>
+#include <bitcoin/server/utilities/miners.hpp>
 #include <bitcoin/server/utilities/mining_channel.hpp>
 #include <bitcoin/server/utilities/stratum_v1.hpp>
 #include <bitcoin/server/utilities/stratum_v2.hpp>

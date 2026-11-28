@@ -38,11 +38,11 @@ test('routes__block_by_height_path__number__confirmed_path', () => {
 });
 
 test('routes__transaction_input_path__index__input_fragment', () => {
-  expect(transactionInputPath('00ab', 3)).toBe('/v1/tx/00ab#input-3');
+  expect(transactionInputPath('00ab', 3)).toBe('/v1/input/00ab/3');
 });
 
 test('routes__transaction_output_path__index__output_fragment', () => {
-  expect(transactionOutputPath('00ab', 3)).toBe('/v1/tx/00ab#output-3');
+  expect(transactionOutputPath('00ab', 3)).toBe('/v1/output/00ab/3');
 });
 
 test('routes__address_path__reserved_characters__encoded', () => {

@@ -427,19 +427,6 @@ export function useTransactionPrunedInputs(txid: string, options?: { enabled?: b
   });
 }
 
-export function useTransactionInputScriptHex(
-  txid: string,
-  inputIndex: number,
-  options?: { enabled?: boolean }
-) {
-  return useBlockchainQuery<string>({
-    queryKey: ['transaction', txid, 'input', inputIndex, 'scriptHex'],
-    queryFn: (client) => client.getTransactionInputScriptHex(txid, inputIndex),
-    enabled: (options?.enabled ?? true) && Boolean(txid.trim()),
-    staleTime: Infinity,
-  });
-}
-
 export function useTransactionOutputScriptHex(
   txid: string,
   outputIndex: number,
@@ -448,6 +435,19 @@ export function useTransactionOutputScriptHex(
   return useBlockchainQuery<string>({
     queryKey: ['transaction', txid, 'output', outputIndex, 'scriptHex'],
     queryFn: (client) => client.getTransactionOutputScriptHex(txid, outputIndex),
+    enabled: (options?.enabled ?? true) && Boolean(txid.trim()),
+    staleTime: Infinity,
+  });
+}
+
+export function useTransactionInputScriptHex(
+  txid: string,
+  inputIndex: number,
+  options?: { enabled?: boolean }
+) {
+  return useBlockchainQuery<string>({
+    queryKey: ['transaction', txid, 'input', inputIndex, 'scriptHex'],
+    queryFn: (client) => client.getTransactionInputScriptHex(txid, inputIndex),
     enabled: (options?.enabled ?? true) && Boolean(txid.trim()),
     staleTime: Infinity,
   });

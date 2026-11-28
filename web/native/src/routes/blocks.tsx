@@ -361,7 +361,7 @@ function RowDetail({ row, now }: { row: Row; now: number }) {
       >
         {formatInteger(row.height)}
       </Link>
-      <Link to={blockByHashPath(strong.hash)} className="text-textPrimary truncate font-mono">
+      <Link to={blockByHashPath(strong.hash)} className="text-accent hover:text-accentSecondary truncate font-mono">
         {strong.hash}
       </Link>
       <span className="text-textMuted truncate">{formatShortRelativeTime(strong.timestamp, now)}</span>

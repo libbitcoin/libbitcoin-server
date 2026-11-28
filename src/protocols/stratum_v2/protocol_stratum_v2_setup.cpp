@@ -145,6 +145,8 @@ bool protocol_stratum_v2_setup::handle_receive_setup_connection(
         return false;
     }
 
+    channel_->set_client(message->firmware.empty() ? message->vendor :
+        message->vendor + " " + message->firmware);
     channel_->set_handshaked();
     const setup_connection_success success{ version, {} };
     SEND(success, finished, _1, network::error::success);

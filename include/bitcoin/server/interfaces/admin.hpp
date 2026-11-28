@@ -31,7 +31,9 @@ struct admin_methods
     static constexpr std::tuple methods
     {
         method<"log_subscribe", uint8_t, optional<0_u64>>{ "version", "filter" },
-        method<"event_subscribe", uint8_t, optional<0_u64>>{ "version", "filter" }
+        method<"event_subscribe", uint8_t, optional<0_u64>>{ "version", "filter" },
+        method<"mining", uint8_t>{ "version" },
+        method<"mining_subscribe", uint8_t>{ "version" }
     };
 
     template <typename... Args>
@@ -44,6 +46,8 @@ struct admin_methods
 
     using log_subscribe = at<0>;
     using event_subscribe = at<1>;
+    using mining = at<2>;
+    using mining_subscribe = at<3>;
 };
 
 /// ?format=json|html (via query string).
@@ -57,6 +61,13 @@ struct admin_methods
 
 /// /v1/log/subscribe?filter=[mask] {stream}
 /// /v1/event/subscribe?filter=[mask] {stream}
+
+/// The mining channels of the stratum services and the blocks they found.
+/// Subscription responds with the same and pushes it periodically and as
+/// channels open and close.
+
+/// /v1/mining
+/// /v1/mining/subscribe {stream}
 
 } // namespace interface
 } // namespace server

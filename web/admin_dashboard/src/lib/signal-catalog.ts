@@ -1,6 +1,5 @@
 import {
   EVENT_DEFINITIONS,
-  LOG_LEVELS,
   type EventValueKind,
   eventValueInMilliseconds,
   getEventDefinition,
@@ -304,18 +303,6 @@ const declaredSignals: SignalDefinition[] = [
     description: signal.description,
   })),
   ...EVENT_DEFINITIONS.map((definition) => createEventSignal(definition.id)),
-  ...LOG_LEVELS.filter((level) => !level.disabled).map((level) => ({
-    id: logSignalId(level.id),
-    source: 'log' as const,
-    sourceId: level.id,
-    name: level.name,
-    label: `${level.label} logs`,
-    category: 'logs',
-    payloadKind: 'text' as const,
-    allowedMeasures: occurrenceMeasures,
-    defaultMeasure: 'occurrence-rate' as const,
-    description: `${level.label} log message volume. Message text is not interpreted as numeric data.`,
-  })),
   {
     id: NATIVE_TOP_SIGNAL_ID,
     source: 'native',

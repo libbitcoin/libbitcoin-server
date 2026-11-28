@@ -55,6 +55,8 @@ void protocol_admin::start() NOEXCEPT
     // Subscription methods.
     SUBSCRIBE_ADMIN(handle_get_log_subscribe, _1, _2, _3, _4);
     SUBSCRIBE_ADMIN(handle_get_event_subscribe, _1, _2, _3, _4);
+    SUBSCRIBE_ADMIN(handle_get_mining, _1, _2, _3);
+    SUBSCRIBE_ADMIN(handle_get_mining_subscribe, _1, _2, _3);
     protocol_native::start();
 }
 
@@ -62,6 +64,7 @@ void protocol_admin::stopping(const code& ec) NOEXCEPT
 {
     BC_ASSERT(stranded());
     log_interest_->set(zero);
+    mining_timer_->stop();
     admin_dispatcher_.stop(ec);
     protocol_native::stopping(ec);
 }
@@ -223,6 +226,43 @@ void protocol_admin::handle_get_event_subscribe(const code& ec,
     send_json({ { "previous", previous } });
 }
 
+void protocol_admin::handle_get_mining(const code& ec,
+    admin_interface::mining, uint8_t /*version*/) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped(ec))
+        return;
+
+    send_json(mining_snapshot());
+}
+
+// The snapshot is pushed as channels open or close, and periodically.
+void protocol_admin::handle_get_mining_subscribe(const code& ec,
+    admin_interface::mining_subscribe, uint8_t /*version*/) NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped(ec))
+        return;
+
+    if (!websocket())
+    {
+        send_not_acceptable();
+        return;
+    }
+
+    mining_generation_ = mining()->generation();
+    mining_checks_ = zero;
+    send_json(mining_snapshot());
+
+    if (!mining_subscribed_)
+    {
+        mining_subscribed_ = true;
+        start_mining();
+    }
+}
+
 // Event handlers.
 // ----------------------------------------------------------------------------
 
@@ -290,9 +330,114 @@ void protocol_admin::do_event(uint8_t event_, uint64_t zulu,
     });
 }
 
+void protocol_admin::start_mining() NOEXCEPT
+{
+    BC_ASSERT(stranded());
+
+    if (stopped())
+        return;
+
+    mining_timer_->start(BIND(do_mining, _1),
+        seconds{ mining_check_seconds });
+}
+
+void protocol_admin::do_mining(const code& ec) NOEXCEPT
+{
+    BC_ASSERT(stranded() && websocket());
+
+    if (stopped() || ec == network::error::operation_canceled)
+        return;
+
+    if (ec)
+    {
+        stop(ec);
+        return;
+    }
+
+    const auto generation = mining()->generation();
+    if (generation != mining_generation_ ||
+        ++mining_checks_ >= mining_snapshot_checks)
+    {
+        mining_generation_ = generation;
+        mining_checks_ = zero;
+        notify_json(mining_snapshot());
+    }
+
+    start_mining();
+}
+
 // Utils.
 // ----------------------------------------------------------------------------
 // static/private
+
+system::json::value protocol_admin::mining_snapshot() const NOEXCEPT
+{
+    auto& registry = *mining();
+    system::json::array channels{};
+    for (const auto& channel: registry.get_channels(miners::now()))
+    {
+        system::json::array workers{};
+        for (const auto& worker: channel.workers)
+            workers.emplace_back(worker);
+
+        system::json::object rejections{};
+        for (const auto& [result, count]: channel.rejections)
+            rejections[result] = count;
+
+        system::json::array shares{};
+        for (const auto& share: channel.shares)
+            shares.push_back(system::json::object
+            {
+                { "time", share.time },
+                { "height", share.height },
+                { "difficulty", share.difficulty },
+                { "result", share.result }
+            });
+
+        system::json::array history{};
+        for (const auto& sample: channel.history)
+            history.push_back(system::json::array{ sample.time, sample.rate });
+
+        system::json::value last{};
+        if (channel.last_share.has_value())
+            last = channel.last_share.value();
+
+        channels.push_back(system::json::object
+        {
+            { "id", channel.id },
+            { "service", channel.service },
+            { "transport", channel.transport },
+            { "address", channel.address },
+            { "client", channel.client },
+            { "workers", std::move(workers) },
+            { "connected", channel.connected },
+            { "difficulty", channel.difficulty },
+            { "hashrate", channel.hashrate },
+            { "accepted", channel.accepted },
+            { "rejected", channel.rejected },
+            { "rejections", std::move(rejections) },
+            { "last_share", std::move(last) },
+            { "shares", std::move(shares) },
+            { "history", std::move(history) }
+        });
+    }
+
+    system::json::array blocks{};
+    for (const auto& block: registry.get_blocks())
+        blocks.push_back(system::json::object
+        {
+            { "hash", encode_hash(block.hash) },
+            { "height", block.height },
+            { "time", block.time },
+            { "channel", block.channel }
+        });
+
+    return system::json::object
+    {
+        { "channels", std::move(channels) },
+        { "blocks", std::move(blocks) }
+    };
+}
 
 // zulu time in milliseconds since epoch (native js time format).
 uint64_t protocol_admin::to_zulu(const logger::time& point) NOEXCEPT

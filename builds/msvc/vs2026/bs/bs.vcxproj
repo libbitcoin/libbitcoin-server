@@ -135,6 +135,7 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\app\providers.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\chart-editor.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\event-view.tsx" />
+    <None Include="..\..\..\..\web\admin_dashboard\src\components\fit-hash.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\hashrate-chart.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\log-view.tsx" />
     <None Include="..\..\..\..\web\admin_dashboard\src\components\metric-item.tsx" />
@@ -163,13 +164,13 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\log-settings.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\log-window.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\mining\format.ts" />
-    <None Include="..\..\..\..\web\admin_dashboard\src\lib\mining\sample.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\native-client.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\native-contract.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\pool-rates.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\reconnecting-websocket.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\signal-catalog.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\stream-window.ts" />
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\styles.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\sync-fill.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\sync-status.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\telemetry-worker-protocol.ts" />
@@ -188,6 +189,7 @@
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\endpoints.test.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\fee-histogram.test.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\format.test.ts" />
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\live-metrics.test.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\log-window.test.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\mining\format.test.ts" />
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\pool-rates.test.ts" />
@@ -203,7 +205,6 @@
     <None Include="..\..\..\..\web\native\src\app\route-navigation.tsx" />
     <None Include="..\..\..\..\web\native\src\app\router.tsx" />
     <None Include="..\..\..\..\web\native\src\app\saved-investigations.tsx" />
-    <None Include="..\..\..\..\web\native\src\app\script-explainer-preference.tsx" />
     <None Include="..\..\..\..\web\native\src\app\shell.tsx" />
     <None Include="..\..\..\..\web\native\src\components\block-size-bar.tsx" />
     <None Include="..\..\..\..\web\native\src\components\block-validation-inspector.tsx" />
@@ -212,6 +213,7 @@
     <None Include="..\..\..\..\web\native\src\components\command-palette.tsx" />
     <None Include="..\..\..\..\web\native\src\components\copy-button.tsx" />
     <None Include="..\..\..\..\web\native\src\components\fee-chart.tsx" />
+    <None Include="..\..\..\..\web\native\src\components\fit-hash.tsx" />
     <None Include="..\..\..\..\web\native\src\components\hash-text.tsx" />
     <None Include="..\..\..\..\web\native\src\components\hashrate-chart.tsx" />
     <None Include="..\..\..\..\web\native\src\components\miner-share.tsx" />
@@ -219,8 +221,6 @@
     <None Include="..\..\..\..\web\native\src\components\mining-settings.tsx" />
     <None Include="..\..\..\..\web\native\src\components\qr-code.tsx" />
     <None Include="..\..\..\..\web\native\src\components\save-bookmark.tsx" />
-    <None Include="..\..\..\..\web\native\src\components\script-explainer.tsx" />
-    <None Include="..\..\..\..\web\native\src\components\script-lookup-status.tsx" />
     <None Include="..\..\..\..\web\native\src\components\search-bar.tsx" />
     <None Include="..\..\..\..\web\native\src\components\sort-header.tsx" />
     <None Include="..\..\..\..\web\native\src\components\spinner.tsx" />
@@ -253,6 +253,7 @@
     <None Include="..\..\..\..\web\native\src\lib\utils\address.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\clipboard.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\coinbase.ts" />
+    <None Include="..\..\..\..\web\native\src\lib\utils\dialog.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\format.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\investigations.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\libbitcoin-address-alias.ts" />
@@ -261,10 +262,10 @@
     <None Include="..\..\..\..\web\native\src\lib\utils\pool-template.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\pool-templates.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\routes.ts" />
-    <None Include="..\..\..\..\web\native\src\lib\utils\script-explainer.ts" />
-    <None Include="..\..\..\..\web\native\src\lib\utils\script-opcodes.ts" />
+    <None Include="..\..\..\..\web\native\src\lib\utils\script.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\search.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\services.ts" />
+    <None Include="..\..\..\..\web\native\src\lib\utils\styles.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\template-follow.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\template-scene.ts" />
     <None Include="..\..\..\..\web\native\src\lib\utils\template-settings.ts" />
@@ -302,6 +303,7 @@
     <None Include="..\..\..\..\web\native\test\lib\utils\pool-template.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\pool-templates.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\routes.test.ts" />
+    <None Include="..\..\..\..\web\native\test\lib\utils\script.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\search.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\services.test.ts" />
     <None Include="..\..\..\..\web\native\test\lib\utils\template-follow.test.ts" />

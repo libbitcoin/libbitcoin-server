@@ -207,7 +207,14 @@ void protocol_stratum_v2::open_channel(uint32_t request_id,
     channel->set_floor(floor);
     channel->set_payout(payout);
     channel->set_notified(difficulty);
-    add_channel(id, channel);
+    add_channel(id, channel,
+    {
+        .service = "stratum_v2",
+        .transport = miners::to_transport(channel_->noised(),
+            channel_->websocket(), channel_->secure()),
+        .client = channel_->client(),
+        .workers = { identity }
+    });
     authorize_timer_->stop();
 
     const auto target = to_target_hash(difficulty);
@@ -248,7 +255,8 @@ bool protocol_stratum_v2::to_payout(chain::script& out,
     const auto name = address.empty() ?
         identity.substr(zero, identity.find('.')) : address;
 
-    return !output_script(out, name, p2kh_, p2sh_, witness_);
+    return !output_script(out, name, p2kh_, p2sh_, witness_) &&
+        out.serialized_size(false) <= max_address_script;
 }
 
 protocol_stratum_v2::channel_state::ptr protocol_stratum_v2::find(
@@ -318,8 +326,9 @@ void protocol_stratum_v2::submit_share(const share& share,
     const auto job = channel->find(share.job_id);
     if (!job)
     {
-        share_failed(share, channel->issued(share.job_id) ? "stale-share" :
-            "invalid-job-id");
+        const auto stale = channel->issued(share.job_id);
+        reject_share(*channel, stale ? "stale" : "job_not_found");
+        share_failed(share, stale ? "stale-share" : "invalid-job-id");
         return;
     }
 
@@ -437,8 +446,8 @@ void protocol_stratum_v2::send_job(mining_channel& channel,
 
     if (state.standard)
     {
-        const auto coinbase = splice(splice(job->prefix, channel.extranonce()),
-            job->suffix);
+        const auto coinbase = coinbase_unwitnessed(job->prefix,
+            channel.extranonce(), job->suffix);
 
         const new_mining_job standard
         {

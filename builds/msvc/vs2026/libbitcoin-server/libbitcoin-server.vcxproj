@@ -205,6 +205,7 @@
     <ClCompile Include="..\..\..\..\src\utilities\electrum_version.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\extranonces.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\merkle.cpp" />
+    <ClCompile Include="..\..\..\..\src\utilities\miners.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\mining_channel.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\stratum_v1.cpp" />
     <ClCompile Include="..\..\..\..\src\utilities\stratum_v2.cpp" />
@@ -328,6 +329,7 @@
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\electrum_version.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\extranonces.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\merkle.hpp" />
+    <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\miners.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\mining_channel.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\stratum_v1.hpp" />
     <ClInclude Include="..\..\..\..\include\bitcoin\server\utilities\stratum_v2.hpp" />

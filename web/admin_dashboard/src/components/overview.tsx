@@ -17,12 +17,37 @@ import type { NativeTelemetry } from '@/lib/use-telemetry';
 import { averageRate, nextBlockRate } from '@/lib/pool-rates';
 import type { NativeFees } from '@/lib/native-contract';
 import { MetricItem } from './metric-item';
+
+// A page of the native site, opened apart from the admin site where it is
+// advertised, else the text alone.
+function ExplorerLink({
+  explorer,
+  path,
+  children,
+}: {
+  explorer: string | undefined;
+  path: string;
+  children: ReactNode;
+}) {
+  if (!explorer) return <>{children}</>;
+  return (
+    <a
+      href={`${explorer}${path}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-accent hover:text-accentSecondary"
+    >
+      {children}
+    </a>
+  );
+}
 import { NodeSyncProgress } from './node-sync-progress';
 import { TelemetryDashboard } from './telemetry-dashboard';
 
 interface OverviewProps {
   adminStatus: ConnectionStatus;
   endpoints: EndpointConfiguration;
+  explorer: string | undefined;
   metrics: MetricsSnapshot;
   native: NativeTelemetry;
   sync: ChainSync | null;
@@ -36,7 +61,7 @@ const lifecycleEvents: ReadonlyArray<{ event: number; label: string }> = [
   { event: 14, label: 'Block reorganized' },
 ];
 
-export function Overview({ adminStatus, endpoints, metrics, native, sync }: OverviewProps) {
+export function Overview({ adminStatus, endpoints, explorer, metrics, native, sync }: OverviewProps) {
   const configuration = native.configuration;
   const pooling = configuration?.network?.relay === true && sync?.blocksRemaining === 0;
   const activity = detectNodeActivity(metrics, 10, pooling);
@@ -63,7 +88,7 @@ export function Overview({ adminStatus, endpoints, metrics, native, sync }: Over
   ].filter((warning): warning is string => warning !== null);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {warnings.length > 0 && (
         <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
           <p className="text-sm font-medium text-amber-300">Transport notice</p>
@@ -75,12 +100,21 @@ export function Overview({ adminStatus, endpoints, metrics, native, sync }: Over
         </section>
       )}
 
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-accent text-2xl font-semibold">Overview</h1>
+          <p className="text-textMuted text-sm">The chain, pool and telemetry of this node.</p>
+        </div>
+      </header>
+
       <NodeSyncProgress sync={sync} />
 
       <dl aria-label="Node summary" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricItem
           label="Current top"
-          value={native.top === null ? '—' : formatInteger(native.top)}
+          value={
+            native.top === null ? '—' : <ExplorerLink explorer={explorer} path="/v1/top">{formatInteger(native.top)}</ExplorerLink>
+          }
           detail={
             native.transport === 'none'
               ? 'Waiting for native API'
@@ -88,7 +122,6 @@ export function Overview({ adminStatus, endpoints, metrics, native, sync }: Over
                   native.transport === 'websocket' ? 'native WebSocket' : 'REST fallback'
                 }`
           }
-          emphasized
         />
         <MetricItem
           label="Current activity"
@@ -121,20 +154,28 @@ export function Overview({ adminStatus, endpoints, metrics, native, sync }: Over
           } · ${String(connection.reconnects)} reconnect${connection.reconnects === 1 ? '' : 's'}`}
           numeric={false}
         />
-        {pool && (
-          <MetricItem
-            label="Pool size"
-            value={`${formatInteger(pool.count)} transactions`}
-            detail={`${formatBtc(pool.fee)} btc fees · ${formatMvb(pool.virtual)} MvB`}
-          />
-        )}
-        {pool && (
-          <MetricItem
-            label="Fee rate"
-            value={`${formatSatsPerVbyte(averageRate(pool))} sat/vB`}
-            detail={nextBlockDetail(pool)}
-          />
-        )}
+        <MetricItem
+          label="Pool size"
+          value={
+            pool ? (
+              <ExplorerLink explorer={explorer} path="/v1/txs/unconfirmed">{`${formatInteger(pool.count)} transactions`}</ExplorerLink>
+            ) : (
+              '—'
+            )
+          }
+          detail={pool ? `${formatBtc(pool.fee)} btc fees · ${formatMvb(pool.virtual)} MvB` : 'Not pooling'}
+        />
+        <MetricItem
+          label="Fee rate"
+          value={
+            pool ? (
+              <ExplorerLink explorer={explorer} path="/v1/fees">{`${formatSatsPerVbyte(averageRate(pool))} sat/vB`}</ExplorerLink>
+            ) : (
+              '—'
+            )
+          }
+          detail={pool ? nextBlockDetail(pool) : 'Not pooling'}
+        />
       </dl>
 
       <TelemetryDashboard metrics={metrics} />
@@ -142,12 +183,7 @@ export function Overview({ adminStatus, endpoints, metrics, native, sync }: Over
       <section className="grid gap-6 xl:grid-cols-2">
         <div className="border-accent/30 bg-surface/80 overflow-hidden rounded-2xl border">
           <header className="border-accentSecondary/20 border-b px-5 py-4">
-            <p className="text-accentSecondary text-xs tracking-wide uppercase">
-              Lifecycle heights
-            </p>
-            <h2 className="text-accent mt-1 text-lg font-semibold">
-              Highest observed event values
-            </h2>
+            <h2 className="text-accent text-lg font-semibold">Lifecycle heights</h2>
           </header>
           <div className="bg-accentSecondary/10 grid gap-px sm:grid-cols-2 lg:grid-cols-3">
             {lifecycleEvents.map(({ event, label }) => {
@@ -166,8 +202,7 @@ export function Overview({ adminStatus, endpoints, metrics, native, sync }: Over
 
         <div className="border-accent/30 bg-surface/80 rounded-2xl border">
           <header className="border-accentSecondary/20 border-b px-5 py-4">
-            <p className="text-accentSecondary text-xs tracking-wide uppercase">Capabilities</p>
-            <h2 className="text-accent mt-1 text-lg font-semibold">Native configuration</h2>
+            <h2 className="text-accent text-lg font-semibold">Native configuration</h2>
           </header>
           {configuration ? (
             <div className="space-y-4 p-5 text-sm">

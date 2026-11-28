@@ -5,6 +5,7 @@ import {
   requestBrowserNotificationPermission,
   type BrowserNotificationPermission,
 } from '@/lib/browser-notifications';
+import { HEADER_ACTION } from '@/lib/styles';
 
 interface SettingsProps {
   browserNotificationsEnabled: boolean;
@@ -94,10 +95,11 @@ export function Settings({
               disabled={
                 requestingNotifications ||
                 notificationPermission === 'unsupported' ||
-                notificationPermission === 'denied'
+                notificationPermission === 'denied' ||
+                !globalThis.isSecureContext
               }
               onClick={() => void toggleBrowserNotifications()}
-              className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary rounded-md border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              className={`${HEADER_ACTION} disabled:cursor-not-allowed`}
             >
               {notificationButtonLabel(
                 notificationPermission,
@@ -116,7 +118,7 @@ export function Settings({
             <button
               type="button"
               onClick={onClose}
-              className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary rounded-md border px-4 py-2 text-sm"
+              className="border-accent bg-accent/20 text-accent hover:bg-accent/30 rounded-md border px-4 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
             >
               Done
             </button>
@@ -133,6 +135,7 @@ function notificationButtonLabel(
   requesting: boolean
 ): string {
   if (requesting) return 'Requesting permission…';
+  if (!globalThis.isSecureContext) return 'Requires https';
   if (permission === 'unsupported') return 'Notifications unavailable';
   if (permission === 'denied') return 'Blocked by browser';
   return enabled ? 'Disable notifications' : 'Enable notifications';
@@ -144,6 +147,9 @@ function notificationDescription(
   requesting: boolean
 ): string {
   if (requesting) return 'Waiting for your browser permission choice.';
+  if (!globalThis.isSecureContext) {
+    return 'Notifications require https or localhost.';
+  }
   if (permission === 'unsupported') return 'This browser does not support system notifications.';
   if (permission === 'denied') {
     return 'Notifications are blocked. Allow them in your browser settings to enable this feature.';

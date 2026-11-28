@@ -143,6 +143,7 @@ export function carried(state: MinerState, settings: MinerSettings): Partial<Min
 // A stratum v2 standard job, made current by its previous block.
 interface StandardJob {
   job: number;
+  height?: number;
   version: number;
   merkle: Uint8Array;
   previous: Uint8Array;
@@ -562,6 +563,25 @@ class Miner {
     for (const worker of this.workers) this.assign(worker);
   }
 
+  // The height of the standard job, which its messages do not carry, from
+  // its previous block.
+  setHeight(previous: string, height: number) {
+    const standard = this.standard;
+    const job = this.state.job;
+    if (!standard || !job || job.previous !== previous || job.height !== undefined) return;
+    this.standard = { ...standard, height };
+    for (const unit of this.units.values()) {
+      if (unit.standard?.job === standard.job) unit.height = height;
+    }
+
+    this.update({
+      job: { ...job, height },
+      shares: this.state.shares.map((share) =>
+        share.job === job.id && share.height === undefined ? { ...share, height } : share
+      ),
+    });
+  }
+
   private setJob(job: Job) {
     this.job = job;
     this.update({
@@ -607,6 +627,7 @@ class Miner {
         header: standardHeader(standard.version, standard.previous, standard.merkle, ntime, standard.bits),
         id: standard.job.toString(16).padStart(8, '0'),
         bits: bitsHex(standard.bits),
+        height: standard.height,
         standard: { ...standard, ntime },
       };
     }

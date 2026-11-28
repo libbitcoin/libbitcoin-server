@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useScriptExplainerPreference } from '@/app/script-explainer-preference';
 import { classifySearchQuery } from '@/lib/utils/search';
 import { copyTextToClipboard } from '@/lib/utils/clipboard';
 import { formatHash } from '@/lib/utils/format';
@@ -181,8 +180,6 @@ export function CommandPalette() {
   const { network, params: networkParams } = useNetwork();
   const { data: configuration } = useServerConfiguration();
   const { turbo, setTurbo } = useTurbo();
-  const { enabled: scriptExplainerEnabled, setEnabled: setScriptExplainerEnabled } =
-    useScriptExplainerPreference();
 
   const storage = useMemo(() => getLocalStorage(), []);
   const [recents, setRecents] = useState<RecentItem[]>(() =>
@@ -310,15 +307,6 @@ export function CommandPalette() {
           },
         },
         {
-          id: 'cmd.script',
-          section: 'Commands',
-          label: 'script — set script explainer on/off',
-          keywords: ['script', 'explainer', 'on', 'off', 'toggle'],
-          onSelect: () => {
-            setQuery('>script ');
-          },
-        },
-        {
           id: 'cmd.copy',
           section: 'Commands',
           label: 'copy — copy url/id/endpoint',
@@ -351,7 +339,7 @@ export function CommandPalette() {
         return commandSuggestions;
       }
 
-      const knownCommands = new Set(['turbo', 'script', 'copy', 'nav']);
+      const knownCommands = new Set(['turbo', 'copy', 'nav']);
       if (!knownCommands.has(commandToken)) {
         const matches = commandSuggestions.filter((item) =>
           matchQuery(commandToken, {
@@ -367,7 +355,7 @@ export function CommandPalette() {
                 id: 'cmd.unknown',
                 section: 'Commands',
                 label: `Unknown command: ${commandToken}`,
-                detail: 'Try: turbo, script, copy, nav',
+                detail: 'Try: turbo, copy, nav',
                 onSelect: () => {
                   setQuery('>');
                 },
@@ -427,42 +415,6 @@ export function CommandPalette() {
         ];
 
         return normalized ? options.filter((item) => matchQuery(normalized, item)) : options;
-      }
-
-      if (commandToken === 'script') {
-        const options: PaletteItem[] = [
-          {
-            id: 'cmd.script.on',
-            section: 'Features',
-            label: `Script explainer on${scriptExplainerEnabled ? ' (current)' : ''}`,
-            keywords: ['on', 'enable', 'show'],
-            onSelect: () => {
-              dismissPalette();
-              setScriptExplainerEnabled(true);
-            },
-          },
-          {
-            id: 'cmd.script.off',
-            section: 'Features',
-            label: `Script explainer off${scriptExplainerEnabled ? '' : ' (current)'}`,
-            keywords: ['off', 'disable', 'hide'],
-            onSelect: () => {
-              dismissPalette();
-              setScriptExplainerEnabled(false);
-            },
-          },
-          {
-            id: 'cmd.script.toggle',
-            section: 'Features',
-            label: `Toggle script explainer (${scriptExplainerEnabled ? 'on' : 'off'})`,
-            keywords: ['toggle'],
-            onSelect: () => {
-              dismissPalette();
-              setScriptExplainerEnabled(!scriptExplainerEnabled);
-            },
-          },
-        ];
-        return argsText ? options.filter((item) => matchQuery(argsText, item)) : options;
       }
 
       if (commandToken === 'copy') {
@@ -925,17 +877,6 @@ export function CommandPalette() {
       ...goToActions,
       ...baseActions,
       ...turboActions,
-      {
-        id: 'script.toggle',
-        section: 'Features',
-        label: scriptExplainerEnabled ? 'Disable script explainer' : 'Enable script explainer',
-        detail: 'Explain scripts in transaction input and output details',
-        keywords: ['script', 'explainer', 'opcode', 'witness', 'show', 'hide', 'toggle'],
-        onSelect: () => {
-          dismissPalette();
-          setScriptExplainerEnabled(!scriptExplainerEnabled);
-        },
-      },
       ...clipboardActions,
       ...recentActions,
       clearRecentsAction,
@@ -1001,7 +942,7 @@ export function CommandPalette() {
             }}
             placeholder={
               getInputMode(query) === 'command'
-                ? 'Commands: >turbo, >script, >copy, >nav'
+                ? 'Commands: >turbo, >copy, >nav'
                 : getInputMode(query) === 'recents'
                   ? 'Recents: # tx | # block | # address'
                   : 'Type a command or paste an identifier…'

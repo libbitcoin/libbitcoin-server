@@ -65,11 +65,11 @@ export function transactionPath(txid: string) {
 }
 
 export function transactionInputPath(txid: string, inputIndex: number) {
-  return `${transactionPath(txid)}#input-${String(inputIndex)}`;
+  return `/v1/input/${encodeURIComponent(txid)}/${String(inputIndex)}`;
 }
 
 export function transactionOutputPath(txid: string, outputIndex: number) {
-  return `${transactionPath(txid)}#output-${String(outputIndex)}`;
+  return `/v1/output/${encodeURIComponent(txid)}/${String(outputIndex)}`;
 }
 
 export function addressPath(addressOrHash: string) {

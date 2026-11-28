@@ -264,6 +264,9 @@
     <ClCompile Include="..\..\..\..\test\utilities\merkle.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\test\utilities\miners.cpp">
+      <Filter>src\utilities</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\test\utilities\mining_channel.cpp">
       <Filter>src\utilities</Filter>
     </ClCompile>

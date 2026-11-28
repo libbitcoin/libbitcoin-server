@@ -1,5 +1,6 @@
 import {
   EVENT_DEFINITIONS,
+  getEventDefinition,
   type AdminEventFrame,
   type AdminFrame,
   type AdminLogFrame,
@@ -73,6 +74,9 @@ export interface MetricsSnapshot {
   sessionStartedAt: number;
   totalFrames: number;
   totalLogs: number;
+  totalFaults: number;
+  unclearedFaults: number;
+  clearedFaultSequence: number;
   evictedLogs: number;
   clearedLogs: number;
   totalEvents: number;
@@ -111,6 +115,9 @@ interface MutableBucket {
   signals: Map<string, MutableSignalBucket>;
   snapshot: TelemetryBucket | null;
 }
+
+// The fault log level.
+const FAULT_LEVEL = 6;
 
 class RingBuffer<T> {
   readonly #items: Array<T | undefined>;
@@ -156,6 +163,50 @@ class RingBuffer<T> {
   }
 }
 
+// A ring of the given capacity for each key, so that the newest of a quiet
+// key are not displaced by a busy one. Read newest first across keys.
+class KeyedRingBuffer<T extends { id: number }> {
+  readonly #rings = new Map<number | string, RingBuffer<T>>();
+  #snapshot: readonly T[] | null = null;
+
+  constructor(
+    readonly capacity: number,
+    readonly keyOf: (value: T) => number | string
+  ) {}
+
+  get size(): number {
+    let size = 0;
+    for (const ring of this.#rings.values()) size += ring.size;
+    return size;
+  }
+
+  push(value: T): boolean {
+    const key = this.keyOf(value);
+    let ring = this.#rings.get(key);
+    if (!ring) {
+      ring = new RingBuffer<T>(this.capacity);
+      this.#rings.set(key, ring);
+    }
+
+    this.#snapshot = null;
+    return ring.push(value);
+  }
+
+  clear(): void {
+    this.#snapshot = null;
+    this.#rings.clear();
+  }
+
+  newestFirst(): readonly T[] {
+    if (this.#snapshot) return this.#snapshot;
+    const output: T[] = [];
+    for (const ring of this.#rings.values()) output.push(...ring.newestFirst());
+    output.sort((left, right) => right.id - left.id);
+    this.#snapshot = output;
+    return output;
+  }
+}
+
 type SnapshotListener = () => void;
 
 function addToRecord(record: Partial<Record<string, number>>, key: string, value: number): void {
@@ -190,8 +241,11 @@ export class LiveMetricsStore {
   readonly #now: () => number;
   readonly #autoPublish: boolean;
   #listeners = new Set<SnapshotListener>();
-  #logs = new RingBuffer<RecentLog>(RECENT_LOG_LIMIT);
-  #events = new RingBuffer<RecentEvent>(RECENT_EVENT_LIMIT);
+  #logs = new KeyedRingBuffer<RecentLog>(RECENT_LOG_LIMIT, (log) => log.level);
+  #events = new KeyedRingBuffer<RecentEvent>(
+    RECENT_EVENT_LIMIT,
+    (event) => getEventDefinition(event.event).category
+  );
   #buckets = new Map<number, MutableBucket>();
   #lastBucketTime = Number.NEGATIVE_INFINITY;
   #priorSignalCounts: Partial<Record<string, number>> = {};
@@ -205,6 +259,9 @@ export class LiveMetricsStore {
   #lastCollectionAt: number;
   #totalFrames = 0;
   #totalLogs = 0;
+  #totalFaults = 0;
+  #clearedFaults = 0;
+  #clearedFaultSequence = 0;
   #evictedLogs = 0;
   #clearedLogs = 0;
   #totalEvents = 0;
@@ -312,6 +369,12 @@ export class LiveMetricsStore {
     this.flush();
   }
 
+  clearFaults(): void {
+    this.#clearedFaults = this.#totalFaults;
+    this.#clearedFaultSequence = this.#sequence;
+    this.flush();
+  }
+
   clearEvents(): void {
     this.#events.clear();
     this.flush();
@@ -333,6 +396,9 @@ export class LiveMetricsStore {
     this.#frameTime = null;
     this.#totalFrames = 0;
     this.#totalLogs = 0;
+    this.#totalFaults = 0;
+    this.#clearedFaults = 0;
+    this.#clearedFaultSequence = 0;
     this.#evictedLogs = 0;
     this.#clearedLogs = 0;
     this.#totalEvents = 0;
@@ -367,6 +433,7 @@ export class LiveMetricsStore {
     this.#totalLogs += 1;
     this.#lastLogAt = receivedAt;
     this.#sequence += 1;
+    if (frame.level === FAULT_LEVEL) this.#totalFaults += 1;
     if (this.#logs.push({ ...frame, id: this.#sequence, receivedAt })) this.#evictedLogs += 1;
     this.#recordSignal(logSignalId(frame.level), frame.time, null);
     this.#frameTime = Math.max(this.#frameTime ?? frame.time, frame.time);
@@ -481,6 +548,9 @@ export class LiveMetricsStore {
       sessionStartedAt: this.#sessionStartedAt,
       totalFrames: this.#totalFrames,
       totalLogs: this.#totalLogs,
+      totalFaults: this.#totalFaults,
+      unclearedFaults: this.#totalFaults - this.#clearedFaults,
+      clearedFaultSequence: this.#clearedFaultSequence,
       evictedLogs: this.#evictedLogs,
       clearedLogs: this.#clearedLogs,
       totalEvents: this.#totalEvents,

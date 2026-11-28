@@ -371,22 +371,66 @@ const adminAckFrameSchema = z.object({
   previous: z.number().nonnegative(),
 });
 
+const miningCountSchema = z.number().int().nonnegative();
+
+const miningShareSchema = z.object({
+  time: adminTimestampSchema,
+  height: miningCountSchema,
+  difficulty: z.number().nonnegative(),
+  result: z.string(),
+});
+
+const miningChannelSchema = z.object({
+  id: z.string(),
+  service: z.string(),
+  transport: z.string(),
+  address: z.string(),
+  client: z.string(),
+  workers: z.array(z.string()),
+  connected: adminTimestampSchema,
+  difficulty: z.number().nonnegative(),
+  hashrate: z.number().nonnegative(),
+  accepted: miningCountSchema,
+  rejected: miningCountSchema,
+  rejections: z.record(z.string(), miningCountSchema),
+  last_share: adminTimestampSchema.nullable(),
+  shares: z.array(miningShareSchema),
+  history: z.array(z.tuple([adminTimestampSchema, z.number().nonnegative()])),
+});
+
+const miningBlockSchema = z.object({
+  hash: z.string(),
+  height: miningCountSchema,
+  time: adminTimestampSchema,
+  channel: z.string(),
+});
+
+// The mining channels of the stratum services and the blocks they found.
+const adminMiningFrameSchema = z.object({
+  channels: z.array(miningChannelSchema),
+  blocks: z.array(miningBlockSchema),
+});
+
 export const adminFrameSchema = z.union([
   adminLogFrameSchema,
   adminEventFrameSchema,
   adminAckFrameSchema,
+  adminMiningFrameSchema,
 ]);
 
 export type AdminLogFrame = z.infer<typeof adminLogFrameSchema>;
 export type AdminEventFrame = z.infer<typeof adminEventFrameSchema>;
 export type AdminAckFrame = z.infer<typeof adminAckFrameSchema>;
+export type AdminMiningFrame = z.infer<typeof adminMiningFrameSchema>;
+export type MiningChannel = z.infer<typeof miningChannelSchema>;
 export type AdminFrame = z.infer<typeof adminFrameSchema>;
 
 export const ALL_LOG_FILTER = LOG_LEVELS.reduce(
   (filter, level) => (level.disabled ? filter : filter | (1 << level.id)),
   0
 );
-export const DEFAULT_LOG_FILTER = 2 ** 0 + 2 ** 1 + 2 ** 2 + 2 ** 5 + 2 ** 6;
+export const FAULT_LOG_FILTER = 2 ** 6;
+export const DEFAULT_LOG_FILTER = FAULT_LOG_FILTER;
 export const OPERATIONAL_LOG_FILTER = 2 ** 0 + 2 ** 1 + 2 ** 2 + 2 ** 6 + 2 ** 7;
 export const ALL_EVENT_FILTER = 2 ** EVENT_DEFINITIONS.length - 1;
 
@@ -411,6 +455,10 @@ export function isAdminAckFrame(frame: AdminFrame): frame is AdminAckFrame {
   return 'previous' in frame;
 }
 
+export function isAdminMiningFrame(frame: AdminFrame): frame is AdminMiningFrame {
+  return 'channels' in frame;
+}
+
 // The first header archived, which begins a synchronization from genesis.
 export function isFirstHeaderFrame(frame: AdminFrame): boolean {
   return isAdminEventFrame(frame) && frame.event === 0 && frame.value === 1;
@@ -426,7 +474,9 @@ export function parseAdminFrame(text: string): AdminFrame | null {
         ? adminLogFrameSchema
         : 'event' in value
           ? adminEventFrameSchema
-          : adminAckFrameSchema;
+          : 'channels' in value
+            ? adminMiningFrameSchema
+            : adminAckFrameSchema;
     const result = schema.safeParse(value);
     return result.success ? result.data : null;
   } catch {

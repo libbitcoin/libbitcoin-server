@@ -3,6 +3,7 @@ import { EVENT_DEFINITIONS, type EventCategory, getEventDefinition } from '@/lib
 import { formatEventValue, formatIsoTimestamp, formatTimestamp } from '@/lib/format';
 import type { RecentEvent } from '@/lib/live-metrics';
 import type { WorkerMetricsStore } from '@/lib/worker-metrics-store';
+import { HEADER_ACTION } from '@/lib/styles';
 
 const ROW_HEIGHT = 32;
 
@@ -58,17 +59,11 @@ export function EventView({ metrics, paused, onPausedChange, onClear }: EventVie
   }, [search, category]);
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-accentSecondary text-xs tracking-wide uppercase">Node lifecycle</p>
-          <h2 className="text-accent mt-1 text-2xl font-semibold">Live events</h2>
-          <p className="text-textMuted mt-1 text-sm">
-            Heights are event payloads; timing values retain their source units.
-          </p>
-          <p className="text-textMuted mt-1 text-xs">
-            Pause freezes this view; collection and charts continue.
-          </p>
+          <h1 className="text-accent text-2xl font-semibold">Events</h1>
+          <p className="text-textMuted text-sm">The node&apos;s events as they occur.</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -80,21 +75,21 @@ export function EventView({ metrics, paused, onPausedChange, onClear }: EventVie
               }
               onPausedChange(!paused);
             }}
-            className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary rounded-md border px-3 py-2 text-sm font-medium"
+            className={HEADER_ACTION}
           >
-            {paused ? 'Resume display' : 'Pause display'}
+            {paused ? 'Resume' : 'Pause'}
           </button>
           <button
             type="button"
             onClick={onClear}
-            className="border-accent/40 text-accent hover:border-accent hover:text-accentSecondary rounded-md border px-3 py-2 text-sm font-medium"
+            className={HEADER_ACTION}
           >
             Clear
           </button>
         </div>
       </header>
 
-      <div className="border-accent/30 bg-surface/80 flex flex-wrap gap-3 rounded-2xl border p-4">
+      <div className="flex flex-wrap gap-3">
         <label className="min-w-56 flex-1">
           <span className="sr-only">Search events</span>
           <input
@@ -103,8 +98,8 @@ export function EventView({ metrics, paused, onPausedChange, onClear }: EventVie
             onChange={(event) => {
               setSearch(event.target.value);
             }}
-            placeholder="Search event names or values…"
-            className="border-accent/40 bg-background text-textPrimary placeholder:text-textMuted/60 focus:border-accent w-full rounded-md border px-3 py-2 text-sm focus:ring-0"
+            placeholder="Search events…"
+            className="bg-surface/80 text-textPrimary placeholder:text-textMuted/60 w-full rounded-md border-0 px-3 py-2 text-sm focus:ring-0"
           />
         </label>
         <label>
@@ -128,11 +123,7 @@ export function EventView({ metrics, paused, onPausedChange, onClear }: EventVie
       <div className="border-accent/30 bg-surface/80 overflow-hidden rounded-xl border">
         <div className="border-accentSecondary/30 bg-accentSecondary/20 text-textMuted flex justify-between border-b px-4 py-3 text-xs">
           <span>
-            {paused
-              ? 'Display paused · collection continues'
-              : offset > 0
-                ? 'Viewing older rows · collection continues'
-                : 'Live stream · newest first'}
+            {paused ? 'Paused' : offset > 0 ? 'Older events' : 'Newest first'}
           </span>
           <span>
             {String(window.matched)} matching · {String(window.retained)} retained
@@ -178,7 +169,7 @@ export function EventView({ metrics, paused, onPausedChange, onClear }: EventVie
         <div className="flex justify-end text-xs">
           <button
             type="button"
-            className="text-accent hover:underline"
+            className="text-accent hover:text-accentSecondary"
             onClick={() => {
               if (viewport.current) viewport.current.scrollTop = 0;
               setScroll({ offset: 0, search, category });

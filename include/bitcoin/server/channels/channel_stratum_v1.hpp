@@ -74,6 +74,16 @@ public:
         return subscribed_;
     }
 
+    inline void set_client(const std::string& client) NOEXCEPT
+    {
+        client_ = client;
+    }
+
+    inline const std::string& client() const NOEXCEPT
+    {
+        return client_;
+    }
+
     inline void authorize(const std::string& worker) NOEXCEPT
     {
         workers_.insert(worker);
@@ -87,6 +97,13 @@ public:
     inline bool authorized_worker(const std::string& worker) const NOEXCEPT
     {
         return workers_.contains(worker);
+    }
+
+    inline system::string_list workers() const NOEXCEPT
+    {
+        system::string_list out{ workers_.begin(), workers_.end() };
+        std::sort(out.begin(), out.end());
+        return out;
     }
 
     inline void set_mask(uint32_t mask) NOEXCEPT
@@ -113,6 +130,7 @@ private:
     // These are protected by strand.
     mining_channel::ptr mining_{};
     std::unordered_set<std::string> workers_{};
+    std::string client_{};
     uint32_t mask_{};
     bool subscribed_{};
 };

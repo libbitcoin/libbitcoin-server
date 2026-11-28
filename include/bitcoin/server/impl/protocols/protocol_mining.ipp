@@ -41,6 +41,10 @@ void CLASS::stopping(const code& ec) NOEXCEPT
     if (active_.exchange(false))
         this->demand_template(false);
 
+    for (const auto& entry: channels_)
+        this->mining()->remove(entry.second->key());
+
+    channels_.clear();
     decay_timer_->stop();
     base::stopping(ec);
 }
@@ -49,10 +53,16 @@ void CLASS::stopping(const code& ec) NOEXCEPT
 // ----------------------------------------------------------------------------
 
 TEMPLATE
-void CLASS::add_channel(uint32_t id,
-    const mining_channel::ptr& channel) NOEXCEPT
+void CLASS::add_channel(uint32_t id, const mining_channel::ptr& channel,
+    miners::channel&& entry) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
+    entry.id = miners::to_id(this->identifier(), id);
+    entry.address = this->opposite().to_string();
+    entry.connected = miners::now();
+    entry.difficulty = channel->difficulty();
+    channel->set_key(entry.id);
+    this->mining()->add(std::move(entry));
     channels_.emplace(id, channel);
 }
 
@@ -60,7 +70,12 @@ TEMPLATE
 void CLASS::remove_channel(uint32_t id) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
-    channels_.erase(id);
+    const auto it = channels_.find(id);
+    if (it == channels_.end())
+        return;
+
+    this->mining()->remove(it->second->key());
+    channels_.erase(it);
 }
 
 TEMPLATE
@@ -158,6 +173,7 @@ void CLASS::do_template(const code& ec,
         bitcoin.forks.bip42);
 
     const auto value = ceilinged_add(subsidy, held->fees);
+    const auto bip141 = ctx.is_enabled(flags::bip141_rule);
     const auto prefix = coinbase_prefix(height, options_.coinbase_tag,
         extranonce_size());
 
@@ -168,12 +184,17 @@ void CLASS::do_template(const code& ec,
         if (current && current->held == held)
             continue;
 
+        const auto& payout = channel.payout();
+        const auto suffix = bip141 ?
+            coinbase_suffix(height, value, payout, held->commitment) :
+            coinbase_suffix(height, value, payout);
+
         const auto clean = !current || current->previous != held->previous;
         send_job(channel, to_shared(job
         {
             held,
             prefix,
-            coinbase_suffix(height, value, channel.payout(), held->commitment),
+            suffix,
             held->previous,
             chain_state::signal_version(bitcoin),
             ctx.work_required,
@@ -188,6 +209,7 @@ TEMPLATE
 void CLASS::refresh(mining_channel& channel) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
+    this->mining()->set_difficulty(channel.key(), channel.difficulty());
     const auto current = channel.current();
     if (!current)
         return;
@@ -201,9 +223,23 @@ void CLASS::refresh(mining_channel& channel) NOEXCEPT
 // Shares.
 // ----------------------------------------------------------------------------
 
-// The miner sets only header fields, so a valid header is a valid block.
 TEMPLATE
 share_outcome CLASS::check_share(mining_channel& channel, const job& job,
+    uint32_t version, uint32_t timestamp, uint32_t nonce,
+    const system::data_chunk& rolled, system::chain::header& out,
+    code& ec) NOEXCEPT
+{
+    BC_ASSERT(this->stranded());
+    const auto outcome = to_outcome(channel, job, version, timestamp, nonce,
+        rolled, out, ec);
+
+    record_share(channel, job, out, outcome);
+    return outcome;
+}
+
+// The miner sets only header fields, so a valid header is a valid block.
+TEMPLATE
+share_outcome CLASS::to_outcome(mining_channel& channel, const job& job,
     uint32_t version, uint32_t timestamp, uint32_t nonce,
     const system::data_chunk& rolled, system::chain::header& out,
     code& ec) NOEXCEPT
@@ -212,7 +248,8 @@ share_outcome CLASS::check_share(mining_channel& channel, const job& job,
     using namespace system;
 
     const auto extranonce = splice(channel.extranonce(), rolled);
-    const auto coinbase = splice(splice(job.prefix, extranonce), job.suffix);
+    const auto coinbase = coinbase_unwitnessed(job.prefix, extranonce,
+        job.suffix);
     out = chain::header
     {
         version,
@@ -256,9 +293,54 @@ void CLASS::accept_share(mining_channel& channel, const job& job,
     using namespace system;
 
     if (to_uintx(header.hash()) <= chain::compact::expand(job.bits))
-        submit_mined(header, job, splice(channel.extranonce(), rolled));
+        submit_mined(channel, header, job, splice(channel.extranonce(),
+            rolled));
 
     retarget(channel);
+}
+
+TEMPLATE
+void CLASS::reject_share(const mining_channel& channel,
+    const std::string& result) NOEXCEPT
+{
+    BC_ASSERT(this->stranded());
+    const auto current = channel.current();
+    const auto height = current ? current->held->context.height : zero;
+    this->mining()->add_share(channel.key(),
+    {
+        miners::now(), height, channel.difficulty(), result
+    }, false);
+}
+
+TEMPLATE
+void CLASS::record_share(const mining_channel& channel, const job& job,
+    const system::chain::header& header, share_outcome outcome) NOEXCEPT
+{
+    BC_ASSERT(this->stranded());
+    using namespace system;
+
+    std::string result{};
+    switch (outcome)
+    {
+        case share_outcome::accepted:
+            result = to_uintx(header.hash()) <= chain::compact::expand(job.bits) ?
+                "submitted" : "accepted";
+            break;
+        case share_outcome::duplicate:
+            result = "duplicate";
+            break;
+        case share_outcome::low_difficulty:
+            result = "low_difficulty";
+            break;
+        case share_outcome::invalid:
+            result = "invalid";
+            break;
+    }
+
+    this->mining()->add_share(channel.key(),
+    {
+        miners::now(), job.held->context.height, job.difficulty, result
+    }, outcome == share_outcome::accepted);
 }
 
 // Difficulty.
@@ -374,7 +456,8 @@ void CLASS::suggest(mining_channel& channel, double difficulty) NOEXCEPT
 // ----------------------------------------------------------------------------
 
 TEMPLATE
-void CLASS::submit_mined(const system::chain::header& header, const job& job,
+void CLASS::submit_mined(const mining_channel& channel,
+    const system::chain::header& header, const job& job,
     const system::data_chunk& extranonce) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
@@ -382,14 +465,21 @@ void CLASS::submit_mined(const system::chain::header& header, const job& job,
 
     const auto& query = this->archive();
     const auto& links = job.held->links;
+    const auto& ctx = job.held->context;
+    const auto bip141 = ctx.is_enabled(chain::flags::bip141_rule);
+    const auto coinbase = bip141 ?
+        coinbase_witnessed(job.prefix, extranonce, job.suffix) :
+        coinbase_unwitnessed(job.prefix, extranonce, job.suffix);
+
     const auto hash = header.hash();
-    mined_.emplace(hash, job.held->context.height);
+    mined_.emplace(hash, std::pair{ job.held->context.height,
+        channel.key() });
 
     data_chunk data{};
     write::bytes::data sink{ data };
     header.to_data(sink);
     sink.write_variable(add1(links.size()));
-    sink.write_bytes(coinbase_witnessed(job.prefix, extranonce, job.suffix));
+    sink.write_bytes(coinbase);
 
     for (const auto& link: links)
     {
@@ -422,10 +512,14 @@ void CLASS::handle_submitted(const system::hash_digest& hash,
     submission outcome, const code& ec) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
-    const auto it = mined_.find(hash);
-    const auto height = it == mined_.end() ? zero : it->second;
-    if (it != mined_.end())
+    std::string key{};
+    size_t height{};
+    if (const auto it = mined_.find(hash); it != mined_.end())
+    {
+        height = it->second.first;
+        key = std::move(it->second.second);
         mined_.erase(it);
+    }
 
     const auto block = "[" + system::encode_hash(hash) + ":" +
         std::to_string(height) + "]";
@@ -436,6 +530,8 @@ void CLASS::handle_submitted(const system::hash_digest& hash,
         case submission::duplicate:
         {
             LOGN("Stratum block accepted " << block);
+            this->mining()->add_block({ hash, height, miners::now(),
+                std::move(key) });
             break;
         }
         case submission::inconclusive:

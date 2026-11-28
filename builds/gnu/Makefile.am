@@ -146,6 +146,7 @@ src_libbitcoin_server_la_SOURCES = \
     ${srcdir}/../../src/utilities/electrum_version.cpp \
     ${srcdir}/../../src/utilities/extranonces.cpp \
     ${srcdir}/../../src/utilities/merkle.cpp \
+    ${srcdir}/../../src/utilities/miners.cpp \
     ${srcdir}/../../src/utilities/mining_channel.cpp \
     ${srcdir}/../../src/utilities/stratum_v1.cpp \
     ${srcdir}/../../src/utilities/stratum_v2.cpp
@@ -344,6 +345,7 @@ include_bitcoin_server_utilities_HEADERS = \
     ${srcdir}/../../include/bitcoin/server/utilities/electrum_version.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/extranonces.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/merkle.hpp \
+    ${srcdir}/../../include/bitcoin/server/utilities/miners.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/mining_channel.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/stratum_v1.hpp \
     ${srcdir}/../../include/bitcoin/server/utilities/stratum_v2.hpp \
@@ -435,6 +437,7 @@ test_libbitcoin_server_test_SOURCES = \
     ${srcdir}/../../test/utilities/electrum_version.cpp \
     ${srcdir}/../../test/utilities/extranonces.cpp \
     ${srcdir}/../../test/utilities/merkle.cpp \
+    ${srcdir}/../../test/utilities/miners.cpp \
     ${srcdir}/../../test/utilities/mining_channel.cpp \
     ${srcdir}/../../test/utilities/stratum_v1.cpp \
     ${srcdir}/../../test/utilities/stratum_v2.cpp

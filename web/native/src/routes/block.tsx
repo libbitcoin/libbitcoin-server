@@ -33,6 +33,7 @@ import {
   formatSats,
   formatTimestamp,
 } from '@/lib/utils/format';
+import { HEADER_ACTION } from '@/lib/utils/styles';
 import { BlockSizeBar } from '@/components/block-size-bar';
 import { Spinner } from '@/components/spinner';
 import { CopyButton } from '@/components/copy-button';
@@ -219,7 +220,7 @@ export function BlockPage() {
           {previousPath ? (
             <Link
               to={previousPath}
-              className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent rounded-md border px-3 py-2 text-sm"
+              className={HEADER_ACTION}
             >
               ← Previous
             </Link>
@@ -234,7 +235,7 @@ export function BlockPage() {
           {nextPath ? (
             <Link
               to={nextPath}
-              className="border-accent/40 text-textPrimary hover:border-accent hover:text-accent rounded-md border px-3 py-2 text-sm"
+              className={HEADER_ACTION}
             >
               Next →
             </Link>

@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
-import type { HashrateSample } from '@/lib/mining/sample';
 import { formatHashrate } from '@/lib/mining/format';
+
+// A hashrate (hashes per second) at a time, in milliseconds.
+export interface HashrateSample {
+  time: number;
+  rate: number;
+}
 
 const HEIGHT = 200;
 const LEFT = 72;
