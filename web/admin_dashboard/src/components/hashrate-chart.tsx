@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { ago, axisRate, gridStep as step } from '@/lib/mining/axis';
 import { formatHashrate } from '@/lib/mining/format';
 
 // A hashrate (hashes per second) at a time, in milliseconds.
@@ -12,25 +13,6 @@ const LEFT = 72;
 const RIGHT = 12;
 const TOP = 12;
 const BOTTOM = 24;
-
-
-// A round step of about a third of the value, for the gridlines.
-function step(maximum: number): number {
-  const rough = maximum / 3;
-  const power = 10 ** Math.floor(Math.log10(rough));
-  const scaled = rough / power;
-  return (scaled <= 1 ? 1 : scaled <= 2 ? 2 : scaled <= 5 ? 5 : 10) * power;
-}
-
-// An axis rate, without trailing zeros (6 MH/s, 2.5 MH/s).
-function axisRate(rate: number): string {
-  return formatHashrate(rate).replace(/(\.\d*?)0+ /, '$1 ').replace('. ', ' ');
-}
-
-function ago(seconds: number): string {
-  if (seconds <= 0) return 'now';
-  return seconds < 60 ? `−${String(seconds)} s` : `−${String(seconds / 60)} min`;
-}
 
 // The hashrate over the span (seconds) ending at the last sample.
 export function HashrateChart({

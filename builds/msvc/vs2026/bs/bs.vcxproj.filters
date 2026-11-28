@@ -226,6 +226,9 @@
     <None Include="..\..\..\..\web\admin_dashboard\src\components\fit-hash.tsx">
       <Filter>web\admin_dashboard\src\components</Filter>
     </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\components\fleet-chart.tsx">
+      <Filter>web\admin_dashboard\src\components</Filter>
+    </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\components\hashrate-chart.tsx">
       <Filter>web\admin_dashboard\src\components</Filter>
     </None>
@@ -306,6 +309,12 @@
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\log-window.ts">
       <Filter>web\admin_dashboard\src\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\mining\axis.ts">
+      <Filter>web\admin_dashboard\src\lib\mining</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin_dashboard\src\lib\mining\fleet.ts">
+      <Filter>web\admin_dashboard\src\lib\mining</Filter>
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\src\lib\mining\format.ts">
       <Filter>web\admin_dashboard\src\lib\mining</Filter>
@@ -390,6 +399,9 @@
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\log-window.test.ts">
       <Filter>web\admin_dashboard\test\lib</Filter>
+    </None>
+    <None Include="..\..\..\..\web\admin_dashboard\test\lib\mining\fleet.test.ts">
+      <Filter>web\admin_dashboard\test\lib\mining</Filter>
     </None>
     <None Include="..\..\..\..\web\admin_dashboard\test\lib\mining\format.test.ts">
       <Filter>web\admin_dashboard\test\lib\mining</Filter>
