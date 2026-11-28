@@ -233,7 +233,7 @@ share_outcome CLASS::check_share(mining_channel& channel, const job& job,
     const auto outcome = to_outcome(channel, job, version, timestamp, nonce,
         rolled, out, ec);
 
-    record_share(channel, job, outcome);
+    record_share(channel, job, out, outcome);
     return outcome;
 }
 
@@ -314,14 +314,17 @@ void CLASS::reject_share(const mining_channel& channel,
 
 TEMPLATE
 void CLASS::record_share(const mining_channel& channel, const job& job,
-    share_outcome outcome) NOEXCEPT
+    const system::chain::header& header, share_outcome outcome) NOEXCEPT
 {
     BC_ASSERT(this->stranded());
+    using namespace system;
+
     std::string result{};
     switch (outcome)
     {
         case share_outcome::accepted:
-            result = "accepted";
+            result = to_uintx(header.hash()) <= chain::compact::expand(job.bits) ?
+                "submitted" : "accepted";
             break;
         case share_outcome::duplicate:
             result = "duplicate";

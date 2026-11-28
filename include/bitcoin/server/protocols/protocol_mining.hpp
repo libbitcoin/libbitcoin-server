@@ -150,7 +150,7 @@ private:
         const system::data_chunk& rolled, system::chain::header& out,
         code& ec) NOEXCEPT;
     void record_share(const mining_channel& channel, const job& job,
-        share_outcome outcome) NOEXCEPT;
+        const system::chain::header& header, share_outcome outcome) NOEXCEPT;
 
     // These are thread safe.
     const settings::mining_server& options_;
