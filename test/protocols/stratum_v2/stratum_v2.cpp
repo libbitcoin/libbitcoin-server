@@ -38,6 +38,10 @@ static std::string user()
     return stratum_v2_setup_fixture::address(0x01) + ".rig";
 }
 
+// Difficulty one target less one, converts to difficulty one.
+constexpr auto inexact_target = base16_hash(
+    "00000000fffeffffffffffffffffffffffffffffffffffffffffffffffffffff");
+
 BC_FIXTURE_TEST_SUITE(stratum_v2_tests, stratum_v2_ten_block_setup_fixture)
 
 // setup_connection
@@ -276,6 +280,16 @@ BC_AUTO_TEST_CASE(stratum_v2__open_extended_mining_channel__max_target__target_f
     BC_REQUIRE_EQUAL(success->target, server::to_target_hash(1.0));
 }
 
+BC_AUTO_TEST_CASE(stratum_v2__open_extended_mining_channel__inexact_max_target__max_target)
+{
+    const auto ready = setup();
+    open_extended(user(), 0.0f, inexact_target);
+    const auto success = receive_message<extended_success>();
+    BC_REQUIRE(ready);
+    BC_REQUIRE(success);
+    BC_REQUIRE_EQUAL(success->target, inexact_target);
+}
+
 BC_AUTO_TEST_CASE(stratum_v2__open_extended_mining_channel__hash_rate_without_interval__minimum_target)
 {
     const auto ready = setup();
@@ -371,6 +385,16 @@ BC_AUTO_TEST_CASE(stratum_v2__open_standard_mining_channel__zero_max_target__max
     BC_REQUIRE(ready);
     BC_REQUIRE(error);
     BC_REQUIRE_EQUAL(error->error_code, "max-target-out-of-range");
+}
+
+BC_AUTO_TEST_CASE(stratum_v2__open_standard_mining_channel__inexact_max_target__max_target)
+{
+    const auto ready = setup();
+    open_standard(user(), 0.0f, inexact_target);
+    const auto success = receive_message<standard_success>();
+    BC_REQUIRE(ready);
+    BC_REQUIRE(success);
+    BC_REQUIRE_EQUAL(success->target, inexact_target);
 }
 
 // submit_shares_extended
@@ -608,6 +632,37 @@ BC_AUTO_TEST_CASE(stratum_v2__update_channel__lower_max_target__target_then_job)
     BC_REQUIRE(job);
     BC_REQUIRE_EQUAL(job->job_id, 1u);
     BC_REQUIRE(job->ntime_start.has_value());
+}
+
+BC_AUTO_TEST_CASE(stratum_v2__update_channel__inexact_max_target__max_target_then_job)
+{
+    const auto started = start_extended();
+    send_message(update_channel{ 1, 0.0f, inexact_target });
+    const auto target = receive_message<set_target>();
+    const auto job = receive_message<extended_job>();
+    BC_REQUIRE(started.previous);
+    BC_REQUIRE(target);
+    BC_REQUIRE_EQUAL(target->target, inexact_target);
+    BC_REQUIRE(job);
+}
+
+BC_AUTO_TEST_CASE(stratum_v2__update_channel__inexact_max_target_unchanged_floor__max_target)
+{
+    const auto ready = setup();
+    open_extended(user(), 0.0f, server::to_target_hash(1.0));
+    const auto success = receive_message<extended_success>();
+    const auto job = receive_message<extended_job>();
+    const auto previous = receive_message<prev_hash>();
+    send_message(update_channel{ 1, 0.0f, inexact_target });
+    send_message(update_channel{ 9, 0.0f, maximum_target });
+    const auto target = receive_message<set_target>();
+    BC_REQUIRE(ready);
+    BC_REQUIRE(success);
+    BC_REQUIRE_EQUAL(success->target, server::to_target_hash(1.0));
+    BC_REQUIRE(job);
+    BC_REQUIRE(previous);
+    BC_REQUIRE(target);
+    BC_REQUIRE_EQUAL(target->target, inexact_target);
 }
 
 BC_AUTO_TEST_CASE(stratum_v2__update_channel__lower_max_target__prior_job_share_low_difficulty)
